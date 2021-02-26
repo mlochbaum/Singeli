@@ -66,35 +66,22 @@ Parse ← {
   Name ← Get (⊑alph∊˜⊏)˙
   Word ← Get (⊑(wc∾oc)∊˜⊏)˙
 
-  AddParams ← {𝕊∘(c.run  _node_ (<∾Params))⍟(Next"{") 𝕩}
-  AddArgs   ← {  (c.call _node_ (<∾Args  ))⍟(Next"(") 𝕩}
+  AddParams ← {𝕊∘(c.run  _node_ (⊢≍○<"{"‿"}"_args))⍟(Next"{") 𝕩}
+  AddArgs   ← {  (c.call _node_ (⊢≍○<"("‿")"_args))⍟(Next"(") 𝕩}
   Expr0 ← {𝕤
     Vec ← c.run _node_ (⟨MakeVec˜⟩ ∾ "["‿Expr‿"]"‿Expr0 _seq)
     Par ← ⊑ "("‿Expr‿")" _seq
-    ¬∘Is⟜"["◶⟨Vec, ¬∘Is⟜"("◶⟨Par,Word⟩⟩ Peek@
+    ¬∘Is⟜"["◶⟨Vec, ¬∘Is⟜"("◶⟨Par,c.word _node_ (<∘Word)⟩⟩ Peek@
   }
   Callable ← AddParams∘Expr0
   Expr ← c.phrase _node_ {𝕤
     While ⟨¬Next∘(sep∾⥊¨",:=)}"), AddArgs∘Callable, 0⟩
   }
 
-  Param ← c.param _node_ {𝕤
-    n ← Name@
-    e ← When ⟨Try"==", Expr⟩
-    n‿e
-  }
-  Params ← {𝕤
-    Get "{"
-    a ← While ⟨Try∘",", Param, 1⟩
-    c ← While ⟨Try∘"&", Expr, 0⟩
-    Get "}"
-    a‿c
-  }
-
-  Args ← {𝕤
-    Get "("
+  _args ← {𝕤
+    Get ⊑𝕗
     a ← While ⟨Try∘",", Expr, 1⟩
-    Get ")"
+    Get 1⊑𝕗
     a
   }
 
@@ -105,7 +92,7 @@ Parse ← {
   # TODO: make most of the for definition conditional
   "@":      c.for    _node_ ("@"‿Callable‿"("‿(While∘⟨Try∘",", Name, 1⟩)‿"over"‿Name‿"from"‿Expr‿"to"‿Expr‿")"‿Statement _seq)@ ;
   "return": c.return _node_ ("return"‿Expr _seq)@ ;
-  "{":      Body@ ;
+  "{":      c.body   _node_ Body@ ;
   𝕩:
     n ← Expr@
     k ← Try ":"
@@ -121,6 +108,19 @@ Parse ← {
   }
   # 𝕩 indicates if preceding token was =
   Result ← c.body _node_ (Next∘"{"◶⟨Expr‿sep _seq !, Body⟩)
+
+  Param ← c.param _node_ {𝕤
+    n ← Name@
+    e ← When ⟨Try"==", Expr⟩
+    n‿e
+  }
+  Params ← {𝕤
+    Get "{"
+    a ← While ⟨Try∘",", Param, 1⟩
+    c ← While ⟨Try∘"&", Expr, 0⟩
+    Get "}"
+    a‿c
+  }
 
   FunDecl ← c.funDecl _node_ {𝕤
     n ← Name@
@@ -154,9 +154,10 @@ nodes ← {
       (<n) ∾ "  "⊸∾¨∾ d⊣◶⟨≍○<⊢,RunNode,∾RunNode¨⟩¨𝕩
     }
   }
-  run      ⇐ Node "run"      ‿0‿2‿2     # name params conds
-  call     ⇐ Node "call"     ‿0‿2       # name args
-  phrase   ⇐ Node "phrase"   ‿3         # things
+  word     ⇐ Node "word"     ‿0         # name
+  run      ⇐ Node "run"      ‿1‿2       # name params conds
+  call     ⇐ Node "call"     ‿1‿2       # name args
+  phrase   ⇐ Node "phrase"   ‿2         # things
   body     ⇐ Node "body"     ‿2         # statements
   funDecl  ⇐ Node "funDecl"  ‿0‿2‿2‿2‿1 # name params args type result
   arg      ⇐ Node "arg"      ‿0‿1       # name type
@@ -176,11 +177,4 @@ RunNode ← {𝕎𝕩}´⊢
 
 MakeVec ← !
 
-•Out ∾∾⟜lf¨ RunNode Parse ⊑Tokenize 1↓"
-add{T}(a:*T, b:*T, r:*T, l:u64) : void = {
-  i := 0u64;
-  i = i+1;
-}
-def a=1+2
-'abc'=fn{x,y}
-"
+•Out ∾∾⟜lf¨ RunNode Parse ⊑Tokenize •FChars "tests/test.singeli"
