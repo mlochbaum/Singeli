@@ -57,7 +57,7 @@ Parse ← {
   # Node creation and error tracking
   c ← nodes
   ⟨_whileParse_⇐_while_, DumpStack⇐Arr⟩ ← MakeStack@
-  _node_ ← {⟨𝕗, 𝔾_whileParse_⟨𝕗,Pos@⟩ 𝕩⟩}
+  _node_ ← {𝔽 𝔾_whileParse_⟨𝕗,Pos@⟩ 𝕩}
 
   When  ← {Test‿Cont:       ( ⥊∘< Cont)⍟Test   ⟨⟩  }
   While ← {Test‿Cont‿init: {(𝕊∾⟜<⟜Cont)⍟Test𝕩} Cont¨↕init}
@@ -71,7 +71,7 @@ Parse ← {
   Expr0 ← {𝕤
     Vec ← c.run _node_ (⟨MakeVec˜⟩ ∾ "["‿Expr‿"]"‿Expr0 _seq)
     Par ← ⊑ "("‿Expr‿")" _seq
-    ¬∘Is⟜"["◶⟨Vec, ¬∘Is⟜"("◶⟨Par,c.word _node_ (<∘Word)⟩⟩ Peek@
+    ¬∘Is⟜"["◶⟨Vec, ¬∘Is⟜"("◶⟨Par,c.word _node_ Word⟩⟩ Peek@
   }
   Callable ← AddParams∘Expr0
   Expr ← c.phrase _node_ {𝕤
@@ -148,33 +148,108 @@ Parse ← {
 }
 
 nodes ← {
-  Node ← {
-    n←⊑𝕩 ⋄ d←0⍟(⟨3⟩⊸≡)1⍟(⟨2⟩⊸≡)1↓𝕩
-    {
-      (<n) ∾ "  "⊸∾¨∾ d⊣◶⟨≍○<⊢,RunNode,∾RunNode¨⟩¨𝕩
-    }
+  # Node operations
+  o ← {
+    Dump ⇐ {𝕩.Dump@}
+    Disp ⇐ {𝕩.Disp@}
   }
-  word     ⇐ Node "word"     ‿0         # name
-  run      ⇐ Node "run"      ‿1‿2       # name params conds
-  call     ⇐ Node "call"     ‿1‿2       # name args
-  phrase   ⇐ Node "phrase"   ‿2         # things
-  body     ⇐ Node "body"     ‿2         # statements
-  funDecl  ⇐ Node "funDecl"  ‿0‿2‿2‿2‿1 # name params args type result
-  arg      ⇐ Node "arg"      ‿0‿1       # name type
-  decl     ⇐ Node "decl"     ‿1‿2‿1     # name type value
-  define   ⇐ Node "define"   ‿1‿1       # target value
-  export   ⇐ Node "export"   ‿0‿1       # name value
-  program  ⇐ Node "program"  ‿2         # lines
-  param    ⇐ Node "param"    ‿0‿2       # name equals
-  paramList⇐ Node "paramList"‿2‿2       # params conds
-  if       ⇐ Node "if"       ‿1‿1‿2     # cond then else
-  while    ⇐ Node "while"    ‿1‿1       # cond stmt
-  do       ⇐ Node "do"       ‿1‿1       # stmt cond
-  return   ⇐ Node "return"   ‿1         # value
-}
+  Defaults ← {
+    node‿visit ⇐ 𝕩
+    Dump⇐{𝕤⋄⟨node,Visit o.dump⟩}
+    DispMemb ← <⊸∾⟜("  "⊸∾¨)  # Display node 𝕨 and members 𝕩
+    Disp⇐{𝕤⋄node DispMemb ∾∾ @ ⥊∘<∘⊢⍟((2×≡)+≡⟜@)¨○Visit o.disp}
+  }
 
-RunNode ← {𝕎𝕩}´⊢
+  # Node types
+  Word ⇐ {
+    name⇐𝕩
+    Visit←⟨⟩˙
+    ⟨node,Dump⟩⇐Defaults "word"‿visit
+    Disp⇐{𝕤⋄⟨name⟩}
+  }
+  Run ⇐ {
+    ⟨caller,params⟩⇐𝕩
+    Visit←{⟨𝕏caller,𝕏¨params⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "run"‿visit
+  }
+  Call ⇐ {
+    ⟨caller,args⟩⇐𝕩
+    Visit←{⟨𝕏caller,𝕏¨args⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "call"‿visit
+  }
+  Phrase ⇐ {
+    things⇐𝕩
+    Visit←{⟨𝕏¨things⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "phrase"‿visit
+  }
+  Body ⇐ {
+    statements⇐𝕩
+    Visit←{⟨𝕏¨statements⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "body"‿visit
+  }
+  FunDecl ⇐ {
+    ⟨name,params,args,type,result⟩⇐𝕩
+    Visit←{⟨name,𝕏¨params,𝕏¨args,𝕏¨type,𝕏result⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "funDecl"‿visit
+  }
+  Arg ⇐ {
+    ⟨name,type⟩⇐𝕩
+    Visit←{⟨name,𝕏type⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "arg"‿visit
+  }
+  Decl ⇐ {
+    ⟨name,type,value⟩⇐𝕩
+    Visit←{⟨𝕏name,𝕏¨type,𝕏value⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "decl"‿visit
+  }
+  Define ⇐ {
+    ⟨target,value⟩⇐𝕩
+    Visit←{⟨𝕏target,𝕏value⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "define"‿visit
+  }
+  Export ⇐ {
+    ⟨name,value⟩⇐𝕩
+    Visit←{⟨name,𝕏value⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "export"‿visit
+  }
+  Program ⇐ {
+    lines⇐𝕩
+    Visit←{⟨𝕏¨lines⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "program"‿visit
+  }
+  Param ⇐ {
+    ⟨name,equals⟩⇐𝕩
+    Visit←{⟨name,𝕏¨equals⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "param"‿visit
+  }
+  ParamList ⇐ {
+    ⟨params,conds⟩⇐𝕩
+    Visit←{⟨𝕏¨params,𝕏¨conds⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "paramList"‿visit
+  }
+  If ⇐ {
+    ⟨cond,then,else⟩⇐𝕩
+    Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "if"‿visit
+  }
+  While ⇐ {
+    ⟨cond,stmt⟩⇐𝕩
+    Visit←{⟨𝕏cond,𝕏stmt⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "while"‿visit
+  }
+  Do ⇐ {
+    ⟨stmt,cond⟩⇐𝕩
+    Visit←{⟨𝕏stmt,𝕏cond⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "do"‿visit
+  }
+  Return ⇐ {
+    ⟨value⟩⇐𝕩
+    Visit←{⟨𝕏value⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "return"‿visit
+  }
+}
 
 MakeVec ← !
 
-•Out ∾∾⟜lf¨ RunNode Parse ⊑Tokenize •FChars "tests/test.singeli"
+ast ← Parse ⊑Tokenize •FChars "tests/test.singeli"
+•Out ∾∾⟜lf¨ ast.Disp @
