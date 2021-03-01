@@ -69,7 +69,7 @@ Parse ← {
   AddParams ← {𝕊∘(c.run  _node_ (⊢≍○<"{"‿"}"_args))⍟(Next"{") 𝕩}
   AddArgs   ← {  (c.call _node_ (⊢≍○<"("‿")"_args))⍟(Next"(") 𝕩}
   Expr0 ← {𝕤
-    Vec ← c.run _node_ (⟨MakeVec˜⟩ ∾ "["‿Expr‿"]"‿Expr0 _seq)
+    Vec ← c.run _node_ (⟨types.Vec⟩ ∾ "["‿Expr‿"]"‿Expr0 _seq)
     Par ← ⊑ "("‿Expr‿")" _seq
     ¬∘Is⟜"["◶⟨Vec, ¬∘Is⟜"("◶⟨Par,c.word _node_ Word⟩⟩ Peek@
   }
@@ -146,6 +146,67 @@ Parse ← {
 
   Program @
 }
+
+_and_ ← { 𝔽◶⟨0,𝔾⟩ }
+IsNum ← 1=•Type
+IsInt ← IsNum _and_ (⌊⊸=)
+IsNat ← IsInt _and_ (0⊸≤)
+Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.Show@}⟩𝕩}
+
+⟨IsType⟩ ← types ← {
+  IsType ⇐ {𝕊v: type=v.class}
+  Type ← {k𝕊d:
+    class⇐𝕤
+    kind‿dat⇐𝕨‿𝕩
+    Show⇐kind◶⟨
+      ∾⟜⍕´                 # Primitive:   qual‿len     u8
+      {∾"["‿𝕨‿"]"‿𝕩}○Show´ # Vector:      count‿t      [4]…
+      "*"∾Show             # Pointer:     t            *…
+      {∾𝕨‿" -> "‿𝕩}○Show´  # Function:    ⟨t, q‿r‿s⟩   (…,…,…) -> …
+      Show                 # Tuple:       q‿r‿s        (…,…,…)
+    ⟩∘dat
+  }
+  tPRIM‿tVEC‿tPTR‿tFUN‿tTUP ← ↕5
+
+  allPrims ← ∾(<(tPRIM Type ≍)¨´)˘ primTypes ← ∘‿2⥊⟨
+    'u', 2⋆0∾3+↕4  # 1/8/16/32/64
+    'i', 2⋆  3+↕4  #   8/16/32/64
+    'f', 2⋆  5+↕2  #        32/64
+  ⟩
+  
+  Word2Prim ⇐ (Show¨allPrims)⊸⊐⌾< ⊑ allPrims˙
+  Vec ⇐ {n𝕊t: !IsNat n ⋄ !IsType t ⋄ tVEC Type ⟨n,t⟩}
+  Ptr ⇐ { 𝕊t: !IsType t ⋄ tPTR Type t}
+
+  Kind←{𝕩.kind} ⋄ Dat←{𝕩.dat}
+  _cases ← {
+    c ← ⌊‿2⥊𝕗
+    k ← ⊏˘c
+    d ← (1⊏˘c) ∾ ((≠⥊c)↓𝕗)»⟨!∘0⟩
+    (k⊸⊐⌾< ⊢⊘(≠◶⊢‿¯1)○Kind)◶({𝕏○Dat}¨d) ⊣ @○(!IsType)
+  }
+
+  Size ⇐ ⟨
+    tPRIM, 1⊸⊑
+    tVEC,  ×⟜{Size𝕩}´
+    tTUP,  +´{Size𝕩}¨
+  ⟩_cases
+
+  VCount ⇐ ⟨ tVEC,⊑, 1 ⟩ _cases
+
+  _sub ← {
+    L ← ¯1⊸⊑
+    𝕨 ⟨
+      tVEC,  =○⊑ _and_ (𝕊○L)
+      tTUP,  =○≠ _and_ (∧´𝕊¨)
+      tPRIM, ≠○⊑◶⟨𝔽○L, ('f'≠⊑∘⊣)_and_(<○L)⟩
+      0
+    ⟩ _cases 𝕩
+  }
+  Subtype  ⇐ ≤ _sub
+  SSubtype ⇐ < _sub
+}
+
 
 nodes ← {
   # Node operations
@@ -248,8 +309,6 @@ nodes ← {
     ⟨node,Dump,Disp⟩⇐Defaults "return"‿visit
   }
 }
-
-MakeVec ← !
 
 ast ← Parse ⊑Tokenize •FChars "tests/test.singeli"
 •Out ∾∾⟜lf¨ ast.Disp @
