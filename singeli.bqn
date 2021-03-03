@@ -109,12 +109,12 @@ Parse ← {
   # 𝕩 indicates if preceding token was =
   Result ← c.body _node_ (Next∘"{"◶⟨Expr‿sep _seq !, Body⟩)
 
-  Param ← c.param _node_ {𝕤
-    n ← Name@
-    e ← When ⟨Try"==", Expr⟩
-    n‿e
-  }
-  Params ← {𝕤
+  Params ← c.params _node_ {𝕤
+    Param ← {𝕤
+      n ← Name@
+      e ← When ⟨Try"==", Expr⟩
+      n‿e
+    }
     Get "{"
     a ← While ⟨Try∘",", Param, 1⟩
     c ← While ⟨Try∘"&", Expr, 0⟩
@@ -124,7 +124,7 @@ Parse ← {
 
   FunDecl ← c.funDecl _node_ {𝕤
     n ← Name@
-    p ← When ⟨Next"{", c.paramList _node_ Params⟩
+    p ← When ⟨Next"{", Params⟩
     Get "("
     Arg ← c.arg _node_ (Name‿":"‿Expr _seq)
     a ← While ⟨Try∘",", Arg, 1⟩
@@ -297,15 +297,13 @@ nodes ← {
     ⟨node,Dump,Disp⟩⇐d←Defaults "body"‿visit
     Eval⇐¯1⊑d.Eval
   }
-  Param ⇐ {
-    ⟨name,equals⟩⇐𝕩
-    Visit←{⟨name,𝕏¨equals⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "param"‿visit
-  }
-  ParamList ⇐ {
+  ParamEq ← Run (Word"match"){⟨𝕗,𝕨‿𝕩⟩}
+  Params ⇐ {
     ⟨params,conds⟩⇐𝕩
-    Visit←{⟨𝕏¨params,𝕏¨conds⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "paramList"‿visit
+    conds∾˜↩∾<⊸(Word⊸ParamEq¨)´¨params
+    params↩⊑¨params
+    Visit←{params∾⟨𝕏¨conds⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "params"‿visit
   }
   If ⇐ {
     ⟨cond,then,else⟩⇐𝕩
