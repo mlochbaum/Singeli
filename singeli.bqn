@@ -69,7 +69,7 @@ Parse ← {
   AddParams ← {𝕊∘(c.run  _node_ (⊢≍○<"{"‿"}"_args))⍟(Next"{") 𝕩}
   AddArgs   ← {  (c.call _node_ (⊢≍○<"("‿")"_args))⍟(Next"(") 𝕩}
   Expr0 ← {𝕤
-    Vec ← c.run _node_ (⟨types.Vec⟩ ∾ "["‿Expr‿"]"‿Expr0 _seq)
+    Vec ← c.run _node_ (⟨c.Word"vector"⟩ ∾ "["‿Expr‿"]"‿Expr0 _seq)
     Par ← ⊑ "("‿Expr‿")" _seq
     ¬∘Is⟜"["◶⟨Vec, ¬∘Is⟜"("◶⟨Par,c.word _node_ Word⟩⟩ Peek@
   }
@@ -87,8 +87,8 @@ Parse ← {
 
   Statement ← {
   "if":     c.if     _node_ ("if"‿"("‿Expr‿")"‿Statement‿(When∘⟨Next∘"else",Statement⟩)_seq)@ ;
-  "while":  c.while  _node_ ("while"‿"("‿Expr‿")"‿Statement _seq)@ ;
-  "do":     c.do     _node_ ("do"‿Statement‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
+  "while":  c.while  _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Statement _seq)@ ;
+  "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Statement‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
   # TODO: make most of the for definition conditional
   "@":      c.for    _node_ ("@"‿Callable‿"("‿(While∘⟨Try∘",", Name, 1⟩)‿"over"‿Name‿"from"‿Expr‿"to"‿Expr‿")"‿Statement _seq)@ ;
   "return": c.return _node_ ("return"‿Expr _seq)@ ;
@@ -139,7 +139,7 @@ Parse ← {
   Symb ← '''=⊑
   Export ← c.export _node_ ((Get symb˙)‿"="‿Callable‿sep _seq)
 
-  Program ← c.program _node_ {𝕤
+  Program ← c.body _node_ {𝕤
     Line ← ¬∘Is⟜"def"◶⟨Define, Symb◶FunDecl‿Export⟩∘Peek
     While ⟨Rem, Line∘Seps, 0⟩
   }
@@ -168,13 +168,12 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.
   }
   tPRIM‿tVEC‿tPTR‿tFUN‿tTUP ← ↕5
 
-  allPrims ← ∾(<(tPRIM Type ≍)¨´)˘ primTypes ← ∘‿2⥊⟨
+  primTypes ⇐ ∾(<(tPRIM Type ≍)¨´)˘ ∘‿2⥊⟨
     'u', 2⋆0∾3+↕4  # 1/8/16/32/64
     'i', 2⋆  3+↕4  #   8/16/32/64
     'f', 2⋆  5+↕2  #        32/64
   ⟩
   
-  Word2Prim ⇐ (Show¨allPrims)⊸⊐⌾< ⊑ allPrims˙
   Vec ⇐ {n𝕊t: !IsNat n ⋄ !IsType t ⋄ tVEC Type ⟨n,t⟩}
   Ptr ⇐ { 𝕊t: !IsType t ⋄ tPTR Type t}
 
@@ -207,51 +206,67 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.
   SSubtype ⇐ < _sub
 }
 
+# Other types:
+# Instruction result (type, index)
+# Generator, encoded as function
+
+CallFn ← !  # Check types; emit call instruction
+
+
+builtins ← ∾≍⟨
+  Show¨⊸≍ types.primTypes
+  ⍉> ⟨"call"‿CallFn,⟨"vector",types.Vec⟩⟩
+⟩
 
 nodes ← {
   # Node operations
   o ← {
     Dump ⇐ {𝕩.Dump@}
     Disp ⇐ {𝕩.Disp@}
+    Eval ⇐ {𝕩.Eval@}
   }
   Defaults ← {
     node‿visit ⇐ 𝕩
     Dump⇐{𝕤⋄⟨node,Visit o.dump⟩}
-    DispMemb ← <⊸∾⟜("  "⊸∾¨)  # Display node 𝕨 and members 𝕩
-    Disp⇐{𝕤⋄node DispMemb ∾∾ @ ⥊∘<∘⊢⍟((2×≡)+≡⟜@)¨○Visit o.disp}
+    Disp⇐{𝕤⋄node <⊸∾ "  "⊸∾¨ ∾∾ @ ⥊∘<∘⊢⍟((2×≡)+≡⟜@)¨○Visit o.disp}
+    Eval⇐{𝕤⋄Visit o.eval⋄@}
   }
 
   # Node types
-  Word ⇐ {
+  Ident ← {
     name⇐𝕩
-    Visit←⟨⟩˙
-    ⟨node,Dump⟩⇐Defaults "word"‿visit
+    ⟨node,Dump⟩⇐Defaults "ident"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
+    Eval⇐"TODO:lexical scoping"!0˙
+  }
+  Value ← {
+    name⇐𝕨
+    eval⇐𝕩
+    ⟨node,Dump⟩⇐Defaults "value"‿⟨⟩
+    Disp⇐{𝕤⋄⟨name⟩}
+  }
+  bName‿bVal ← <˘builtins
+  Word ⇐ {
+    AWord ← bName⊸⊐⌾< ≥⟜(≠bName)◶⟨⊢ Value ⊑⟜bVal, Ident ⊢⟩ ⊢
+    (∧´∊⟜("."∾dig))◶⟨AWord, Value⟜⍎⟩ 𝕩
   }
   Run ⇐ {
     ⟨caller,params⟩⇐𝕩
     Visit←{⟨𝕏caller,𝕏¨params⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "run"‿visit
+    ⟨node,Dump,Disp⟩⇐d←Defaults "run"‿visit
+    Eval ⇐ {𝕎𝕩}´ d.Eval
   }
-  Call ⇐ {
-    ⟨caller,args⟩⇐𝕩
-    Visit←{⟨𝕏caller,𝕏¨args⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "call"‿visit
-  }
+  Call ⇐ Run (Word"call") ≍○< <⊸∾´
   Phrase ⇐ {
     things⇐𝕩
     Visit←{⟨𝕏¨things⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "phrase"‿visit
-  }
-  Body ⇐ {
-    statements⇐𝕩
-    Visit←{⟨𝕏¨statements⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "body"‿visit
+    ⟨node,Dump,Disp⟩⇐d←Defaults "phrase"‿visit
+    Eval⇐("TODO: operator parsing"!0˙)´d.Eval
   }
   FunDecl ⇐ {
     ⟨name,params,args,type,result⟩⇐𝕩
     Visit←{⟨name,𝕏¨params,𝕏¨args,𝕏¨type,𝕏result⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "funDecl"‿visit
+    ⟨node,Dump,Disp,Eval⟩⇐Defaults "funDecl"‿visit
   }
   Arg ⇐ {
     ⟨name,type⟩⇐𝕩
@@ -262,21 +277,25 @@ nodes ← {
     ⟨name,type,value⟩⇐𝕩
     Visit←{⟨𝕏name,𝕏¨type,𝕏value⟩}
     ⟨node,Dump,Disp⟩⇐Defaults "decl"‿visit
+    Eval⇐"TODO:lexical scoping"!0˙
   }
   Define ⇐ {
     ⟨target,value⟩⇐𝕩
     Visit←{⟨𝕏target,𝕏value⟩}
     ⟨node,Dump,Disp⟩⇐Defaults "define"‿visit
+    Eval⇐"TODO:lexical scoping"!0˙
   }
   Export ⇐ {
     ⟨name,value⟩⇐𝕩
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp⟩⇐Defaults "export"‿visit
+    Eval⇐"TODO:exports"!0˙
   }
-  Program ⇐ {
-    lines⇐𝕩
-    Visit←{⟨𝕏¨lines⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "program"‿visit
+  Body ⇐ {
+    statements⇐𝕩
+    Visit←{⟨𝕏¨statements⟩}
+    ⟨node,Dump,Disp⟩⇐d←Defaults "body"‿visit
+    Eval⇐¯1⊑d.Eval
   }
   Param ⇐ {
     ⟨name,equals⟩⇐𝕩
@@ -292,21 +311,37 @@ nodes ← {
     ⟨cond,then,else⟩⇐𝕩
     Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
     ⟨node,Dump,Disp⟩⇐Defaults "if"‿visit
+    Eval ⇐ {𝕤
+      c ← cond.Eval@
+      lf ← Label@
+      c GotoF lf
+      then.Eval@
+      Goto¨ lt ← Label¨ else
+      SetLabel lf
+      { 𝕩.Eval@ ⋄ SetLabel lt }¨ else
+    }
   }
   While ⇐ {
-    ⟨cond,stmt⟩⇐𝕩
+    ⟨testFirst,cond,stmt⟩⇐𝕩
     Visit←{⟨𝕏cond,𝕏stmt⟩}
     ⟨node,Dump,Disp⟩⇐Defaults "while"‿visit
-  }
-  Do ⇐ {
-    ⟨stmt,cond⟩⇐𝕩
-    Visit←{⟨𝕏stmt,𝕏cond⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "do"‿visit
+    Eval ⇐ {𝕤
+      Goto¨ lc ← Label¨↕testFirst
+      SetLabel lt ← Label@
+      stmt.Eval@
+      SetLabel¨ lc
+      (cond.Eval@) Goto lt
+    }
   }
   Return ⇐ {
     ⟨value⟩⇐𝕩
     Visit←{⟨𝕏value⟩}
     ⟨node,Dump,Disp⟩⇐Defaults "return"‿visit
+    Eval ⇐ {𝕤
+      r←o.Eval value
+      # ! r IsOfType fntype
+      Emit "ret"‿r
+    }
   }
 }
 
