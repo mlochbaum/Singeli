@@ -104,7 +104,7 @@ Parse ← {
   Seps ← {Try∘sep◶@‿𝕊𝕩}
   Body ← {𝕤
     Get "{"
-    While ⟨¬Try∘"}", Statement∘Seps, 0⟩
+    While ⟨¬Try∘"}"∘Seps, Statement, 0⟩
   }
   # 𝕩 indicates if preceding token was =
   Result ← c.body _node_ (Next∘"{"◶⟨Expr‿sep _seq !, Body⟩)
