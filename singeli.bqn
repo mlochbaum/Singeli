@@ -95,10 +95,10 @@ Parse ← {
   "{":      c.body   _node_ Body@ ;
   𝕩:
     n ← Expr@
-    k ← Try ":"
+    d ← Try ":"
     e ← Try "="
-    t ← When ⟨k>e, {e↩Try"="⋄𝕩}∘Expr⟩
-    c.decl _node_ {⟨𝕩,t,Expr@⟩}⍟e n
+    t ← When ⟨d>e, {e↩Try"="⋄𝕩}∘Expr⟩
+    c.assign _node_ {⟨𝕩,d,t,Expr@⟩}⍟e n
   }∘Peek
 
   Seps ← {Try∘sep◶@‿𝕊𝕩}
@@ -109,7 +109,7 @@ Parse ← {
   # 𝕩 indicates if preceding token was =
   Result ← c.body _node_ (Next∘"{"◶⟨Expr‿sep _seq !, Body⟩)
 
-  Params ← c.params _node_ {𝕤
+  Params ← {𝕤
     Param ← {𝕤
       n ← Name@
       e ← When ⟨Try"==", Expr⟩
@@ -121,26 +121,28 @@ Parse ← {
     Get "}"
     a‿c
   }
+  _withParams ← {𝕤
+    (Next"{")◶⟨𝔽, c.lambda _node_ (Params‿𝕊 _seq)⟩@
+  }
 
-  FunDecl ← c.funDecl _node_ {𝕤
-    n ← Name@
-    p ← When ⟨Next"{", Params⟩
+  Function ← c.function _node_ {𝕤
     Get "("
     Arg ← c.arg _node_ (Name‿":"‿Expr _seq)
     a ← While ⟨Try∘",", Arg, 1⟩
     Get ")"
     r ← When ⟨Try":", Expr⟩
     b ← Result Try"="
-    ⟨n,p,a,r,b⟩
-  }
-
-  Define ← c.define _node_ ("def"‿Expr‿"="‿(Result∘1) _seq)
+    ⟨a,r,b⟩
+  } _withParams
+  Generator ← ⟨"=",Result∘1⟩_seq _withParams
+  DefFun ← c.define _node_ (      Name‿Function  _seq)
+  Define ← c.define _node_ ("def"‿Name‿Generator _seq)
 
   Symb ← '''=⊑
   Export ← c.export _node_ ((Get symb˙)‿"="‿Callable‿sep _seq)
 
   Program ← c.body _node_ {𝕤
-    Line ← ¬∘Is⟜"def"◶⟨Define, Symb◶FunDecl‿Export⟩∘Peek
+    Line ← ¬∘Is⟜"def"◶⟨Define, Symb◶DefFun‿Export⟩∘Peek
     While ⟨Rem, Line∘Seps, 0⟩
   }
 
@@ -263,25 +265,34 @@ nodes ← {
     ⟨node,Dump,Disp⟩⇐d←Defaults "phrase"‿visit
     Eval⇐("TODO: operator parsing"!0˙)´d.Eval
   }
-  FunDecl ⇐ {
-    ⟨name,params,args,type,result⟩⇐𝕩
-    Visit←{⟨name,𝕏¨params,𝕏¨args,𝕏¨type,𝕏result⟩}
-    ⟨node,Dump,Disp,Eval⟩⇐Defaults "funDecl"‿visit
+  Function ⇐ {
+    ⟨args,type,result⟩⇐𝕩
+    Visit←{⟨𝕏¨args,𝕏¨type,𝕏result⟩}
+    ⟨node,Dump,Disp,Eval⟩⇐Defaults "function"‿visit
+  }
+  ParamEq ← Run (Word"match"){⟨𝕗,𝕨‿𝕩⟩}
+  Lambda ⇐ {
+    ⟨⟨params,conds⟩,value⟩⇐𝕩
+    conds∾˜↩∾<⊸(Word⊸ParamEq¨)´¨params
+    params↩⊑¨params
+    Visit←{params∾⟨𝕏¨conds,𝕏value⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "lambda"‿visit
   }
   Arg ⇐ {
     ⟨name,type⟩⇐𝕩
     Visit←{⟨name,𝕏type⟩}
     ⟨node,Dump,Disp⟩⇐Defaults "arg"‿visit
   }
-  Decl ⇐ {
-    ⟨name,type,value⟩⇐𝕩
-    Visit←{⟨𝕏name,𝕏¨type,𝕏value⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "decl"‿visit
-    Eval⇐"TODO:lexical scoping"!0˙
+  Assign ⇐ {
+    ⟨name,decl,type,value⟩⇐𝕩
+    name {n←⊑t←𝕩.things ⋄ !1=≠t ⋄ !"ident"≡n.node ⋄ n.name}˜↩@
+    Visit←{⟨name∾decl/":",𝕏¨type,𝕏value⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "assign"‿visit
+    Eval⇐{𝕤⋄ Set value.Eval@}
   }
   Define ⇐ {
     ⟨target,value⟩⇐𝕩
-    Visit←{⟨𝕏target,𝕏value⟩}
+    Visit←{⟨target,𝕏value⟩}
     ⟨node,Dump,Disp⟩⇐Defaults "define"‿visit
     Eval⇐"TODO:lexical scoping"!0˙
   }
@@ -296,14 +307,6 @@ nodes ← {
     Visit←{⟨𝕏¨statements⟩}
     ⟨node,Dump,Disp⟩⇐d←Defaults "body"‿visit
     Eval⇐¯1⊑d.Eval
-  }
-  ParamEq ← Run (Word"match"){⟨𝕗,𝕨‿𝕩⟩}
-  Params ⇐ {
-    ⟨params,conds⟩⇐𝕩
-    conds∾˜↩∾<⊸(Word⊸ParamEq¨)´¨params
-    params↩⊑¨params
-    Visit←{params∾⟨𝕏¨conds⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "params"‿visit
   }
   If ⇐ {
     ⟨cond,then,else⟩⇐𝕩
