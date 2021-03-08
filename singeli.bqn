@@ -161,6 +161,7 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.
     class⇐𝕤
     kind‿dat⇐𝕨‿𝕩
     Show⇐kind◶⟨
+      "void"               # Void:                     void
       ∾⟜⍕´                 # Primitive:   qual‿len     u8
       {∾"["‿𝕨‿"]"‿𝕩}○Show´ # Vector:      count‿t      [4]…
       "*"∾Show             # Pointer:     t            *…
@@ -168,14 +169,14 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.
       Show                 # Tuple:       q‿r‿s        (…,…,…)
     ⟩∘dat
   }
-  tPRIM‿tVEC‿tPTR‿tFUN‿tTUP ← ↕5
+  tVOID‿tPRIM‿tVEC‿tPTR‿tFUN‿tTUP ← ↕6
 
-  primTypes ⇐ ∾(<(tPRIM Type ≍)¨´)˘ ∘‿2⥊⟨
+  primTypes ⇐ (tVOID Type ⟨⟩)∾∾(<(tPRIM Type ≍)¨´)˘ ∘‿2⥊⟨
     'u', 2⋆0∾3+↕4  # 1/8/16/32/64
     'i', 2⋆  3+↕4  #   8/16/32/64
     'f', 2⋆  5+↕2  #        32/64
   ⟩
-  
+
   Vec ⇐ {n𝕊t: !IsNat n ⋄ !IsType t ⋄ tVEC Type ⟨n,t⟩}
   Ptr ⇐ { 𝕊t: !IsType t ⋄ tPTR Type t}
 
