@@ -30,6 +30,15 @@ MakeStack ← {𝕤
   _while_⇐{Pop ⊢ 𝔽 ⊣ ·Push𝕘˙}
 }
 
+MakeStream ← {
+  len←≠src←𝕩 ⋄ i←0
+  Pos  ⇐ {𝕤⋄i}
+  Inc  ← {𝕤⋄i+↩1}
+  Rem  ⇐ {𝕤⋄(i+1)<len}
+  Peek ⇐ {𝕤⋄i⊑src}
+  Next ⇐ Inc ⊢ Peek
+}
+
 Parse ← {
   # Three kinds of token tests, distinguished by depth.
   Is ← ≡∘⊢◶⟨
@@ -42,17 +51,14 @@ Parse ← {
   ! (¯1⊑𝕩) Is sep
 
   Err ← {•←>DumpStack@ ⋄ 𝕨!𝕩}
-  MakeStream ← {
-    len←≠src←𝕩 ⋄ i←0
-    Pos  ⇐ {𝕤⋄i}
-    Inc  ← {𝕤⋄i+↩1}
-    Rem  ⇐ {𝕤⋄(i+1)<len}
-    Peek ⇐ {𝕤⋄i⊑src}
+  MakeTokStream ← {
+    Pos‿Rem‿Peek⇐s←MakeStream 𝕩
+    Inc ← s.Next
     Next ⇐ Peek⊸Is
     Get  ⇐ Inc ⊢ Peek⊸(⊣⊣≍○<Err⍟(¬⊢)Is)
     Try  ⇐ 1∘Inc⍟⊢∘Next
   }
-  ⟨Next,Get,Peek,Try,Rem,Pos⟩ ← MakeStream 𝕩
+  ⟨Next,Get,Peek,Try,Rem,Pos⟩ ← MakeTokStream 𝕩
 
   # Node creation and error tracking
   c ← nodes
@@ -149,6 +155,42 @@ Parse ← {
   Program @
 }
 
+operator ← {
+  Parse ⇐ {ops 𝕊 val:
+    Peek‿Next‿Rem ← MakeStream ops {Null‿Left‿bind⇐𝕨 ⋄ value⇐𝕩}¨ val
+    E ← {𝕊test: {𝕊∘{𝕩 LeD Next@}⍟(Test Peek)⍟Rem 𝕩} NuD Next@ }
+    NuD ← { 𝕩.null ≢⟜@◶{𝕩.value}‿{nodes.Run ⟨𝕨.v, ⟨E 𝕨.t⟩⟩} 𝕩 }
+    LeD ← { !@≢l←𝕩.left ⋄ nodes.Run ⟨l.v, ⟨𝕨, E l.t⟩⟩ }
+    E 1
+  }
+  MakeOp ← {𝕤
+    null ⇐ left ⇐ value ⇐ @
+    bind ⇐ ¯∞
+    Op ← {val‿p‿c←𝕩 ⋄ v⇐val ⋄ T⇐p C {𝕩.bind}}  # Value and test
+    AddNull ⇐ {𝕊⟨value, prec⟩: AddNull↩!∘0
+      null ↩ Op ⟨value, prec, <⟩
+    }
+    AddLeft ⇐ {𝕊⟨value, prec, assoc⟩: AddLeft↩!∘0
+      bind ↩ prec
+      left ↩ Op ⟨value, prec, ("lrn"⊸⊐⌾<assoc)⊑<‿≤‿(!∘≠⊢<)⟩
+    }
+  }
+  nil ⇐ MakeOp @
+
+  Lookup‿AddPrefix‿AddInfix ⇐ {
+    n←⟨⟩ ⋄ o←⟨⟩
+    _get ← {(n⊸⊐⌾<𝕩) =⟜(≠n)◶{𝕨⊑o}‿𝔽 𝕩}
+    Lookup ⇐ nil _get
+    Define ← {n∾↩<𝕩 ⋄ o∾↩<r←MakeOp@ ⋄ r} _get
+    AddPrefix ⇐ {𝕊name‿value‿prec:
+      p←Define name ⋄ p.AddNull ⟨nodes.Word value,prec⟩
+    }
+    AddInfix ⇐ {𝕊name‿value‿prec‿assoc:
+      p←Define name ⋄ p.AddLeft ⟨nodes.Word value,prec,assoc⟩
+    }
+  }
+}
+
 _and_ ← { 𝔽◶⟨0,𝔾⟩ }
 IsNum ← 1=•Type
 IsInt ← IsNum _and_ (⌊⊸=)
@@ -218,7 +260,7 @@ CallFn ← !  # Check types; emit call instruction
 
 builtins ← ∾≍⟨
   Show¨⊸≍ types.primTypes
-  ⍉> ⟨"call"‿CallFn,⟨"vector",types.Vec⟩⟩
+  ⍉> ⟨"call"‿CallFn,⟨"vector",types.Vec⟩,⟨"pointer",types.Ptr⟩⟩
 ⟩
 
 scopes ← {
@@ -250,15 +292,17 @@ nodes ← {
   o ← {
     Dump ⇐ {𝕩.Dump@}
     Disp ⇐ {𝕩.Disp@}
+    Oper ⇐ {𝕩.Oper@}
     Scope⇐ {𝕊sc :{𝕩.Scope sc }}
     Eval ⇐ {𝕊env:{𝕩.Eval  env}}
   }
   Defaults ← {
     node‿visit ⇐ 𝕩
-    Dump ⇐{𝕤⋄⟨node,Visit o.dump⟩}
-    Disp ⇐{𝕤⋄node <⊸∾ "  "⊸∾¨ ∾∾ @ ⥊∘<∘⊢⍟((2×≡)+≡⟜@)¨○Visit o.disp}
-    Scope⇐{𝕤⋄Visit o.Scope 𝕩⋄@}
-    Eval ⇐{𝕤⋄Visit o.eval⋄@}
+    Dump ⇐ {𝕤⋄⟨node,Visit o.dump⟩}
+    Disp ⇐ {𝕤⋄node <⊸∾ "  "⊸∾¨ ∾∾ @ ⥊∘<∘⊢⍟((2×≡)+≡⟜@)¨○Visit o.disp}
+    Oper ⇐ {𝕤⋄Visit o.oper ⋄ operator.nil}
+    Scope⇐ {Visit o.Scope 𝕩⋄@}
+    Eval ⇐ {Visit o.Eval 𝕩⋄@}
   }
 
   # Node types
@@ -266,12 +310,13 @@ nodes ← {
     name⇐𝕩
     ⟨node,Dump⟩⇐Defaults "ident"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
+    Oper⇐{𝕤⋄operator.Lookup name}
     Eval⇐!∘0 ⋄ Scope⇐{Eval↩var.Get∘(𝕩.Get name)}
   }
   Value ← {
     name⇐𝕨
     eval⇐𝕩
-    ⟨node,Dump,Scope⟩⇐Defaults "value"‿⟨⟩
+    ⟨node,Dump,Oper,Scope⟩⇐Defaults "value"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
   }
   bName‿bVal ← <˘builtins
@@ -283,27 +328,31 @@ nodes ← {
     ⟨caller,params⟩⇐𝕩
     Visit←{⟨𝕏caller,𝕏¨params⟩}
     ⟨node,Dump,Disp,Scope⟩⇐d←Defaults "run"‿visit
+    Oper ⇐ ⊑d.Oper
     Eval ⇐ {𝕎𝕩}´ d.Eval
   }
   Call ⇐ Run (Word"call") ≍○< <⊸∾´
   Phrase ⇐ {
     things⇐𝕩
     Visit←{⟨𝕏¨things⟩}
-    ⟨node,Dump,Disp,Scope⟩⇐d←Defaults "phrase"‿visit
-    Eval⇐("TODO: operator parsing"!0˙)´d.Eval
+    ⟨node,Dump,Disp,Scope,Eval⟩⇐d←Defaults "phrase"‿visit
+    Oper⇐{𝕤
+      ⟨node,Dump,Disp,Scope,Eval⟩↩o.Oper¨⊸operator.Parse things
+      operator.nil
+    }
   }
   Function ⇐ {
     ⟨args,type,result⟩⇐𝕩
     Visit←{⟨𝕏¨args,𝕏¨type,𝕏result⟩}
-    ⟨node,Dump,Disp,Scope⟩⇐Defaults "function"‿visit
+    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "function"‿visit
   }
   ParamEq ← Run (Word"match"){⟨𝕗,𝕨‿𝕩⟩}
   Lambda ⇐ {
-    ⟨⟨params,conds⟩,value⟩⇐𝕩
+    ⟨⟨params,conds⟩,result⟩⇐𝕩
     conds∾˜↩∾<⊸(Word⊸ParamEq¨)´¨params
     params↩⊑¨params
-    Visit←{params∾⟨𝕏¨conds,𝕏value⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "lambda"‿visit
+    Visit←{params∾⟨𝕏¨conds,𝕏result⟩}
+    ⟨node,Dump,Disp,Oper⟩⇐Defaults "lambda"‿visit
     Scope⇐{
       𝕩.Add¨ params
       Visit o.Scope 𝕩
@@ -312,14 +361,14 @@ nodes ← {
   Arg ⇐ {
     ⟨name,type⟩⇐𝕩
     Visit←{⟨name,𝕏type⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "arg"‿visit
+    ⟨node,Dump,Disp,Oper⟩⇐Defaults "arg"‿visit
     Set←!∘0 ⋄ Scope⇐{ Set ↩ (𝕩.Add name)⊸var.Set }
   }
   Assign ⇐ {
     ⟨name,decl,type,value⟩⇐𝕩
     name {n←⊑t←𝕩.things ⋄ !1=≠t ⋄ !"ident"≡n.node ⋄ n.name}˜↩@
     Visit←{⟨name∾decl/":",𝕏¨type,𝕏value⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "assign"‿visit
+    ⟨node,Dump,Disp,Oper⟩⇐Defaults "assign"‿visit
     GetVar←!∘0 ⋄ Scope⇐{
       Visit o.Scope 𝕩
       getVar ↩ decl◶⟨𝕩.Get, 𝕩.Add⟩ name
@@ -335,7 +384,7 @@ nodes ← {
     ⟨name,value⟩⇐𝕩
     Visit←{⟨name,𝕏value⟩}
     scoped←"lambda"‿"function"(∨´≡¨)<value.node
-    ⟨node,Dump,Disp⟩⇐Defaults "define"‿visit
+    ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
     Set←!∘0 ⋄ sc←@ ⋄ Scope⇐{
       Set ↩ (𝕩.Add name)⊸var.Set
       value.Scope sc ↩ scopes.New⍟scoped 𝕩
@@ -347,19 +396,19 @@ nodes ← {
   Export ⇐ {
     ⟨name,value⟩⇐𝕩
     Visit←{⟨name,𝕏value⟩}
-    ⟨node,Dump,Disp,Scope⟩⇐Defaults "export"‿visit
+    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "export"‿visit
     Eval⇐"TODO:exports"!0˙
   }
   Body ⇐ {
     statements⇐𝕩
     Visit←{⟨𝕏¨statements⟩}
-    ⟨node,Dump,Disp,Scope⟩⇐d←Defaults "body"‿visit
+    ⟨node,Dump,Disp,Oper,Scope⟩⇐d←Defaults "body"‿visit
     Eval⇐¯1⊑d.Eval
   }
   If ⇐ {
     ⟨cond,then,else⟩⇐𝕩
     Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
-    ⟨node,Dump,Disp,Scope⟩⇐Defaults "if"‿visit
+    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "if"‿visit
     Eval ⇐ {𝕤
       c ← cond.Eval@
       lf ← Label@
@@ -373,7 +422,7 @@ nodes ← {
   While ⇐ {
     ⟨testFirst,cond,stmt⟩⇐𝕩
     Visit←{⟨𝕏cond,𝕏stmt⟩}
-    ⟨node,Dump,Disp,Scope⟩⇐Defaults "while"‿visit
+    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "while"‿visit
     Eval ⇐ {𝕤
       Goto¨ lc ← Label¨↕testFirst
       SetLabel lt ← Label@
@@ -385,7 +434,7 @@ nodes ← {
   Return ⇐ {
     ⟨value⟩⇐𝕩
     Visit←{⟨𝕏value⟩}
-    ⟨node,Dump,Disp,Scope⟩⇐Defaults "return"‿visit
+    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "return"‿visit
     Eval ⇐ {𝕤
       r←o.Eval value
       # ! r IsOfType fntype
@@ -394,5 +443,22 @@ nodes ← {
   }
 }
 
+operator.AddPrefix¨⟨
+  "-"‿"__neg" ‿30
+  "$"‿"vector"‿50
+  "*"‿"pointer"‿60
+⟩
+operator.AddInfix¨⟨
+  "<"‿"__lt" ‿20‿'n'
+  ">"‿"__gt" ‿20‿'n'
+ "<="‿"__le" ‿20‿'n'
+ ">="‿"__ge" ‿20‿'n'
+  "+"‿"__add"‿30‿'l'
+  "-"‿"__sub"‿30‿'l'
+  "*"‿"__mul"‿40‿'l'
+  "/"‿"__div"‿40‿'l'
+⟩
+
 ast ← Parse ⊑Tokenize •FChars "tests/test.singeli"
+ast.Oper @
 •Out ∾∾⟜lf¨ ast.Disp @
