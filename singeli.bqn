@@ -290,6 +290,7 @@ env ← {
 nodes ← {
   # Node operations
   o ← {
+    Verify ⇐ {𝕩.node}
     Dump ⇐ {𝕩.Dump@}
     Disp ⇐ {𝕩.Disp@}
     Oper ⇐ {𝕩.Oper@}
@@ -298,6 +299,7 @@ nodes ← {
   }
   Defaults ← {
     node‿visit ⇐ 𝕩
+    Visit o.verify
     Dump ⇐ {𝕤⋄⟨node,Visit o.dump⟩}
     Disp ⇐ {𝕤⋄node <⊸∾ "  "⊸∾¨ ∾∾ @ ⥊∘<∘⊢⍟((2×≡)+≡⟜@)¨○Visit o.disp}
     Oper ⇐ {𝕤⋄Visit o.oper ⋄ operator.nil}
