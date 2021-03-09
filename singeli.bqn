@@ -140,7 +140,7 @@ Parse ← {
     b ← Result Try"="
     ⟨a,r,b⟩
   } _withParams
-  Generator ← ⟨"=",Result∘1⟩_seq _withParams
+  Generator ← {𝕤⋄ Get"=" ⋄ Result 1} _withParams
   DefFun ← c.define _node_ (      Name‿Function  _seq)
   Define ← c.define _node_ ("def"‿Name‿Generator _seq)
 
@@ -157,15 +157,16 @@ Parse ← {
 
 operator ← {
   Parse ⇐ {ops 𝕊 val:
-    Peek‿Next‿Rem ← MakeStream ops {Null‿Left‿bind⇐𝕨 ⋄ value⇐𝕩}¨ val
+    Peek‿Next‿Rem ← MakeStream ops {null‿left‿bind‿R⇐𝕨 ⋄ value⇐𝕩}¨ val
     E ← {𝕊test: {𝕊∘{𝕩 LeD Next@}⍟(Test Peek)⍟Rem 𝕩} NuD Next@ }
-    NuD ← { 𝕩.null ≢⟜@◶{𝕩.value}‿{nodes.Run ⟨𝕨.v, ⟨E 𝕨.t⟩⟩} 𝕩 }
-    LeD ← { !@≢l←𝕩.left ⋄ nodes.Run ⟨l.v, ⟨𝕨, E l.t⟩⟩ }
+    NuD ← { 𝕩.null ≢⟜@◶{𝕩.value}‿{nodes.Run ⟨𝕩.R 𝕨.v, ⟨E 𝕨.t⟩⟩} 𝕩 }
+    LeD ← { !@≢l←𝕩.left ⋄ nodes.Run ⟨𝕩.R l.v, ⟨𝕨, E l.t⟩⟩ }
     E 1
   }
-  MakeOp ← {𝕤
-    null ⇐ left ⇐ value ⇐ @
+  New ← {𝕤
+    null ⇐ left ⇐ @
     bind ⇐ ¯∞
+    R ⇐ ⊢
     Op ← {val‿p‿c←𝕩 ⋄ v⇐val ⋄ T⇐p C {𝕩.bind}}  # Value and test
     AddNull ⇐ {𝕊⟨value, prec⟩: AddNull↩!∘0
       null ↩ Op ⟨value, prec, <⟩
@@ -175,13 +176,14 @@ operator ← {
       left ↩ Op ⟨value, prec, ("lrn"⊸⊐⌾<assoc)⊑<‿≤‿(!∘≠⊢<)⟩
     }
   }
-  nil ⇐ MakeOp @
+  Run ⇐ {𝕊⟨op,params⟩: null‿left‿bind⇐op ⋄ R⇐nodes.Run op.R≍○<params˙}
+  nil ⇐ New @
 
   Lookup‿AddPrefix‿AddInfix ⇐ {
     n←⟨⟩ ⋄ o←⟨⟩
     _get ← {(n⊸⊐⌾<𝕩) =⟜(≠n)◶{𝕨⊑o}‿𝔽 𝕩}
     Lookup ⇐ nil _get
-    Define ← {n∾↩<𝕩 ⋄ o∾↩<r←MakeOp@ ⋄ r} _get
+    Define ← {n∾↩<𝕩 ⋄ o∾↩<r←New@ ⋄ r} _get
     AddPrefix ⇐ {𝕊name‿value‿prec:
       p←Define name ⋄ p.AddNull ⟨nodes.Word value,prec⟩
     }
@@ -330,7 +332,7 @@ nodes ← {
     ⟨caller,params⟩⇐𝕩
     Visit←{⟨𝕏caller,𝕏¨params⟩}
     ⟨node,Dump,Disp,Scope⟩⇐d←Defaults "run"‿visit
-    Oper ⇐ ⊑d.Oper
+    Oper ⇐ {𝕤⋄ operator.Run ⟨⊑Visit o.oper,params⟩}
     Eval ⇐ {𝕎𝕩}´ d.Eval
   }
   Call ⇐ Run (Word"call") ≍○< <⊸∾´
@@ -461,6 +463,7 @@ operator.AddInfix¨⟨
   "/"‿"__div"‿40‿'l'
 ⟩
 
+ShowAST ← {•Out ∾∾⟜lf¨ 𝕩.Disp @}
 ast ← Parse ⊑Tokenize •FChars "tests/test.singeli"
 ast.Oper @
-•Out ∾∾⟜lf¨ ast.Disp @
+ShowAST ast
