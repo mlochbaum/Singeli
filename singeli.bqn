@@ -197,6 +197,8 @@ _and_ ← { 𝔽◶⟨0,𝔾⟩ }
 IsNum ← 1=•Type
 IsInt ← IsNum _and_ (⌊⊸=)
 IsNat ← IsInt _and_ (0⊸≤)
+IsTup ← 0=•Type
+IsGet ← 3=•Type
 Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.Show@}⟩𝕩}
 
 ⟨IsType⟩ ← types ← {
@@ -253,20 +255,44 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.
   SSubtype ⇐ < _sub
 }
 
-# Other types:
-# Instruction result (type, index)
-# Generator, encoded as function
+⟨IsReg⟩ ← register ← {
+  IsReg ⇐ {new=𝕩.class}
+  New ⇐ {class⇐𝕤 ⋄ type⇐𝕨 ⋄ handle⇐𝕩}
+}
 
-CallFn ← {
-  f←⊑𝕩
-  ! nodes.function = f.class
-  f.Call 1↓𝕩
+⟨IsFun,Emit,CallFn⟩ ← function ← {
+  IsFun ⇐ {new=𝕩.class}
+  fid←¯1 ⋄ current⇐@
+  New ← {𝕤
+    class⇐function ⋄ id⇐fid+↩1
+    handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType⇐@
+    Next⇐{ 𝕩 register.New handle+↩1 }
+    NextArg⇐{ args∾↩𝕩 ⋄ Next 𝕩 }
+    SetRType⇐{!IsType rType↩𝕩}
+    Append⇐
+    ⟨Append⇐Push,Instrs⇐Arr⟩←MakeStack@
+  }
+  NextHandle ⇐ { current.Next 𝕩 }
+  NextArg ⇐ { current.NextArg 𝕩 }
+  Label ⇐ { current.NextLabel 𝕩 }
+  Emit ⇐ {
+    current.Append "emit" <⊸∾ 𝕩
+  }
+  CallFn ⇐ {
+    f←⊑𝕩
+    ! IsFun f
+    current.Append ⟨"call",f.id⟩ ∾ 1↓𝕩
+  }
+  _instr ← { current.Append (<𝕗)∾𝕨≍○<𝕩 }
+  SetLabel ⇐ "lbl"_instr
+  Goto     ⇐ "goto"_instr
+  GotoF    ⇐ "gotoF"_instr
 }
 
 
 builtins ← ∾≍⟨
   Show¨⊸≍ types.primTypes
-  ⍉> ⟨"call"‿CallFn,⟨"vector",types.Vec⟩,⟨"pointer",types.Ptr⟩⟩
+  ⍉> ⟨"call"‿CallFn,"emit"‿Emit,⟨"vector",types.Vec⟩,⟨"pointer",types.Ptr⟩⟩
 ⟩
 
 scopes ← {
@@ -372,7 +398,7 @@ nodes ← {
     Visit←{⟨name,𝕏type⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "arg"‿visit
     v←@ ⋄ Scope⇐{ v ↩ 𝕩.Add name }
-    Eval⇐{ v.Type type.Eval 𝕩 ⋄ v.Set 𝕩.fn.Next@ }
+    Eval⇐{ v.Type t←type.Eval 𝕩 ⋄ v.Set function.NextArg t }
   }
   Function ⇐ {
     ⟨args,type,result⟩⇐𝕩
@@ -380,12 +406,13 @@ nodes ← {
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "function"‿visit
     Scope⇐{ Visit o.Scope scopes.New 𝕩 }
     Eval⇐{
-      ev←o.Eval en←args env.New 𝕩
-      en.SetFn f←fenv.New Ev¨ type
+      fs←function.current ⋄ f←function.current↩function.New@
+      ev←o.Eval args env.New 𝕩
+      f.SetRType Ev¨ type
       Ev¨ args
       Ev result
-      f.Emit@
-      # Return a callable function object
+      function.current↩fs
+      f
     }
   }
   Assign ⇐ {
@@ -430,12 +457,12 @@ nodes ← {
     ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "if"‿visit
     Eval ⇐ {𝕊e:
       c ← cond.Eval𝕩
-      lf ← Label@
-      c GotoF lf
+      lf ← function.Label@
+      c function.GotoF lf
       then.Eval𝕩
-      Goto¨ lt ← Label¨ else
-      SetLabel lf
-      { 𝕩.Eval e ⋄ SetLabel lt }¨ else
+      function.Goto¨ lt ← function.Label¨ else
+      function.SetLabel lf
+      { 𝕩.Eval e ⋄ function.SetLabel lt }¨ else
     }
   }
   While ⇐ {
@@ -443,11 +470,11 @@ nodes ← {
     Visit←{⟨𝕏cond,𝕏stmt⟩}
     ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "while"‿visit
     Eval ⇐ {
-      Goto¨ lc ← Label¨↕testFirst
-      SetLabel lt ← Label@
+      function.Goto¨ lc ← function.Label¨↕testFirst
+      function.SetLabel lt ← function.Label@
       stmt.Eval𝕩
-      SetLabel¨ lc
-      (cond.Eval𝕩) Goto lt
+      function.SetLabel¨ lc
+      (cond.Eval𝕩) function.Goto lt
     }
   }
 }
