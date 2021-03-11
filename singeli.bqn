@@ -257,7 +257,11 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.
 # Instruction result (type, index)
 # Generator, encoded as function
 
-CallFn ← !  # Check types; emit call instruction
+CallFn ← {
+  f←⊑𝕩
+  ! nodes.function = f.class
+  f.Call 1↓𝕩
+}
 
 
 builtins ← ∾≍⟨
@@ -268,7 +272,7 @@ builtins ← ∾≍⟨
 scopes ← {
   null←{Get⇐"Undefined name: "⊸∾!0˙}
   New⇐{
-    n←⟨⟩ ⋄ PG←𝕩.Get
+    n←𝕨⊣⟨⟩ ⋄ PG←𝕩.Get
     Add⇐{ ("Duplicate definition: "∾𝕩)!¬∨´≡⟜𝕩¨n ⋄ c←≠n ⋄ n∾↩<𝕩 ⋄ c⊑env.Vars }
     Get⇐{ (n⊸⊐⌾<𝕩) =⟜(≠n)◶{𝕨⊑env.Vars}‿{(PG𝕩)∘env.Parent} 𝕩 }
     Names⇐{𝕤⋄n}
@@ -276,17 +280,20 @@ scopes ← {
   Init⇐New null˙
 }
 var ← {
-  New⇐{𝕤⋄ v←@ ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩𝕩} }
+  Fixed⇐{ Get⇐𝕩˙ }
+  New⇐{
+    v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩𝕩}
+    Type⇐{Type↩!∘0 ⋄ Set↩Set 𝕩⊸TypeCast}
+  }
   Get⇐{𝕩.Get@}
   Set⇐{𝕨.Set𝕩}
 }
 env ← {
-  Vars⇐{𝕩.vars}
+  Vars  ⇐{𝕩.vars}
   Parent⇐{𝕩.parent}
-  New⇐{
-    vars⇐MakeVar¨ 𝕨.Names@
-    parent⇐𝕩
-  }
+  Make ←{ vars⇐𝕨 ⋄ parent⇐𝕩 ⋄ fn⇐𝕩.fn ⋄ SetFn⇐{fn↩𝕩} }
+  New  ⇐{ (var.New∘@¨ 𝕨) Make 𝕩 }
+  Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
 }
 
 nodes ← {
@@ -336,6 +343,7 @@ nodes ← {
     Eval ⇐ {𝕎𝕩}´ d.Eval
   }
   Call ⇐ Run (Word"call") ≍○< <⊸∾´
+  Return ⇐ Run (Word"return") ≍○< ⥊∘<
   Phrase ⇐ {
     things⇐𝕩
     Visit←{⟨𝕏¨things⟩}
@@ -345,11 +353,6 @@ nodes ← {
       operator.nil
     }
   }
-  Function ⇐ {
-    ⟨args,type,result⟩⇐𝕩
-    Visit←{⟨𝕏¨args,𝕏¨type,𝕏result⟩}
-    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "function"‿visit
-  }
   ParamEq ← Run (Word"match"){⟨𝕗,𝕨‿𝕩⟩}
   Lambda ⇐ {
     ⟨⟨params,conds⟩,result⟩⇐𝕩
@@ -357,16 +360,33 @@ nodes ← {
     params↩⊑¨params
     Visit←{params∾⟨𝕏¨conds,𝕏result⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "lambda"‿visit
-    Scope⇐{
-      𝕩.Add¨ params
-      Visit o.Scope 𝕩
+    Scope⇐{ Visit o.Scope params scopes.New 𝕩 }
+    Eval⇐{𝕊 e:
+      class⇐lambda
+      Test⇐{params≡○≢𝕩}  # TODO
+      Run⇐{result.Eval 𝕩 env.Fixed e}
     }
   }
   Arg ⇐ {
     ⟨name,type⟩⇐𝕩
     Visit←{⟨name,𝕏type⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "arg"‿visit
-    Set←!∘0 ⋄ Scope⇐{ Set ↩ (𝕩.Add name)⊸var.Set }
+    v←@ ⋄ Scope⇐{ v ↩ 𝕩.Add name }
+    Eval⇐{ v.Type type.Eval 𝕩 ⋄ v.Set 𝕩.fn.Next@ }
+  }
+  Function ⇐ {
+    ⟨args,type,result⟩⇐𝕩
+    Visit←{⟨𝕏¨args,𝕏¨type,𝕏result⟩}
+    ⟨node,Dump,Disp,Oper⟩⇐Defaults "function"‿visit
+    Scope⇐{ Visit o.Scope scopes.New 𝕩 }
+    Eval⇐{
+      ev←o.Eval en←args env.New 𝕩
+      en.SetFn f←fenv.New Ev¨ type
+      Ev¨ args
+      Ev result
+      f.Emit@
+      # Return a callable function object
+    }
   }
   Assign ⇐ {
     ⟨name,decl,type,value⟩⇐𝕩
@@ -387,15 +407,9 @@ nodes ← {
   Define ⇐ {
     ⟨name,value⟩⇐𝕩
     Visit←{⟨name,𝕏value⟩}
-    scoped←"lambda"‿"function"(∨´≡¨)<value.node
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
-    Set←!∘0 ⋄ sc←@ ⋄ Scope⇐{
-      Set ↩ (𝕩.Add name)⊸var.Set
-      value.Scope sc ↩ scopes.New⍟scoped 𝕩
-    }
-    Eval⇐{
-      𝕩 Set value.Eval sc env.New⍟scoped 𝕩
-    }
+    v←@ ⋄ Scope⇐{ v ↩ 𝕩.Add name ⋄ value.Scope 𝕩 }
+    Eval⇐{ (V𝕩) var.Set value.Eval 𝕩 }
   }
   Export ⇐ {
     ⟨name,value⟩⇐𝕩
@@ -406,43 +420,34 @@ nodes ← {
   Body ⇐ {
     statements⇐𝕩
     Visit←{⟨𝕏¨statements⟩}
-    ⟨node,Dump,Disp,Oper,Scope⟩⇐d←Defaults "body"‿visit
-    Eval⇐¯1⊑d.Eval
+    ⟨node,Dump,Disp,Oper⟩⇐d←Defaults "body"‿visit
+    sc←@ ⋄ Scope⇐{ Visit o.Scope sc ↩ scopes.New 𝕩 }
+    Eval⇐{ ¯1 ⊑ d.Eval (sc.Names@) env.New 𝕩 }
   }
   If ⇐ {
     ⟨cond,then,else⟩⇐𝕩
     Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
     ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "if"‿visit
-    Eval ⇐ {𝕤
-      c ← cond.Eval@
+    Eval ⇐ {𝕊e:
+      c ← cond.Eval𝕩
       lf ← Label@
       c GotoF lf
-      then.Eval@
+      then.Eval𝕩
       Goto¨ lt ← Label¨ else
       SetLabel lf
-      { 𝕩.Eval@ ⋄ SetLabel lt }¨ else
+      { 𝕩.Eval e ⋄ SetLabel lt }¨ else
     }
   }
   While ⇐ {
     ⟨testFirst,cond,stmt⟩⇐𝕩
     Visit←{⟨𝕏cond,𝕏stmt⟩}
     ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "while"‿visit
-    Eval ⇐ {𝕤
+    Eval ⇐ {
       Goto¨ lc ← Label¨↕testFirst
       SetLabel lt ← Label@
-      stmt.Eval@
+      stmt.Eval𝕩
       SetLabel¨ lc
-      (cond.Eval@) Goto lt
-    }
-  }
-  Return ⇐ {
-    ⟨value⟩⇐𝕩
-    Visit←{⟨𝕏value⟩}
-    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "return"‿visit
-    Eval ⇐ {𝕤
-      r←o.Eval value
-      # ! r IsOfType fntype
-      Emit "ret"‿r
+      (cond.Eval𝕩) Goto lt
     }
   }
 }
