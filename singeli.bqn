@@ -285,7 +285,7 @@ TypeCast ← ⊢ # TODO
     ! IsFun f
     current.Append ⟨"call",f.id⟩ ∾ 1↓𝕩
   }
-  _instr ← { current.Append (<𝕗)∾𝕨≍○<𝕩 }
+  _instr ← { current.Append 𝕗‿𝕨‿𝕩 }
   SetLabel ⇐ "lbl"_instr
   Goto     ⇐ "goto"_instr
   GotoF    ⇐ "gotoF"_instr
@@ -350,7 +350,7 @@ nodes ← {
     ⟨node,Dump⟩⇐Defaults "ident"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
     Oper⇐{𝕤⋄operator.Lookup name}
-    E←!∘0 ⋄ Eval⇐{E𝕩} ⋄ Scope⇐{E↩var.Get∘(𝕩.Get name)}
+    Eval⇐!∘0 ⋄ Scope⇐{Eval↩var.Get∘(𝕩.Get name)}
   }
   Value ← {
     name⇐𝕨
@@ -375,9 +375,10 @@ nodes ← {
   Phrase ⇐ {
     things⇐𝕩
     Visit←{⟨𝕏¨things⟩}
-    ⟨node,Dump,Disp,Scope,Eval⟩⇐d←Defaults "phrase"‿visit
+    ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "phrase"‿visit
     Oper⇐{𝕤
-      ⟨node,Dump,Disp,Scope,Eval⟩↩o.Oper¨⊸operator.Parse things
+      n ← o.Oper¨⊸operator.Parse things
+      Scope↩{𝕨n.Scope𝕩} ⋄ Eval↩{𝕨n.Eval𝕩} ⋄ Disp↩{𝕨n.Disp𝕩}
       operator.nil
     }
   }
@@ -500,7 +501,7 @@ operator.AddInfix¨⟨
 ShowAST ← {•Out ∾∾⟜lf¨ 𝕩.Disp @}
 ast ← Parse ⊑Tokenize •FChars "tests/bqn_test.singeli"
 ast.Oper @
-#ShowAST ast
+ShowAST ast
 ast.Scope scopes.Init@
 p←ast.Eval {fn⇐@}
 •←p.Instrs@
