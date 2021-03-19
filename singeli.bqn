@@ -201,6 +201,8 @@ IsTup ← 0=•Type
 IsGet ← 3=•Type
 Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.Show@}⟩𝕩}
 
+TypeCast ← ⊢ # TODO
+
 ⟨IsType⟩ ← types ← {
   IsType ⇐ {𝕊v: type=v.class}
   Type ← {k𝕊d:
@@ -260,16 +262,16 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.
   New ⇐ {class⇐𝕤 ⋄ type⇐𝕨 ⋄ handle⇐𝕩}
 }
 
-⟨IsFun,Emit,CallFn⟩ ← function ← {
+⟨IsFun,Emit,CallFn⟩ ← functions ← {
   IsFun ⇐ {new=𝕩.class}
   fid←¯1 ⋄ current⇐@
-  New ← {𝕤
-    class⇐function ⋄ id⇐fid+↩1
+  New ⇐ {𝕤
+    class⇐𝕤 ⋄ id⇐fid+↩1
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType⇐@
     Next⇐{ 𝕩 register.New handle+↩1 }
     NextArg⇐{ args∾↩𝕩 ⋄ Next 𝕩 }
     SetRType⇐{!IsType rType↩𝕩}
-    Append⇐
+    Append‿Instrs⇐
     ⟨Append⇐Push,Instrs⇐Arr⟩←MakeStack@
   }
   NextHandle ⇐ { current.Next 𝕩 }
@@ -339,7 +341,7 @@ nodes ← {
     Disp ⇐ {𝕤⋄node <⊸∾ "  "⊸∾¨ ∾∾ @ ⥊∘<∘⊢⍟((2×≡)+≡⟜@)¨○Visit o.disp}
     Oper ⇐ {𝕤⋄Visit o.oper ⋄ operator.nil}
     Scope⇐ {Visit o.Scope 𝕩⋄@}
-    Eval ⇐ {Visit o.Eval 𝕩⋄@}
+    Eval ⇐ {Visit o.Eval 𝕩}
   }
 
   # Node types
@@ -348,11 +350,11 @@ nodes ← {
     ⟨node,Dump⟩⇐Defaults "ident"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
     Oper⇐{𝕤⋄operator.Lookup name}
-    Eval⇐!∘0 ⋄ Scope⇐{Eval↩var.Get∘(𝕩.Get name)}
+    E←!∘0 ⋄ Eval⇐{E𝕩} ⋄ Scope⇐{E↩var.Get∘(𝕩.Get name)}
   }
   Value ← {
     name⇐𝕨
-    eval⇐𝕩
+    Eval⇐𝕩˙
     ⟨node,Dump,Oper,Scope⟩⇐Defaults "value"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
   }
@@ -398,7 +400,7 @@ nodes ← {
     Visit←{⟨name,𝕏type⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "arg"‿visit
     v←@ ⋄ Scope⇐{ v ↩ 𝕩.Add name }
-    Eval⇐{ v.Type t←type.Eval 𝕩 ⋄ v.Set function.NextArg t }
+    Eval⇐{ u←V𝕩 ⋄ u.Type t←type.Eval 𝕩 ⋄ u.Set functions.NextArg t }
   }
   Function ⇐ {
     ⟨args,type,result⟩⇐𝕩
@@ -406,12 +408,12 @@ nodes ← {
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "function"‿visit
     Scope⇐{ Visit o.Scope scopes.New 𝕩 }
     Eval⇐{
-      fs←function.current ⋄ f←function.current↩function.New@
+      fs←functions.current ⋄ f←functions.current↩functions.New@
       ev←o.Eval args env.New 𝕩
-      f.SetRType Ev¨ type
+      f.SetRType∘Ev¨ type
       Ev¨ args
       Ev result
-      function.current↩fs
+      functions.current↩fs
       f
     }
   }
@@ -449,7 +451,7 @@ nodes ← {
     Visit←{⟨𝕏¨statements⟩}
     ⟨node,Dump,Disp,Oper⟩⇐d←Defaults "body"‿visit
     sc←@ ⋄ Scope⇐{ Visit o.Scope sc ↩ scopes.New 𝕩 }
-    Eval⇐{ ¯1 ⊑ d.Eval (sc.Names@) env.New 𝕩 }
+    Eval⇐{ ¯1⊑⊑d.Eval (sc.Names@) env.New 𝕩 }
   }
   If ⇐ {
     ⟨cond,then,else⟩⇐𝕩
@@ -457,12 +459,12 @@ nodes ← {
     ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "if"‿visit
     Eval ⇐ {𝕊e:
       c ← cond.Eval𝕩
-      lf ← function.Label@
-      c function.GotoF lf
+      lf ← functions.Label@
+      c functions.GotoF lf
       then.Eval𝕩
-      function.Goto¨ lt ← function.Label¨ else
-      function.SetLabel lf
-      { 𝕩.Eval e ⋄ function.SetLabel lt }¨ else
+      functions.Goto¨ lt ← functions.Label¨ else
+      functions.SetLabel lf
+      { 𝕩.Eval e ⋄ functions.SetLabel lt }¨ else
     }
   }
   While ⇐ {
@@ -470,11 +472,11 @@ nodes ← {
     Visit←{⟨𝕏cond,𝕏stmt⟩}
     ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "while"‿visit
     Eval ⇐ {
-      function.Goto¨ lc ← function.Label¨↕testFirst
-      function.SetLabel lt ← function.Label@
+      functions.Goto¨ lc ← functions.Label¨↕testFirst
+      functions.SetLabel lt ← functions.Label@
       stmt.Eval𝕩
-      function.SetLabel¨ lc
-      (cond.Eval𝕩) function.Goto lt
+      functions.SetLabel¨ lc
+      (cond.Eval𝕩) functions.Goto lt
     }
   }
 }
@@ -496,6 +498,9 @@ operator.AddInfix¨⟨
 ⟩
 
 ShowAST ← {•Out ∾∾⟜lf¨ 𝕩.Disp @}
-ast ← Parse ⊑Tokenize •FChars "tests/test.singeli"
+ast ← Parse ⊑Tokenize •FChars "tests/bqn_test.singeli"
 ast.Oper @
-ShowAST ast
+#ShowAST ast
+ast.Scope scopes.Init@
+p←ast.Eval {fn⇐@}
+•←p.Instrs@
