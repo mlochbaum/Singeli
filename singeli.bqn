@@ -201,8 +201,6 @@ IsTup ← 0=•Type
 IsGet ← 3=•Type
 Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.Show@}⟩𝕩}
 
-TypeCast ← ⊢ # TODO
-
 ⟨IsType⟩ ← types ← {
   IsType ⇐ {𝕊v: type=v.class}
   Type ← {k𝕊d:
@@ -227,6 +225,7 @@ TypeCast ← ⊢ # TODO
 
   Vec ⇐ {n𝕊t: !IsNat n ⋄ !IsType t ⋄ tVEC Type ⟨n,t⟩}
   Ptr ⇐ { 𝕊t: !IsType t ⋄ tPTR Type t}
+  Tup ⇐ { 𝕊t: !0=•Type t ⋄ !∧´IsType t ⋄ tTUP Type t}
 
   Kind←{𝕩.kind} ⋄ Dat←{𝕩.dat}
   _cases ← {
@@ -259,7 +258,7 @@ TypeCast ← ⊢ # TODO
 
 ⟨IsReg⟩ ← register ← {
   IsReg ⇐ {new=𝕩.class}
-  New ⇐ {class⇐𝕤 ⋄ type⇐𝕨 ⋄ handle⇐𝕩}
+  New ⇐ {class⇐𝕤 ⋄ type⇐𝕨 ⋄ handle⇐𝕩 ⋄ show⇐"v"∾⍕𝕩}
 }
 
 ⟨IsFun,Emit,CallFn⟩ ← functions ← {
@@ -291,6 +290,9 @@ TypeCast ← ⊢ # TODO
   GotoF    ⇐ "gotoF"_instr
 }
 
+TypeOf ← {•Type◶⟨types.Tup 𝕊¨, !∘0, !,!,!,!,!, {𝕩.Type@}⟩𝕩}
+TypeCast ← ⊢ # TODO
+
 
 builtins ← ∾≍⟨
   Show¨⊸≍ types.primTypes
@@ -311,10 +313,9 @@ var ← {
   Fixed⇐{ Get⇐𝕩˙ }
   New⇐{
     v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩𝕩}
-    Type⇐{Type↩!∘0 ⋄ Set↩Set 𝕩⊸TypeCast}
+    SetType⇐{SetType↩!∘0 ⋄ Set↩Set 𝕩⊸TypeCast}
   }
   Get⇐{𝕩.Get@}
-  Set⇐{𝕨.Set𝕩}
 }
 env ← {
   Vars  ⇐{𝕩.vars}
@@ -401,7 +402,7 @@ nodes ← {
     Visit←{⟨name,𝕏type⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "arg"‿visit
     v←@ ⋄ Scope⇐{ v ↩ 𝕩.Add name }
-    Eval⇐{ u←V𝕩 ⋄ u.Type t←type.Eval 𝕩 ⋄ u.Set functions.NextArg t }
+    Eval⇐{ u←V𝕩 ⋄ u.SetType t←type.Eval 𝕩 ⋄ u.Set functions.NextArg t }
   }
   Function ⇐ {
     ⟨args,type,result⟩⇐𝕩
@@ -430,8 +431,8 @@ nodes ← {
     Eval⇐{
       u ← GetVar 𝕩
       v ← value.Eval𝕩
-      u var.SetType⟜(≠◶⟨TypeOf v˙, (o.Eval𝕩)∘⊑⟩)⍟decl type
-      u Set v
+      u.SetType⟜(≠◶⟨TypeOf v˙, (o.Eval𝕩)∘⊑⟩)⍟decl type
+      u.Set v
     }
   }
   Define ⇐ {
@@ -439,7 +440,7 @@ nodes ← {
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
     v←@ ⋄ Scope⇐{ v ↩ 𝕩.Add name ⋄ value.Scope 𝕩 }
-    Eval⇐{ (V𝕩) var.Set value.Eval 𝕩 }
+    Eval⇐{ (V𝕩).Set value.Eval 𝕩 }
   }
   Export ⇐ {
     ⟨name,value⟩⇐𝕩
@@ -501,7 +502,7 @@ operator.AddInfix¨⟨
 ShowAST ← {•Out ∾∾⟜lf¨ 𝕩.Disp @}
 ast ← Parse ⊑Tokenize •FChars "tests/bqn_test.singeli"
 ast.Oper @
-ShowAST ast
+#ShowAST ast
 ast.Scope scopes.Init@
 p←ast.Eval {fn⇐@}
-•←p.Instrs@
+•←Show¨⌾(1⊸↓)¨ p.Instrs@
