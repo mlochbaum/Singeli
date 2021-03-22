@@ -261,6 +261,8 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.
   New ⇐ {class⇐𝕤 ⋄ type⇐𝕨 ⋄ handle⇐𝕩 ⋄ show⇐"v"∾⍕𝕩}
 }
 
+NewLabel ← {show⇐"l"∾⍕𝕩}
+
 ⟨IsFun,Emit,CallFn⟩ ← functions ← {
   IsFun ⇐ {new=𝕩.class}
   fid←¯1 ⋄ current⇐@
@@ -268,6 +270,7 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.
     class⇐𝕤 ⋄ id⇐fid+↩1
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType←@
     Next⇐{ 𝕩 register.New handle+↩1 }
+    NextLabel⇐{𝕤⋄ NewLabel label+↩1 }
     NextArg⇐{ args∾↩𝕩 ⋄ Next 𝕩 }
     ⟨Push,Arr⟩←MakeStack@
     Instrs⇐Arr
@@ -296,7 +299,7 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.
     ! IsFun f
     f.rType Append ⟨"call",f.id⟩ ∾ 1↓𝕩
   }
-  _instr ← { Append 𝕗‿𝕨‿𝕩 }
+  _instr ← { Append 𝕗<⊸∾𝕨≍○<𝕩 }
   SetLabel ⇐ "lbl"_instr
   Goto     ⇐ "goto"_instr
   GotoF    ⇐ "gotoF"_instr
