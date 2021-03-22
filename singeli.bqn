@@ -266,32 +266,44 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.
   fid←¯1 ⋄ current⇐@
   New ⇐ {𝕤
     class⇐𝕤 ⋄ id⇐fid+↩1
-    handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType⇐@
+    handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType←@
     Next⇐{ 𝕩 register.New handle+↩1 }
     NextArg⇐{ args∾↩𝕩 ⋄ Next 𝕩 }
-    SetRType⇐{!IsType rType↩𝕩}
-    Append‿Instrs⇐
-    ⟨Append⇐Push,Instrs⇐Arr⟩←MakeStack@
+    ⟨Push,Arr⟩←MakeStack@
+    Instrs⇐Arr
+    Append⇐{ Push𝕩 ⋄ (Next𝕨)⊣@ }
+    SetRType⇐{ SetRType↩!∘0 ⋄ !IsType rType↩𝕩 }
+    _ret←{ Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, TypeCast⟩ 𝕩⟩ }
+    Return⇐!∘0 _ret
+    Finish⇐{SetRtype TypeOf 𝕩⋄𝕩} _ret
+  }
+  _with ⇐ {
+    fs←current
+    f←current↩New@
+    f.Finish f 𝔽 𝕩
+    current↩fs
+    f
   }
   NextHandle ⇐ { current.Next 𝕩 }
   NextArg ⇐ { current.NextArg 𝕩 }
   Label ⇐ { current.NextLabel 𝕩 }
+  Append ← { 𝕨 current.Append 𝕩 }
   Emit ⇐ {
-    current.Append "emit" <⊸∾ 𝕩
+    (⊑𝕩) Append "emit" <⊸∾ 1↓𝕩
   }
   CallFn ⇐ {
     f←⊑𝕩
     ! IsFun f
-    current.Append ⟨"call",f.id⟩ ∾ 1↓𝕩
+    f.rType Append ⟨"call",f.id⟩ ∾ 1↓𝕩
   }
-  _instr ← { current.Append 𝕗‿𝕨‿𝕩 }
+  _instr ← { Append 𝕗‿𝕨‿𝕩 }
   SetLabel ⇐ "lbl"_instr
   Goto     ⇐ "goto"_instr
   GotoF    ⇐ "gotoF"_instr
 }
 
 TypeOf ← {•Type◶⟨types.Tup 𝕊¨, !∘0, !,!,!,!,!, {𝕩.Type@}⟩𝕩}
-TypeCast ← ⊢ # TODO
+TypeCast ← {!𝕩TypeOf⊸types.Subtype𝕨 ⋄ 𝕩}# TODO
 
 
 builtins ← ∾≍⟨
@@ -410,14 +422,11 @@ nodes ← {
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "function"‿visit
     Scope⇐{ Visit o.Scope scopes.New 𝕩 }
     Eval⇐{
-      fs←functions.current ⋄ f←functions.current↩functions.New@
       ev←o.Eval args env.New 𝕩
-      f.SetRType∘Ev¨ type
       Ev¨ args
+      𝕨.SetRType∘Ev¨ type
       Ev result
-      functions.current↩fs
-      f
-    }
+    }functions._with
   }
   Assign ⇐ {
     ⟨name,decl,type,value⟩⇐𝕩
