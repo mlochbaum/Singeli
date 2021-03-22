@@ -50,7 +50,11 @@ Parse ← {
 
   ! (¯1⊑𝕩) Is sep
 
-  Err ← {•←>DumpStack@ ⋄ 𝕨!𝕩}
+  Err ← {
+    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.define,"define",c.export,"export",c.for,"for",c.function,"function",c.if,"if",c.lambda,"lambda",c.phrase,"phrase",c.return,"return",c.run,"run",c.while,"while",c.word,"word"⟩
+    •←L⌾(⊏∘⌽⍉)>DumpStack@
+    𝕨!𝕩
+  }
   MakeTokStream ← {
     Pos‿Rem‿Peek⇐s←MakeStream 𝕩
     Inc ← s.Next
@@ -63,7 +67,7 @@ Parse ← {
   # Node creation and error tracking
   c ← nodes
   ⟨_whileParse_⇐_while_, DumpStack⇐Arr⟩ ← MakeStack@
-  _node_ ← {𝔽 𝔾_whileParse_⟨𝕗,Pos@⟩ 𝕩}
+  _node_ ← {𝔽 𝔾_whileParse_⟨Pos@,𝕗⟩ 𝕩}
 
   When  ← {Test‿Cont:       ( ⥊∘< Cont)⍟Test   ⟨⟩  }
   While ← {Test‿Cont‿init: {(𝕊∾⟜<⟜Cont)⍟Test𝕩} Cont¨↕init}
@@ -493,6 +497,7 @@ nodes ← {
       (cond.Eval𝕩) functions.Goto lt
     }
   }
+  For ⇐ {𝕤⋄ !0 }  # TODO
 }
 
 operator.AddPrefix¨⟨
