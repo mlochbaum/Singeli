@@ -84,9 +84,11 @@ Parse ← {
     ¬∘Is⟜"["◶⟨Vec, ¬∘Is⟜"("◶⟨Par,c.word _node_ Word⟩⟩ Peek@
   }
   Callable ← AddParams∘Expr0
-  Expr ← c.phrase _node_ {𝕤
-    While ⟨¬Next∘(sep∾⥊¨",:=)}"), AddArgs∘Callable, 0⟩
+  _exprEnd ← {endTok _𝕣:
+    end ← endTok∾sep∾⥊¨",:=)}"
+    c.phrase _node_ (While∘⟨¬Next∘end, AddArgs∘Callable, 0⟩)
   }
+  Expr ← ⟨⟩_exprEnd
 
   _args ← {𝕤
     Get ⊑𝕗
@@ -99,8 +101,7 @@ Parse ← {
   "if":     c.if     _node_ ("if"‿"("‿Expr‿")"‿Statement‿(When∘⟨Next∘"else",Statement⟩)_seq)@ ;
   "while":  c.while  _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Statement _seq)@ ;
   "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Statement‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
-  # TODO: make most of the for definition conditional
-  "@":      c.for    _node_ ("@"‿Callable‿"("‿(While∘⟨Try∘",", Name, 1⟩)‿"over"‿Name‿"from"‿Expr‿"to"‿Expr‿")"‿Statement _seq)@ ;
+  "@":      For@ ;
   "return": c.return _node_ ("return"‿Expr _seq)@ ;
   "{":      c.body   _node_ Body@ ;
   𝕩:
@@ -110,6 +111,21 @@ Parse ← {
     t ← When ⟨d>e, {e↩Try"="⋄𝕩}∘Expr⟩
     c.assign _node_ {⟨𝕩,d,t,Expr@⟩}⍟e n
   }∘Peek
+
+  For ← c.for _node_ {𝕤
+    Expr ← "over"‿"from"‿"to"_exprEnd # Shadow
+    Get "@"
+    f ← Callable@
+    Get "("
+    to← Expr@ ⋄ NE←{𝕤⋄ n←c.PhraseToName to ⋄ to↩Expr@ ⋄ n}
+    pe← While ⟨Try∘",", Name, 0⟩
+    ps← pe ⊢◶{!0=≠𝕨⋄⟨⟩}‿{(<NE@)∾𝕨} Try"over" # Pointers
+    fr← When ⟨Try"from", Expr⟩               # Start index
+    i ← ⊢◶{𝕤⋄!0=≠fr⋄⟨⟩}‿{𝕤⋄⟨NE@⟩} Try"to"    # Index variable
+    Get ")"
+    b ← Statement@
+    ⟨f,ps,i,fr,to⟩
+  }
 
   Seps ← {Try∘sep◶@‿𝕊𝕩}
   Body ← {𝕤
@@ -402,6 +418,7 @@ nodes ← {
       operator.nil
     }
   }
+  PhraseToName ⇐ {n←⊑t←𝕩.things ⋄ !1=≠t ⋄ !"ident"≡n.node ⋄ n.name}
   ParamEq ← Run (Word"match"){⟨𝕗,𝕨‿𝕩⟩}
   Lambda ⇐ {
     ⟨⟨params,conds⟩,result⟩⇐𝕩
@@ -437,7 +454,7 @@ nodes ← {
   }
   Assign ⇐ {
     ⟨name,decl,type,value⟩⇐𝕩
-    name {n←⊑t←𝕩.things ⋄ !1=≠t ⋄ !"ident"≡n.node ⋄ n.name}˜↩@
+    name PhraseToName˜↩@
     Visit←{⟨name∾decl/":",𝕏¨type,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "assign"‿visit
     GetVar←!∘0 ⋄ Scope⇐{
@@ -497,7 +514,12 @@ nodes ← {
       (cond.Eval𝕩) functions.Goto lt
     }
   }
-  For ⇐ {𝕤⋄ !0 }  # TODO
+  For ⇐ {
+    ⟨fn,ptrs,ind,from,to⟩⇐𝕩
+    vardisp←1↓∾(","⊸∾¨ptrs)∾" over "⊸∾¨ind
+    Visit←{⟨𝕏fn,vardisp,𝕏¨from,𝕏to⟩}
+    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "for"‿visit
+  }
 }
 
 operator.AddPrefix¨⟨
