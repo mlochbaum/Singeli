@@ -124,7 +124,7 @@ Parse ← {
     i ← ⊢◶{𝕤⋄!0=≠fr⋄⟨⟩}‿{𝕤⋄⟨NE@⟩} Try"to"    # Index variable
     Get ")"
     b ← Statement@
-    ⟨f,ps,i,fr,to⟩
+    ⟨f,ps,i,fr,to,b⟩
   }
 
   Seps ← {Try∘sep◶@‿𝕊𝕩}
@@ -345,19 +345,32 @@ scopes ← {
   Init⇐New null˙
 }
 var ← {
+  Get⇐{𝕩.Get@}
   Fixed⇐{ Get⇐𝕩˙ }
   New⇐{
     v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩𝕩}
     SetType⇐{SetType↩!∘0 ⋄ Set↩Set 𝕩⊸TypeCast}
   }
-  Get⇐{𝕩.Get@}
+  # Variable that tracks when it's been set, for block exec
+  Marked⇐{
+    write⇐0 ⋄ ⟨Get⟩⇐v←New 𝕩 ⋄ Set⇐{write↩1⋄v.Set𝕩}
+  }
 }
 env ← {
   Vars  ⇐{𝕩.vars}
   Parent⇐{𝕩.parent}
-  Make ←{ vars⇐𝕨 ⋄ parent⇐𝕩 ⋄ fn⇐𝕩.fn ⋄ SetFn⇐{fn↩𝕩} }
+  Make ←{ vars⇐𝕨 ⋄ parent⇐𝕩 }
   New  ⇐{ (var.New∘@¨ 𝕨) Make 𝕩 }
   Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
+  Block⇐{ind‿ptrs 𝕊 par:
+    pi ← ptrs ≍○<¨ <ind
+    pv ← Load¨ pi
+    vars‿parent ⇐ ((var.New¨ind)∾(var.Marked¨ptrs)) Make 𝕩
+    Stores ⇐ {𝕤
+      m←{𝕩.write}¨v←(≠ind)↓vars
+      v var.Get⊸Store¨○(m⊸/) pi
+    }
+  }
 }
 
 nodes ← {
@@ -514,11 +527,33 @@ nodes ← {
       (cond.Eval𝕩) functions.Goto lt
     }
   }
+  n0 ← Word "0"
   For ⇐ {
-    ⟨fn,ptrs,ind,from,to⟩⇐𝕩
+    ⟨fn,ptrs,ind,from,to,body⟩⇐𝕩
+    from↩n0⊣´from
+    ptri←Ident¨ptrs
     vardisp←1↓∾(","⊸∾¨ptrs)∾" over "⊸∾¨ind
-    Visit←{⟨𝕏fn,vardisp,𝕏¨from,𝕏to⟩}
-    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "for"‿visit
+    Visit←{⟨𝕏fn,vardisp⊣𝕏¨ptri,𝕏from,𝕏to,𝕏body⟩}
+    ⟨node,Dump,Disp,Oper⟩⇐d←Defaults "for"‿visit
+    Scope ⇐ {
+      d.Scope 𝕩
+      body.Scope (ind∾ptrs) scopes.New 𝕩
+    }
+    Eval ⇐ {
+      e←o.Eval 𝕩
+      for←E fn
+      For ⟨E¨ptri, E from, E to, Block ind‿ptrs‿body‿𝕩⟩
+    }
+  }
+  Block ← {𝕊 ind‿ptrs‿body‿e:
+    class⇐𝕤
+    show⇐"{block}"
+    Exec⇐{
+      ! ind‿ptrs≡○(≠¨)𝕩
+      r ← body.Eval be ← 𝕩 env.Block e
+      be.Stores @
+      r
+    }
   }
 }
 
