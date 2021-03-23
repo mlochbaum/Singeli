@@ -18,7 +18,7 @@ Tokenize←{
   ign←(𝕩∊" "∾tab)∨≠`ab∧c∨n                  # Ignored characters
   # Other stuff
   k∨↩∨´(»⊸∧k<𝕩⊸∊)¨wc‿oc                     # Group names, numbers, and ops
-  ts←¬k∨ign                                 # Token start mask
+  ts←n∨¬k∨ign                               # Token start mask
   ⟨𝕩⊔˜1-˜ign¬⊸×+`ts, /ts⟩
 }
 
