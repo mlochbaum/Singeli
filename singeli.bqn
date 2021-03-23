@@ -247,6 +247,8 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.
   Ptr ⇐ { 𝕊t: !IsType t ⋄ tPTR Type t}
   Tup ⇐ { 𝕊t: !0=•Type t ⋄ !∧´IsType t ⋄ tTUP Type t}
 
+  Deref ⇐ { !IsType 𝕩 ⋄ !tPTR=𝕩.kind ⋄ 𝕩.dat }
+
   Kind←{𝕩.kind} ⋄ Dat←{𝕩.dat}
   _cases ← {
     c ← ⌊‿2⥊𝕗
@@ -267,6 +269,7 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.
     L ← ¯1⊸⊑
     𝕨 ⟨
       tVEC,  =○⊑ _and_ (𝕊○L)
+      tPTR,  𝕊
       tTUP,  =○≠ _and_ (∧´𝕊¨)
       tPRIM, ≠○⊑◶⟨𝔽○L, ('f'≠⊑∘⊣)_and_(<○L)⟩
       0
@@ -328,10 +331,33 @@ NewLabel ← {show⇐"l"∾⍕𝕩}
 TypeOf ← {•Type◶⟨types.Tup 𝕊¨, !∘0, !,!,!,!,!, {𝕩.Type@}⟩𝕩}
 TypeCast ← {!𝕩TypeOf⊸types.Subtype𝕨 ⋄ 𝕩}# TODO
 
+blocks ← {
+  IsBlock ⇐ {new=𝕩.class}
+  New ⇐ {𝕊 ind‿ptrs‿body‿e:
+    class⇐𝕤
+    show⇐"{block}"
+    Exec⇐{
+      ! ptrs≡○≠1⊑𝕩
+      r ← body.Eval be ← ⟨≠ind,𝕩⟩ env.Block e
+      be.Stores @
+      r
+    }
+  }
+  Exec ⇐ {𝕊 ind‿vars‿block:
+    ! IsBlock block
+    block.Exec ind‿vars
+  }
+}
+Load ← {  𝕊 ptr‿i: Emit ⟨types.Deref TypeOf ptr, "load", ptr, i⟩ }
+Store← {v 𝕊 ptr‿i: Emit ⟨types.Deref TypeOf ptr, "store", ptr, i, v⟩ }
+
 
 builtins ← ∾≍⟨
   Show¨⊸≍ types.primTypes
-  ⍉> ⟨"call"‿CallFn,"emit"‿Emit,⟨"vector",types.Vec⟩,⟨"pointer",types.Ptr⟩⟩
+  ⍉> ⟨
+    "call"‿CallFn, "emit"‿Emit, ⟨"exec",blocks.Exec⟩
+    ⟨"vector",types.Vec∘⊑⟩, ⟨"pointer",types.Ptr∘⊑⟩
+  ⟩
 ⟩
 
 scopes ← {
@@ -346,6 +372,7 @@ scopes ← {
 }
 var ← {
   Get⇐{𝕩.Get@}
+  SetType⇐{𝕨.SetType𝕩}
   Fixed⇐{ Get⇐𝕩˙ }
   New⇐{
     v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩𝕩}
@@ -362,12 +389,12 @@ env ← {
   Make ←{ vars⇐𝕨 ⋄ parent⇐𝕩 }
   New  ⇐{ (var.New∘@¨ 𝕨) Make 𝕩 }
   Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
-  Block⇐{ind‿ptrs 𝕊 par:
+  Block⇐{⟨ni,ind‿ptrs⟩ 𝕊 par:
     pi ← ptrs ≍○<¨ <ind
     pv ← Load¨ pi
-    vars‿parent ⇐ ((var.New¨ind)∾(var.Marked¨ptrs)) Make 𝕩
+    vars‿parent ⇐ ((var.New¨↕ni)∾(var.Marked¨pv)) Make 𝕩
     Stores ⇐ {𝕤
-      m←{𝕩.write}¨v←(≠ind)↓vars
+      m←{𝕩.write}¨v←ni↓vars
       v var.Get⊸Store¨○(m⊸/) pi
     }
   }
@@ -477,7 +504,7 @@ nodes ← {
     Eval⇐{
       u ← GetVar 𝕩
       v ← value.Eval𝕩
-      u.SetType⟜(≠◶⟨TypeOf v˙, (o.Eval𝕩)∘⊑⟩)⍟decl type
+      u var.SetType⟜(≠◶⟨TypeOf v˙, (o.Eval𝕩)∘⊑⟩)⍟decl type
       u.Set v
     }
   }
@@ -486,7 +513,7 @@ nodes ← {
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
     v←@ ⋄ Scope⇐{ v ↩ 𝕩.Add name ⋄ value.Scope 𝕩 }
-    Eval⇐{ (V𝕩).Set value.Eval 𝕩 }
+    Eval⇐{ (V𝕩).Set {𝕩.Run}⍟{lambda=𝕩.class}⍟(7=•Type) value.Eval 𝕩 }
   }
   Export ⇐ {
     ⟨name,value⟩⇐𝕩
@@ -542,17 +569,7 @@ nodes ← {
     Eval ⇐ {
       e←o.Eval 𝕩
       for←E fn
-      For ⟨E¨ptri, E from, E to, Block ind‿ptrs‿body‿𝕩⟩
-    }
-  }
-  Block ← {𝕊 ind‿ptrs‿body‿e:
-    class⇐𝕤
-    show⇐"{block}"
-    Exec⇐{
-      ! ind‿ptrs≡○(≠¨)𝕩
-      r ← body.Eval be ← 𝕩 env.Block e
-      be.Stores @
-      r
+      For ⟨E¨ptri, E from, E to, blocks.New ind‿ptrs‿body‿𝕩⟩
     }
   }
 }
@@ -579,4 +596,4 @@ ast.Oper @
 #ShowAST ast
 ast.Scope scopes.Init@
 p←ast.Eval {fn⇐@}
-•←Show¨⌾(1⊸↓)¨ p.Instrs@
+•Out∘(1↓·∾" "⊸∾¨)¨ Show⎊⊢¨⌾(1⊸↓)¨ p.Instrs@
