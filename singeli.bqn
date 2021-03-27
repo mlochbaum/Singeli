@@ -74,14 +74,15 @@ Parse ← {
   _seq ← {≡¨⊸((≠⟜1∧(<sep)≢¨⊢)/>⟜0◶{𝕏@}‿Get¨) 𝔽}
 
   Name ← Get (⊑alph∊˜⊏)˙
-  Word ← Get (⊑(wc∾oc)∊˜⊏)˙
+  Word ← c.word _node_ (Get (⊑(wc∾oc)∊˜⊏)˙)
+  Symbol ← c.symbol _node_ (Get∘1)
 
   AddParams ← {𝕊∘(c.run  _node_ (⊢≍○<"{"‿"}"_args))⍟(Next"{") 𝕩}
   AddArgs   ← {  (c.call _node_ (⊢≍○<"("‿")"_args))⍟(Next"(") 𝕩}
   Expr0 ← {𝕤
     Vec ← c.run _node_ (⟨c.Word"vector"⟩ ∾ "["‿Expr‿"]"‿Expr0 _seq)
     Par ← ⊑ "("‿Expr‿")" _seq
-    ¬∘Is⟜"["◶⟨Vec, ¬∘Is⟜"("◶⟨Par,c.word _node_ Word⟩⟩ Peek@
+    (⊑"[('"⊐⊏)◶Vec‿Par‿Symbol‿Word Peek@
   }
   Callable ← AddParams∘Expr0
   _exprEnd ← {endTok _𝕣:
@@ -164,11 +165,10 @@ Parse ← {
   DefFun ← c.define _node_ (      Name‿Function  _seq)
   Define ← c.define _node_ ("def"‿Name‿Generator _seq)
 
-  Symb ← '''=⊑
-  Export ← c.export _node_ ((Get symb˙)‿"="‿Callable‿sep _seq)
+  Export ← c.export _node_ (Word‿"="‿Callable‿sep _seq)
 
   Program ← c.body _node_ {𝕤
-    Line ← ¬∘Is⟜"def"◶⟨Define, Symb◶DefFun‿Export⟩∘Peek
+    Line ← ¬∘Is⟜"def"◶⟨Define, ('''=⊑)◶DefFun‿Export⟩∘Peek
     While ⟨Rem, Line∘Seps, 0⟩
   }
 
@@ -284,7 +284,8 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!, {𝕩.Sh
   New ⇐ {class⇐𝕤 ⋄ type⇐𝕨 ⋄ handle⇐𝕩 ⋄ show⇐"v"∾⍕𝕩}
 }
 
-NewLabel ← {show⇐"l"∾⍕𝕩}
+NewLabel  ← {show⇐"l"∾⍕𝕩}
+NewSymbol ← {show⇐𝕩} 1↓¯1↓⊢
 
 ⟨IsFun,Emit⟩ ← functions ← {
   IsFun ⇐ {new=𝕩.class}
@@ -439,6 +440,7 @@ nodes ← {
     Disp⇐{𝕤⋄⟨name⟩}
   }
   Word ⇐ (∧´∊⟜("."∾dig))◶⟨Ident, Value⟜•BQN⟩
+  Symbol ⇐ Value⟜NewSymbol
   Run ⇐ {
     ⟨caller,params⟩⇐𝕩
     Visit←{⟨𝕏caller,𝕏¨params⟩}
