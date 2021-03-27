@@ -353,13 +353,15 @@ Load ← {  𝕊 ptr‿i: Emit ⟨types.Deref TypeOf ptr, "load", ptr, i⟩ }
 Store← {v 𝕊 ptr‿i: Emit ⟨types.Deref TypeOf ptr, "store", ptr, i, v⟩ }
 
 
-builtins ← ∾≍⟨
-  Show¨⊸≍ types.primTypes
-  ⍉> ⟨
-    "call"‿CallFn, "emit"‿Emit, ⟨"exec",blocks.Exec⟩
-    ⟨"vector",types.Vec∘⊑⟩, ⟨"pointer",types.Ptr∘⊑⟩
+builtins ← {
+  names‿values ⇐ <˘∾≍⟨
+    Show¨⊸≍ types.primTypes
+    ⍉> ⟨
+      "call"‿CallFn, "emit"‿Emit, ⟨"exec",blocks.Exec⟩
+      ⟨"vector",types.Vec∘⊑⟩, ⟨"pointer",types.Ptr∘⊑⟩
+    ⟩
   ⟩
-⟩
+}
 
 scopes ← {
   null←{Get⇐"Undefined name: "⊸∾!0˙}
@@ -435,11 +437,7 @@ nodes ← {
     ⟨node,Dump,Oper,Scope⟩⇐Defaults "value"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
   }
-  bName‿bVal ← <˘builtins
-  Word ⇐ {
-    AWord ← bName⊸⊐⌾< ≥⟜(≠bName)◶⟨⊢ Value ⊑⟜bVal, Ident ⊢⟩ ⊢
-    (∧´∊⟜("."∾dig))◶⟨AWord, Value⟜⍎⟩ 𝕩
-  }
+  Word ⇐ (∧´∊⟜("."∾dig))◶⟨Ident, Value⟜•BQN⟩
   Run ⇐ {
     ⟨caller,params⟩⇐𝕩
     Visit←{⟨𝕏caller,𝕏¨params⟩}
@@ -478,7 +476,7 @@ nodes ← {
     ⟨name,type⟩⇐𝕩
     Visit←{⟨name,𝕏type⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "arg"‿visit
-    v←@ ⋄ Scope⇐{ v ↩ 𝕩.Add name }
+    v←@ ⋄ Scope⇐{ type.Scope 𝕩 ⋄ v ↩ 𝕩.Add name }
     Eval⇐{ u←V𝕩 ⋄ u.SetType t←type.Eval 𝕩 ⋄ u.Set functions.NextArg t }
   }
   Function ⇐ {
@@ -595,6 +593,6 @@ ShowAST ← {•Out ∾∾⟜lf¨ 𝕩.Disp @}
 ast ← Parse ⊑Tokenize •FChars "tests/bqn_test.singeli"
 ast.Oper @
 #ShowAST ast
-ast.Scope scopes.Init@
-p←ast.Eval {fn⇐@}
+ast.Scope builtins.names scopes.New scopes.Init@
+p←ast.Eval builtins.values env.Fixed @
 •Out∘(1↓·∾" "⊸∾¨)¨ Show⎊⊢¨⌾(1⊸↓)¨ p.Instrs@
