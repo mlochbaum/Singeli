@@ -51,7 +51,7 @@ Parse ← {
   ! (¯1⊑𝕩) Is sep
 
   Err ← {
-    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.define,"define",c.export,"export",c.for,"for",c.function,"function",c.if,"if",c.lambda,"lambda",c.phrase,"phrase",c.return,"return",c.run,"run",c.while,"while",c.word,"word"⟩
+    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.define,"define",c.export,"export",c.for,"for",c.function,"function",c.if,"if",c.lambda,"lambda",c.phrase,"phrase",c.run,"run",c.while,"while",c.word,"word"⟩
     •←L⌾(⊏∘⌽⍉)>DumpStack@
     𝕨!𝕩
   }
@@ -103,7 +103,6 @@ Parse ← {
   "while":  c.while  _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Statement _seq)@ ;
   "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Statement‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
   "@":      For@ ;
-  "return": c.return _node_ ("return"‿Expr _seq)@ ;
   "{":      c.body   _node_ Body@ ;
   𝕩:
     n ← Expr@
@@ -287,7 +286,7 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!, {𝕩.Sh
 
 NewLabel ← {show⇐"l"∾⍕𝕩}
 
-⟨IsFun,Emit,CallFn⟩ ← functions ← {
+⟨IsFun,Emit⟩ ← functions ← {
   IsFun ⇐ {new=𝕩.class}
   fid←¯1 ⋄ current⇐@
   New ⇐ {𝕤
@@ -301,7 +300,7 @@ NewLabel ← {show⇐"l"∾⍕𝕩}
     Append⇐{ Push𝕩 ⋄ (Next𝕨)⊣@ }
     SetRType⇐{ SetRType↩!∘0 ⋄ !IsType rType↩𝕩 }
     _ret←{ Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, TypeCast⟩ 𝕩⟩ }
-    Return⇐!∘0 _ret
+    Return⇐!∘0 _ret ⊑
     Finish⇐{SetRtype TypeOf 𝕩⋄𝕩} _ret
   }
   _with ⇐ {
@@ -315,10 +314,11 @@ NewLabel ← {show⇐"l"∾⍕𝕩}
   NextArg ⇐ { current.NextArg 𝕩 }
   Label ⇐ { current.NextLabel 𝕩 }
   Append ← { 𝕨 current.Append 𝕩 }
+  Return ⇐ { current.Return 𝕩 }
   Emit ⇐ {
     (⊑𝕩) Append "emit" <⊸∾ 1↓𝕩
   }
-  CallFn ⇐ {
+  Call ⇐ {
     f←⊑𝕩
     ! IsFun f
     f.rType Append ⟨"call",f.id⟩ ∾ 1↓𝕩
@@ -357,7 +357,8 @@ builtins ← {
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
     ⍉> ⟨
-      "call"‿CallFn, "emit"‿Emit, ⟨"exec",blocks.Exec⟩
+      ⟨"call",functions.Call⟩, ⟨"emit",Emit⟩,
+      ⟨"return",functions.Return⟩, ⟨"exec",blocks.Exec⟩
       ⟨"vector",types.Vec∘⊑⟩, ⟨"pointer",types.Ptr∘⊑⟩
     ⟩
   ⟩
@@ -446,7 +447,6 @@ nodes ← {
     Eval ⇐ {𝕎𝕩}´ d.Eval
   }
   Call ⇐ Run (Word"call") ≍○< <⊸∾´
-  Return ⇐ Run (Word"return") ≍○< ⥊∘<
   Phrase ⇐ {
     things⇐𝕩
     Visit←{⟨𝕏¨things⟩}
