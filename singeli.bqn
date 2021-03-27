@@ -220,7 +220,7 @@ IsInt ← IsNum _and_ (⌊⊸=)
 IsNat ← IsInt _and_ (0⊸≤)
 IsTup ← 0=•Type
 IsGet ← 3=•Type
-Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!,!, {𝕩.Show@}⟩𝕩}
+Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!, {𝕩.Show@}⟩𝕩}
 
 ⟨IsType⟩ ← types ← {
   IsType ⇐ {𝕊v: type=v.class}
@@ -329,7 +329,7 @@ NewLabel ← {show⇐"l"∾⍕𝕩}
   GotoF    ⇐ "gotoF"_instr
 }
 
-TypeOf ← {•Type◶⟨types.Tup 𝕊¨, !∘0, !,!,!,!,!, {𝕩.Type@}⟩𝕩}
+TypeOf ← {•Type◶⟨types.Tup 𝕊¨, !∘0, !,!,!,!, {𝕩.Type@}⟩𝕩}
 TypeCast ← {!𝕩TypeOf⊸types.Subtype𝕨 ⋄ 𝕩}# TODO
 
 blocks ← {
@@ -514,7 +514,7 @@ nodes ← {
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
     v←@ ⋄ Scope⇐{ v ↩ 𝕩.Add name ⋄ value.Scope 𝕩 }
-    Eval⇐{ (V𝕩).Set {𝕩.Run}⍟{lambda=𝕩.class}⍟(7=•Type) value.Eval 𝕩 }
+    Eval⇐{ (V𝕩).Set {𝕩.Run}⍟{lambda=𝕩.class}⍟(6=•Type) value.Eval 𝕩 }
   }
   Export ⇐ {
     ⟨name,value⟩⇐𝕩
