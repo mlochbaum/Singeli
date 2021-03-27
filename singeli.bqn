@@ -1,8 +1,8 @@
 tab‿lf←@+9‿10
 
 dig ← '0'+↕10
-alph← ⥊"aA"+⌜↕26
-wc  ← dig∾alph∾"._"      # Word characters
+alph← "_"∾⥊"aA"+⌜↕26
+wc  ← dig∾alph∾"."       # Word characters
 oc  ← "!$%&*+-/<=>?\^|~" # Operator characters that can stick together
 
 # Source to list of token strings
