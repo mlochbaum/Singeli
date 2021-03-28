@@ -289,9 +289,9 @@ NewSymbol ← {show⇐𝕩} 1↓¯1↓⊢
 
 ⟨IsFun,Emit⟩ ← functions ← {
   IsFun ⇐ {new=𝕩.class}
-  fid←¯1 ⋄ current⇐@
-  New ⇐ {𝕤
-    class⇐𝕤 ⋄ id⇐fid+↩1
+  current⇐@
+  New ← {𝕤
+    class⇐𝕤 ⋄ show⇐"f"∾⍕id⇐𝕩
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType←@
     Next⇐{ 𝕩 register.New handle+↩1 }
     NextLabel⇐{𝕤⋄ NewLabel label+↩1 }
@@ -306,7 +306,7 @@ NewSymbol ← {show⇐𝕩} 1↓¯1↓⊢
   }
   _with ⇐ {
     fs←current
-    f←current↩New@
+    f←current↩program.AddFunction new
     f.Finish f 𝔽 𝕩
     current↩fs
     f
@@ -403,6 +403,20 @@ env ← {
       v var.Get⊸Store¨○(m⊸/) pi
     }
   }
+}
+
+program ← {
+  AddFunction⇐Export⇐!∘0
+  _with ⇐ {
+    fns←⟨⟩ ⋄ AddFunction ↩ { f ← 𝕏 ≠fns ⋄ fns∾⟜<↩f ⋄ f }
+    exp←⟨⟩ ⋄ Export ↩ { exp ∾⟜<↩ 𝕩 }
+    𝕨𝔽𝕩
+    AddFunction↩Export↩!∘0
+    ∾ ⟨∾DispFunction¨fns, DispExport¨exp⟩
+  }
+  Disp ← (1↓·∾" "⊸∾¨) Show⎊⊢¨⌾(1⊸↓)
+  DispFunction←{ ∾⟨"beginFn "∾Show𝕩⟩‿(Disp¨ 𝕩.Instrs@)‿⟨"endFn",""⟩ }
+  DispExport←{ "export " ∾ Disp 𝕩 }
 }
 
 nodes ← {
@@ -520,7 +534,7 @@ nodes ← {
     ⟨name,value⟩⇐𝕩 ⋄ name↩Show name.Eval@
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper,Scope⟩⇐d←Defaults "export"‿visit
-    Eval ⇐ program.Export d.Eval
+    Eval ⇐ { program.Export d.Eval 𝕩 }
   }
   Body ⇐ {
     statements⇐𝕩
@@ -591,10 +605,16 @@ operator.AddInfix¨⟨
   "/"‿"__div"‿40‿'l'
 ⟩
 
-ShowAST ← {•Out ∾∾⟜lf¨ 𝕩.Disp @}
-ast ← Parse ⊑Tokenize •FChars "tests/bqn_test.singeli"
-ast.Oper @
-#ShowAST ast
-ast.Scope builtins.names scopes.New scopes.Init@
-p←ast.Eval builtins.values env.Fixed @
-•Out∘(1↓·∾" "⊸∾¨)¨ Show⎊⊢¨⌾(1⊸↓)¨ p.Instrs@
+ast ← {
+  Show ⇐ {•Out ∾∾⟜lf¨ 𝕩.Disp @}
+  baseScope ← builtins.names scopes.New scopes.Init@
+  baseEnv   ← builtins.values env.Fixed @
+  Build ⇐ Parse∘⊑ Tokenize
+  Compile ⇐ {
+    t ← Build 𝕩
+    t.Oper @
+    t.Scope baseScope
+    t.Eval program._with baseEnv
+  }
+}
+•Out¨ ast.Compile •FChars "tests/bqn_test.singeli"
