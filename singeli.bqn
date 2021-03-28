@@ -219,14 +219,14 @@ IsInt ← IsNum _and_ (⌊⊸=)
 IsNat ← IsInt _and_ (0⊸≤)
 IsTup ← 0=•Type
 IsGet ← 3=•Type
-Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!, {𝕩.Show@}⟩𝕩}
+Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!, {𝕩.Shows@}⟩𝕩}
 
 ⟨IsType⟩ ← types ← {
   IsType ⇐ {𝕊v: type=v.class}
   Type ← {k𝕊d:
     class⇐𝕤
     kind‿dat⇐𝕨‿𝕩
-    Show⇐kind◶⟨
+    Shows⇐kind◶⟨
       "void"               # Void:                     void
       ∾⟜⍕´                 # Primitive:   qual‿len     u8
       {∾"["‿𝕨‿"]"‿𝕩}○Show´ # Vector:      count‿t      [4]…
@@ -281,17 +281,17 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!, {𝕩.Sh
 
 ⟨IsReg⟩ ← register ← {
   IsReg ⇐ {new=𝕩.class}
-  New ⇐ {class⇐𝕤 ⋄ type⇐𝕨 ⋄ handle⇐𝕩 ⋄ show⇐"v"∾⍕𝕩}
+  New ⇐ {class⇐𝕤 ⋄ type⇐𝕨 ⋄ handle⇐𝕩 ⋄ shows⇐"v"∾⍕𝕩}
 }
 
-NewLabel  ← {show⇐"l"∾⍕𝕩}
-NewSymbol ← {show⇐𝕩}
+NewLabel  ← {shows⇐"l"∾⍕𝕩}
+NewSymbol ← {shows⇐𝕩}
 
 ⟨IsFun,Emit⟩ ← functions ← {
   IsFun ⇐ {new=𝕩.class}
   current⇐@
   New ← {𝕤
-    class⇐𝕤 ⋄ show⇐"f"∾⍕id⇐𝕩
+    class⇐𝕤 ⋄ shows⇐"f"∾⍕id⇐𝕩
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType←@
     Next⇐{ 𝕩 register.New handle+↩1 }
     NextLabel⇐{𝕤⋄ NewLabel label+↩1 }
@@ -303,6 +303,7 @@ NewSymbol ← {show⇐𝕩}
     _ret←{ Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, TypeCast⟩ 𝕩⟩ }
     Return⇐!∘0 _ret ⊑
     Finish⇐{SetRtype TypeOf 𝕩⋄𝕩} _ret
+    Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨"f"∾⍕id,Show rType⟩∾(⍕∘≠⊸∾Show¨args)}
   }
   _with ⇐ {
     fs←current
@@ -337,7 +338,7 @@ blocks ← {
   IsBlock ⇐ {new=𝕩.class}
   New ⇐ {𝕊 ind‿ptrs‿body‿e:
     class⇐𝕤
-    show⇐"{block}"
+    shows⇐"{block}"
     Exec⇐{
       ! ptrs≡○≠1⊑𝕩
       r ← body.Eval be ← ⟨≠ind,𝕩⟩ env.Block e
@@ -415,7 +416,7 @@ program ← {
     ∾ ⟨∾DispFunction¨fns, DispExport¨exp⟩
   }
   Disp ← (1↓·∾" "⊸∾¨) Show¨⌾(1⊸↓)
-  DispFunction←{ ∾⟨"beginFn "∾Show𝕩⟩‿(Disp¨ 𝕩.Instrs@)‿⟨"endFn",""⟩ }
+  DispFunction←{ ∾⟨"beginFn "∾𝕩.Prot@⟩‿(Disp¨ 𝕩.Instrs@)‿⟨"endFn",""⟩ }
   DispExport←{ "export " ∾ Disp 𝕩 }
 }
 
