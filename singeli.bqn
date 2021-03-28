@@ -285,7 +285,7 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!, {𝕩.Sh
 }
 
 NewLabel  ← {show⇐"l"∾⍕𝕩}
-NewSymbol ← {show⇐𝕩} 1↓¯1↓⊢
+NewSymbol ← {show⇐𝕩}
 
 ⟨IsFun,Emit⟩ ← functions ← {
   IsFun ⇐ {new=𝕩.class}
@@ -350,8 +350,8 @@ blocks ← {
     block.Exec ind‿vars
   }
 }
-Load ← {  𝕊 ptr‿i: Emit ⟨types.Deref TypeOf ptr, "load", ptr, i⟩ }
-Store← {v 𝕊 ptr‿i: Emit ⟨types.Deref TypeOf ptr, "store", ptr, i, v⟩ }
+Load ← {  𝕊 ptr‿i: Emit ⟨types.Deref TypeOf ptr, NewSymbol "load", ptr, i⟩ }
+Store← {v 𝕊 ptr‿i: Emit ⟨types.Deref TypeOf ptr, NewSymbol "store", ptr, i, v⟩ }
 
 
 builtins ← {
@@ -414,7 +414,7 @@ program ← {
     AddFunction↩Export↩!∘0
     ∾ ⟨∾DispFunction¨fns, DispExport¨exp⟩
   }
-  Disp ← (1↓·∾" "⊸∾¨) Show⎊⊢¨⌾(1⊸↓)
+  Disp ← (1↓·∾" "⊸∾¨) Show¨⌾(1⊸↓)
   DispFunction←{ ∾⟨"beginFn "∾Show𝕩⟩‿(Disp¨ 𝕩.Instrs@)‿⟨"endFn",""⟩ }
   DispExport←{ "export " ∾ Disp 𝕩 }
 }
@@ -454,7 +454,7 @@ nodes ← {
     Disp⇐{𝕤⋄⟨name⟩}
   }
   Word ⇐ (∧´∊⟜("."∾dig))◶⟨Ident, Value⟜•BQN⟩
-  Symbol ⇐ Value⟜NewSymbol
+  Symbol ⇐ Value⟜(NewSymbol 1↓¯1↓⊢)
   Run ⇐ {
     ⟨caller,params⟩⇐𝕩
     Visit←{⟨𝕏caller,𝕏¨params⟩}
