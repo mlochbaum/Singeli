@@ -165,7 +165,7 @@ Parse ← {
   DefFun ← c.define _node_ (      Name‿Function  _seq)
   Define ← c.define _node_ ("def"‿Name‿Generator _seq)
 
-  Export ← c.export _node_ (Word‿"="‿Callable‿sep _seq)
+  Export ← c.export _node_ (Symbol‿"="‿Callable‿sep _seq)
 
   Program ← c.body _node_ {𝕤
     Line ← ¬∘Is⟜"def"◶⟨Define, ('''=⊑)◶DefFun‿Export⟩∘Peek
@@ -517,10 +517,10 @@ nodes ← {
     Eval⇐{ (V𝕩).Set {𝕩.Run}⍟{lambda=𝕩.class}⍟(6=•Type) value.Eval 𝕩 }
   }
   Export ⇐ {
-    ⟨name,value⟩⇐𝕩
+    ⟨name,value⟩⇐𝕩 ⋄ name↩Show name.Eval@
     Visit←{⟨name,𝕏value⟩}
-    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "export"‿visit
-    Eval⇐"TODO:exports"!0˙
+    ⟨node,Dump,Disp,Oper,Scope⟩⇐d←Defaults "export"‿visit
+    Eval ⇐ program.Export d.Eval
   }
   Body ⇐ {
     statements⇐𝕩
