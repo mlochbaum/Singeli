@@ -453,7 +453,7 @@ nodes ← {
     Eval⇐!∘0 ⋄ Scope⇐{Eval↩var.Get∘(𝕩.Get name)}
   }
   Value ← {
-    name⇐𝕨
+    name←𝕨
     Eval⇐𝕩˙
     ⟨node,Dump,Oper,Scope⟩⇐Defaults "value"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
@@ -461,7 +461,7 @@ nodes ← {
   Word ⇐ (∧´∊⟜("."∾dig))◶⟨Ident, Value⟜•BQN⟩
   Symbol ⇐ Value⟜(NewSymbol 1↓¯1↓⊢)
   Run ⇐ {
-    ⟨caller,params⟩⇐𝕩
+    ⟨caller,params⟩←𝕩
     Visit←{⟨𝕏caller,𝕏¨params⟩}
     ⟨node,Dump,Disp,Scope⟩⇐d←Defaults "run"‿visit
     Oper ⇐ {𝕤⋄ operator.Run ⟨⊑Visit o.oper,params⟩}
@@ -469,7 +469,8 @@ nodes ← {
   }
   Call ⇐ Run (Word"call") ≍○< <⊸∾´
   Phrase ⇐ {
-    things⇐𝕩
+    things←𝕩
+    ToName⇐{𝕤⋄ !1=≠things ⋄ n←⊑things ⋄ !"ident"≡n.node ⋄ n.name }
     Visit←{⟨𝕏¨things⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "phrase"‿visit
     Oper⇐{𝕤
@@ -478,10 +479,10 @@ nodes ← {
       operator.nil
     }
   }
-  PhraseToName ⇐ {n←⊑t←𝕩.things ⋄ !1=≠t ⋄ !"ident"≡n.node ⋄ n.name}
+  PhraseToName ⇐ {!"phrase"≡𝕩.node ⋄ 𝕩.ToName@}
   ParamEq ← Run (Word"match"){⟨𝕗,𝕨‿𝕩⟩}
   Lambda ⇐ {
-    ⟨⟨params,conds⟩,result⟩⇐𝕩
+    ⟨⟨params,conds⟩,result⟩←𝕩
     conds∾˜↩∾<⊸(Word⊸ParamEq¨)´¨params
     params↩⊑¨params
     Visit←{params∾⟨𝕏¨conds,𝕏result⟩}
@@ -493,14 +494,14 @@ nodes ← {
     }
   }
   Arg ⇐ {
-    ⟨name,type⟩⇐𝕩
+    ⟨name,type⟩←𝕩
     Visit←{⟨name,𝕏type⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "arg"‿visit
     v←@ ⋄ Scope⇐{ type.Scope 𝕩 ⋄ v ↩ 𝕩.Add name }
     Eval⇐{ u←V𝕩 ⋄ u.SetType t←type.Eval 𝕩 ⋄ u.Set functions.NextArg t }
   }
   Function ⇐ {
-    ⟨args,type,result⟩⇐𝕩
+    ⟨args,type,result⟩←𝕩
     Visit←{⟨𝕏¨args,𝕏¨type,𝕏result⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "function"‿visit
     Scope⇐{ Visit o.Scope scopes.New 𝕩 }
@@ -512,7 +513,7 @@ nodes ← {
     }functions._with
   }
   Assign ⇐ {
-    ⟨name,decl,type,value⟩⇐𝕩
+    ⟨name,decl,type,value⟩←𝕩
     name PhraseToName˜↩@
     Visit←{⟨name∾decl/":",𝕏¨type,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "assign"‿visit
@@ -528,7 +529,7 @@ nodes ← {
     }
   }
   Define ⇐ {
-    ⟨name,value⟩⇐𝕩
+    ⟨name,value⟩←𝕩
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
     isLambda ← "lambda"≡value.node
@@ -536,20 +537,20 @@ nodes ← {
     Eval⇐{ u←V𝕩 ⋄ u.Set u value.Eval 𝕩 }
   }
   Export ⇐ {
-    ⟨name,value⟩⇐𝕩 ⋄ name↩Show name.Eval@
+    ⟨name,value⟩←𝕩 ⋄ name↩Show name.Eval@
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper,Scope⟩⇐d←Defaults "export"‿visit
     Eval ⇐ { program.Export d.Eval 𝕩 }
   }
   Body ⇐ {
-    statements⇐𝕩
+    statements←𝕩
     Visit←{⟨𝕏¨statements⟩}
     ⟨node,Dump,Disp,Oper⟩⇐d←Defaults "body"‿visit
     sc←@ ⋄ Scope⇐{ Visit o.Scope sc ↩ scopes.New 𝕩 }
     Eval⇐{ ¯1⊑⊑d.Eval (sc.Names@) env.New 𝕩 }
   }
   If ⇐ {
-    ⟨cond,then,else⟩⇐𝕩
+    ⟨cond,then,else⟩←𝕩
     Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
     ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "if"‿visit
     Eval ⇐ {𝕊e:
@@ -563,7 +564,7 @@ nodes ← {
     }
   }
   While ⇐ {
-    ⟨testFirst,cond,stmt⟩⇐𝕩
+    ⟨testFirst,cond,stmt⟩←𝕩
     Visit←{⟨𝕏cond,𝕏stmt⟩}
     ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "while"‿visit
     Eval ⇐ {
@@ -576,7 +577,7 @@ nodes ← {
   }
   n0 ← Word "0"
   For ⇐ {
-    ⟨fn,ptrs,ind,from,to,body⟩⇐𝕩
+    ⟨fn,ptrs,ind,from,to,body⟩←𝕩
     from↩n0⊣´from
     ptri←Ident¨ptrs
     vardisp←1↓∾(","⊸∾¨ptrs)∾" over "⊸∾¨ind
