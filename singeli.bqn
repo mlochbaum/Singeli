@@ -370,7 +370,11 @@ scopes ← {
   null←{Get⇐"Undefined name: "⊸∾!0˙}
   New⇐{
     n←𝕨⊣⟨⟩ ⋄ PG←𝕩.Get
-    Add⇐{ ("Duplicate definition: "∾𝕩)!¬∨´≡⟜𝕩¨n ⋄ c←≠n ⋄ n∾↩<𝕩 ⋄ c⊑env.Vars }
+    Add⇐{
+      i←/≡⟜𝕩¨n
+      c ← 𝕨 (≠i)◶{c←≠n⋄n∾↩<𝕩⋄c}‿{("Duplicate definition: "∾𝕩)!𝕨⊣0⋄⊑i} 𝕩
+      c⊑env.Vars
+    }
     Get⇐{ (n⊸⊐⌾<𝕩) =⟜(≠n)◶{𝕨⊑env.Vars}‿{(PG𝕩)∘env.Parent} 𝕩 }
     Names⇐{𝕤⋄n}
   }
@@ -483,10 +487,9 @@ nodes ← {
     Visit←{params∾⟨𝕏¨conds,𝕏result⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "lambda"‿visit
     Scope⇐{ Visit o.Scope params scopes.New 𝕩 }
-    Eval⇐{𝕊 e:
-      class⇐lambda
-      Test⇐{params≡○≢𝕩}  # TODO
-      Run⇐{result.Eval 𝕩 env.Fixed e}
+    Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value
+      # TODO test conditions, not just length
+      {params≡○≢𝕩}◶⟨({𝕩.Get@}𝕨)⊣@,{result.Eval 𝕩 env.Fixed e}⟩
     }
   }
   Arg ⇐ {
@@ -528,8 +531,9 @@ nodes ← {
     ⟨name,value⟩⇐𝕩
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
-    v←@ ⋄ Scope⇐{ v ↩ 𝕩.Add name ⋄ value.Scope 𝕩 }
-    Eval⇐{ (V𝕩).Set {𝕩.Run}⍟{lambda=𝕩.class}⍟(6=•Type) value.Eval 𝕩 }
+    isLambda ← "lambda"≡value.node
+    v←@ ⋄ Scope⇐{ v ↩ isLambda 𝕩.Add name ⋄ value.Scope 𝕩 }
+    Eval⇐{ u←V𝕩 ⋄ u.Set u value.Eval 𝕩 }
   }
   Export ⇐ {
     ⟨name,value⟩⇐𝕩 ⋄ name↩Show name.Eval@
