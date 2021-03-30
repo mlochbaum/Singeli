@@ -484,13 +484,19 @@ nodes ← {
   Lambda ⇐ {
     ⟨⟨params,conds⟩,result⟩←𝕩
     conds∾˜↩∾<⊸(Word⊸ParamEq¨)´¨params
-    params↩⊑¨params
-    Visit←{params∾⟨𝕏¨conds,𝕏result⟩}
+    uPar‿iPar←(⍷≍○<⊐)⊑¨params
+    Visit←{(iPar⊏uPar)∾⟨𝕏¨conds,𝕏result⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "lambda"‿visit
-    Scope⇐{ Visit o.Scope params scopes.New 𝕩 }
+    Scope⇐{ Visit o.Scope uPar scopes.New 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value
-      # TODO test conditions, not just length
-      {params≡○≢𝕩}◶⟨({𝕩.Get@}𝕨)⊣@,{result.Eval 𝕩 env.Fixed e}⟩
+      Match←!∘0 # TODO
+      next ← ({𝕩.Get@}𝕨)⊣{"No matching generator definition"!0˙}
+      Check ← {iPar (≡○≢)_and_(∧´(∧´⊏Match¨1⊸↓)¨∘⊔) 𝕩}
+      Check◶Next‿{
+        F←Next 𝕩˙
+        try ← result.eval{𝕨.Eval◶F‿𝕏}´conds
+        Try (iPar∊⊸/𝕩) env.Fixed e
+      }
     }
   }
   Arg ⇐ {
