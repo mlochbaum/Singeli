@@ -180,15 +180,15 @@ operator ← {
   Parse ⇐ {ops 𝕊 val:
     Peek‿Next‿Rem ← MakeStream ops {null‿left‿bind‿R⇐𝕨 ⋄ value⇐𝕩}¨ val
     E ← {𝕊test: {𝕊∘{𝕩 LeD Next@}⍟(Test Peek)⍟Rem 𝕩} NuD Next@ }
-    NuD ← { 𝕩.null ≢⟜@◶{𝕩.value}‿{nodes.Run ⟨𝕩.R 𝕨.v, ⟨E 𝕨.t⟩⟩} 𝕩 }
-    LeD ← { !@≢l←𝕩.left ⋄ nodes.Run ⟨𝕩.R l.v, ⟨𝕨, E l.t⟩⟩ }
+    NuD ← { 𝕩.null ≢⟜@◶{𝕩.value}‿{nodes.Run ⟨𝕩.R 𝕨.V@, ⟨E 𝕨.t⟩⟩} 𝕩 }
+    LeD ← { !@≢l←𝕩.left ⋄ nodes.Run ⟨𝕩.R l.V@, ⟨𝕨, E l.t⟩⟩ }
     E 1
   }
   New ← {𝕤
     null ⇐ left ⇐ @
     bind ⇐ ¯∞
     R ⇐ ⊢
-    Op ← {val‿p‿c←𝕩 ⋄ v⇐val ⋄ T⇐p C {𝕩.bind}}  # Value and test
+    Op ← {val‿p‿c←𝕩 ⋄ V⇐nodes.Word∘val ⋄ T⇐p C {𝕩.bind}}  # Value and test
     AddNull ⇐ {𝕊⟨value, prec⟩: AddNull↩!∘0
       null ↩ Op ⟨value, prec, <⟩
     }
@@ -206,10 +206,10 @@ operator ← {
     Lookup ⇐ nil _get
     Define ← {n∾↩<𝕩 ⋄ o∾↩<r←New@ ⋄ r} _get
     AddPrefix ⇐ {𝕊name‿value‿prec:
-      p←Define name ⋄ p.AddNull ⟨nodes.Word value,prec⟩
+      p←Define name ⋄ p.AddNull ⟨value,prec⟩
     }
     AddInfix ⇐ {𝕊name‿value‿prec‿assoc:
-      p←Define name ⋄ p.AddLeft ⟨nodes.Word value,prec,assoc⟩
+      p←Define name ⋄ p.AddLeft ⟨value,prec,assoc⟩
     }
   }
 }
@@ -472,7 +472,7 @@ nodes ← {
     Oper ⇐ {𝕤⋄ operator.Run ⟨⊑Visit o.oper,params⟩}
     Eval ⇐ {𝕎𝕩}´ d.Eval
   }
-  Call ⇐ Run (Word"call") ≍○< <⊸∾´
+  Call ⇐ { Run ⟨Ident"call" , <⊸∾´𝕩⟩ }
   Phrase ⇐ {
     things←𝕩
     ToName⇐{𝕤⋄ !1=≠things ⋄ n←⊑things ⋄ !"ident"≡n.node ⋄ n.name }
@@ -485,10 +485,10 @@ nodes ← {
     }
   }
   PhraseToName ⇐ {!"phrase"≡𝕩.node ⋄ 𝕩.ToName@}
-  ParamEq ← Run (Word"match"){⟨𝕗,𝕨‿𝕩⟩}
+  ParamEq ← { Run ⟨Ident"match", 𝕨‿𝕩⟩ }
   Lambda ⇐ {
     ⟨⟨params,conds⟩,result⟩←𝕩
-    conds∾˜↩∾<⊸(Word⊸ParamEq¨)´¨params
+    conds∾˜↩∾<⊸(Ident⊸ParamEq¨)´¨params
     uPar‿iPar←(⍷≍○<⊐)⊑¨params
     Visit←{(iPar⊏uPar)∾⟨𝕏¨conds,𝕏result⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "lambda"‿visit
