@@ -367,6 +367,9 @@ builtins ← {
       ⟨"return",functions.Return⟩, ⟨"exec",blocks.Exec⟩
       ⟨"match",Match⟩
       ⟨"__vec",types.Vec∘⊑⟩, ⟨"__pnt",types.Ptr∘⊑⟩
+      ⟨"__neg",-⟩
+      ⟨"__lt",<´⟩,  ⟨"__gt",>´⟩,  ⟨"__le",≤´⟩,  ⟨"__ge",≥´⟩
+      ⟨"__add",+´⟩, ⟨"__sub",-´⟩, ⟨"__mul",×´⟩, ⟨"__div",÷´⟩
     ⟩
   ⟩
 }
