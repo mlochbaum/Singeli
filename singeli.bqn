@@ -51,7 +51,7 @@ Parse ← {
   ! (¯1⊑𝕩) Is sep
 
   Err ← {
-    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.define,"define",c.export,"export",c.for,"for",c.function,"function",c.if,"if",c.lambda,"lambda",c.phrase,"phrase",c.run,"run",c.while,"while",c.word,"word"⟩
+    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.define,"define",c.export,"export",c.for,"for",c.function,"function",c.if,"if",c.lambda,"lambda",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.while,"while",c.word,"word"⟩
     •←L⌾(⊏∘⌽⍉)>DumpStack@
     𝕨!𝕩
   }
@@ -73,9 +73,11 @@ Parse ← {
   While ← {Test‿Cont‿init: {(𝕊∾⟜<⟜Cont)⍟Test𝕩} Cont¨↕init}
   _seq ← {≡¨⊸((≠⟜1∧(<sep)≢¨⊢)/>⟜0◶{𝕏@}‿Get¨) 𝔽}
 
-  Name ← Get (⊑alph∊˜⊏)˙
-  Word ← c.word _node_ (Get (⊑(wc∾oc)∊˜⊏)˙)
-  Symbol ← c.symbol _node_ (Get∘1)
+  _begin ← {Get (⊑𝕗∊˜⊏)˙}
+  Name ← alph _begin
+  Oper ← oc _begin
+  Word ← c.word _node_ ((wc∾oc)_begin)
+  Symbol ← c.symbol _node_ ("'"_begin)
 
   AddParams ← {𝕊∘(c.run  _node_ (⊢≍○<"{"‿"}"_args))⍟(Next"{") 𝕩}
   AddArgs   ← {  (c.call _node_ (⊢≍○<"("‿")"_args))⍟(Next"(") 𝕩}
@@ -168,8 +170,14 @@ Parse ← {
 
   Export ← c.export _node_ (Symbol‿"="‿Callable‿sep _seq)
 
+  OpType ← {𝕤
+    pre ← (⊑≢Get) "prefix"‿"infix"
+    pre◶⟨'p', Next◶⟨'n', ⊑∘Get∘1⟩⟩ "none"‿"left"‿"right"
+  }
+  OpDef ← c.opDef _node_ ("oper"‿OpType‿Oper‿Name‿Word _seq)
+
   Program ← c.body _node_ {𝕤
-    Line ← ¬∘Is⟜"def"◶⟨Define, ('''=⊑)◶DefFun‿Export⟩∘Peek
+    Line ← "def"‿"oper"⊸⊐⌾<◶⟨Define, OpDef, ('''=⊑)◶DefFun‿Export⟩∘Peek
     While ⟨Rem, Line∘Seps, 0⟩
   }
 
@@ -200,17 +208,17 @@ operator ← {
   Run ⇐ {𝕊⟨op,params⟩: null‿left‿bind⇐op ⋄ R⇐nodes.Run op.R≍○<params˙}
   nil ⇐ New @
 
-  Lookup‿AddPrefix‿AddInfix ⇐ {
+  Lookup‿AddOp‿AddPrefix‿AddInfix ⇐ {
     n←⟨⟩ ⋄ o←⟨⟩
     _get ← {(n⊸⊐⌾<𝕩) =⟜(≠n)◶{𝕨⊑o}‿𝔽 𝕩}
     Lookup ⇐ nil _get
     Define ← {n∾↩<𝕩 ⋄ o∾↩<r←New@ ⋄ r} _get
-    AddPrefix ⇐ {𝕊name‿value‿prec:
-      p←Define name ⋄ p.AddNull ⟨value,prec⟩
+    AddOp ⇐ {𝕊type‿name‿value‿prec:
+      p ← Define name
+      (type≠'p')◶⟨p.AddNull, p.AddLeft∾⟜type⟩ ⟨value,prec⟩
     }
-    AddInfix ⇐ {𝕊name‿value‿prec‿assoc:
-      p←Define name ⋄ p.AddLeft ⟨value,prec,assoc⟩
-    }
+    AddPrefix ⇐ {𝕊name‿value‿prec:       AddOp ⟨'p'⟩∾𝕩}
+    AddInfix  ⇐ {𝕊name‿value‿prec‿assoc: AddOp ¯1⌽𝕩}
   }
 }
 
@@ -549,6 +557,13 @@ nodes ← {
     v←@ ⋄ Scope⇐{ v ↩ isLambda 𝕩.Add name ⋄ value.Scope 𝕩 }
     Eval⇐{ u←V𝕩 ⋄ u.Set u value.Eval 𝕩 }
   }
+  OpDef ⇐ {
+    ⟨type,op,fn,prec⟩←𝕩
+    !"value"≡prec.node ⋄ !1=•Type prec↩prec.Eval@
+    Visit←{𝕤⋄⟨type,op,fn,⍕prec⟩}
+    ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "opdef"‿visit
+    Oper⇐{𝕤⋄ operator.AddOp type‿op‿fn‿prec}
+  }
   Export ⇐ {
     ⟨name,value⟩←𝕩 ⋄ name↩Show name.Eval@
     Visit←{⟨name,𝕏value⟩}
@@ -609,7 +624,7 @@ nodes ← {
 }
 
 operator.AddPrefix¨⟨
-  "-"‿"__neg" ‿30
+  "-"‿"__neg"‿30
   "$"‿"__vec"‿50
   "*"‿"__pnt"‿60
 ⟩
