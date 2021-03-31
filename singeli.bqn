@@ -293,8 +293,14 @@ Match ← {𝕨•Type∘⊣◶⟨∧´𝕊¨, ≡, !,!,!,!, {𝕨𝕨.Matches�
 }
 
 ⟨IsReg⟩ ← register ← {
-  IsReg ⇐ {new=𝕩.class}
-  New ⇐ {class⇐𝕤 ⋄ type⇐𝕨 ⋄ handle⇐𝕩 ⋄ shows⇐"v"∾⍕𝕩 ⋄ Matches⇐≡}
+  IsReg ⇐ (6=•Type)◶0‿{new=𝕩.class}
+  New ⇐ {
+    class⇐𝕤 ⋄ type⇐𝕨 ⋄ handle⇐𝕩
+    shows⇐"v"∾⍕𝕩 ⋄ Matches⇐≡
+    Get⇐⊢ ⋄ SetUsed⇐{𝕤⋄Get↩{𝕤⋄type New functions.NextHandle@}}
+  }
+  JoinNew ← { 𝕨.SetUsed@ ⋄ 𝕨 functions.Mut 𝕩 }⍟(IsReg⊣)
+  Join ⇐ JoinNew⟜{ 𝕩.Get 𝕩 }⍟(IsReg⊢)
 }
 
 NewLabel  ← {shows⇐"l"∾⍕𝕩 ⋄ Matches⇐≡}
@@ -311,7 +317,7 @@ NewSymbol ← {shows⇐𝕩      ⋄ Matches⇐≡}
     NextArg⇐{ args∾↩𝕩 ⋄ Next 𝕩 }
     ⟨Push,Arr⟩←MakeStack@
     Instrs⇐Arr
-    Append⇐{ Push𝕩 ⋄ (Next𝕨)⊣@ }
+    Append⇐{ Push𝕩⋄@ ; (1⊸⊑⊣𝕊) ⟨"new",Next𝕨⟩∾NewSymbol⌾⊑𝕩 }
     SetRType⇐{ SetRType↩!∘0 ⋄ !IsType rType↩𝕩 }
     _ret←{ Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, TypeCast⟩ 𝕩⟩ }
     Return⇐!∘0 _ret ⊑
@@ -330,9 +336,8 @@ NewSymbol ← {shows⇐𝕩      ⋄ Matches⇐≡}
   Label ⇐ { current.NextLabel 𝕩 }
   Append ← { 𝕨 current.Append 𝕩 }
   Return ⇐ { current.Return 𝕩 }
-  Emit ⇐ {
-    (⊑𝕩) Append "emit" <⊸∾ 1↓𝕩
-  }
+  Emit ⇐ { (⊑𝕩) Append "emit" <⊸∾ 1↓𝕩 }
+  Mut  ⇐ { Append "mut"‿𝕨‿𝕩 ⋄ 𝕨 }
   Call ⇐ {
     f←⊑𝕩
     ! IsFun f
@@ -402,7 +407,7 @@ var ← {
   SetType⇐{𝕨.SetType𝕩}
   Fixed⇐{ Get⇐𝕩˙ }
   New⇐{
-    v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩𝕩}
+    v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩v register.Join 𝕩}
     SetType⇐{SetType↩!∘0 ⋄ Set↩Set 𝕩⊸TypeCast}
   }
   # Variable that tracks when it's been set, for block exec
