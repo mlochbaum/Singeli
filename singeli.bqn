@@ -208,15 +208,18 @@ operator ← {
   Run ⇐ {𝕊⟨op,params⟩: null‿left‿bind⇐op ⋄ R⇐nodes.Run op.R≍○<params˙}
   nil ⇐ New @
 
-  Lookup‿AddOp ⇐ {
+  Lookup⇐Add⇐!∘0
+  _with ⇐ {
     n←⟨⟩ ⋄ o←⟨⟩
     _get ← {(n⊸⊐⌾<𝕩) =⟜(≠n)◶{𝕨⊑o}‿𝔽 𝕩}
-    Lookup ⇐ nil _get
+    Lookup ↩ nil _get
     Define ← {n∾↩<𝕩 ⋄ o∾↩<r←New@ ⋄ r} _get
-    AddOp ⇐ {𝕊type‿name‿value‿prec:
+    Add ↩ {𝕊type‿name‿value‿prec:
       p ← Define name
       (type≠'p')◶⟨p.AddNull, p.AddLeft∾⟜type⟩ ⟨value,prec⟩
     }
+    𝕨𝔽𝕩
+    Lookup↩Add↩!∘0
   }
 }
 
@@ -560,7 +563,7 @@ nodes ← {
     !"value"≡prec.node ⋄ !1=•Type prec↩prec.Eval@
     Visit←{𝕤⋄⟨type,op,fn,⍕prec⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "opdef"‿visit
-    Oper⇐{𝕤⋄ operator.AddOp type‿op‿fn‿prec}
+    Oper⇐{𝕤⋄ operator.Add type‿op‿fn‿prec}
   }
   Export ⇐ {
     ⟨name,value⟩←𝕩 ⋄ name↩Show name.Eval@
@@ -643,7 +646,7 @@ ast ← {
   Build ⇐ Parse∘⊑ Tokenize
   Compile ⇐ {
     t ← Build 𝕩
-    t.Oper @
+    t.Oper operator._with @
     t.Scope baseScope
     t.Eval program._with baseEnv
   }
