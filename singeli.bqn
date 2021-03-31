@@ -219,7 +219,8 @@ IsInt ← IsNum _and_ (⌊⊸=)
 IsNat ← IsInt _and_ (0⊸≤)
 IsTup ← 0=•Type
 IsGet ← 3=•Type
-Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!, {𝕩.Shows@}⟩𝕩}
+Show  ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!, {𝕩.Shows@}⟩𝕩}
+Match ← {𝕨•Type∘⊣◶⟨∧´𝕊¨, ≡, !,!,!,!, {𝕨𝕨.Matches𝕩}⟩𝕩}
 
 ⟨IsType⟩ ← types ← {
   IsType ⇐ {𝕊v: type=v.class}
@@ -234,6 +235,7 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!, {𝕩.Sh
       {∾𝕨‿" -> "‿𝕩}○Show´  # Function:    ⟨t, q‿r‿s⟩   (…,…,…) -> …
       Show                 # Tuple:       q‿r‿s        (…,…,…)
     ⟩∘dat
+    Matches⇐{𝕨MT𝕩}
   }
   tVOID‿tPRIM‿tVEC‿tPTR‿tFUN‿tTUP ← ↕6
 
@@ -277,21 +279,22 @@ Show ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!, {𝕩.Sh
   }
   Subtype  ⇐ ≤ _sub
   SSubtype ⇐ < _sub
+  MT ⇐ Subtype ∧ Subtype˜
 }
 
 ⟨IsReg⟩ ← register ← {
   IsReg ⇐ {new=𝕩.class}
-  New ⇐ {class⇐𝕤 ⋄ type⇐𝕨 ⋄ handle⇐𝕩 ⋄ shows⇐"v"∾⍕𝕩}
+  New ⇐ {class⇐𝕤 ⋄ type⇐𝕨 ⋄ handle⇐𝕩 ⋄ shows⇐"v"∾⍕𝕩 ⋄ Matches⇐≡}
 }
 
-NewLabel  ← {shows⇐"l"∾⍕𝕩}
-NewSymbol ← {shows⇐𝕩}
+NewLabel  ← {shows⇐"l"∾⍕𝕩 ⋄ Matches⇐≡}
+NewSymbol ← {shows⇐𝕩      ⋄ Matches⇐≡}
 
 ⟨IsFun,Emit⟩ ← functions ← {
   IsFun ⇐ {new=𝕩.class}
   current⇐@
   New ← {𝕤
-    class⇐𝕤 ⋄ shows⇐"f"∾⍕id⇐𝕩
+    class⇐𝕤 ⋄ shows⇐"f"∾⍕id⇐𝕩 ⋄ Matches⇐≡
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType←@
     Next⇐{ 𝕩 register.New handle+↩1 }
     NextLabel⇐{𝕤⋄ NewLabel label+↩1 }
@@ -338,7 +341,7 @@ blocks ← {
   IsBlock ⇐ {new=𝕩.class}
   New ⇐ {𝕊 ind‿ptrs‿body‿e:
     class⇐𝕤
-    shows⇐"{block}"
+    shows⇐"{block}" ⋄ Matches⇐≡
     Exec⇐{
       ! ptrs≡○≠1⊑𝕩
       r ← body.Eval be ← ⟨≠ind,𝕩⟩ env.Block e
@@ -361,6 +364,7 @@ builtins ← {
     ⍉> ⟨
       ⟨"call",functions.Call⟩, ⟨"emit",Emit⟩,
       ⟨"return",functions.Return⟩, ⟨"exec",blocks.Exec⟩
+      ⟨"match",Match⟩
       ⟨"vector",types.Vec∘⊑⟩, ⟨"pointer",types.Ptr∘⊑⟩
     ⟩
   ⟩
@@ -489,7 +493,6 @@ nodes ← {
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "lambda"‿visit
     Scope⇐{ Visit o.Scope uPar scopes.New 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value
-      Match←!∘0 # TODO
       next ← ({𝕩.Get@}𝕨)⊣{"No matching generator definition"!0˙}
       Check ← {iPar (≡○≢)_and_(∧´(∧´⊏Match¨1⊸↓)¨∘⊔) 𝕩}
       Check◶Next‿{
