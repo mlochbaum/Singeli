@@ -208,7 +208,7 @@ operator ← {
   Run ⇐ {𝕊⟨op,params⟩: null‿left‿bind⇐op ⋄ R⇐nodes.Run op.R≍○<params˙}
   nil ⇐ New @
 
-  Lookup‿AddOp‿AddPrefix‿AddInfix ⇐ {
+  Lookup‿AddOp ⇐ {
     n←⟨⟩ ⋄ o←⟨⟩
     _get ← {(n⊸⊐⌾<𝕩) =⟜(≠n)◶{𝕨⊑o}‿𝔽 𝕩}
     Lookup ⇐ nil _get
@@ -217,8 +217,6 @@ operator ← {
       p ← Define name
       (type≠'p')◶⟨p.AddNull, p.AddLeft∾⟜type⟩ ⟨value,prec⟩
     }
-    AddPrefix ⇐ {𝕊name‿value‿prec:       AddOp ⟨'p'⟩∾𝕩}
-    AddInfix  ⇐ {𝕊name‿value‿prec‿assoc: AddOp ¯1⌽𝕩}
   }
 }
 
@@ -623,21 +621,20 @@ nodes ← {
   }
 }
 
-operator.AddPrefix¨⟨
-  "-"‿"__neg"‿30
-  "$"‿"__vec"‿50
-  "*"‿"__pnt"‿60
-⟩
-operator.AddInfix¨⟨
-  "<"‿"__lt" ‿20‿'n'
-  ">"‿"__gt" ‿20‿'n'
- "<="‿"__le" ‿20‿'n'
- ">="‿"__ge" ‿20‿'n'
-  "+"‿"__add"‿30‿'l'
-  "-"‿"__sub"‿30‿'l'
-  "*"‿"__mul"‿40‿'l'
-  "/"‿"__div"‿40‿'l'
-⟩
+preamble ← 1↓"
+oper prefix      -  __neg 30
+oper prefix      $  __vec 50
+oper prefix      *  __pnt 60
+
+oper infix none  <  __lt  20
+oper infix none  >  __gt  20
+oper infix none  <= __le  20
+oper infix none  >= __ge  20
+oper infix left  +  __add 30
+oper infix left  -  __sub 30
+oper infix left  *  __mul 40
+oper infix left  /  __div 40
+"
 
 ast ← {
   Show ⇐ {•Out ∾∾⟜lf¨ 𝕩.Disp @}
@@ -651,4 +648,4 @@ ast ← {
     t.Eval program._with baseEnv
   }
 }
-•Out¨ ast.Compile •FChars "tests/bqn_test.singeli"
+•Out¨ ast.Compile preamble ∾ •FChars "tests/bqn_test.singeli"
