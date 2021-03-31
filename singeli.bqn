@@ -366,7 +366,7 @@ builtins ← {
       ⟨"call",functions.Call⟩, ⟨"emit",Emit⟩,
       ⟨"return",functions.Return⟩, ⟨"exec",blocks.Exec⟩
       ⟨"match",Match⟩
-      ⟨"vector",types.Vec∘⊑⟩, ⟨"pointer",types.Ptr∘⊑⟩
+      ⟨"__vec",types.Vec∘⊑⟩, ⟨"__pnt",types.Ptr∘⊑⟩
     ⟩
   ⟩
 }
@@ -607,8 +607,8 @@ nodes ← {
 
 operator.AddPrefix¨⟨
   "-"‿"__neg" ‿30
-  "$"‿"vector"‿50
-  "*"‿"pointer"‿60
+  "$"‿"__vec"‿50
+  "*"‿"__pnt"‿60
 ⟩
 operator.AddInfix¨⟨
   "<"‿"__lt" ‿20‿'n'
