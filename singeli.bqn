@@ -87,7 +87,8 @@ Parse ← {
   Callable ← AddParams∘Expr0
   _exprEnd ← {endTok _𝕣:
     end ← endTok∾sep∾⥊¨",:=)}"
-    c.phrase _node_ (While∘⟨¬Next∘end, AddArgs∘Callable, 0⟩)
+    Call ← { Op←∨´(oc∾"[")=⊏ ⋄ c←¬Next op ⋄ AddArgs⍟c Callable𝕩 }
+    c.phrase _node_ (While∘⟨¬Next∘end, Call, 0⟩)
   }
   Expr ← ⟨⟩_exprEnd
 
