@@ -385,7 +385,8 @@ builtins ← {
     ⍉> ⟨
       ⟨"call",functions.Call⟩, ⟨"emit",functions.Emit⟩,
       ⟨"return",functions.Return⟩, ⟨"exec",blocks.Exec⟩
-      ⟨"match",Match⟩
+      ⟨"match",Match´⟩
+      ⟨"type",TypeOf∘⊑⟩, ⟨"kind",symbols.New Kind∘⊑⟩
       ⟨"__vec",types.Vec∘⊑⟩, ⟨"__pnt",types.Ptr∘⊑⟩
       ⟨"__neg",-⟩
       ⟨"__lt",<´⟩,  ⟨"__gt",>´⟩,  ⟨"__le",≤´⟩,  ⟨"__ge",≥´⟩
