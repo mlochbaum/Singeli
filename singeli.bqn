@@ -349,12 +349,13 @@ functions ← {kname⇐"function"
   Label ⇐ { current.NextLabel 𝕩 }
   Append ← { 𝕨 current.Append 𝕩 }
   Return ⇐ { current.Return 𝕩 }
-  Emit ⇐ { (⊑𝕩) Append "emit" <⊸∾ 1↓𝕩 }
+  Emit ⇐ { (⊑𝕩) Append "emit" <⊸∾ 𝕩 }
   Mut  ⇐ { Append "mut"‿𝕨‿𝕩 ⋄ 𝕨 }
   Call ⇐ {
-    f←⊑𝕩
+    f ← ⊑𝕩
     ! "function"≡Kind f
-    f.rType Append ⟨"call",f.id⟩ ∾ 1↓𝕩
+    t ← f.rType
+    t Append ⟨"call",t,f.id⟩ ∾ 1↓𝕩
   }
   _instr ← { Append 𝕗<⊸∾𝕨≍○<𝕩 }
   SetLabel ⇐ "lbl"_instr
