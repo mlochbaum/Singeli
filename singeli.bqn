@@ -667,4 +667,4 @@ ast ← {
     t.Eval program._with baseEnv
   }
 }
-•Out¨ ast.Compile preamble ∾ •FChars "tests/bqn_test.singeli"
+•Out¨ ast.Compile preamble ∾ ∾ •FChars¨ •args
