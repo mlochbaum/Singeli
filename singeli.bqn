@@ -377,9 +377,9 @@ functions ← {kname⇐"function"
     t ← f.rType
     t Append ⟨"call",t,f.id⟩ ∾ 1↓𝕩
   }
-  _instr ← { Append 𝕗<⊸∾𝕨≍○<𝕩 }
+  _instr ← { Append (𝕨𝔽𝕩)<⊸∾𝕨≍○<𝕩 }
   SetLabel ⇐ "lbl"_instr
-  Goto     ⇐ "goto"_instr
+  Goto     ⇐ "goto"⊘"gotoT"_instr
   GotoF    ⇐ "gotoF"_instr
 }
 
