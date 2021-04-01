@@ -478,7 +478,7 @@ program ← {
   J ← 1↓·∾" "⊸∾¨
   Disp ← J Show¨⌾(1⊸↓)
   DispFunction←{ ∾⟨"beginFn "∾𝕩.Prot@⟩‿(Disp¨ 𝕩.Instrs@)‿⟨"endFn",""⟩ }
-  DispExport←{ "export " ∾ J {𝕩.Prot@}¨⌾(1⊸↓) 𝕩 }
+  DispExport←{ "export " ∾ J {𝕩.Prot@}⌾⊑ ⌽𝕩 }
 }
 
 nodes ← {
