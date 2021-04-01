@@ -313,8 +313,11 @@ registers ← {kname⇐"register"
   Join ⇐ JoinNew⟜{ 𝕩.Get 𝕩 }⍟(Is⊢)
 }
 
-NewLabel  ← { shows⇐"l"∾⍕𝕩 ⋄ Matches⇐≡ }
-symbols ← {kname⇐"symbol"⋄ New⇐{ kind⇐kname ⋄ shows⇐𝕩 ⋄ Matches⇐≡ } }
+NewLabel  ← { shows⇐"l"∾⍕𝕩 }
+symbols ← {kname⇐"symbol"
+  M←(kname≡Kind∘⊢)_and_(≡○Show)
+  New⇐{ kind⇐kname ⋄ shows⇐𝕩 ⋄ Matches⇐M }
+}
 
 functions ← {kname⇐"function"
   current⇐@
