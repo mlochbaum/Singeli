@@ -298,9 +298,23 @@ types ← {kname⇐"type"
   Subtype  ⇐ ≤ _sub
   SSubtype ⇐ < _sub
   MT ⇐ Subtype ∧ Subtype˜
-}
 
-TypeCast ← {!𝕩TypeOf⊸types.Subtype𝕨 ⋄ 𝕩}# TODO
+  Cast ⇐ {
+    Num←{t𝕊n:
+      C←{𝕊q‿l:
+        "Cannot cast float to integer"!IsInt n
+        "Constant doesn't fit"!1=(-⟜(1⊸⊑÷2˙)⍟(q='i')⟨0,2⋆l⟩)⊸⍋⌾<n
+      }⍟('f'≠⊑)
+      ⟨ tPRIM,C, 0!˜"Cannot cast number to "∾Show ⟩ _cases t
+      t constants.New n
+    }
+    Obj←{
+      ! 𝕩 TypeOf⊸MT 𝕨
+      𝕩
+    }
+    𝕨 ⟨⟨tTUP,⊢⟩_cases⊸(𝕊¨)˜, Num˜, Obj˜⟩_tsel˜ 𝕩
+  }
+}
 
 registers ← {kname⇐"register"
   New ⇐ {
@@ -311,6 +325,12 @@ registers ← {kname⇐"register"
   Is ← "register"≡Kind
   JoinNew ← (Is⊣)◶{ 𝕩.SetUsed@ ⋄ 𝕩 }‿{ 𝕨 functions.Mut 𝕩 }
   Join ⇐ JoinNew⟜{ 𝕩.Get 𝕩 }⍟(Is⊢)
+}
+constants ← {kname⇐"constant"
+  New ⇐ {
+    kind⇐kname ⋄ type⇐𝕨 ⋄ value⇐𝕩
+    shows⇐∾"!:"∾⟜Show¨𝕩‿𝕨 ⋄ Matches⇐≡
+  }
 }
 
 NewLabel  ← { shows⇐"l"∾⍕𝕩 }
@@ -331,7 +351,7 @@ functions ← {kname⇐"function"
     Instrs⇐Arr
     Append⇐{ Push𝕩⋄@ ; (1⊸⊑⊣𝕊) ⟨"new",Next𝕨⟩∾symbols.New⌾⊑𝕩 }
     SetRType⇐{ SetRType↩!∘0 ⋄ !IsType rType↩𝕩 }
-    _ret←{ Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, TypeCast⟩ 𝕩⟩ }
+    _ret←{ Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, types.Cast⟩ 𝕩⟩ }
     Return⇐!∘0 _ret ⊑
     Finish⇐{SetRtype TypeOf 𝕩⋄𝕩} _ret
     Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨"f"∾⍕id,Show rType⟩∾(⍕∘≠⊸∾Show¨args)}
@@ -392,6 +412,7 @@ builtins ← {
       ⟨"match",Match´⟩
       ⟨"type",TypeOf∘⊑⟩, ⟨"kind",symbols.New Kind∘⊑⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",⊑´⟩
+      ⟨"cast",types.Cast´⟩
       ⟨"__vec",types.Vec∘⊑⟩, ⟨"__pnt",types.Ptr∘⊑⟩
       ⟨"__neg",-⟩
       ⟨"__lt",<´⟩,  ⟨"__gt",>´⟩,  ⟨"__le",≤´⟩,  ⟨"__ge",≥´⟩
@@ -420,7 +441,7 @@ var ← {
   Fixed⇐{ Get⇐𝕩˙ }
   New⇐{
     v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩v registers.Join 𝕩}
-    SetType⇐{SetType↩!∘0 ⋄ Set↩Set 𝕩⊸TypeCast}
+    SetType⇐{SetType↩!∘0 ⋄ Set↩Set 𝕩⊸types.Cast}
   }
   # Variable that tracks when it's been set, for block exec
   Marked⇐{
