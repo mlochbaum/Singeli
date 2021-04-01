@@ -223,21 +223,28 @@ operator ← {
   }
 }
 
+
+# Runtime
+# Kinds are:
+# - BQN values tuple (list), number, generator (function)
+# - Classes symbols, types, registers, functions, blocks
 _and_ ← { 𝔽◶⟨0,𝔾⟩ }
 IsNum ← 1=•Type
 IsInt ← IsNum _and_ (⌊⊸=)
 IsNat ← IsInt _and_ (0⊸≤)
 IsTup ← 0=•Type
-IsGet ← 3=•Type
-Show  ← {•Type◶⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, !,!,!,!, {𝕩.Shows@}⟩𝕩}
-Match ← {𝕨•Type∘⊣◶⟨∧´𝕊¨, ≡, !,!,!,!, {𝕨𝕨.Matches𝕩}⟩𝕩}
 
-⟨IsType⟩ ← types ← {
-  IsType ⇐ {𝕊v: type=v.class}
-  Type ← {k𝕊d:
-    class⇐𝕤
-    kind‿dat⇐𝕨‿𝕩
-    Shows⇐kind◶⟨
+_tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!⟩)˙)∾↑)𝕗)}
+Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
+Show  ← {⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, {𝕩.Shows@}⟩_tsel 𝕩}
+Match ← {𝕨 ⟨∧´𝕊¨, ≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
+TypeOf← {⟨types.Tup 𝕊¨, {𝕩.Type@}⟩_tsel 𝕩}
+
+types ← {kname⇐"type"
+  New ← {k𝕊d:
+    kind⇐kname
+    typeKind‿dat⇐𝕨‿𝕩
+    Shows⇐typeKind◶⟨
       "void"               # Void:                     void
       ∾⟜⍕´                 # Primitive:   qual‿len     u8
       {∾"["‿𝕨‿"]"‿𝕩}○Show´ # Vector:      count‿t      [4]…
@@ -249,20 +256,21 @@ Match ← {𝕨•Type∘⊣◶⟨∧´𝕊¨, ≡, !,!,!,!, {𝕨𝕨.Matches�
   }
   tVOID‿tPRIM‿tVEC‿tPTR‿tFUN‿tTUP ← ↕6
 
-  primTypes ⇐ (tVOID Type ⟨⟩)∾∾(<(tPRIM Type ≍)¨´)˘ ∘‿2⥊⟨
+  primTypes ⇐ (tVOID New ⟨⟩)∾∾(<(tPRIM New ≍)¨´)˘ ∘‿2⥊⟨
     'u', 2⋆0∾3+↕4  # 1/8/16/32/64
     'i', 2⋆  3+↕4  #   8/16/32/64
     'f', 2⋆  5+↕2  #        32/64
   ⟩
 
-  Vec ⇐ {n𝕊t: !IsNat n ⋄ !IsType t ⋄ tVEC Type ⟨n,t⟩}
-  Ptr ⇐ { 𝕊t: !IsType t ⋄ tPTR Type t}
-  Tup ⇐ { 𝕊t: !0=•Type t ⋄ !∧´IsType t ⋄ tTUP Type t}
+  IsType ← kname≡Kind
+  Vec ⇐ {n𝕊t: !IsNat n ⋄ !IsType t ⋄ tVEC New ⟨n,t⟩}
+  Ptr ⇐ { 𝕊t: !IsType t ⋄ tPTR New t}
+  Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´IsType t ⋄ tTUP New t}
 
-  Deref ⇐ { !IsType 𝕩 ⋄ !tPTR=𝕩.kind ⋄ 𝕩.dat }
+  Deref ⇐ { !IsType 𝕩 ⋄ !tPTR=𝕩.typeKind ⋄ 𝕩.dat }
 
-  Kind←{𝕩.kind} ⋄ Dat←{𝕩.dat}
   _cases ← {
+    Kind←{𝕩.typeKind} ⋄ Dat←{𝕩.dat}
     c ← ⌊‿2⥊𝕗
     k ← ⊏˘c
     d ← (1⊏˘c) ∾ ((≠⥊c)↓𝕗)»⟨!∘0⟩
@@ -292,38 +300,40 @@ Match ← {𝕨•Type∘⊣◶⟨∧´𝕊¨, ≡, !,!,!,!, {𝕨𝕨.Matches�
   MT ⇐ Subtype ∧ Subtype˜
 }
 
-⟨IsReg⟩ ← register ← {
-  IsReg ⇐ (6=•Type)◶0‿{new=𝕩.class}
+TypeCast ← {!𝕩TypeOf⊸types.Subtype𝕨 ⋄ 𝕩}# TODO
+
+registers ← {kname⇐"register"
   New ⇐ {
-    class⇐𝕤 ⋄ type⇐𝕨 ⋄ handle⇐𝕩
+    kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
     shows⇐"v"∾⍕𝕩 ⋄ Matches⇐≡
-    Get⇐⊢ ⋄ SetUsed⇐{𝕤⋄Get↩{ Emit type‿𝕩 }}
+    Get⇐⊢ ⋄ SetUsed⇐{𝕤⋄Get↩{ functions.Emit type‿𝕩 }}
   }
-  JoinNew ← (IsReg⊣)◶{ 𝕩.SetUsed@ ⋄ 𝕩 }‿{ 𝕨 functions.Mut 𝕩 }
-  Join ⇐ JoinNew⟜{ 𝕩.Get 𝕩 }⍟(IsReg⊢)
+  Is ← "register"≡Kind
+  JoinNew ← (Is⊣)◶{ 𝕩.SetUsed@ ⋄ 𝕩 }‿{ 𝕨 functions.Mut 𝕩 }
+  Join ⇐ JoinNew⟜{ 𝕩.Get 𝕩 }⍟(Is⊢)
 }
 
-NewLabel  ← {shows⇐"l"∾⍕𝕩 ⋄ Matches⇐≡}
-NewSymbol ← {shows⇐𝕩      ⋄ Matches⇐≡}
+NewLabel  ← { shows⇐"l"∾⍕𝕩 ⋄ Matches⇐≡ }
+symbols ← {kname⇐"symbol"⋄ New⇐{ kind⇐kname ⋄ shows⇐𝕩 ⋄ Matches⇐≡ } }
 
-⟨IsFun,Emit⟩ ← functions ← {
-  IsFun ⇐ {new=𝕩.class}
+functions ← {kname⇐"function"
   current⇐@
   New ← {𝕤
-    class⇐𝕤 ⋄ shows⇐"f"∾⍕id⇐𝕩 ⋄ Matches⇐≡
+    kind⇐kname ⋄ shows⇐"f"∾⍕id⇐𝕩 ⋄ Matches⇐≡
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType←@
-    Next⇐{ 𝕩 register.New handle+↩1 }
+    Next⇐{ 𝕩 registers.New handle+↩1 }
     NextLabel⇐{𝕤⋄ NewLabel label+↩1 }
     NextArg⇐{ args∾↩𝕩 ⋄ Next 𝕩 }
     ⟨Push,Arr⟩←MakeStack@
     Instrs⇐Arr
-    Append⇐{ Push𝕩⋄@ ; (1⊸⊑⊣𝕊) ⟨"new",Next𝕨⟩∾NewSymbol⌾⊑𝕩 }
+    Append⇐{ Push𝕩⋄@ ; (1⊸⊑⊣𝕊) ⟨"new",Next𝕨⟩∾symbols.New⌾⊑𝕩 }
     SetRType⇐{ SetRType↩!∘0 ⋄ !IsType rType↩𝕩 }
     _ret←{ Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, TypeCast⟩ 𝕩⟩ }
     Return⇐!∘0 _ret ⊑
     Finish⇐{SetRtype TypeOf 𝕩⋄𝕩} _ret
     Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨"f"∾⍕id,Show rType⟩∾(⍕∘≠⊸∾Show¨args)}
   }
+  IsType ← "type"≡Kind
   _with ⇐ {
     fs←current
     f←current↩program.AddFunction new
@@ -340,7 +350,7 @@ NewSymbol ← {shows⇐𝕩      ⋄ Matches⇐≡}
   Mut  ⇐ { Append "mut"‿𝕨‿𝕩 ⋄ 𝕨 }
   Call ⇐ {
     f←⊑𝕩
-    ! IsFun f
+    ! "function"≡Kind f
     f.rType Append ⟨"call",f.id⟩ ∾ 1↓𝕩
   }
   _instr ← { Append 𝕗<⊸∾𝕨≍○<𝕩 }
@@ -349,13 +359,9 @@ NewSymbol ← {shows⇐𝕩      ⋄ Matches⇐≡}
   GotoF    ⇐ "gotoF"_instr
 }
 
-TypeOf ← {•Type◶⟨types.Tup 𝕊¨, !∘0, !,!,!,!, {𝕩.Type@}⟩𝕩}
-TypeCast ← {!𝕩TypeOf⊸types.Subtype𝕨 ⋄ 𝕩}# TODO
-
-blocks ← {
-  IsBlock ⇐ {new=𝕩.class}
+blocks ← {kname⇐"block"
   New ⇐ {𝕊 ind‿ptrs‿body‿e:
-    class⇐𝕤
+    kind⇐kname
     shows⇐"{block}" ⋄ Matches⇐≡
     Exec⇐{
       ! ptrs≡○≠1⊑𝕩
@@ -365,19 +371,19 @@ blocks ← {
     }
   }
   Exec ⇐ {𝕊 ind‿vars‿block:
-    ! IsBlock block
+    ! "block"≡Kind block
     block.Exec ind‿vars
   }
 }
-Load ← {  𝕊 ptr‿i: Emit ⟨types.Deref TypeOf ptr, NewSymbol "load", ptr, i⟩ }
-Store← {v 𝕊 ptr‿i: Emit ⟨types.Deref TypeOf ptr, NewSymbol "store", ptr, i, v⟩ }
+Load ← {  𝕊 ptr‿i: functions.Emit ⟨types.Deref TypeOf ptr, symbols.New "load", ptr, i⟩ }
+Store← {v 𝕊 ptr‿i: functions.Emit ⟨types.Deref TypeOf ptr, symbols.New "store", ptr, i, v⟩ }
 
 
 builtins ← {
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
     ⍉> ⟨
-      ⟨"call",functions.Call⟩, ⟨"emit",Emit⟩,
+      ⟨"call",functions.Call⟩, ⟨"emit",functions.Emit⟩,
       ⟨"return",functions.Return⟩, ⟨"exec",blocks.Exec⟩
       ⟨"match",Match⟩
       ⟨"__vec",types.Vec∘⊑⟩, ⟨"__pnt",types.Ptr∘⊑⟩
@@ -407,7 +413,7 @@ var ← {
   SetType⇐{𝕨.SetType𝕩}
   Fixed⇐{ Get⇐𝕩˙ }
   New⇐{
-    v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩v register.Join 𝕩}
+    v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩v registers.Join 𝕩}
     SetType⇐{SetType↩!∘0 ⋄ Set↩Set 𝕩⊸TypeCast}
   }
   # Variable that tracks when it's been set, for block exec
@@ -481,7 +487,7 @@ nodes ← {
     Disp⇐{𝕤⋄⟨name⟩}
   }
   Word ⇐ (∧´∊⟜("."∾dig))◶⟨Ident, Value⟜•BQN⟩
-  Symbol ⇐ Value⟜(NewSymbol 1↓¯1↓⊢)
+  Symbol ⇐ Value⟜(symbols.New 1↓¯1↓⊢)
   Run ⇐ {
     ⟨caller,params⟩←𝕩
     Visit←{⟨𝕏caller,𝕏¨params⟩}
@@ -565,7 +571,7 @@ nodes ← {
   }
   OpDef ⇐ {
     ⟨type,op,fn,prec⟩←𝕩
-    !"value"≡prec.node ⋄ !1=•Type prec↩prec.Eval@
+    !"value"≡prec.node ⋄ !IsNum prec↩prec.Eval@
     Visit←{𝕤⋄⟨type,op,fn,⍕prec⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "opdef"‿visit
     Oper⇐{𝕤⋄ operator.Add type‿op‿fn‿prec}
