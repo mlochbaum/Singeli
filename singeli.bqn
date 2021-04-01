@@ -474,9 +474,10 @@ program ← {
     AddFunction↩Export↩!∘0
     ∾ ⟨∾DispFunction¨fns, DispExport¨exp⟩
   }
-  Disp ← (1↓·∾" "⊸∾¨) Show¨⌾(1⊸↓)
+  J ← 1↓·∾" "⊸∾¨
+  Disp ← J Show¨⌾(1⊸↓)
   DispFunction←{ ∾⟨"beginFn "∾𝕩.Prot@⟩‿(Disp¨ 𝕩.Instrs@)‿⟨"endFn",""⟩ }
-  DispExport←{ "export " ∾ Disp 𝕩 }
+  DispExport←{ "export " ∾ J {𝕩.Prot@}¨⌾(1⊸↓) 𝕩 }
 }
 
 nodes ← {
