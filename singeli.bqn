@@ -297,9 +297,9 @@ Match ← {𝕨•Type∘⊣◶⟨∧´𝕊¨, ≡, !,!,!,!, {𝕨𝕨.Matches�
   New ⇐ {
     class⇐𝕤 ⋄ type⇐𝕨 ⋄ handle⇐𝕩
     shows⇐"v"∾⍕𝕩 ⋄ Matches⇐≡
-    Get⇐⊢ ⋄ SetUsed⇐{𝕤⋄Get↩{𝕤⋄type New functions.NextHandle@}}
+    Get⇐⊢ ⋄ SetUsed⇐{𝕤⋄Get↩{ Emit type‿𝕩 }}
   }
-  JoinNew ← { 𝕨.SetUsed@ ⋄ 𝕨 functions.Mut 𝕩 }⍟(IsReg⊣)
+  JoinNew ← (IsReg⊣)◶{ 𝕩.SetUsed@ ⋄ 𝕩 }‿{ 𝕨 functions.Mut 𝕩 }
   Join ⇐ JoinNew⟜{ 𝕩.Get 𝕩 }⍟(IsReg⊢)
 }
 
