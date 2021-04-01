@@ -265,7 +265,7 @@ types ← {kname⇐"type"
   IsType ← kname≡Kind
   Vec ⇐ {n𝕊t: !IsNat n ⋄ !IsType t ⋄ tVEC New ⟨n,t⟩}
   Ptr ⇐ { 𝕊t: !IsType t ⋄ tPTR New t}
-  Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´IsType t ⋄ tTUP New t}
+  Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´IsType¨ t ⋄ tTUP New t}
 
   Deref ⇐ { !IsType 𝕩 ⋄ !tPTR=𝕩.typeKind ⋄ 𝕩.dat }
 
@@ -387,6 +387,7 @@ builtins ← {
       ⟨"return",functions.Return⟩, ⟨"exec",blocks.Exec⟩
       ⟨"match",Match´⟩
       ⟨"type",TypeOf∘⊑⟩, ⟨"kind",symbols.New Kind∘⊑⟩
+      ⟨"tup",⊢⟩, ⟨"tupsel",⊑´⟩
       ⟨"__vec",types.Vec∘⊑⟩, ⟨"__pnt",types.Ptr∘⊑⟩
       ⟨"__neg",-⟩
       ⟨"__lt",<´⟩,  ⟨"__gt",>´⟩,  ⟨"__le",≤´⟩,  ⟨"__ge",≥´⟩
