@@ -320,7 +320,7 @@ registers ← {kname⇐"register"
   New ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
     shows⇐"v"∾⍕𝕩 ⋄ Matches⇐≡
-    Get⇐⊢ ⋄ SetUsed⇐{𝕤⋄Get↩{ functions.Emit type‿𝕩 }}
+    Get⇐⊢ ⋄ SetUsed⇐{𝕤⋄Get↩{ functions.Copy type‿𝕩 }}
   }
   Is ← "register"≡Kind
   JoinNew ← (Is⊣)◶{ 𝕩.SetUsed@ ⋄ 𝕩 }‿{ 𝕨 functions.Mut 𝕩 }
@@ -370,6 +370,7 @@ functions ← {kname⇐"function"
   Append ← { 𝕨 current.Append 𝕩 }
   Return ⇐ { current.Return 𝕩 }
   Emit ⇐ { (⊑𝕩) Append "emit" <⊸∾ 𝕩 }
+  Copy ⇐ { (⊑𝕩) Append "val" <⊸∾ 𝕩 }
   Mut  ⇐ { Append "mut"‿𝕨‿𝕩 ⋄ 𝕨 }
   Call ⇐ {
     f ← ⊑𝕩
