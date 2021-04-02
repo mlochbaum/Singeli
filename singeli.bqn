@@ -320,11 +320,8 @@ registers ← {kname⇐"register"
   New ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
     shows⇐"v"∾⍕𝕩 ⋄ Matches⇐≡
-    Get⇐⊢ ⋄ SetUsed⇐{𝕤⋄Get↩{ functions.Copy type‿𝕩 }}
+    used⇐0 ⋄ SetUsed⇐{𝕤⋄used↩1}
   }
-  Is ← "register"≡Kind
-  JoinNew ← (Is⊣)◶{ 𝕩.SetUsed@ ⋄ 𝕩 }‿{ 𝕨 functions.Mut 𝕩 }
-  Join ⇐ JoinNew⟜{ 𝕩.Get 𝕩 }⍟(Is⊢)
 }
 constants ← {kname⇐"constant"
   New ⇐ {
@@ -441,8 +438,12 @@ var ← {
   SetType⇐{𝕨.SetType𝕩}
   Fixed⇐{ Get⇐𝕩˙ }
   New⇐{
-    v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩v registers.Join 𝕩}
-    SetType⇐{SetType↩!∘0 ⋄ Set↩Set 𝕩⊸types.Cast}
+    v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩𝕩}
+    SetType⇐{SetType↩!∘0
+      C ← functions.Copy 𝕩≍○<⊢
+      G ← ("register"≡Kind∘⊢)◶⟨ C , {𝕩.SetUsed@⋄𝕩} C⍟{𝕩.used} ⟩
+      Set↩Set ·G 𝕩⊸types.Cast
+    }
   }
   # Variable that tracks when it's been set, for block exec
   Marked⇐{
