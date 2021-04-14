@@ -83,13 +83,13 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
   AddParams ← {𝕊∘(c.run  _node_ (⊢≍○<"{"‿"}"_args))⍟(Next"{") 𝕩}
   AddArgs   ← {  (c.call _node_ (⊢≍○<"("‿")"_args))⍟(Next"(") 𝕩}
   Expr0 ← {𝕤
-    Vec ← c.run _node_ (⟨c.Word"vector"⟩ ∾ "["‿Expr‿"]"‿Expr0 _seq)
+    Vec ← c.run _node_ ((c.Word"__vec") ≍○< "["‿Expr‿"]"‿Expr0 _seq)
     Par ← ⊑ "("‿Expr‿")" _seq
     (⊑"[('"⊐⊏)◶Vec‿Par‿Symbol‿Word Peek@
   }
   Callable ← AddParams∘Expr0
   _exprEnd ← {endTok _𝕣:
-    end ← endTok∾sep∾⥊¨",:=)}"
+    end ← endTok∾sep∾⥊¨",:=)}]"
     Call ← { Op←∨´(oc∾"[")=⊏ ⋄ c←¬Next op ⋄ AddArgs⍟c Callable𝕩 }
     c.phrase _node_ (While∘⟨¬Next∘end, Call, 0⟩)
   }
@@ -412,7 +412,7 @@ builtins ← {
       ⟨"type",TypeOf∘⊑⟩, ⟨"kind",symbols.New Kind∘⊑⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",⊑´⟩
       ⟨"cast",types.Cast´⟩
-      ⟨"__vec",types.Vec∘⊑⟩, ⟨"__pnt",types.Ptr∘⊑⟩
+      ⟨"__vec",types.Vec´⟩, ⟨"__pnt",types.Ptr∘⊑⟩
       ⟨"__neg",-⟩
       ⟨"__lt",<´⟩,  ⟨"__gt",>´⟩,  ⟨"__le",≤´⟩,  ⟨"__ge",≥´⟩
       ⟨"__add",+´⟩, ⟨"__sub",-´⟩, ⟨"__mul",×´⟩, ⟨"__div",÷´⟩
