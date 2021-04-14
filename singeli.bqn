@@ -148,7 +148,7 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
     }
     Get "{"
     a ← While ⟨Try∘",", Param, 1⟩
-    c ← While ⟨Try∘"&", Expr, 0⟩
+    c ← While ⟨Try∘"&", ⟨"&"⟩_exprEnd, 0⟩
     Get "}"
     a‿c
   }
