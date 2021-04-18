@@ -403,6 +403,11 @@ Store← {v 𝕊 ptr‿i: functions.Emit ⟨types.Deref TypeOf ptr, symbols.New 
 
 
 builtins ← {
+  Kinds ← {
+    E ← "Unhandled type" ! 0˙
+    (e{k‿o←𝕨⋄∧○(k≡⊢)◶⟨𝕏,O˙⟩}´𝕩){o←𝕨𝔽○Kind𝕩⋄𝕨O𝕩}
+  }
+  Ty2 ← {𝕏´}∘Kinds "number"‿"type"≍○<¨≍○<
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
     ⍉> ⟨
@@ -414,8 +419,11 @@ builtins ← {
       ⟨"cast",types.Cast´⟩
       ⟨"__vec",types.Vec´⟩, ⟨"__pnt",types.Ptr∘⊑⟩
       ⟨"__neg",-⟩
-      ⟨"__lt",<´⟩,  ⟨"__gt",>´⟩,  ⟨"__le",≤´⟩,  ⟨"__ge",≥´⟩
       ⟨"__add",+´⟩, ⟨"__sub",-´⟩, ⟨"__mul",×´⟩, ⟨"__div",÷´⟩
+    ⟩
+    >⟨
+      "__lt"‿"__gt"‿"__le"‿"__ge"
+      <‿>‿≤‿≥ Ty2¨ ⥊≍˘⟜({𝕏˜}¨) ⟨types.SSubtype,types.Subtype⟩
     ⟩
   ⟩
 }
