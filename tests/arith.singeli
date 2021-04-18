@@ -1,15 +1,24 @@
-def Size = u64
-def __add{a,b} = emit{type{a}, 'op +', a, b}
-def __add{a,b & match{kind{b},'number'}} = a + cast{type{a},b}
-def __add{a,b & match{kind{a},'number'}} = cast{type{b},a} + b
+oper prefix       ~ __not   50
+oper infix none === match   20
+oper prefix       ? kind    60
+oper infix left   ? haskind 60
+oper prefix       ! type    60
+oper infix right  ! astype  60
+def haskind{t,v} = ?v===t
+def astype{t,v} = cast{type{t},v}
 
-def __sub{a,b} = emit{type{a}, 'op -' , a, b}
-def __mul{a,b} = emit{type{a}, 'op *' , a, b}
-def __div{a,b} = emit{type{a}, 'op /' , a, b}
-def __gt {a,b} = emit{u1,      'op >' , a, b}
-def __ge {a,b} = emit{u1,      'op >=', a, b}
-def __lt {a,b} = emit{u1,      'op <' , a, b}
-def __le {a,b} = emit{u1,      'op <=', a, b}
+def Size = u64
+def __add{a,b} = emit{!a, 'op +', a, b}
+def __add{a,b & 'number'?b} = a + a!b
+def __add{a,b & 'number'?a} = b!a + b
+
+def __sub{a,b} = emit{!a, 'op -' , a, b}
+def __mul{a,b} = emit{!a, 'op *' , a, b}
+def __div{a,b} = emit{!a, 'op /' , a, b}
+def __gt {a,b} = emit{u1, 'op >' , a, b}
+def __ge {a,b} = emit{u1, 'op >=', a, b}
+def __lt {a,b} = emit{u1, 'op <' , a, b}
+def __le {a,b} = emit{u1, 'op <=', a, b}
 
 def for{vars,begin,end,block} = {
   i:Size = begin
