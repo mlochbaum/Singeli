@@ -428,20 +428,6 @@ builtins ← {
   ⟩
 }
 
-scopes ← {
-  null←{Get⇐"Undefined name: "⊸∾!0˙}
-  New⇐{
-    n←𝕨⊣⟨⟩ ⋄ PG←𝕩.Get
-    Add⇐{
-      i←/≡⟜𝕩¨n
-      c ← 𝕨 (≠i)◶{c←≠n⋄n∾↩<𝕩⋄c}‿{("Duplicate definition: "∾𝕩)!𝕨⊣0⋄⊑i} 𝕩
-      c⊑env.Vars
-    }
-    Get⇐{ (n⊸⊐⌾<𝕩) =⟜(≠n)◶{𝕨⊑env.Vars}‿{(PG𝕩)∘env.Parent} 𝕩 }
-    Names⇐{𝕤⋄n}
-  }
-  Init⇐New null˙
-}
 var ← {
   Get⇐{𝕩.Get@}
   SetType⇐{𝕨.SetType𝕩}
@@ -458,6 +444,23 @@ var ← {
   Marked⇐{
     write⇐0 ⋄ ⟨Get⟩⇐v←New 𝕩 ⋄ Set⇐{write↩1⋄v.Set𝕩}
   }
+}
+scopes ← {
+  noLambda ← var.Fixed {"Unhandled case"!0˙}
+  null←{Get⇐"Undefined name: "⊸∾!0˙ ⋄ GetLam⇐noLambda˙}
+  New⇐{
+    n←𝕨⊣⟨⟩ ⋄ Names⇐{𝕤⋄n}
+    Sel ←{𝕩⊑env.Vars}
+    Make←{c←≠n⋄n∾↩<𝕩⋄c}
+    Par ←{𝕏∘env.Parent}
+    _find ← { (n⊸⊐⌾<𝕩) =⟜(≠n)◶𝕗 𝕩 }
+    Get ⇐ ⟨Sel⊣, Par 𝕩.Get∘⊢⟩ _find
+    Add ⇐ Sel {("Duplicate definition: "∾𝕩)!0}‿Make _find
+    Lam ← Par⍟(noLambda⊸≢) 𝕩.GetLam∘⊢
+    AddLam ⇐ ⟨≍○<˜Sel∘⊣, Lam≍○<Sel∘Make⟩ _find
+    GetLam ⇐ ⟨Sel⊣, Lam⟩ _find
+  }
+  Init⇐New null˙
 }
 env ← {
   Vars  ⇐{𝕩.vars}
@@ -604,8 +607,10 @@ nodes ← {
     ⟨name,value⟩←𝕩
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
-    isLambda ← "lambda"≡value.node
-    v0←@ ⋄ v←@ ⋄ Scope⇐{ v0↩𝕩.Get⎊{get⇐@} name ⋄ v ↩ isLambda 𝕩.Add name ⋄ value.Scope 𝕩 }
+    v0←v←@ ⋄ Scope ⇐ {
+      v0‿v ↩ ("lambda"≡value.node)◶⟨ @≍○<𝕩.Add , 𝕩.AddLam ⟩ name
+      value.Scope 𝕩
+    }
     Eval⇐{ u←V𝕩 ⋄ u.Set (V0𝕩) value.Eval 𝕩 }
   }
   OpDef ⇐ {
