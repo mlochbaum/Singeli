@@ -597,8 +597,8 @@ nodes ← {
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
     isLambda ← "lambda"≡value.node
-    v←@ ⋄ Scope⇐{ v ↩ isLambda 𝕩.Add name ⋄ value.Scope 𝕩 }
-    Eval⇐{ u←V𝕩 ⋄ u.Set u value.Eval 𝕩 }
+    v0←@ ⋄ v←@ ⋄ Scope⇐{ v0↩𝕩.Get⎊{get⇐@} name ⋄ v ↩ isLambda 𝕩.Add name ⋄ value.Scope 𝕩 }
+    Eval⇐{ u←V𝕩 ⋄ u.Set (V0𝕩) value.Eval 𝕩 }
   }
   OpDef ⇐ {
     ⟨type,op,fn,prec⟩←𝕩
