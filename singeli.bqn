@@ -20,7 +20,7 @@ Tokenize←{
   k∨↩∨´(»⊸∧k<𝕩⊸∊)¨wc‿oc                     # Group names, numbers, and ops
   ts←n∨¬k∨ign                               # Token start mask
   lc←(1+/𝕩=lf){(⊢≍¨𝕩-⊏⟜(0∾𝕨))𝕨⍋𝕩}/ts        # Line/column numbers
-  ⟨𝕩⊔˜1-˜ign¬⊸×+`ts, lc⟩
+  ⟨𝕩⊔˜1-˜(k<ign)¬⊸×+`ts, lc⟩
 }
 
 MakeStack ← {𝕤
