@@ -143,8 +143,9 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
   Params ← {𝕤
     Param ← {𝕤
       n ← Name@
-      e ← When ⟨Try"==", Expr⟩
-      n‿e
+      e ← When ⟨     Try "==", Expr⟩
+      t ← When ⟨(≠e)◶Try‿0":", Expr⟩
+      n‿e‿t
     }
     Get "{"
     a ← While ⟨Try∘",", Param, 1⟩
@@ -228,7 +229,7 @@ operator ← {
 # Runtime
 # Kinds are:
 # - BQN values tuple (list), number, generator (function)
-# - Classes symbols, types, registers, functions, blocks
+# - Classes symbols, types, registers, constants, functions, blocks
 _and_ ← { 𝔽◶⟨0,𝔾⟩ }
 IsNum ← 1=•Type
 IsInt ← IsNum _and_ (⌊⊸=)
@@ -414,6 +415,7 @@ builtins ← {
       ⟨"call",functions.Call⟩, ⟨"emit",functions.Emit⟩,
       ⟨"return",functions.Return⟩, ⟨"exec",blocks.Exec⟩
       ⟨"match",Match´⟩
+      ⟨"hastype",(("register"⊸≡∨"constant"⊸≡)Kind∘⊑) _and_ ({𝕩.type}⊸Match´)⟩
       ⟨"type",TypeOf∘⊑⟩, ⟨"kind",symbols.New Kind∘⊑⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",⊑´⟩
       ⟨"cast",types.Cast´⟩
@@ -550,10 +552,10 @@ nodes ← {
     }
   }
   PhraseToName ⇐ {!"phrase"≡𝕩.node ⋄ 𝕩.ToName@}
-  ParamEq ← { Run ⟨Ident"match", 𝕨‿𝕩⟩ }
   Lambda ⇐ {
     ⟨⟨params,conds⟩,result⟩←𝕩
-    conds∾˜↩∾<⊸(Ident⊸ParamEq¨)´¨params
+    PC ← {n←⊑𝕩 ⋄ ∾ "match"‿"hastype" {f←𝕨⋄{Run⟨Ident f,⟨Ident n,𝕩⟩⟩}¨𝕩}¨ 1↓𝕩}
+    conds∾˜↩∾PC¨params
     uPar‿iPar←(⍷≍○<⊐)⊑¨params
     Visit←{(iPar⊏uPar)∾⟨𝕏¨conds,𝕏result⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "lambda"‿visit
