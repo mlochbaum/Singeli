@@ -240,6 +240,7 @@ _tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!⟩)˙)∾↑)𝕗)}
 Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
 Show  ← {⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, {𝕩.Shows@}⟩_tsel 𝕩}
 Match ← {𝕨 ⟨∧´𝕊¨, ≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
+IsTyped←("register"⊸≡∨"constant"⊸≡) Kind
 TypeOf← {⟨types.Tup 𝕊¨, {𝕩.Type@}⟩_tsel 𝕩}
 
 types ← {kname⇐"type"
@@ -415,7 +416,7 @@ builtins ← {
       ⟨"call",functions.Call⟩, ⟨"emit",functions.Emit⟩,
       ⟨"return",functions.Return⟩, ⟨"exec",blocks.Exec⟩
       ⟨"match",Match´⟩
-      ⟨"hastype",(("register"⊸≡∨"constant"⊸≡)Kind∘⊑) _and_ ({𝕩.type}⊸Match´)⟩
+      ⟨"hastype",IsTyped∘⊑ _and_ ({𝕩.type}⊸Match´)⟩
       ⟨"type",TypeOf∘⊑⟩, ⟨"kind",symbols.New Kind∘⊑⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",⊑´⟩
       ⟨"cast",types.Cast´⟩
@@ -542,7 +543,7 @@ nodes ← {
   Call ⇐ { Run ⟨Ident"call" , <⊸∾´𝕩⟩ }
   Phrase ⇐ {
     things←𝕩
-    ToName⇐{𝕤⋄ !1=≠things ⋄ n←⊑things ⋄ !"ident"≡n.node ⋄ n.name }
+    ToName⇐{𝕤⋄ (1=≠)◶@‿(("ident"≡{𝕩.node})◶@‿{𝕩.name}⊑) things }
     Visit←{⟨𝕏¨things⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "phrase"‿visit
     Oper⇐{𝕤
@@ -551,22 +552,28 @@ nodes ← {
       operator.nil
     }
   }
-  PhraseToName ⇐ {!"phrase"≡𝕩.node ⋄ 𝕩.ToName@}
+  PhraseTryName ⇐ {"phrase"≡𝕩.node}◶@‿{𝕩.ToName@}
+  PhraseToName ⇐ @ (⊢⊣!∘≢) PhraseTryName
   Lambda ⇐ {
-    ⟨⟨params,conds⟩,result⟩←𝕩
-    PC ← {n←⊑𝕩 ⋄ ∾ "match"‿"hastype" {f←𝕨⋄{Run⟨Ident f,⟨Ident n,𝕩⟩⟩}¨𝕩}¨ 1↓𝕩}
-    conds∾˜↩∾PC¨params
-    uPar‿iPar←(⍷≍○<⊐)⊑¨params
-    Visit←{(iPar⊏uPar)∾⟨𝕏¨conds,𝕏result⟩}
+    ⟨⟨paramsPlus,conds⟩,result⟩←𝕩
+    params‿pmatch‿ptype ← <˘⍉>paramsPlus
+    tname ← (@⊸≢¨⊸/ PhraseTryName¨)¨ ptype
+    uTyp‿iTyp←(⍷∘∾ ≍○< ⊐∘∾⊔·/≠¨)tname
+    _pc ← {n←𝕨⋄f←𝕗 ⋄ {Run⟨Ident f,⟨Ident n,𝕩⟩⟩}¨𝕩}
+    conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "match"_pc¨ pmatch)
+    uPar‿iPar←(⍷≍○<⊐)params
+    Visit←{((iPar⊏uPar)∾⟜(∾":"⊸∾¨)¨tname)∾⟨𝕏¨conds,𝕏result⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "lambda"‿visit
-    Scope⇐{ Visit o.Scope uPar scopes.New 𝕩 }
+    Scope⇐{ Visit o.Scope (uPar∾uTyp) scopes.New 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value
       next ← ({𝕩.Get@}𝕨)⊣{"No matching generator definition"!0˙}
-      Check ← {iPar (≡○≢)_and_(∧´(∧´⊏Match¨1⊸↓)¨∘⊔) 𝕩}
-      Check◶Next‿{
+      AllEq ← ∧´⊏Match¨1⊸↓
+      Check ← {iPar (≡○≢)_and_(∧´AllEq¨∘⊔) 𝕩}
+      CT ← {∧´((∧´IsTyped¨)_and_(AllEq{𝕩.type}¨)⊏⟜𝕩)¨iTyp}
+      Check _and_ CT◶Next‿{
         F←Next 𝕩˙
         try ← result.eval{𝕨.Eval◶F‿𝕏}´conds
-        Try (iPar∊⊸/𝕩) env.Fixed e
+        Try ((iPar∊⊸/𝕩)∾{𝕩.type}¨iTyp⊑¨⊸⊏𝕩) env.Fixed e
       }
     }
   }
