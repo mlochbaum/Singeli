@@ -554,10 +554,11 @@ nodes ← {
   }
   PhraseTryName ⇐ {"phrase"≡𝕩.node}◶@‿{𝕩.ToName@}
   PhraseToName ⇐ @ (⊢⊣!∘≢) PhraseTryName
+  notTypeVar ← types.primTypes≠⊸↑builtins.names
   Lambda ⇐ {
     ⟨⟨paramsPlus,conds⟩,result⟩←𝕩
     params‿pmatch‿ptype ← <˘⍉>paramsPlus
-    tname ← (@⊸≢¨⊸/ PhraseTryName¨)¨ ptype
+    tname ← (¬∘∊⟜(⟨@⟩∾notTypeVar)⊸/ PhraseTryName¨)¨ ptype
     uTyp‿iTyp←(⍷∘∾ ≍○< ⊐∘∾⊔·/≠¨)tname
     _pc ← {n←𝕨⋄f←𝕗 ⋄ {Run⟨Ident f,⟨Ident n,𝕩⟩⟩}¨𝕩}
     conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "match"_pc¨ pmatch)
