@@ -6,14 +6,25 @@ oper infix right  ! astype  60
 def haskind{t,v} = ?v===t
 def astype{t,v} = cast{type{t},v}
 
-def __add{a:T,b:T} = emit{T, 'op +', a, b}
-def __add{a:T,b & 'number'?b} = a + a!b
-def __add{a,b:T & 'number'?a} = b!a + b
+def promote{fn} = {
+  def fn{a:T,b & 'number'?b} = fn{a , a!b}
+  def fn{a,b:T & 'number'?a} = fn{b!a , b}
+}
+def arith{fn, op} = {
+  def fn{a:T,b:T} = emit{T, op, a, b}
+  promote{fn}
+}
+def compare{fn, op} = {
+  def fn{a:T,b:T} = emit{u1, op, a, b}
+  promote{fn}
+}
 
-def __sub{a,b} = emit{!a, 'op -' , a, b}
-def __mul{a,b} = emit{!a, 'op *' , a, b}
-def __div{a,b} = emit{!a, 'op /' , a, b}
-def __gt {a,b} = emit{u1, 'op >' , a, b}
-def __ge {a,b} = emit{u1, 'op >=', a, b}
-def __lt {a,b} = emit{u1, 'op <' , a, b}
-def __le {a,b} = emit{u1, 'op <=', a, b}
+def __add = arith{__add, 'op +'}
+def __sub = arith{__sub, 'op -'}
+def __mul = arith{__mul, 'op *'}
+def __div = arith{__div, 'op /'}
+
+def __gt  = compare{__gt, 'op >' }
+def __ge  = compare{__ge, 'op >='}
+def __lt  = compare{__lt, 'op <' }
+def __le  = compare{__le, 'op <='}
