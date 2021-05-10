@@ -1,14 +1,6 @@
-oper infix none === match   20
-oper prefix       ? kind    60
-oper infix left   ? haskind 60
-oper prefix       ! type    60
-oper infix right  ! astype  60
-def haskind{t,v} = ?v===t
-def astype{t,v} = cast{type{t},v}
-
 def promote{fn} = {
-  def fn{a:T,b & 'number'?b} = fn{a , a!b}
-  def fn{a,b:T & 'number'?a} = fn{b!a , b}
+  def fn{a:T,b & match{'number',kind{b}}} = fn{a , cast{T,b}}
+  def fn{a,b:T & match{'number',kind{a}}} = fn{cast{T,a} , b}
 }
 def arith{fn, op} = {
   def fn{a:T,b:T} = emit{T, op, a, b}
