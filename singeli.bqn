@@ -141,15 +141,16 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
   Result ← c.body _node_ (Next∘"{"◶⟨Expr‿sep _seq !, Body⟩)
 
   Params ← {𝕤
+    ExprA ← ⟨"&"⟩_exprEnd
     Param ← {𝕤
       n ← Name@
-      e ← When ⟨     Try "==", Expr⟩
-      t ← When ⟨(≠e)◶Try‿0":", Expr⟩
+      e ← When ⟨     Try "==", ExprA⟩
+      t ← When ⟨(≠e)◶Try‿0":", ExprA⟩
       n‿e‿t
     }
     Get "{"
     a ← While ⟨Try∘",", Param, 1⟩
-    c ← While ⟨Try∘"&", ⟨"&"⟩_exprEnd, 0⟩
+    c ← While ⟨Try∘"&", ExprA, 0⟩
     Get "}"
     a‿c
   }
