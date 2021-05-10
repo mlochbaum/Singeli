@@ -1,4 +1,3 @@
-oper prefix       ~ __not   50
 oper infix none === match   20
 oper prefix       ? kind    60
 oper infix left   ? haskind 60
@@ -6,11 +5,10 @@ oper prefix       ! type    60
 oper infix right  ! astype  60
 def haskind{t,v} = ?v===t
 def astype{t,v} = cast{type{t},v}
-def __not{n} = 1-n
 
 def __add{a:T,b:T} = emit{T, 'op +', a, b}
-def __add{a,b & ~'number'?a & 'number'?b} = a + a!b
-def __add{a,b & 'number'?a & ~'number'?b} = b!a + b
+def __add{a:T,b & 'number'?b} = a + a!b
+def __add{a,b:T & 'number'?a} = b!a + b
 
 def __sub{a,b} = emit{!a, 'op -' , a, b}
 def __mul{a,b} = emit{!a, 'op *' , a, b}
