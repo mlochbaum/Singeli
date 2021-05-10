@@ -1,3 +1,5 @@
+include 'c_op'
+
 oper prefix       ~ __not   50
 oper infix none === match   20
 oper prefix       ? kind    60

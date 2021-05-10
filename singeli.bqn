@@ -178,8 +178,12 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
   }
   OpDef ← c.opDef _node_ ("oper"‿OpType‿Oper‿Name‿Word _seq)
 
+  Include ← c.include _node_ ("include"‿Symbol _seq)
+
   Program ← c.body _node_ {𝕤
-    Line ← "def"‿"oper"⊸⊐⌾<◶⟨Define, OpDef, ('''=⊑)◶DefFun‿Export⟩∘Peek
+    Line ← "def"‿"oper"‿"include"⊸⊐⌾<◶⟨
+      Define, OpDef, Include, ('''=⊑)◶DefFun‿Export
+    ⟩∘Peek
     While ⟨Rem, Line∘Seps, 0⟩
   }
 
@@ -636,6 +640,10 @@ nodes ← {
     ⟨node,Dump,Disp,Oper,Scope⟩⇐d←Defaults "export"‿visit
     Eval ⇐ { program.Export d.Eval 𝕩 }
   }
+  Include ⇐ {
+    file ← Show (⊑𝕩).Eval@
+    ast.Build •FChars ∾"include/"‿file‿".singeli"
+  }
   Body ⇐ {
     statements←𝕩
     Visit←{⟨𝕏¨statements⟩}
@@ -689,21 +697,6 @@ nodes ← {
   }
 }
 
-preamble ← 1↓"
-oper prefix      -  __neg 30
-oper prefix      $  __vec 50
-oper prefix      *  __pnt 60
-
-oper infix none  <  __lt  20
-oper infix none  >  __gt  20
-oper infix none  <= __le  20
-oper infix none  >= __ge  20
-oper infix left  +  __add 30
-oper infix left  -  __sub 30
-oper infix left  *  __mul 40
-oper infix left  /  __div 40
-"
-
 ast ← {
   Show ⇐ {•Out ∾∾⟜lf¨ 𝕩.Disp @}
   baseScope ← builtins.names scopes.New scopes.Init@
@@ -716,4 +709,4 @@ ast ← {
     t.Eval program._with baseEnv
   }
 }
-•Out¨ ast.Compile preamble ∾ ∾ •FChars¨ •args
+•Out¨ ast.Compile ∾ •FChars¨ •args
