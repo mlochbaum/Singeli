@@ -1,27 +1,7 @@
-include 'c_op'
-
-oper prefix       ~ __not   50
-oper infix none === match   20
-oper prefix       ? kind    60
-oper infix left   ? haskind 60
-oper prefix       ! type    60
-oper infix right  ! astype  60
-def haskind{t,v} = ?v===t
-def astype{t,v} = cast{type{t},v}
-def __not{n} = 1-n
+include 'skin/c'
+include 'arch/c'
 
 def Size = u64
-def __add{a:T,b:T} = emit{T, 'op +', a, b}
-def __add{a,b & ~'number'?a & 'number'?b} = a + a!b
-def __add{a,b & 'number'?a & ~'number'?b} = b!a + b
-
-def __sub{a,b} = emit{!a, 'op -' , a, b}
-def __mul{a,b} = emit{!a, 'op *' , a, b}
-def __div{a,b} = emit{!a, 'op /' , a, b}
-def __gt {a,b} = emit{u1, 'op >' , a, b}
-def __ge {a,b} = emit{u1, 'op >=', a, b}
-def __lt {a,b} = emit{u1, 'op <' , a, b}
-def __le {a,b} = emit{u1, 'op <=', a, b}
 
 def for{vars,begin,end,block} = {
   i:Size = begin
