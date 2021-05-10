@@ -642,7 +642,7 @@ nodes ← {
   }
   Include ⇐ {
     file ← Show (⊑𝕩).Eval@
-    ast.Build •FChars ∾"include/"‿file‿".singeli"
+    {𝕩.NoScope@⋄𝕩} ast.Build •FChars ∾"include/"‿file‿".singeli"
   }
   Body ⇐ {
     statements←𝕩
@@ -650,6 +650,8 @@ nodes ← {
     ⟨node,Dump,Disp,Oper⟩⇐d←Defaults "body"‿visit
     sc←@ ⋄ Scope⇐{ Visit o.Scope sc ↩ scopes.New 𝕩 }
     Eval⇐{ ¯1⊑⊑d.Eval (sc.Names@) env.New 𝕩 }
+    # Hack for import statements
+    NoScope⇐{𝕤⋄ Scope↩d.Scope ⋄ Eval↩¯1⊑·⊑d.Eval }
   }
   If ⇐ {
     ⟨cond,then,else⟩←𝕩
