@@ -2,11 +2,25 @@ oper prefix      -  __neg 30
 oper prefix      $  __vec 50
 oper prefix      *  __pnt 60
 
+oper infix none  == __eq  20
+oper infix none  != __ne  20
 oper infix none  <  __lt  20
 oper infix none  >  __gt  20
 oper infix none  <= __le  20
 oper infix none  >= __ge  20
+
 oper infix left  +  __add 30
 oper infix left  -  __sub 30
 oper infix left  *  __mul 40
 oper infix left  /  __div 40
+oper infix left  %  __mod 40
+
+# Nobody likes low-precedence & |
+oper infix none  &  __and 35
+oper infix none  |  __or  35
+oper infix none  ^  __or  35
+oper prefix      ~  __not 50
+
+# Shifts are like multiply/divide and should have the same precedence
+oper infix left <<  __shl 40
+oper infix left >>  __shl 40
