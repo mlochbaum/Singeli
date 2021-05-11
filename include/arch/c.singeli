@@ -11,6 +11,8 @@ def compare{fn, op} = {
   promote{fn}
 }
 
+def __pnt{a:T & match{'pointer',typekind{T}}} = load{a,0}
+
 def __add = arith{__add, 'op +'}
 def __sub = arith{__sub, 'op -'}
 def __mul = arith{__mul, 'op *'}

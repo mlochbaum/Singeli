@@ -263,6 +263,10 @@ types ← {kname⇐"type"
     Matches⇐{𝕨MT𝕩}
   }
   tVOID‿tPRIM‿tVEC‿tPTR‿tFUN‿tTUP ← ↕6
+  TypeKind⇐{
+    !IsType 𝕩
+    𝕩.typeKind⊑"void"‿"primitive"‿"vector"‿"pointer"‿"function"‿"tuple"
+  }
 
   primTypes ⇐ (tVOID New ⟨⟩)∾∾(<(tPRIM New ≍)¨´)˘ ∘‿2⥊⟨
     'u', 2⋆0∾3+↕4  # 1/8/16/32/64
@@ -423,6 +427,8 @@ builtins ← {
       ⟨"match",Match´⟩
       ⟨"hastype",IsTyped∘⊑ _and_ ({𝕩.type}⊸Match´)⟩
       ⟨"type",TypeOf∘⊑⟩, ⟨"kind",symbols.New Kind∘⊑⟩
+      ⟨"typekind",symbols.New types.TypeKind∘⊑⟩
+      ⟨"load",Load⟩, ⟨"store",¯1⊸(⊑Store↓)⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",⊑´⟩
       ⟨"cast",types.Cast´⟩
       ⟨"__vec",types.Vec´⟩, ⟨"__pnt",types.Ptr∘⊑⟩
