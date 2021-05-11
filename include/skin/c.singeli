@@ -18,7 +18,7 @@ oper infix left  %  __mod 40
 # Nobody likes low-precedence & |
 oper infix none  &  __and 35
 oper infix none  |  __or  35
-oper infix none  ^  __or  35
+oper infix none  ^  __xor 35
 oper prefix      ~  __not 50
 
 # Shifts are like multiply/divide and should have the same precedence
