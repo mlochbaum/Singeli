@@ -53,7 +53,7 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
 
   Err ← {
     l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.define,"define",c.export,"export",c.for,"for",c.function,"function",c.if,"if",c.lambda,"lambda",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.while,"while",c.word,"word"⟩
-    •←(⟨⊏⟜lc,L⟩⊑⊸{𝕎𝕩}˘⊢)⌾⍉>DumpStack@
+    •Show (⟨⊏⟜lc,L⟩⊑⊸{𝕎𝕩}˘⊢)⌾⍉>DumpStack@
     𝕨!𝕩
   }
   MakeTokStream ← {
@@ -109,7 +109,7 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
   "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Statement‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
   "@":      For@ ;
   "{":      c.body   _node_ Body@ ;
-  𝕩:
+  𝕊𝕩:
     n ← Expr@
     d ← Try ":"
     e ← Try "="
@@ -243,7 +243,7 @@ IsTup ← 0=•Type
 
 _tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!⟩)˙)∾↑)𝕗)}
 Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
-Show  ← {⟨"tup{"∾"}"«·∾(","∾𝕊)¨, ⍕, {𝕩.Shows@}⟩_tsel 𝕩}
+Show  ← {⟨"tup{"∾"}"«·∾(","∾𝕊)¨, •Repr, {𝕩.Shows@}⟩_tsel 𝕩}
 Match ← {𝕨 ⟨∧´𝕊¨, ≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
 IsTyped←("register"⊸≡∨"constant"⊸≡) Kind
 TypeOf← {⟨types.Tup 𝕊¨, {𝕩.Type@}⟩_tsel 𝕩}
@@ -254,7 +254,7 @@ types ← {kname⇐"type"
     typeKind‿dat⇐𝕨‿𝕩
     Shows⇐typeKind◶⟨
       "void"               # Void:                     void
-      ∾⟜⍕´                 # Primitive:   qual‿len     u8
+      ∾⟜•Repr´             # Primitive:   qual‿len     u8
       {∾"["‿𝕨‿"]"‿𝕩}○Show´ # Vector:      count‿t      [4]…
       "*"∾Show             # Pointer:     t            *…
       {∾𝕨‿" -> "‿𝕩}○Show´  # Function:    ⟨t, q‿r‿s⟩   (…,…,…) -> …
@@ -331,7 +331,7 @@ types ← {kname⇐"type"
 registers ← {kname⇐"register"
   New ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
-    shows⇐"v"∾⍕𝕩 ⋄ Matches⇐≡
+    shows⇐"v"∾•Repr𝕩 ⋄ Matches⇐≡
     used⇐0 ⋄ SetUsed⇐{𝕤⋄used↩1}
   }
 }
@@ -342,7 +342,7 @@ constants ← {kname⇐"constant"
   }
 }
 
-NewLabel  ← { shows⇐"l"∾⍕𝕩 }
+NewLabel  ← { shows⇐"l"∾•Repr𝕩 }
 symbols ← {kname⇐"symbol"
   M←(kname≡Kind∘⊢)_and_(≡○Show)
   New⇐{ kind⇐kname ⋄ shows⇐𝕩 ⋄ Matches⇐M }
@@ -351,7 +351,7 @@ symbols ← {kname⇐"symbol"
 functions ← {kname⇐"function"
   current⇐@
   New ← {𝕤
-    kind⇐kname ⋄ shows⇐"f"∾⍕id⇐𝕩 ⋄ Matches⇐≡
+    kind⇐kname ⋄ shows⇐"f"∾•Repr id⇐𝕩 ⋄ Matches⇐≡
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType←@
     Next⇐{ 𝕩 registers.New handle+↩1 }
     NextLabel⇐{𝕤⋄ NewLabel label+↩1 }
@@ -363,7 +363,7 @@ functions ← {kname⇐"function"
     _ret←{ Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, types.Cast⟩ 𝕩⟩ }
     Return⇐!∘0 _ret ⊑
     Finish⇐{SetRtype TypeOf 𝕩⋄𝕩} _ret
-    Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨"f"∾⍕id,Show rType⟩∾(⍕∘≠⊸∾Show¨args)}
+    Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨"f"∾•Repr id,Show rType⟩∾(•Repr∘≠⊸∾Show¨args)}
   }
   IsType ← "type"≡Kind
   _with ⇐ {
@@ -574,7 +574,7 @@ nodes ← {
     _pc ← {n←𝕨⋄f←𝕗 ⋄ {Run⟨Ident f,⟨Ident n,𝕩⟩⟩}¨𝕩}
     conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "match"_pc¨ pmatch)
     uPar‿iPar←(⍷≍○<⊐)params
-    Visit←{((iPar⊏uPar)∾⟜(∾":"⊸∾¨)¨tname)∾⟨𝕏¨conds,𝕏result⟩}
+    Visit←{((iPar⊏uPar)∾⟜(∾""<⊸∾":"⊸∾¨)¨tname)∾⟨𝕏¨conds,𝕏result⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "lambda"‿visit
     Scope⇐{ Visit o.Scope (uPar∾uTyp) scopes.New 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value
@@ -637,7 +637,7 @@ nodes ← {
   OpDef ⇐ {
     ⟨type,op,fn,prec⟩←𝕩
     !"value"≡prec.node ⋄ !IsNum prec↩prec.Eval@
-    Visit←{𝕤⋄⟨type,op,fn,⍕prec⟩}
+    Visit←{𝕤⋄⟨type,op,fn,•Repr prec⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "opdef"‿visit
     Oper⇐{𝕤⋄ operator.Add type‿op‿fn‿prec}
   }
