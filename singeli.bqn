@@ -109,7 +109,7 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
   "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Statement‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
   "@":      For@ ;
   "{":      c.body   _node_ Body@ ;
-  𝕊𝕩:
+  𝕩:
     n ← Expr@
     d ← Try ":"
     e ← Try "="
