@@ -434,6 +434,7 @@ builtins ← {
       ⟨"__vec",types.Vec´⟩, ⟨"__pnt",types.Ptr∘⊑⟩
       ⟨"__neg",-⟩
       ⟨"__add",+´⟩, ⟨"__sub",-´⟩, ⟨"__mul",×´⟩, ⟨"__div",÷´⟩
+      ⟨"__and",∧´⟩, ⟨"__or" ,∨´⟩, ⟨"__xor",≠´⟩, ⟨"__not",¬∘⊑⟩
     ⟩
     >⟨
       "__lt"‿"__gt"‿"__le"‿"__ge"
