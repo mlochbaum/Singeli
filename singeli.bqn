@@ -630,8 +630,8 @@ nodes ← {
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
     v0←v←@ ⋄ Scope ⇐ {
-      v0‿v ↩ ("lambda"≡value.node)◶⟨ @≍○<𝕩.Add , 𝕩.AddLam ⟩ name
       value.Scope 𝕩
+      v0‿v ↩ ("lambda"≡value.node)◶⟨ @≍○<𝕩.Add , 𝕩.AddLam ⟩ name
     }
     Eval⇐{ u←V𝕩 ⋄ u.Set (V0𝕩) value.Eval 𝕩 }
   }
