@@ -57,8 +57,7 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
     𝕨!𝕩
   }
   MakeTokStream ← {
-    Pos‿Rem‿Peek⇐s←MakeStream 𝕩
-    Inc ← s.Next
+    ⟨Inc⇐Next⟩←Pos‿Rem‿Peek⇐MakeStream 𝕩
     Next ⇐ Peek⊸Is
     Get  ⇐ Inc ⊢ Peek⊸(⊣⊣≍○<Err⍟(¬⊢)Is)
     Try  ⇐ 1∘Inc⍟⊢∘Next
@@ -132,7 +131,7 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
     ⟨f,ps,i,fr,to,b⟩
   }
 
-  Seps ← {Try∘sep◶@‿𝕊𝕩}
+  Seps ← {Try∘sep◶@‿𝕊⍟Rem𝕩}
   Body ← {𝕤
     Get "{"
     While ⟨¬Try∘"}"∘Seps, Statement, 0⟩
@@ -185,7 +184,8 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
     Line ← "def"‿"oper"‿"include"⊸⊐⌾<◶⟨
       Define, OpDef, Include, ('''=⊑)◶DefFun‿Export
     ⟩∘Peek
-    While ⟨Rem, Line∘Seps, 0⟩
+    Seps@
+    While ⟨Rem, Seps⊢Line, 0⟩
   }
 
   Program @
