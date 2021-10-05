@@ -23,4 +23,4 @@ oper prefix      ~  __not 50
 
 # Shifts are like multiply/divide and should have the same precedence
 oper infix left <<  __shl 40
-oper infix left >>  __shl 40
+oper infix left >>  __shr 40

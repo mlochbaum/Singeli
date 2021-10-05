@@ -30,4 +30,5 @@ def logic = arith
 def __and = logic{__and, 'op &'}
 def __or  = logic{__or , 'op |'}
 def __xor = logic{__xor, 'op ^'}
-def __not = logic{__not, 'op ~'}
+def logic1 = arith1
+def __not = logic1{__not, '~'}
