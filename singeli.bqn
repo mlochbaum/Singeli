@@ -240,10 +240,11 @@ IsNum ← 1=•Type
 IsInt ← IsNum _and_ (⌊⊸=)
 IsNat ← IsInt _and_ (0⊸≤)
 IsTup ← 0=•Type
+FmtInt ← '-'⍟('¯'⊸=)⌾⊑•Repr
 
 _tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!⟩)˙)∾↑)𝕗)}
 Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
-Show  ← {⟨"tup{"∾"}"«·∾(","∾𝕊)¨, •Repr, {𝕩.Shows@}⟩_tsel 𝕩}
+Show  ← {⟨"tup{"∾"}"«·∾(","∾𝕊)¨, FmtInt, {𝕩.Shows@}⟩_tsel 𝕩}
 Match ← {𝕨 ⟨∧´𝕊¨, ≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
 IsTyped←("register"⊸≡∨"constant"⊸≡) Kind
 TypeOf← {⟨types.Tup 𝕊¨, {𝕩.Type@}⟩_tsel 𝕩}
