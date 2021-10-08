@@ -720,4 +720,5 @@ ast ← {
     t.Eval program._with baseEnv
   }
 }
-•Out¨ ast.Compile ∾ •FChars¨ •args
+
+(∾∾⟜lf¨) ast.Compile

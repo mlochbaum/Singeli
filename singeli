@@ -1,0 +1,39 @@
+#! /usr/bin/env bqn
+
+help_pre ← 1↓"
+Compile Singeli program(s).
+Argument is a list of input files and options. Supported:"
+
+short‿long‿args‿dup‿desc ← <˘⍉> ⟨
+  "h"‿"help"  ‿0‿1‿"Print this message and exit"
+  "o"‿"out"   ‿1‿0‿"Output file (print to stdout by default)"
+# "i"‿"stdin" ‿0‿0‿"Use stdin as input, after any argument files"
+  "t"‿"target"‿1‿0‿"Output type: c (default), ir"
+⟩
+short‿long ∾˜¨⟜<¨↩ "-"‿"--"
+args ∾↩ 0
+
+c ← ≠short
+op ← (short⊸⊐ ⌊ long⊸⊐) •args
+op ⌈↩ c ×¬ <`⊸= op⊏args
+opts ← ((1+c)∾˜f/op) ⊔ ((op=c)(1-˜×⟜(+`))○(∾⟜1)f←¬»op⊏args) ⊔ •args
+"Option can't be duplicated" ! ∧´ (dup∾1) ≥ 1<≠¨opts
+help‿out‿target‿files ← (1⌾(¯1⊸⊑)args) ⊣◶⟨0<≠∘⊢,⊑¨⊢⟩¨ opts
+
+{ help ?
+  opt_help ← ∾¨´ ⟨desc⟩ ∾˜ (1+·⌈´≠¨)⊸(↑¨)¨ short‿long ∾¨¨ ",:"
+  •Out ∾∾⟜(@+10)¨ ⟨help_pre,""⟩ ∾ opt_help
+  •Exit@
+;@}
+
+frontend ← •Import "singeli.bqn"
+backend ← {
+  ⟨"ir"⟩≡target ? ⊢ ;
+  •Import "emit_c.bqn"
+}
+output ← {
+  ≠out ? (⊑out) •file.Chars ⊢ ;
+  •Out
+}
+
+Output Backend Frontend ∾ •file.Chars¨ files

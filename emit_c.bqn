@@ -144,4 +144,4 @@ code‿op ← (⊑¨ ≍○< 1⊸↓¨) ⟨
   "endFn"  ‿¯1‿1‿⟨"}"⟩
 ⟩
 
-•Out Generate •FChars ⊑•args
+Generate
