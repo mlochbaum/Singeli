@@ -33,7 +33,7 @@ backend ← {
 }
 output ← {
   ≠out ? (⊑out) •file.Chars ⊢ ;
-  •Out
+  •Out ¯1⊸↓
 }
 
 Output Backend Frontend ∾ •file.Chars¨ files
