@@ -1,0 +1,5 @@
+beginFn f0 i64 1 i64
+ret v0
+endFn
+
+export f0 i64 1 i64 efn

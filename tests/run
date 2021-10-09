@@ -1,0 +1,23 @@
+#! /usr/bin/env bqn
+
+steps ← •Import¨ "../singeli.bqn"‿"../emit_c.bqn"
+
+n ← ≠types ← "in"‿"ir"‿"c"
+files ← •file.List "."
+type‿name ← types⊸⊐⌾⊑ <˘⍉> (2∾˜·∧`⌾⌽'.'⊸≠)⊸⊔¨ files
+files‿type‿name (⍋name≍˘type)⊸⊏¨↩
+
+Test ← {
+  l ← 1-˜≠ t ← •file.Chars¨ 𝕩
+  m ← (1↓t) ≡ t {𝕎𝕩}´⟜⌽¨○(l⊸↑) (¯1+`n↑/⁼𝕨) ⊔ steps
+  (¬m) / 2↕𝕩
+}
+gr ← ⊐∘⊣⌾((type<n)⊸/)⟜(¯1¨) name
+fail ← ∾ type Test¨○(gr⊸⊔) files
+
+•Out {
+  0=≠fail ? "All passed!"
+;
+  f←(⌈´≠¨)⊸(↑¨)⊸((∾⟜" → "⊸∾)¨)˝ ⍉fail
+  ¯1↓∾∾⟜(@+10)¨ ⟨"Following steps failed:"⟩∾f
+}
