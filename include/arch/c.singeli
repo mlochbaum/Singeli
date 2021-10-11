@@ -39,3 +39,7 @@ def __not{a:u1} = emit{u1, '!', a}
 
 def __shl = logic{__shl, 'op <<'}
 def __shr = logic{__shr, 'op >>'}
+
+def cast_p{T, x} = emit{T, '(void*)', x}
+def cast_i{T, x} = emit{T, '', x}
+def assert{X} = emit{void, 'si_assert', X}
