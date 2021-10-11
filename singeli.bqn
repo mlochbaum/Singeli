@@ -268,6 +268,7 @@ types ← {kname⇐"type"
     !IsType 𝕩
     𝕩.typeKind⊑"void"‿"primitive"‿"vector"‿"pointer"‿"function"‿"tuple"
   }
+  IsVoid ⇐ {tVOID≡𝕩.typeKind}
 
   primTypes ⇐ (tVOID New ⟨⟩)∾∾(<(tPRIM New ≍)¨´)˘ ∘‿2⥊⟨
     'u', 2⋆0∾3+↕4  # 1/8/16/32/64
@@ -361,7 +362,10 @@ functions ← {kname⇐"function"
     Instrs⇐Arr
     Append⇐{ Push𝕩⋄@ ; (1⊸⊑⊣𝕊) ⟨"new",Next𝕨⟩∾symbols.New⌾⊑𝕩 }
     SetRType⇐{ SetRType↩!∘0 ⋄ !IsType rType↩𝕩 }
-    _ret←{ Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, types.Cast⟩ 𝕩⟩ }
+    _ret←{
+      @≢rType? types.IsVoid rType? @ ;
+      Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, types.Cast⟩ 𝕩⟩
+    }
     Return⇐!∘0 _ret ⊑
     Finish⇐{SetRtype TypeOf 𝕩⋄𝕩} _ret
     Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨"f"∾•Repr id,Show rType⟩∾(•Repr∘≠⊸∾Show¨args)}

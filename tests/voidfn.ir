@@ -1,0 +1,5 @@
+beginFn f0 void 1 i64
+new v1 emit i64 thing v0
+endFn
+
+export f0 void 1 i64 efn

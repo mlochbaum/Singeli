@@ -1,0 +1,4 @@
+fn(i:i64) : void = {
+  emit{i64, 'thing', i}
+}
+'efn' = fn
