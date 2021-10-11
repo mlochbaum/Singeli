@@ -22,7 +22,6 @@ prelude ← 1⌽"
 #define si_load(A, B) A[B]
 #define si_store(A, B, C) A[B] = C
 #define si_assert(A) if (!(A)) __builtin_unreachable();
-int main(){}
 "
 
 lf ← @+10
