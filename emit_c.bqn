@@ -4,7 +4,7 @@ arch ← {
     u‿f ← bType = "uf"
     (ptrs/"*") ∾˜ {
       0≤am      ? "Unsupported vector type" ! ∊⟜(2⋆6+↕4)⌾<l←w×am  # 64…512
-                  ∾⟨"__m",•Repr l,f¬⊸/"i"⟩ ;
+                  ∾⟨"__m",•Repr l,{¬f?"i";(64=w)/"d"}⟩ ;
       f         ? "float"‿"double"⊑˜32‿64⊸⊐⌾<w ;
       w=0       ? "void" ;
       u∧w=1     ? "bool" ;
