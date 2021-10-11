@@ -673,7 +673,7 @@ nodes ← {
       then.Eval𝕩
       functions.Goto¨ lt ← functions.Label¨ else
       functions.SetLabel lf
-      { 𝕩.Eval e ⋄ functions.SetLabel lt }¨ else
+      lt { 𝕩.Eval e ⋄ functions.SetLabel 𝕨 }¨ else
     }
   }
   While ⇐ {
