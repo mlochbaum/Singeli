@@ -298,6 +298,7 @@ types ← {kname⇐"type"
   ⟩_cases
 
   VCount ⇐ ⟨ tVEC,⊑, 1 ⟩ _cases
+  VType ⇐ ⟨ tVEC,1⊸⊑ ⟩ _cases
 
   _sub ← {
     L ← ¯1⊸⊑
@@ -436,6 +437,8 @@ builtins ← {
       ⟨"load",Load⟩, ⟨"store",¯1⊸(⊑Store↓)⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",⊑´⟩
       ⟨"cast",types.Cast´⟩
+      ⟨"eltype",types.VType⊑⟩, ⟨"vcount",types.VCount⊑⟩
+      ⟨"width",types.Size⊑⟩
       ⟨"__vec",types.Vec´⟩, ⟨"__pnt",types.Ptr∘⊑⟩
       ⟨"__neg",-⟩
       ⟨"__add",+´⟩, ⟨"__sub",-´⟩, ⟨"__mul",×´⟩, ⟨"__div",÷´⟩
