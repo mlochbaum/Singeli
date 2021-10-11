@@ -1,9 +1,10 @@
-# SSE
+# x86
 arch ← {
   Type ⇐ { bType‿w‿am‿ptrs:
     u‿f ← bType = "uf"
     (ptrs/"*") ∾˜ {
-      0≤am      ? "Unsupported type" ! 128=w×am, "__m128"∾f¬⊸/"i" ;
+      0≤am      ? "Unsupported vector type" ! ∊⟜(2⋆6+↕4)⌾<l←w×am  # 64…512
+                  ∾⟨"__m",•Repr l,f¬⊸/"i"⟩ ;
       f         ? "float"‿"double"⊑˜32‿64⊸⊐⌾<w ;
       w=0       ? "void" ;
       u∧w=1     ? "bool" ;
