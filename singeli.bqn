@@ -414,8 +414,8 @@ blocks ← {kname⇐"block"
     block.Exec ind‿vars
   }
 }
-Load ← {  𝕊 ptr‿i: functions.Emit ⟨types.Deref TypeOf ptr, symbols.New "load", ptr, i⟩ }
-Store← {v 𝕊 ptr‿i: functions.Emit ⟨types.Deref TypeOf ptr, symbols.New "store", ptr, i, v⟩ }
+Load ← {  𝕊 ptr‿i: functions.Emit ⟨types.Deref TypeOf ptr, symbols.New "si_load", ptr, i⟩ }
+Store← {v 𝕊 ptr‿i: functions.Emit ⟨types.Deref TypeOf ptr, symbols.New "si_store", ptr, i, v⟩ }
 
 
 builtins ← {

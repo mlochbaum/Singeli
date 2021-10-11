@@ -18,14 +18,11 @@ prelude ← 1⌽"
 #include<stdint.h>
 #include<stdbool.h>
 #include<xmmintrin.h>
-static inline void si_aseti8 (int8_t * a, uint8_t  n, int8_t  k) { a[n]=k; }
-static inline void si_aseti16(int16_t* a, uint64_t n, int16_t k) { a[n]=k; }
-static inline void si_aseti32(int32_t* a, uint64_t n, int32_t k) { a[n]=k; }
-static inline void si_aseti64(int64_t* a, uint64_t n, int64_t k) { a[n]=k; }
-static inline int8_t  si_ageti8 (int8_t * a, uint64_t n) { return a[n]; }
-static inline int16_t si_ageti16(int16_t* a, uint64_t n) { return a[n]; }
-static inline int32_t si_ageti32(int32_t* a, uint64_t n) { return a[n]; }
-static inline int64_t si_ageti64(int64_t* a, uint64_t n) { return a[n]; }
+#include<immintrin.h>
+#define si_load(A, B) A[B]
+#define si_store(A, B, C) A[B] = C
+#define si_assert(A) if (!(A)) __builtin_unreachable();
+int main(){}
 "
 
 lf ← @+10
