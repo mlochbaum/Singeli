@@ -4,7 +4,7 @@ steps ← •Import¨ "../singeli.bqn"‿"../emit_c.bqn"
 
 n ← ≠types ← "in"‿"ir"‿"c"
 files ← •file.List "."
-type‿name ← types⊸⊐⌾⊑ <˘⍉> (2∾˜·∧`⌾⌽'.'⊸≠)⊸⊔¨ files
+type‿name ← types⊸⊐⌾⊑ <˘⍉> (2∾˜·∨`⌾⌽'.'⊸=)⊸⊔¨ files
 files‿type‿name (⍋name≍˘type)⊸⊏¨↩
 
 Test ← {
