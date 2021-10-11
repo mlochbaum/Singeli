@@ -265,7 +265,7 @@ types ← {kname⇐"type"
   }
   tVOID‿tPRIM‿tVEC‿tPTR‿tFUN‿tTUP ← ↕6
   TypeKind⇐{
-    !IsType 𝕩
+    "typekind argument must be type"!IsType 𝕩
     𝕩.typeKind⊑"void"‿"primitive"‿"vector"‿"pointer"‿"function"‿"tuple"
   }
   IsVoid ⇐ {tVOID≡𝕩.typeKind}
@@ -277,8 +277,8 @@ types ← {kname⇐"type"
   ⟩
 
   IsType ← kname≡Kind
-  Vec ⇐ {n𝕊t: !IsNat n ⋄ !IsType t ⋄ tVEC New ⟨n,t⟩}
-  Ptr ⇐ { 𝕊t: !IsType t ⋄ tPTR New t}
+  Vec ⇐ {n𝕊t: "Vector size should be a constant integer"!IsNat n ⋄ !IsType t ⋄ tVEC New ⟨n,t⟩}
+  Ptr ⇐ { 𝕊t: "Pointer type wasn't type"!IsType t ⋄ tPTR New t}
   Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´IsType¨ t ⋄ tTUP New t}
 
   Deref ⇐ { !IsType 𝕩 ⋄ !tPTR=𝕩.typeKind ⋄ 𝕩.dat }
