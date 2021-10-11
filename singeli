@@ -21,7 +21,8 @@ opts ← ((1+c)∾˜f/op) ⊔ ((op=c)(1-˜×⟜(+`))○(∾⟜1)f←¬»op⊏arg
 "Option can't be duplicated" ! ∧´ (dup∾1) ≥ 1<≠¨opts
 help‿out‿target‿pre‿files ← (1⌾(¯1⊸⊑)args) ⊣◶⟨0<≠∘⊢,⊑¨⊢⟩¨ opts
 
-files •file.At¨˜↩ <•wdpath
+Rel ← •wdpath⊸•file.At
+files Rel¨↩
 
 { help ?
   opt_help ← ∾¨´ ⟨desc⟩ ∾˜ (1+·⌈´≠¨)⊸(↑¨)¨ short‿long ∾¨¨ ",:"
@@ -35,7 +36,7 @@ backend ← {
   pre ⊑⊸{𝕨⊸𝕏}⍟(0<≠∘⊣) •Import "emit_c.bqn"
 }
 output ← {
-  ≠out ? (⊑out) •file.Chars ⊢ ;
+  ≠out ? (Rel⊑out) •file.Chars ⊢ ;
   •Out ¯1⊸↓
 }
 
