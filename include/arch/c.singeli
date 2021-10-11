@@ -21,6 +21,8 @@ def __sub = arith{__sub, 'op -'}
 def __mul = arith{__mul, 'op *'}
 def __div = arith{__div, 'op /'}
 
+def __eq  = compare{__eq, 'op =='}
+def __ne  = compare{__ne, 'op !='}
 def __gt  = compare{__gt, 'op >' }
 def __ge  = compare{__ge, 'op >='}
 def __lt  = compare{__lt, 'op <' }
@@ -34,3 +36,6 @@ def logic1 = arith1
 
 def __not = logic1{__not, '~'}
 def __not{a:u1} = emit{u1, '!', a}
+
+def __shl = logic{__shl, 'op <<'}
+def __shr = logic{__shr, 'op >>'}
