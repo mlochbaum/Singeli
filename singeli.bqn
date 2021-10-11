@@ -460,6 +460,11 @@ var ← {
       Set↩Set ·G 𝕩⊸types.Cast
     }
   }
+  # Transform variable to use Mut, for control structure bodies
+  Mut⇐{
+    ⟨Get⟩⇐𝕩 ⋄ v←@
+    Set⇐{!"register"≡Kind v↩Get@ ⋄ (Set↩v⊸functions.Mut) 𝕩}
+  }
   # Variable that tracks when it's been set, for block exec
   Marked⇐{
     write⇐0 ⋄ ⟨Get⟩⇐v←New 𝕩 ⋄ Set⇐{write↩1⋄v.Set𝕩}
@@ -487,6 +492,7 @@ env ← {
   Parent⇐{𝕩.parent}
   Make ←{ vars⇐𝕨 ⋄ parent⇐𝕩 }
   New  ⇐{ (var.New∘@¨ 𝕨) Make 𝕩 }
+  Mut  ⇐{ vars‿parent⇐⟨var.Mut¨𝕩.vars,env.Mut 𝕩.parent⟩ }⍟(@⊸≢)
   Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
   Block⇐{⟨ni,ind‿ptrs⟩ 𝕊 par:
     pi ← ptrs ≍○<¨ <ind
@@ -670,14 +676,15 @@ nodes ← {
     ⟨cond,then,else⟩←𝕩
     Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
     ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "if"‿visit
-    Eval ⇐ {𝕊e:
+    Eval ⇐ {
       c ← cond.Eval𝕩
       lf ← functions.Label@
       c functions.GotoF lf
-      then.Eval𝕩
+      m ← env.Mut 𝕩
+      then.Eval m
       functions.Goto¨ lt ← functions.Label¨ else
       functions.SetLabel lf
-      lt { 𝕩.Eval e ⋄ functions.SetLabel 𝕨 }¨ else
+      lt { 𝕩.Eval m ⋄ functions.SetLabel 𝕨 }¨ else
     }
   }
   While ⇐ {
@@ -687,9 +694,10 @@ nodes ← {
     Eval ⇐ {
       functions.Goto¨ lc ← functions.Label¨↕testFirst
       functions.SetLabel lt ← functions.Label@
-      stmt.Eval𝕩
+      m ← env.Mut 𝕩
+      stmt.Eval m
       functions.SetLabel¨ lc
-      (cond.Eval𝕩) functions.Goto lt
+      (cond.Eval m) functions.Goto lt
     }
   }
   n0 ← Word "0"
