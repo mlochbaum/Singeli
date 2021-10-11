@@ -43,7 +43,7 @@ Generate ← {
   }⍟(0<≠)
   l ← ProcLine¨ lf ((⊢-˜+`×¬)∘=⊔⊢) 𝕩
   "Unclosed function" ! 0≡fn
-  ∾ ⟨prelude⟩∾l
+  ∾ ⟨𝕨⊣prelude⟩∾l
 }
 
 StartLine ← { 𝕊 str:

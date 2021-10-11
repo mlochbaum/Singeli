@@ -1,6 +1,6 @@
 #! /usr/bin/env bqn
 
-steps ← •Import¨ "../singeli.bqn"‿"../emit_c.bqn"
+steps ← {""⊸𝕏}⌾(1⊸⊑) •Import¨ "../singeli.bqn"‿"../emit_c.bqn"
 
 n ← ≠types ← "in"‿"ir"‿"c"
 files ← •file.List "."
