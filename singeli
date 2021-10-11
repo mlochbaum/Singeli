@@ -21,6 +21,8 @@ opts ← ((1+c)∾˜f/op) ⊔ ((op=c)(1-˜×⟜(+`))○(∾⟜1)f←¬»op⊏arg
 "Option can't be duplicated" ! ∧´ (dup∾1) ≥ 1<≠¨opts
 help‿out‿target‿pre‿files ← (1⌾(¯1⊸⊑)args) ⊣◶⟨0<≠∘⊢,⊑¨⊢⟩¨ opts
 
+files •file.At¨˜↩ <•wdpath
+
 { help ?
   opt_help ← ∾¨´ ⟨desc⟩ ∾˜ (1+·⌈´≠¨)⊸(↑¨)¨ short‿long ∾¨¨ ",:"
   •Out ∾∾⟜(@+10)¨ ⟨help_pre,""⟩ ∾ opt_help
