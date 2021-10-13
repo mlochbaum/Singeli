@@ -664,8 +664,7 @@ nodes ← {
     Eval ⇐ { program.Export d.Eval 𝕩 }
   }
   Include ⇐ {
-    file ← Show (⊑𝕩).Eval@
-    {𝕩.NoScope@⋄𝕩} ast.Build •FChars files.Resolve file
+    {𝕩.NoScope@⋄𝕩} files.Include Show (⊑𝕩).Eval@
   }
   Body ⇐ {
     statements←𝕩
@@ -728,10 +727,13 @@ files ← {
   path←lpath←@ ⋄ log←⟨⟩
   Init ⇐ { path‿lpath↩𝕩 ⋄ log←⟨⟩ }
   Report ⇐ {𝕤⋄ lpath •FLines⍟(≢⟜@) log }
-  Resolve ⇐ {
+  Include ⇐ {
     f ← ('.'=⊑)◶⟨"include/",path⟩⊸•file.At 𝕩∾".singeli"
     log ∾↩ <f
-    f
+    op←path ⋄ path↩(⊢/˜·∨`⌾⌽'/'⊸=)f
+    a ← ast.Build •FChars f
+    path↩op
+    a
   }
 }
 
