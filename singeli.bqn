@@ -725,10 +725,13 @@ nodes ← {
 }
 
 files ← {
-  path←@
-  Init ⇐ { path↩𝕩 }
+  path←lpath←@ ⋄ log←⟨⟩
+  Init ⇐ { path‿lpath↩𝕩 ⋄ log←⟨⟩ }
+  Report ⇐ {𝕤⋄ lpath •FLines⍟(≢⟜@) log }
   Resolve ⇐ {
-    ('.'=⊑)◶⟨"include/",path⟩⊸•file.At 𝕩∾".singeli"
+    f ← ('.'=⊑)◶⟨"include/",path⟩⊸•file.At 𝕩∾".singeli"
+    log ∾↩ <f
+    f
   }
 }
 
@@ -740,6 +743,7 @@ ast ← {
   Compile ⇐ {
     files.Init 𝕨
     t ← Build 𝕩
+    files.Report@
     t.Oper operator._with @
     t.Scope baseScope
     t.Eval program._with baseEnv
