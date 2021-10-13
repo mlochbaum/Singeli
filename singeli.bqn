@@ -665,7 +665,7 @@ nodes ← {
   }
   Include ⇐ {
     file ← Show (⊑𝕩).Eval@
-    {𝕩.NoScope@⋄𝕩} ast.Build •FChars ∾"include/"‿file‿".singeli"
+    {𝕩.NoScope@⋄𝕩} ast.Build •FChars files.Resolve file
   }
   Body ⇐ {
     statements←𝕩
@@ -673,7 +673,7 @@ nodes ← {
     ⟨node,Dump,Disp,Oper⟩⇐d←Defaults "body"‿visit
     sc←@ ⋄ Scope⇐{ Visit o.Scope sc ↩ scopes.New 𝕩 }
     Eval⇐{ ¯1⊑⊑d.Eval (sc.Names@) env.New 𝕩 }
-    # Hack for import statements
+    # Hack for include statements
     NoScope⇐{𝕤⋄ Scope↩d.Scope ⋄ Eval↩¯1⊑·⊑d.Eval }
   }
   If ⇐ {
@@ -724,12 +724,21 @@ nodes ← {
   }
 }
 
+files ← {
+  path←@
+  Init ⇐ { path↩𝕩 }
+  Resolve ⇐ {
+    ('.'=⊑)◶⟨"include/",path⟩⊸•file.At 𝕩∾".singeli"
+  }
+}
+
 ast ← {
   Show ⇐ {•Out ∾∾⟜lf¨ 𝕩.Disp @}
   baseScope ← builtins.names scopes.New scopes.Init@
   baseEnv   ← builtins.values env.Fixed @
   Build ⇐ Parse∘Tokenize
   Compile ⇐ {
+    files.Init 𝕨
     t ← Build 𝕩
     t.Oper operator._with @
     t.Scope baseScope

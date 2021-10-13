@@ -10,6 +10,7 @@ short‿long‿args‿dup‿desc ← <˘⍉> ⟨
 # "i"‿"stdin" ‿0‿0‿"Use stdin as input, after any argument files"
   "t"‿"target"‿1‿0‿"Output type: c (default), ir"
   "p"‿"pre"   ‿1‿0‿"Prefix for C output"
+# "d"‿"deplog"‿1‿0‿"Output file for log of included dependencies"
 ⟩
 short‿long ∾˜¨⟜<¨↩ "-"‿"--"
 args ∾↩ 0
@@ -40,4 +41,5 @@ output ← {
   •Out ¯1⊸↓
 }
 
-Output Backend Frontend ∾ •file.Chars¨ files
+FP ← ⊢/˜·∨`⌾⌽'/'⊸=  # Path from file
+Output Backend ∾ (FP Frontend •file.Chars)¨ files
