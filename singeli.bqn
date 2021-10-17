@@ -23,6 +23,23 @@ Tokenize←{
   ⟨𝕩⊔˜1-˜(ign>≠`ab∧s∨d)¬⊸×+`ts, lc⟩
 }
 
+numbers ← {
+  _be ← {𝕗⊸×⊸+˜´⌽}
+  Nat ← (10 _be ⊣ "Ill-formed number"!·∧´0⊸≤∧≤⟜9) -⟜'0'
+  LC ← +⟜(32×1="A["⊸⍋)  # Lowercase
+  da ← dig∾'a'+↕26
+  Read ⇐ {
+    (≠𝕩)>s←⌊´𝕩⊐"bx" ? # Base n with 0x9abc or 31bNUMBER
+      b ← ('b'=s⊑𝕩)◶⟨16⊣·!"0"⊸≡,Nat⟩ s↑𝕩
+      "Invalid base" ! b≤≠da
+      b _be (b↑da) (≠∘⊣(⊢⊣"Invalid digits"!∧´∘>)⊐) (1+s)↓𝕩
+    ;
+      _n ← {('-'=⊑)◶⟨𝔽, -∘𝔽 1⊸↓⟩}
+      Pos ← ⊐⟜"."⊸(Nat∘↑ + ·(0<≠)◶⟨0,Nat÷10⋆≠⟩+⟜1⊸↓)
+      ⊐⟜"e"⊸(Pos _n∘↑ × <⟜≠◶⟨1,10⋆·Nat _n+⟜1⊸↓⟩) 𝕩
+  }∘LC
+}
+
 MakeStack ← {𝕤
   st←@ ⋄ d←0
   Push⇐{   st↩𝕩‿st ⋄ d+↩1}
@@ -558,7 +575,7 @@ nodes ← {
     ⟨node,Dump,Oper,Scope⟩⇐Defaults "value"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
   }
-  Word ⇐ (∧´∊⟜("."∾dig))◶⟨Ident, Value⟜•BQN⟩
+  Word ⇐ (⊑⊏∊dig˙)◶⟨Ident, Value⟜numbers.Read⟩
   Symbol ⇐ Value⟜(symbols.New 1↓¯1↓⊢)
   Run ⇐ {
     ⟨caller,params⟩←𝕩
