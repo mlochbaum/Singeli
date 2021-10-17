@@ -1,0 +1,16 @@
+include 'skin/c'
+include 'arch/c'
+
+def Size = u64
+
+def for{vars,begin,end,block} = {
+  i:Size = begin
+  while (i<end) {
+    exec{i, vars,block}
+    i = i+1
+  }
+}
+
+loop(dst:*f64, x:*f64, w:*f64, len:Size) : void = {
+  @for (dst,x,w over _ from 0 to len) { dst=emit{f64,'op',w,x} }
+}
