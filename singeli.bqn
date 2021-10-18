@@ -297,8 +297,8 @@ types ← {kname⇐"type"
   ⟩
 
   IsType ← kname≡Kind
-  Vec ⇐ {n𝕊t: "Vector size should be a constant integer"!IsNat n ⋄ !IsType t ⋄ tVEC New ⟨n,t⟩}
-  Ptr ⇐ { 𝕊t: "Pointer type wasn't type"!IsType t ⋄ tPTR New t}
+  Vec ← {n𝕊t: "Vector size should be a constant integer"!IsNat n ⋄ !IsType t ⋄ tVEC New ⟨n,t⟩}
+  Ptr ← { 𝕊t: "Pointer type wasn't type"!IsType t ⋄ tPTR New t}
   Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´IsType¨ t ⋄ tTUP New t}
 
   Deref ⇐ { !IsType 𝕩 ⋄ !tPTR=𝕩.typeKind ⋄ 𝕩.dat }
@@ -311,14 +311,14 @@ types ← {kname⇐"type"
     (k⊸⊐⌾< ⊢⊘(≠◶⊢‿¯1)○Kind)◶({𝕏○Dat}¨d) ⊣ @○(!IsType)
   }
 
-  Size ⇐ ⟨
+  Size ← ⟨
     tPRIM, 1⊸⊑
     tVEC,  ×⟜{Size𝕩}´
     tTUP,  +´{Size𝕩}¨
   ⟩_cases
 
-  VCount ⇐ ⟨ tVEC,⊑, 1 ⟩ _cases
-  VType ⇐ ⟨ tVEC,1⊸⊑ ⟩ _cases
+  VCount ← ⟨ tVEC,⊑, 1 ⟩ _cases
+  VType ← ⟨ tVEC,1⊸⊑ ⟩ _cases
 
   _sub ← {
     L ← ¯1⊸⊑
@@ -349,6 +349,11 @@ types ← {kname⇐"type"
     }
     𝕨 ⟨⟨tTUP,⊢⟩_cases⊸(𝕊¨)˜, Num˜, Obj˜⟩_tsel˜ 𝕩
   }
+
+  builtins ⇐ >⟨
+    ⟨"cast","eltype","vcount","width","__vec","__pnt"⟩
+    ⟨ Cast´, VType⊑ , VCount⊑, Size⊑ ,   Vec´,   Ptr⊑⟩
+  ⟩
 }
 
 registers ← {kname⇐"register"
@@ -456,15 +461,12 @@ builtins ← {
       ⟨"typekind",symbols.New types.TypeKind∘⊑⟩
       ⟨"load",Load⟩, ⟨"store",¯1⊸(⊑Store↓)⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",⊑´⟩
-      ⟨"cast",types.Cast´⟩
-      ⟨"eltype",types.VType⊑⟩, ⟨"vcount",types.VCount⊑⟩
-      ⟨"width",types.Size⊑⟩
-      ⟨"__vec",types.Vec´⟩, ⟨"__pnt",types.Ptr∘⊑⟩
       ⟨"__neg",-⟩
       ⟨"__add",+´⟩, ⟨"__sub",-´⟩, ⟨"__mul",×´⟩, ⟨"__div",÷´⟩
       ⟨"__and",∧´⟩, ⟨"__or" ,∨´⟩, ⟨"__xor",≠´⟩, ⟨"__not",¬∘⊑⟩
       ⟨"__shr",⌊÷⟜(2⋆⊢)⟩, ⟨"__shl", ⊣×2⋆⊢⟩
     ⟩
+    types.builtins
     >⟨
       "__eq"‿"__ne"‿"__lt"‿"__gt"‿"__le"‿"__ge"
       =‿≠‿<‿>‿≤‿≥ Ty2¨ ⟨Match,¬Match⟩ ∾ ·⥊≍˘⟜({𝕏˜}¨) ⟨types.SSubtype,types.Subtype⟩
