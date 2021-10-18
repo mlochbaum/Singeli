@@ -7,6 +7,7 @@ oc  ← "!$%&*+-/<=>?\^|~" # Operator characters that can stick together
 
 # Source to list of token strings
 Tokenize←{
+  𝕩∾↩lf(≠⥊⊣)¯1↑𝕩                            # Trailing newline
   # Resolve comments and strings
   s‿d‿c‿n←𝕩⊸=¨"'""#"∾lf⋄sd←/¨s‿d
   g←⍋q←(¯1↓¨sd)∾⊸∾/c ⋄q↩g⊏q                 # Open indices
