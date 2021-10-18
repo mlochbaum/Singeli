@@ -706,6 +706,7 @@ nodes ← {
       functions.Goto¨ lt ← functions.Label¨ else
       functions.SetLabel lf
       lt { 𝕩.Eval m ⋄ functions.SetLabel 𝕨 }¨ else
+      {Shows⇐!∘"Can't use if statement result as value"}
     }
   }
   While ⇐ {
@@ -719,6 +720,7 @@ nodes ← {
       stmt.Eval m
       functions.SetLabel¨ lc
       (cond.Eval m) functions.Goto lt
+      {Shows⇐!∘"Can't use while statement result as value"}
     }
   }
   n0 ← Word "0"
