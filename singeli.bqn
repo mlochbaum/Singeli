@@ -102,7 +102,9 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
   Expr0 ← {𝕤
     Vec ← c.run _node_ ((c.Word"__vec") ≍○< "["‿Expr‿"]"‿Expr0 _seq)
     Par ← ⊑ "("‿Expr‿")" _seq
-    (⊑"[('"⊐⊏)◶Vec‿Par‿Symbol‿Word Peek@
+    ARes← c.body _node_ (Next∘"{"◶⟨≍○<Expr, Body⟩)
+    Anon← c.lambda _node_ (Params‿"=>"‿ARes _seq)
+    (⊑"[({'"⊐⊏)◶Vec‿Par‿Anon‿Symbol‿Word Peek@
   }
   Callable ← AddParams∘Expr0
   _exprEnd ← {endTok _𝕣:
