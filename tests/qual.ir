@@ -1,0 +1,5 @@
+beginFn f0 u8 3 i64 u1 f32
+new v3 emit u8 out 2 1 0
+ret v3
+endFn
+

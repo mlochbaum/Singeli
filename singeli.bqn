@@ -301,6 +301,8 @@ types ← {kname⇐"type"
   Ptr ← { 𝕊t: "Pointer type wasn't type"!IsType t ⋄ tPTR New t}
   Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´IsType¨ t ⋄ tTUP New t}
 
+  _isQual ← {{tPRIM≡𝕩.typeKind}◶⟨0,𝔽{⊑𝕩.dat}⟩ TypeOf⍟(¬IsType)}
+
   Deref ⇐ { !IsType 𝕩 ⋄ !tPTR=𝕩.typeKind ⋄ 𝕩.dat }
 
   _cases ← {
@@ -350,9 +352,11 @@ types ← {kname⇐"type"
     𝕨 ⟨⟨tTUP,⊢⟩_cases⊸(𝕊¨)˜, Num˜, Obj˜⟩_tsel˜ 𝕩
   }
 
-  builtins ⇐ >⟨
+  builtins ⇐ ∾˘⍉∘‿2⥊⟨
     ⟨"cast","eltype","vcount","width","__vec","__pnt"⟩
     ⟨ Cast´, VType⊑ , VCount⊑, Size⊑ ,   Vec´,   Ptr⊑⟩
+    "isfloat"‿"issigned"‿"isint"
+    {𝕩_isQual⊑}¨⟨'f'⊸≡ ⋄ 'i'⊸≡ ⋄ ⊑∘∊⟜"iu"⟩
   ⟩
 }
 
