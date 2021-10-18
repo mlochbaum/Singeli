@@ -320,7 +320,7 @@ types ← {kname⇐"type"
   ⟩_cases
 
   VCount ← ⟨ tVEC,⊑, 1 ⟩ _cases
-  VType ← ⟨ tVEC,1⊸⊑ ⟩ _cases
+  VType ← ⟨ tVEC,1⊸⊑, tPTR,⊢ ⟩ _cases
 
   _sub ← {
     L ← ¯1⊸⊑
