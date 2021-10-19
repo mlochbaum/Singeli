@@ -741,7 +741,7 @@ nodes ← {
     Visit←{⟨𝕏fn,vardisp⊣𝕏¨ptri,𝕏from,𝕏to,𝕏body⟩}
     ⟨node,Dump,Disp,Oper⟩⇐d←Defaults "for"‿visit
     Scope ⇐ {
-      d.Scope 𝕩
+      (o.Scope 𝕩)¨ ∾⟨fn⟩‿ptri‿⟨from,to⟩
       body.Scope (ind∾ptrs) scopes.New 𝕩
     }
     Eval ⇐ {
