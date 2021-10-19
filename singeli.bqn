@@ -528,7 +528,7 @@ env ← {
   Block⇐{⟨ni,ind‿ptrs⟩ 𝕊 par:
     pi ← ptrs ≍○<¨ <ind
     pv ← Load¨ pi
-    vars‿parent ⇐ (({𝕩.Set ind⋄𝕩}∘var.New¨↕ni)∾(var.Marked¨pv)) Make 𝕩
+    vars‿parent ⇐ ((var.Fixed∘ind¨↕ni)∾(var.Marked¨pv)) Make 𝕩
     Stores ⇐ {𝕤
       m←{𝕩.write}¨v←ni↓vars
       v var.Get⊸Store¨○(m⊸/) pi
