@@ -1,16 +1,16 @@
 # Singeli
 
-Singeli is now able to compile useful programs to C, but it's very rough around the edges, with poor error reporting.
+Singeli is now able to compile useful programs to C, but it's very rough around the edges, with poor error reporting. We plan to use it to implement primitives in [CBQN](https://github.com/dzaima/CBQN), and are currently working to integrate it into the build system there.
 
-It's implemented in [BQN](https://mlochbaum.github.io/BQN), with a frontend that emits IR and a backend that converts it to C (other targets might be supported in the future). To compile input.singeli:
+Singeli is a domain-specific language for building [SIMD](https://en.wikipedia.org/wiki/SIMD) algorithms with flexible abstractions and control over every instruction emitted. It's implemented in [BQN](https://mlochbaum.github.io/BQN), with a frontend that emits IR and a backend that converts it to C. Other backends like LLVM or machine code are possible—it should be easy to support other CPU architectures but there are no plans to target GPUs.
+
+To compile input.singeli:
 
 ```
 $ singeli input.singeli [-o output.c]
 ```
 
-For other options see `$ singeli -h`.
-
-The plan is to make a highly flexible domain-specific language for building [SIMD](https://en.wikipedia.org/wiki/SIMD) algorithms with control over every instruction emitted. It will initially target x86-64 with vector extensions, emitting C with compiler intrinsics, assembly, or machine code. It should be easy to support other CPU architectures but there are no plans to target GPUs. Our intended use case is for implementing array languages, but Singeli may prove useful for other tasks as well.
+For options see `$ singeli -h`. To run `./singeli` as an executable, ensure that CBQN is installed as `bqn` in your executable path, or call as `/path/to/bqn singeli …`.
 
 Early design discussion for Singeli took place at [topanswers.xyz](https://topanswers.xyz/apl?q=1623); now it's in the BQN forums ([links and instructions](https://mlochbaum.github.io/BQN/index.html#where-can-i-find-bqn-users)).
 
