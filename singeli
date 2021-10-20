@@ -42,5 +42,4 @@ output ← {
   •Out ¯1⊸↓
 }
 
-FP ← ⊢/˜·∨`⌾⌽'/'⊸=  # Path from file
-Output Backend ∾ ((FP≍○<deplog˙) Frontend •file.Chars)¨ files
+Output Backend ∾ deplog⊸Frontend¨ files

@@ -753,15 +753,20 @@ nodes ← {
 }
 
 files ← {
-  path←lpath←@ ⋄ log←⟨⟩
-  Init ⇐ { path‿lpath↩𝕩 ⋄ log←⟨⟩ }
-  Report ⇐ {𝕤⋄ lpath •FLines⍟(≢⟜@) log }
+  path←@ ⋄ log←⟨⟩
+  Load ← {
+    path ↩ (∨`⌾⌽'/'⊸=)⊸/ 𝕩
+    ast.Build •file.Chars 𝕩
+  }
   Include ⇐ {
     f ← ('.'=⊑)◶⟨"include/",path⟩⊸•file.At 𝕩∾".singeli"
     log ∾↩ <f
-    op←path ⋄ path↩(⊢/˜·∨`⌾⌽'/'⊸=)f
-    a ← ast.Build •FChars f
-    path↩op
+    op←path ⋄ a←Load f ⋄ path↩op ⋄ a
+  }
+  Build ⇐ {
+    log ↩ ⟨⟩
+    a ← Load 𝕩
+    •file.Lines⟜log⍟(@⊸≢) 𝕨
     a
   }
 }
@@ -772,9 +777,7 @@ ast ← {
   baseEnv   ← builtins.values env.Fixed @
   Build ⇐ Parse∘Tokenize
   Compile ⇐ {
-    files.Init 𝕨
-    t ← Build 𝕩
-    files.Report@
+    t ← 𝕨 files.Build 𝕩
     t.Oper operator._with @
     t.Scope baseScope
     t.Eval program._with baseEnv
