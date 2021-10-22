@@ -75,3 +75,73 @@ The `oper` statement, which can only appear at the top level in the program, def
 The declaration lists the operator's form (arity, and associativity for infix operators), spelling, generator, and precedence. After the declaration, applying the operator runs the associated generator.
 
 An operator can have at most one infix and one prefix definition. Prefix operators have no associativity (as operators can't be used as operands, they always run from right to left), while infix operators can be declared `left`, `right`, or `none`. With `none`, an error occurs in ambiguous cases where the operator is applied multiple times. The precedence is any number, and higher numbers bind tighter.
+
+## Built-in generators
+
+The following generators are pre-defined in any program. They're placed in a parent scope of the main program, so these names can be shadowed by the program.
+
+### Program
+
+| Syntax                 | Result
+|------------------------|--------
+| `emit{type,op,args…}`  | Call instruction `op` (a symbol, to be interpreted by the backend)
+| `call{fun,args…}`      | Call a function
+| `return{result}`       | Return `result` (optional if return type is `void`) from current function
+| `exec{ind,vars,block}` | Execute `block` on pointers `vars` at index `i`
+| `load{ptr,ind}`        | Return value at `ptr+ind`
+| `store{ptr,ind,val}`   | Store `val` at `ptr+ind`
+
+### Values
+
+| Syntax              | Result
+|---------------------|--------
+| `match{a,b}`        | Return 1 if the parameters match and 0 otherwise
+| `hastype{val,type}` | Return 1 if `val` is a typed value of the given type
+| `type{val}`         | Return the type of `val`
+| `kind{val}`         | Return a symbol indicating the kind of value
+| `show{vals…}`       | For debugging: print the parameters, and return it if there's exactly one
+
+### Types
+
+| Syntax           | Result
+|------------------|--------
+| `width{type}`    | The number of bits taken up by `type`
+| `eltype{type}`   | The underlying type of a vector or pointer type
+| `vcount{[n]t}`   | The number of elements `n` in a vector type
+| `cast{type,val}` | `val` converted to the given type
+| `isfloat{type}`  | 1 if `type` is floating point and 0 otherwise
+| `issigned{type}` | 1 if `type` is signed integer and 0 otherwise
+| `isint{type}`    | 1 if `type` is integer and 0 otherwise
+| `typekind{type}` | A symbol indicating the nature of the type
+| `__pnt{t}`       | Pointer type with element `t`
+| `__vec{n,t}`     | Vector type with element `t` and length `n`; equivalent to `[n]t`
+
+### Generators
+
+| Syntax             | Result
+|--------------------|--------
+| `bind{gen,param…}` | Bind/curry the given parameters to the generator
+
+### Tuples
+
+| Syntax              | Result
+|---------------------|--------
+| `tup{elems…}`       | Create a tuple of the parameters
+| `tupsel{ind,tuple}` | Select the `ind`th element (0-indexed) from the tuple
+| `apply{gen,tuple}`  | Apply a generator to a tuple of parameters
+
+### Arithmetic
+
+Arithmetic functions are named with a double underscore, as they're meant to be aliased to operators. The default definitions work on compile-time numbers, and sometimes types. The definitions for numbers are shown, with a C-like syntax but using `^` for exponentiation and `//` for floored division.
+
+| `__neg` | `__shr`  | `__shl` | `__add` | `__sub` | `__mul` | `__div` |
+|---------|----------|---------|---------|---------|---------|---------|
+| `-y`    | `x//2^y `| `x*2^y `| `x+y`   | `x-y`   | `x*y`   | `x/y`   |
+
+| `__and` | `__or`      | `__xor` | `__not` |
+|---------|-------------|---------|---------|
+| `x*y`   | `x*y-(x+y)` | `x!=y`  | `1-y`   |
+
+| `__eq`  | `__ne`  | `__lt`  | `__gt`  | `__le`  | `__ge`  |
+|---------|---------|---------|---------|---------|---------|
+| `x==y`  | `x!=y`  | `x<y`   | `x>y`   | `x<=y`  | `x>=y`  |
