@@ -393,12 +393,12 @@ functions ← {kname⇐"function"
     Instrs⇐Arr
     Append⇐{ Push𝕩⋄@ ; (1⊸⊑⊣𝕊) ⟨"new",Next𝕨⟩∾symbols.New⌾⊑𝕩 }
     SetRType⇐{ SetRType↩!∘0 ⋄ !IsType rType↩𝕩 }
-    _ret←{
-      @≢rType? types.IsVoid rType? @ ;
+    _ret_←{
+      @≢rType? types.IsVoid rType? Append⍟𝕘 ⟨"ret",⊑types.primTypes⟩ ⋄@ ;
       Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, types.Cast⟩ 𝕩⟩
     }
-    Return⇐!∘0 _ret ⊑
-    Finish⇐{SetRtype TypeOf 𝕩⋄𝕩} _ret
+    Return⇐!∘0 _ret_ 1 ⊑
+    Finish⇐{SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
     Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨"f"∾•Repr id,Show rType⟩∾(•Repr∘≠⊸∾Show¨args)}
   }
   IsType ← "type"≡Kind
