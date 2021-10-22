@@ -458,7 +458,7 @@ builtins ← {
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
     ⍉> ⟨
-      ⟨"show",•Show∘Show⊸⊢⊑⟩
+      ⟨"show",(•Out Show⎊("("∾")"∾˜Kind⎊"unknown"))⊸⊢⊑⟩
       ⟨"call",functions.Call⟩, ⟨"emit",functions.Emit⟩,
       ⟨"return",functions.Return⟩, ⟨"exec",blocks.Exec⟩
       ⟨"match",Match´⟩
