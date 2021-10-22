@@ -115,9 +115,11 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
   }
   Expr ← ⟨⟩_exprEnd
 
-  _args ← {𝕤
+  _args ← {𝕗 _argsFn_ Expr}
+  _argsFn_ ← {𝕤
     Get ⊑𝕗
-    a ← While ⟨Try∘",", Expr, 1⟩
+    Try 1⊑𝕗 ? ⟨⟩ ;
+    a ← While ⟨Try∘",", 𝔾, 1⟩
     Get 1⊑𝕗
     a
   }
@@ -179,10 +181,8 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
   }
 
   Function ← c.function _node_ {𝕤
-    Get "("
     Arg ← c.arg _node_ (Name‿":"‿Expr _seq)
-    a ← While ⟨Try∘",", Arg, 1⟩
-    Get ")"
+    a ← "("‿")" _argsFn_ Arg @
     r ← When ⟨Try":", Expr⟩
     b ← Result Try"="
     ⟨a,r,b⟩
@@ -397,7 +397,7 @@ functions ← {kname⇐"function"
       @≢rType? types.IsVoid rType? Append⍟𝕘 ⟨"ret",⊑types.primTypes⟩ ⋄@ ;
       Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, types.Cast⟩ 𝕩⟩
     }
-    Return⇐!∘0 _ret_ 1 ⊑
+    Return⇐!∘0 _ret_ 1 @⊣´⊢
     Finish⇐{SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
     Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨"f"∾•Repr id,Show rType⟩∾(•Repr∘≠⊸∾Show¨args)}
   }
