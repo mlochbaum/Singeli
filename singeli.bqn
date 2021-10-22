@@ -455,10 +455,11 @@ builtins ← {
     (e{k‿o←𝕨⋄∧○(k≡⊢)◶⟨𝕏,O˙⟩}´𝕩){o←𝕨𝔽○Kind𝕩⋄𝕨O𝕩}
   }
   Ty2 ← {𝕏⚇0´}∘Kinds "number"‿"type"≍○<¨≍○<
+  Fmt ← 2↓·∾·", "⊸∾¨Show⎊("("∾")"∾˜Kind⎊"unknown")¨
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
     ⍉> ⟨
-      ⟨"show",(•Out Show⎊("("∾")"∾˜Kind⎊"unknown"))⊸⊢⊑⟩
+      ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"}⊣•Out∘Fmt⟩
       ⟨"call",functions.Call⟩, ⟨"emit",functions.Emit⟩,
       ⟨"return",functions.Return⟩, ⟨"exec",blocks.Exec⟩
       ⟨"match",Match´⟩
