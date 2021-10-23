@@ -191,7 +191,7 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
   DefFun ← c.define _node_ (      Name‿Function  _seq)
   Define ← c.define _node_ ("def"‿Name‿Generator _seq)
 
-  Export ← c.export _node_ (Symbol‿"="‿Callable‿sep _seq)
+  Export ← c.export _node_ ((While∘⟨Try∘",",Symbol,1⟩)‿"="‿Callable‿sep _seq)
 
   OpType ← {𝕤
     pre ← (⊑≢Get) "prefix"‿"infix"
@@ -543,7 +543,7 @@ program ← {
   AddFunction⇐Export⇐!∘0
   _with ⇐ {
     fns←⟨⟩ ⋄ AddFunction ↩ { f ← 𝕏 ≠fns ⋄ fns∾⟜<↩f ⋄ f }
-    exp←⟨⟩ ⋄ Export ↩ { exp ∾⟜<↩ 𝕩 }
+    exp←⟨⟩ ⋄ Export ↩ { exp ∾⟜<↩ 𝕨‿𝕩 }
     𝕨𝔽𝕩
     AddFunction↩Export↩!∘0
     ∾ ⟨∾DispFunction¨fns, DispExport¨exp⟩
@@ -688,10 +688,10 @@ nodes ← {
     Oper⇐{𝕤⋄ operator.Add type‿op‿fn‿prec}
   }
   Export ⇐ {
-    ⟨name,value⟩←𝕩 ⋄ name↩Show name.Eval@
+    ⟨name,value⟩ ← {Show 𝕩.Eval@}¨⌾⊑ 𝕩
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper,Scope⟩⇐d←Defaults "export"‿visit
-    Eval ⇐ { program.Export d.Eval 𝕩 }
+    Eval ⇐ { program.Export¨⟜<´ d.Eval 𝕩 }
   }
   Include ⇐ {
     {𝕩.NoScope@⋄𝕩} files.Include Show (⊑𝕩).Eval@

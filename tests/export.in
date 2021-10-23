@@ -1,0 +1,4 @@
+fn{T}(arg:T) : T = arg
+'e0'      = fn{i8}
+'e1','e2' = fn{i16}
+'e3'      = fn{i32}

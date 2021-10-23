@@ -1,0 +1,16 @@
+beginFn f0 i8 1 i8
+ret v0
+endFn
+
+beginFn f1 i16 1 i16
+ret v0
+endFn
+
+beginFn f2 i32 1 i32
+ret v0
+endFn
+
+export f0 i8 1 i8 e0
+export f1 i16 1 i16 e1
+export f1 i16 1 i16 e2
+export f2 i32 1 i32 e3
