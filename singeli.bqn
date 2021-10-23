@@ -385,7 +385,7 @@ functions ← {kname⇐"function"
   current⇐@
   New ← {𝕤
     kind⇐kname ⋄ shows⇐"f"∾•Repr id⇐𝕩 ⋄ Matches⇐≡
-    handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType←@
+    handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType⇐@
     Next⇐{ 𝕩 registers.New handle+↩1 }
     NextLabel⇐{𝕤⋄ NewLabel label+↩1 }
     NextArg⇐{ args∾↩𝕩 ⋄ Next 𝕩 }
@@ -399,7 +399,7 @@ functions ← {kname⇐"function"
     }
     Return⇐!∘0 _ret_ 1 @⊣´⊢
     Finish⇐{SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
-    Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨"f"∾•Repr id,Show rType⟩∾(•Repr∘≠⊸∾Show¨args)}
+    Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨shows,Show rType⟩∾(•Repr∘≠⊸∾Show¨args)}
   }
   IsType ← "type"≡Kind
   _with ⇐ {
@@ -421,7 +421,7 @@ functions ← {kname⇐"function"
     f ← ⊑𝕩
     ! "function"≡Kind f
     t ← f.rType
-    t Append ⟨"call",t,f.id⟩ ∾ 1↓𝕩
+    t Append ⟨"call",t,f⟩ ∾ ≠⊸∾ 1↓𝕩
   }
   _instr ← { Append (𝕨𝔽𝕩)<⊸∾𝕨≍○<𝕩 }
   SetLabel ⇐ "lbl"_instr
