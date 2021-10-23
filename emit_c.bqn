@@ -104,8 +104,7 @@ Export ← {
   aname ← ("v"∾•Repr)¨ ↕≠ atype ← (Type𝕩˙)¨ ↕I32 𝕩
   exp ← Name 𝕩
   param ← ","Join atype {∾𝕨‿" "‿𝕩}¨ aname
-  in ← ","Join aname
-  ∾⟨ret," ",exp,"(",param,") { return ",val,"(",in,"); }"⟩
+  ∾⟨ret," (*const ",exp,")(",param,") = ",val,";"⟩
 }
 ⟨New⟩ ← {
   Call ← {𝕨‿"("‿𝕩‿")"}⟜List

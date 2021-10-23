@@ -8,5 +8,5 @@ static int32_t si_f1(int32_t v0) {
   return v1;
 }
 
-int32_t fn(int32_t v0) { return si_f1(v0); }
+int32_t (*const fn)(int32_t v0) = si_f1;
 
