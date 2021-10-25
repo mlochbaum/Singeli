@@ -27,6 +27,7 @@ prelude ← 1⌽"
 lf ← @+10
 
 Generate ← {
+  decl.Init@
   fn ← 0  # Whether a function is active
   ProcLine ← {
     line ← StartLine 𝕩
@@ -42,7 +43,7 @@ Generate ← {
   }⍟(0<≠)
   l ← ProcLine¨ lf ((⊢-˜+`×¬)∘=⊔⊢) 𝕩
   "Unclosed function" ! 0≡fn
-  ∾ ⟨𝕨⊣prelude⟩∾l
+  ∾ ⟨𝕨⊣prelude⟩∾(decl.Emit@)∾l
 }
 
 StartLine ← { 𝕊 str:
@@ -63,10 +64,10 @@ StartLine ← { 𝕊 str:
   }
 }
 
+Nat ← 10⊸×⊸+˜´∘⌽ -⟜'0'
 as ← {
   Name ⇐ ⊢
   Rename ⇐ "si_"⊸∾
-  Nat ← 10⊸×⊸+˜´∘⌽ -⟜'0'
   I32 ⇐ ('-'=⊑)⊸(⊣-∘⊢⍟⊣Nat∘↓)
   Lit ⇐ {
     v‿t ← (1-˜+`×¬)∘(1⌾⊑':'⊸=)⊸⊔ 𝕩
@@ -88,6 +89,15 @@ as ← {
 Name‿Rename‿Type‿Lit‿I32 ← {𝕏{𝕩.Next@}}¨ ⟨as.Name,as.Rename,as.Type,as.Lit,as.I32⟩
 All ← {𝕩.All@}
 
+decl ← {
+  FromName ← Nat 4⊸↓  # si_f
+  n←p←c←o←@ ⋄ Init⇐{𝕤⋄c↩↕0⋄o↩⟨⟩}
+  BeginFn ⇐ {n↩FromName 𝕨⋄p↩𝕩}
+  EndFn ⇐ {𝕤⋄ n<≠c ? n⊑c ? o∾↩<p ; @}
+  Call ⇐ { i←FromName𝕩 ⋄ c↑˜↩(≠c)⌈1+i ⋄ c 1⌾(i⊸⊑)↩ }
+  Emit ⇐ {𝕤⋄ ∾⟜⟨⥊lf⟩⍟(0<≠) (¯2⊸↓∾(";"∾lf)˙)¨ o }
+}
+
 Join ← {∾1↓⥊(<𝕨)≍˘𝕩}
 List ← ", "⊸Join
 
@@ -96,7 +106,7 @@ BeginFn ← {𝕤
   ret ← Type 𝕩
   argc ← I32 𝕩
   param ← List ((Type𝕩˙)∾" v"∾•Repr)¨ ↕argc
-  ∾⟨"static ",ret," ",n,"(",param,") {"⟩
+  n⊸decl.BeginFn⊸⊢ ∾⟨"static ",ret," ",n,"(",param,") {"⟩
 }
 Export ← {
   val ← Rename 𝕩
@@ -110,7 +120,7 @@ Export ← {
   Call ← {𝕨‿"("‿𝕩‿")"}⟜List
   code‿op ← <˘⍉>⟨
     "val" ‿(≍○< Lit)
-    "call"‿{ fn ← Rename 𝕩 ⋄ fn Call (Lit𝕩˙)¨ ↕I32 𝕩 }
+    "call"‿{ decl.Call fn ← Rename 𝕩 ⋄ fn Call (Lit𝕩˙)¨ ↕I32 𝕩 }
     "emit"‿(Name (≡⟜"op")◶⟨
         Call⟜(as.Lit¨All)
         { o←Name 𝕩 ⋄ ⟨Lit 𝕩," ",o," ",Lit 𝕩⟩ }
@@ -137,7 +147,7 @@ code‿op ← (⊑¨ ≍○< 1⊸↓¨) ⟨
   "goto"   ‿ 0‿1‿⟨"  ","goto ",Name⟩
   "new"    ‿ 0‿1‿⟨"  ",New⟩
   "mut"    ‿ 0‿1‿⟨"  ",Name," = ",Lit⟩
-  "endFn"  ‿¯1‿1‿⟨"}"⟩
+  "endFn"  ‿¯1‿1‿⟨"}"⊣decl.EndFn⟩
 ⟩
 
 Generate
