@@ -1,6 +1,6 @@
 # Singeli
 
-Singeli is now able to compile useful programs to C, but it's very rough around the edges, with poor error reporting. We plan to use it to implement primitives in [CBQN](https://github.com/dzaima/CBQN), and are currently working to integrate it into the build system there.
+Singeli is now able to compile useful programs to C, but it's very rough around the edges, with poor error reporting. We are beginning to use it for [CBQN](https://github.com/dzaima/CBQN), where it can be enabled from the `singeli` git branch.
 
 Singeli is a domain-specific language for building [SIMD](https://en.wikipedia.org/wiki/SIMD) algorithms with flexible abstractions and control over every instruction emitted. It's implemented in [BQN](https://mlochbaum.github.io/BQN), with a frontend that emits IR and a backend that converts it to C. Other backends like LLVM or machine code are possible—it should be easy to support other CPU architectures but there are no plans to target GPUs.
 
