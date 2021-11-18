@@ -301,6 +301,7 @@ types ← {kname⇐"type"
   Vec ← {n𝕊t: "Vector size should be a constant integer"!IsNat n ⋄ !IsType t ⋄ tVEC New ⟨n,t⟩}
   Ptr ← { 𝕊t: "Pointer type wasn't type"!IsType t ⋄ tPTR New t}
   Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´IsType¨ t ⋄ tTUP New t}
+  Fun ⇐ tFUN New ⋈
 
   _isQual ← {{tPRIM≡𝕩.typeKind}◶⟨0,𝔽{⊑𝕩.dat}⟩ TypeOf⍟(¬IsType)}
 
@@ -384,7 +385,7 @@ symbols ← {kname⇐"symbol"
 functions ← {kname⇐"function"
   current⇐@
   New ← {𝕤
-    kind⇐kname ⋄ shows⇐"f"∾•Repr id⇐𝕩 ⋄ Matches⇐≡
+    kind⇐kname ⋄ shows⇐"f"∾•Repr id⇐𝕩 ⋄ Matches⇐≡ ⋄ type⇐@
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType⇐@
     Next⇐{ 𝕩 registers.New handle+↩1 }
     NextLabel⇐{𝕤⋄ NewLabel label+↩1 }
@@ -392,12 +393,15 @@ functions ← {kname⇐"function"
     ⟨Push,Arr⟩←MakeStack@
     Instrs⇐Arr
     Append⇐{ Push𝕩⋄@ ; (1⊸⊑⊣𝕊) ⟨"new",Next𝕨⟩∾symbols.New⌾⊑𝕩 }
-    SetRType⇐{ SetRType↩!∘0 ⋄ !IsType rType↩𝕩 }
+    SetRType⇐{
+      SetRType↩!∘0 ⋄ !IsType rType↩𝕩
+      type ↩ args types.Fun rType
+    }
     _ret_←{
       @≢rType? types.IsVoid rType? Append⍟𝕘 ⟨"ret",⊑types.primTypes⟩ ⋄@ ;
       Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, types.Cast⟩ 𝕩⟩
     }
-    Return⇐!∘0 _ret_ 1 @⊣´⊢
+    Return⇐!∘"Early return from function with no explicit result type" _ret_ 1 @⊣´⊢
     Finish⇐{SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
     Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨shows,Show rType⟩∾(•Repr∘≠⊸∾Show¨args)}
   }
