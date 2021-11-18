@@ -274,13 +274,14 @@ types ← {kname⇐"type"
   New ← {k𝕊d:
     kind⇐kname
     typeKind‿dat⇐𝕨‿𝕩
+    T←"("∾")"«·∾(","∾Show)¨  # Display type tuple
     Shows⇐typeKind◶⟨
       "void"               # Void:                     void
       ∾⟜•Repr´             # Primitive:   qual‿len     u8
       {∾"["‿𝕨‿"]"‿𝕩}○Show´ # Vector:      count‿t      [4]…
       "*"∾Show             # Pointer:     t            *…
-      {∾𝕨‿" -> "‿𝕩}○Show´  # Function:    ⟨t, q‿r‿s⟩   (…,…,…) -> …
-      Show                 # Tuple:       q‿r‿s        (…,…,…)
+      T⊸{∾𝕨‿" -> "‿𝕩}⟜Show´# Function:    ⟨t, q‿r‿s⟩   (…,…,…) -> …
+      T                    # Tuple:       q‿r‿s        (…,…,…)
     ⟩∘dat
     Matches⇐{𝕨MT𝕩}
   }
