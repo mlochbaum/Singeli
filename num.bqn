@@ -1,7 +1,7 @@
 # High-precision numbers as pairs representing unevaluated sums
 # Format is ⟨high,low⟩
 
-To   ⇐ ≍○<⟜0
+To   ⇐ ⋈⟜0
 From ⇐ +´
 
 Add12 ← {a𝕊b:

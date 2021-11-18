@@ -20,7 +20,7 @@ Tokenize←{
   # Other stuff
   k∨↩∨´(»⊸∧k<𝕩⊸∊)¨wc‿oc                     # Group names, numbers, and ops
   ts←n∨¬k∨ign                               # Token start mask
-  lc←(1+/𝕩=lf){(⊢≍¨𝕩-⊏⟜(0∾𝕨))𝕨⍋𝕩}/ts        # Line/column numbers
+  lc←(1+/𝕩=lf){(⊢⋈¨𝕩-⊏⟜(0∾𝕨))𝕨⍋𝕩}/ts        # Line/column numbers
   ⟨𝕩⊔˜1-˜(ign>≠`ab∧s∨d)¬⊸×+`ts, lc⟩
 }
 
@@ -77,7 +77,7 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
   MakeTokStream ← {
     ⟨Inc⇐Next⟩←Pos‿Rem‿Peek⇐MakeStream 𝕩
     Next ⇐ Peek⊸Is
-    Get  ⇐ Inc ⊢ Peek⊸(⊣⊣≍○<Err⍟(¬⊢)Is)
+    Get  ⇐ Inc ⊢ Peek⊸(⊣⊣⋈Err⍟(¬⊢)Is)
     Try  ⇐ 1∘Inc⍟⊢∘Next
   }
   ⟨Next,Get,Peek,Try,Rem,Pos⟩ ← MakeTokStream tok
@@ -98,12 +98,12 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
   Word ← c.word _node_ (∊⟜(wc∾oc)_ifASCII _begin)
   Symbol ← c.symbol _node_ ('''⊸=_begin)
 
-  AddParams ← {𝕊∘(c.run  _node_ (⊢≍○<"{"‿"}"_args))⍟(Next"{") 𝕩}
-  AddArgs   ← {  (c.call _node_ (⊢≍○<"("‿")"_args))⍟(Next"(") 𝕩}
+  AddParams ← {𝕊∘(c.run  _node_ (⊢⋈"{"‿"}"_args))⍟(Next"{") 𝕩}
+  AddArgs   ← {  (c.call _node_ (⊢⋈"("‿")"_args))⍟(Next"(") 𝕩}
   Expr0 ← {𝕤
-    Vec ← c.run _node_ ((c.Word"__vec") ≍○< "["‿Expr‿"]"‿Expr0 _seq)
+    Vec ← c.run _node_ ((c.Word"__vec") ⋈ "["‿Expr‿"]"‿Expr0 _seq)
     Par ← ⊑ "("‿Expr‿")" _seq
-    ARes← c.body _node_ (Next∘"{"◶⟨≍○<Expr, Body⟩)
+    ARes← c.body _node_ (Next∘"{"◶⟨⋈Expr, Body⟩)
     Anon← c.lambda _node_ (Params‿"=>"‿ARes _seq)
     (⊑"[({'"⊐⊏)◶Vec‿Par‿Anon‿Symbol‿Word Peek@
   }
@@ -233,7 +233,7 @@ operator ← {
       left ↩ Op ⟨value, prec, ("lrn"⊸⊐⌾<assoc)⊑<‿≤‿(!∘≠⊢<)⟩
     }
   }
-  Run ⇐ {𝕊⟨op,params⟩: null‿left‿bind⇐op ⋄ R⇐nodes.Run op.R≍○<params˙}
+  Run ⇐ {𝕊⟨op,params⟩: null‿left‿bind⇐op ⋄ R⇐nodes.Run op.R⋈params˙}
   nil ⇐ New @
 
   Lookup⇐Add⇐!∘0
@@ -291,7 +291,7 @@ types ← {kname⇐"type"
   }
   IsVoid ⇐ {tVOID≡𝕩.typeKind}
 
-  primTypes ⇐ (tVOID New ⟨⟩)∾∾(<(tPRIM New ≍)¨´)˘ ∘‿2⥊⟨
+  primTypes ⇐ (tVOID New ⟨⟩)∾∾(<(tPRIM New ⋈)¨´)˘ ∘‿2⥊⟨
     'u', 2⋆0∾3+↕4  # 1/8/16/32/64
     'i', 2⋆  3+↕4  #   8/16/32/64
     'f', 2⋆  5+↕2  #        32/64
@@ -423,7 +423,7 @@ functions ← {kname⇐"function"
     t ← f.rType
     t Append ⟨"call",t,f⟩ ∾ ≠⊸∾ 1↓𝕩
   }
-  _instr ← { Append (𝕨𝔽𝕩)<⊸∾𝕨≍○<𝕩 }
+  _instr ← { Append (𝕨𝔽𝕩)<⊸∾𝕨⋈𝕩 }
   SetLabel ⇐ "lbl"_instr
   Goto     ⇐ "goto"⊘"gotoT"_instr
   GotoF    ⇐ "gotoF"_instr
@@ -454,7 +454,7 @@ builtins ← {
     E ← "Unhandled type" ! 0˙
     (e{k‿o←𝕨⋄∧○(k≡⊢)◶⟨𝕏,O˙⟩}´𝕩){o←𝕨𝔽○Kind𝕩⋄𝕨O𝕩}
   }
-  Ty2 ← {𝕏⚇0´}∘Kinds "number"‿"type"≍○<¨≍○<
+  Ty2 ← {𝕏⚇0´}∘Kinds "number"‿"type"⋈¨⋈
   Fmt ← 2↓·∾·", "⊸∾¨Show⎊("("∾")"∾˜Kind⎊"unknown")¨
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
@@ -489,7 +489,7 @@ var ← {
   New⇐{
     v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩𝕩}
     SetType⇐{SetType↩!∘0
-      C ← functions.Copy 𝕩≍○<⊢
+      C ← functions.Copy 𝕩⋈⊢
       G ← ("register"≡Kind∘⊢)◶⟨ C , {𝕩.SetUsed@⋄𝕩} C⍟{𝕩.used} ⟩
       Set↩Set ·G 𝕩⊸types.Cast
     }
@@ -516,7 +516,7 @@ scopes ← {
     Get ⇐ ⟨Sel⊣, Par 𝕩.Get∘⊢⟩ _find
     Add ⇐ Sel {("Duplicate definition: "∾𝕩)!0}‿Make _find
     Lam ← Par⍟(noLambda⊸≢) 𝕩.GetLam∘⊢
-    AddLam ⇐ ⟨≍○<˜Sel∘⊣, Lam≍○<Sel∘Make⟩ _find
+    AddLam ⇐ ⟨⋈˜Sel∘⊣, Lam⋈Sel∘Make⟩ _find
     GetLam ⇐ ⟨Sel⊣, Lam⟩ _find
   }
   Init⇐New null˙
@@ -529,7 +529,7 @@ env ← {
   Mut  ⇐{ vars‿parent⇐⟨var.Mut¨𝕩.vars,env.Mut 𝕩.parent⟩ }⍟(@⊸≢)
   Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
   Block⇐{⟨ni,ind‿ptrs⟩ 𝕊 par:
-    pi ← ptrs ≍○<¨ <ind
+    pi ← ptrs ⋈¨ <ind
     pv ← Load¨ pi
     vars‿parent ⇐ ((var.Fixed∘ind¨↕ni)∾(var.Marked¨pv)) Make 𝕩
     Stores ⇐ {𝕤
@@ -616,10 +616,10 @@ nodes ← {
     ⟨⟨paramsPlus,conds⟩,result⟩←𝕩
     params‿pmatch‿ptype ← <˘⍉>paramsPlus
     tname ← (¬∘∊⟜(⟨@⟩∾notTypeVar)⊸/ PhraseTryName¨)¨ ptype
-    uTyp‿iTyp←(⍷∘∾ ≍○< ⊐∘∾⊔·/≠¨)tname
+    uTyp‿iTyp←(⍷∘∾ ⋈ ⊐∘∾⊔·/≠¨)tname
     _pc ← {n←𝕨⋄f←𝕗 ⋄ {Run⟨Ident f,⟨Ident n,𝕩⟩⟩}¨𝕩}
     conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "match"_pc¨ pmatch)
-    uPar‿iPar←(⍷≍○<⊐)params
+    uPar‿iPar←(⍷⋈⊐)params
     Visit←{((iPar⊏uPar)∾⟜(∾""<⊸∾":"⊸∾¨)¨tname)∾⟨𝕏¨conds,𝕏result⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "lambda"‿visit
     Scope⇐{ Visit o.Scope (uPar∾uTyp) scopes.New 𝕩 }
@@ -676,7 +676,7 @@ nodes ← {
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
     v0←v←@ ⋄ Scope ⇐ {
       value.Scope 𝕩
-      v0‿v ↩ ("lambda"≡value.node)◶⟨ @≍○<𝕩.Add , 𝕩.AddLam ⟩ name
+      v0‿v ↩ ("lambda"≡value.node)◶⟨ @⋈𝕩.Add , 𝕩.AddLam ⟩ name
     }
     Eval⇐{ u←V𝕩 ⋄ u.Set (V0𝕩) value.Eval 𝕩 }
   }

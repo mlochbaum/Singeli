@@ -118,7 +118,7 @@ Export ← {
 ⟨New⟩ ← {
   Call ← {𝕨‿"("‿𝕩‿")"}⟜List
   code‿op ← <˘⍉>⟨
-    "val" ‿(≍○< Lit)
+    "val" ‿(⋈ Lit)
     "call"‿{ decl.Call fn ← Rename 𝕩 ⋄ fn Call (Lit𝕩˙)¨ ↕I32 𝕩 }
     "emit"‿(Name (≡⟜"op")◶⟨
         Call⟜(as.Lit¨All)
@@ -136,7 +136,7 @@ Export ← {
   }
 }
 
-code‿op ← (⊑¨ ≍○< 1⊸↓¨) ⟨
+code‿op ← (⊑¨ ⋈ 1⊸↓¨) ⟨
   "export" ‿ 0‿0‿⟨Export⟩
   "beginFn"‿ 1‿0‿⟨BeginFn⟩
   "lbl"    ‿ 0‿1‿⟨Name,":"⟩
