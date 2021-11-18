@@ -101,6 +101,8 @@ The following generators are pre-defined in any program. They're placed in a par
 | `kind{val}`         | Return a symbol indicating the kind of value
 | `show{vals…}`       | For debugging: print the parameters, and return it if there's exactly one
 
+Possible `kind` results are `number`, `constant`, `symbol`, `tuple`, `generator`, `type`, `register`, `function`, and `block`.
+
 ### Types
 
 | Syntax           | Result
@@ -115,6 +117,17 @@ The following generators are pre-defined in any program. They're placed in a par
 | `typekind{type}` | A symbol indicating the nature of the type
 | `__pnt{t}`       | Pointer type with element `t`
 | `__vec{n,t}`     | Vector type with element `t` and length `n`; equivalent to `[n]t`
+
+Possible `typekind` results are:
+
+| Type kind   | Example display
+|-------------|--------
+| `void`      | `void`
+| `primitive` | `i32`
+| `vector`    | `[4]i32`
+| `pointer`   | `*f64`
+| `function`  | `(i8,u1) -> void`
+| `tuple`     | `tup{u1,[2]u32}`
 
 ### Generators
 
