@@ -142,6 +142,7 @@ Possible `typekind` results are:
 | `tup{elems…}`       | Create a tuple of the parameters
 | `tupsel{ind,tuple}` | Select the `ind`th element (0-indexed) from the tuple
 | `apply{gen,tuple}`  | Apply a generator to a tuple of parameters
+| `each{gen,tuple…}`  | Map a generator over the given tuples
 
 ### Arithmetic
 

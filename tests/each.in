@@ -1,0 +1,6 @@
+divplusmod() : u32 = {
+  def t = tup{0,1,2,3,4}
+  def u = each{{a}=>__mul{3,a}, t}
+  def v = each{__add, u, tup{1,0,1,0,1}}
+  apply{bind{emit, u32, 'list'}, v}
+}
