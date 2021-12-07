@@ -435,12 +435,12 @@ functions ← {kname⇐"function"
 }
 
 blocks ← {kname⇐"block"
-  New ⇐ {𝕊 ind‿ptrs‿body‿e:
+  New ⇐ {𝕊 ind‿ptrs‿body‿ls‿e:
     kind⇐kname
     shows⇐"{block}" ⋄ Matches⇐≡
     Exec⇐{
       ! ptrs≡○≠1⊑𝕩
-      r ← body.Eval be ← ⟨≠ind,𝕩⟩ env.Block e
+      r ← body.Eval be ← ⟨≠ind,ls,𝕩⟩ env.Block e
       be.Stores @
       r
     }
@@ -533,13 +533,13 @@ env ← {
   New  ⇐{ (var.New∘@¨ 𝕨) Make 𝕩 }
   Mut  ⇐{ vars‿parent⇐⟨var.Mut¨𝕩.vars,env.Mut 𝕩.parent⟩ }⍟(@⊸≢)
   Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
-  Block⇐{⟨ni,ind‿ptrs⟩ 𝕊 par:
+  Block⇐{⟨ni,Load‿Store,ind‿ptrs⟩ 𝕊 par:
     pi ← ptrs ⋈¨ <ind
     pv ← Load¨ pi
-    vars‿parent ⇐ ((var.Fixed∘ind¨↕ni)∾(var.Marked¨pv)) Make 𝕩
+    vars‿parent ⇐ ((var.Fixed∘ind¨↕ni)∾(var.Marked¨pv)) Make par
     Stores ⇐ {𝕤
       m←{𝕩.write}¨v←ni↓vars
-      v var.Get⊸Store¨○(m⊸/) pi
+      v var.Get⊸(Store∾⟜<˜)¨○(m⊸/) pi
     }
   }
 }
@@ -748,14 +748,17 @@ nodes ← {
     vardisp←1↓∾(","⊸∾¨ptrs)∾" over "⊸∾¨ind
     Visit←{⟨𝕏fn,vardisp⊣𝕏¨ptri,𝕏from,𝕏to,𝕏body⟩}
     ⟨node,Dump,Disp,Oper⟩⇐d←Defaults "for"‿visit
+    ls←@
     Scope ⇐ {
       (o.Scope 𝕩)¨ ∾⟨fn⟩‿ptri‿⟨from,to⟩
+      ls ↩ {𝕏}∘𝕩.Get¨ "load"‿"store"
       body.Scope (ind∾ptrs) scopes.New 𝕩
     }
     Eval ⇐ {
       e←o.Eval 𝕩
       for←E fn
-      For ⟨E¨ptri, E from, E to, blocks.New ind‿ptrs‿body‿𝕩⟩
+      lsv←var.Get∘{𝕎𝕩}⟜𝕩¨ ls
+      For ⟨E¨ptri, E from, E to, blocks.New ind‿ptrs‿body‿lsv‿𝕩⟩
     }
   }
 }

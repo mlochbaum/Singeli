@@ -1,0 +1,19 @@
+include 'skin/c'
+include 'arch/c'
+
+def for{vars,begin,end,block} = {
+  i:u64 = begin
+  while (i<end) {
+    exec{i, vars,block}
+    i = i+1
+  }
+}
+
+loop(dst:*f64, x:*f64, w:*f64, len:u64) : void = {
+  def load{a,b} = emit{f64, 'llooaadd', a, b}
+  def store{a,b,c} = emit{f64, 'ssttoorree', a, b, c}
+  @for (dst,x,w over _ from 0 to len) {
+    def store{a,b,c} = emit{'wrong', f64, a, b, c} # In body; not called
+    dst=emit{f64,'op',w,x}
+  }
+}
