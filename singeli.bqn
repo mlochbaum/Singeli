@@ -54,6 +54,7 @@ architectures ← {
       Has ⇐ mask ⊑˜ Id⌾<
     }
   }
+  x86 ⇐ New ((⊢-˜+`×¬)' '⊸=)⊸⊔¨ •file.Lines "data/x86_ext.txt"
 }
 
 MakeStack ← {𝕤
