@@ -97,13 +97,13 @@ Parse ← {src 𝕊 tok‿lc:  # Tokens; line and column numbers
     }
     •Out¨ t Tr○((r=e)⊸/) c
     •Out ""
-    •Out {∾"Expected "‿𝕨‿" but saw "‿𝕩}○•Repr´⍟(1<≡) 𝕨
+    •Out {∾"Expected "‿𝕨‿" but saw "‿𝕩}⟜•Repr´⍟(1<≡) 𝕨
     •Exit 1
   }
   MakeTokStream ← {
     ⟨Inc⇐Next⟩←Pos‿Rem‿Peek⇐MakeStream 𝕩
     Next ⇐ Peek⊸Is
-    Get  ⇐ Inc ⊢ Peek⊸(⊣ ⊣ ⋈ Asrt Is)
+    Get  ⇐ Inc ⊢ {𝕩 (⊢ ⊣ (𝕨•Repr⊘⊣⊢)⊸⋈ Asrt Is˜) Peek@}
     Try  ⇐ 1∘Inc⍟⊢∘Next
   }
   ⟨Next,Get,Peek,Try,Rem,Pos⟩ ← MakeTokStream tok
@@ -117,12 +117,12 @@ Parse ← {src 𝕊 tok‿lc:  # Tokens; line and column numbers
   While ← {Test‿Cont‿init: {(𝕊∾⟜<⟜Cont)⍟Test𝕩} Cont¨↕init}
   _seq ← {≡¨⊸((≠⟜1∧(<sep)≢¨⊢)/>⟜0◶{𝕏@}‿Get¨) 𝔽}
 
-  _begin ← {Get (⊑∘𝔽⊑)˙}
+  _begin_ ← {𝕘 Get (⊑∘𝔽⊑)˙}
   _ifASCII ← {(@+128)⊸≤◶𝔽‿1}
-  Name ← ∊⟜alph _begin
-  Oper ← ∊⟜oc _ifASCII _begin
-  Word ← c.word _node_ (∊⟜(wc∾oc)_ifASCII _begin)
-  Symbol ← c.symbol _node_ ('''⊸=_begin)
+  Name ← ∊⟜alph _begin_ "name"
+  Oper ← ∊⟜oc _ifASCII _begin_ "oper"
+  Word ← c.word _node_ (∊⟜(wc∾oc)_ifASCII _begin_ "word")
+  Symbol ← c.symbol _node_ ('''⊸=_begin_"symbol")
 
   AddParams ← {𝕊∘(c.run  _node_ (⊢⋈"{"‿"}"_args))⍟(Next"{") 𝕩}
   AddArgs   ← {  (c.call _node_ (⊢⋈"("‿")"_args))⍟(Next"(") 𝕩}
