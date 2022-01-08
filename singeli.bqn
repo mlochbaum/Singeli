@@ -85,15 +85,15 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
 
   ! (¯1⊑tok) Is sep
 
-  Err ← {
+  Asrt ← {𝕨𝕊1:@;
     l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.define,"define",c.export,"export",c.for,"for",c.function,"function",c.if,"if",c.lambda,"lambda",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.while,"while",c.word,"word"⟩
     •Show (⟨⊏⟜lc,L⟩⊑⊸{𝕎𝕩}˘⊢)⌾⍉>DumpStack@
-    𝕨!𝕩
+    ! 𝕨
   }
   MakeTokStream ← {
     ⟨Inc⇐Next⟩←Pos‿Rem‿Peek⇐MakeStream 𝕩
     Next ⇐ Peek⊸Is
-    Get  ⇐ Inc ⊢ Peek⊸(⊣⊣⋈Err⍟(¬⊢)Is)
+    Get  ⇐ Inc ⊢ Peek⊸(⊣ ⊣ ⋈ Asrt Is)
     Try  ⇐ 1∘Inc⍟⊢∘Next
   }
   ⟨Next,Get,Peek,Try,Rem,Pos⟩ ← MakeTokStream tok
@@ -177,7 +177,7 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
   }
   # 𝕩 indicates if preceding token was =
   Result ← c.body _node_ (Next∘"{"◶⟨
-    Expr‿sep _seq "Missing = before body?"Err⍟(¬⊢)⊢
+    Expr‿sep _seq "Missing = before body?"Asrt⊢
     Body
   ⟩)
 
