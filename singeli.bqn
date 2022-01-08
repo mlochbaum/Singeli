@@ -74,7 +74,7 @@ MakeStream ← {
   Next ⇐ Inc ⊢ Peek
 }
 
-Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
+Parse ← {src 𝕊 tok‿lc:  # Tokens; line and column numbers
   # Three kinds of token tests, distinguished by depth.
   Is ← ≡∘⊢◶⟨
     {𝕏𝕨}   # 0 Function to apply
@@ -87,8 +87,18 @@ Parse ← {𝕊 tok‿lc:  # Tokens; line and column numbers
 
   Asrt ← {𝕨𝕊1:@;
     l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.define,"define",c.export,"export",c.for,"for",c.function,"function",c.if,"if",c.lambda,"lambda",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.while,"while",c.word,"word"⟩
-    •Show (⟨⊏⟜lc,L⟩⊑⊸{𝕎𝕩}˘⊢)⌾⍉>DumpStack@
-    ! 𝕨
+    p‿t←<˘⟨⊏⟜lc,L⟩⊑⊸{𝕎𝕩}˘⍉>DumpStack@
+    r‿c←<˘⍉>p
+    •Out src/˜(src=lf)(⊣<+`⊸=)e←¯1⊑r
+    Tr ← {
+      e ← (¯1+`(𝕩≤»𝕨≠⊸+¨𝕩))⊔𝕩⋈¨𝕨
+      l ← "^"⌾(1⊑¯1⊑⊑) ⌽ "|"⌾(1⊸⊑)¨⊸∾` (1+≠e)↑e
+      (∾⊢⥊⟜' '⊸∾¨˜⊣-·»+⟜≠¨)˝∘⍉∘>¨ l
+    }
+    •Out¨ t Tr○((r=e)⊸/) c
+    •Out ""
+    •Out {∾"Expected "‿𝕨‿" but saw "‿𝕩}○•Repr´⍟(1<≡) 𝕨
+    •Exit 1
   }
   MakeTokStream ← {
     ⟨Inc⇐Next⟩←Pos‿Rem‿Peek⇐MakeStream 𝕩
@@ -805,7 +815,7 @@ ast ← {
   Show ⇐ {•Out ∾∾⟜lf¨ 𝕩.Disp @}
   baseScope ← builtins.names scopes.New scopes.Init@
   baseEnv   ← builtins.values env.Fixed @
-  Build ⇐ Parse∘Tokenize
+  Build ⇐ Parse⟜Tokenize
   Compile ⇐ {
     t ← 𝕨 files.Build 𝕩
     t.Oper operator._with @
