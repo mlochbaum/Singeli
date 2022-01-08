@@ -91,7 +91,7 @@ Parse ← {src 𝕊 tok‿lc:  # Tokens; line and column numbers
     r‿c←<˘⍉>p
     •Out src/˜(src=lf)(⊣<+`⊸=)e←¯1⊑r
     Tr ← {
-      e ← (¯1+`(𝕩≤»𝕨≠⊸+¨𝕩))⊔𝕩⋈¨𝕨
+      e ← (+`(𝕩≤¯1»𝕨≠⊸+¨𝕩))⊔𝕩⋈¨𝕨
       l ← "^"⌾(1⊑¯1⊑⊑) ⌽ "|"⌾(1⊸⊑)¨⊸∾` (1+≠e)↑e
       (∾⊢⥊⟜' '⊸∾¨˜⊣-·»+⟜≠¨)˝∘⍉∘>¨ l
     }
@@ -166,15 +166,17 @@ Parse ← {src 𝕊 tok‿lc:  # Tokens; line and column numbers
   }∘Peek
 
   For ← c.for _node_ {𝕤
+    OA← "@for: multiple variables must use ""over"""⊸Asrt
+    TA← "@for: ""from"" missing ""to"""⊸Asrt
     Expr ← "over"‿"from"‿"to"_exprEnd # Shadow
     Get "@"
     f ← Callable@
     Get "("
     to← Expr@ ⋄ NE←{𝕤⋄ n←c.PhraseToName to ⋄ to↩Expr@ ⋄ n}
     pe← While ⟨Try∘",", Name, 0⟩
-    ps← pe ⊢◶{!0=≠𝕨⋄⟨⟩}‿{(<NE@)∾𝕨} Try"over" # Pointers
-    fr← When ⟨Try"from", Expr⟩               # Start index
-    i ← ⊢◶{𝕤⋄!0=≠fr⋄⟨⟩}‿{𝕤⋄⟨NE@⟩} Try"to"    # Index variable
+    ps← pe ⊢◶{OA 0=≠𝕨⋄⟨⟩}‿{(<NE@)∾𝕨} Try"over" # Pointers
+    fr← When ⟨Try"from", Expr⟩                 # Start index
+    i ← ⊢◶{𝕤⋄TA 0=≠fr⋄⟨⟩}‿{𝕤⋄⟨NE@⟩} Try"to"    # Index variable
     Get ")"
     b ← Statement@
     ⟨f,ps,i,fr,to,b⟩
