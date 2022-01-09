@@ -19,6 +19,8 @@ Tokenize←{
   ign←(𝕩∊" "∾tab)∨≠`ab∧c∨n                  # Ignored characters
   # Other stuff
   k∨↩∨´(»⊸∧k<𝕩⊸∊)¨wc‿oc                     # Group names, numbers, and ops
+  bt←(⌈`↕∘≠×¬)k ⋄ xd←𝕩∊dig
+  k∨↩»⊸∨(»(bt⊏xd)∧𝕩='e')∧(𝕩='-')∧«xd        # Negative exponents 12e-3
   ts←n∨¬k∨ign                               # Token start mask
   lc←(1+/𝕩=lf){(⊢⋈¨𝕩-⊏⟜(0∾𝕨))𝕨⍋𝕩}/ts        # Line/column numbers
   ⟨𝕩⊔˜1-˜(ign>≠`ab∧s∨d)¬⊸×+`ts, lc⟩
@@ -292,11 +294,11 @@ IsNum ← 1=•Type
 IsInt ← IsNum _and_ (⌊⊸=)
 IsNat ← IsInt _and_ (0⊸≤)
 IsTup ← 0=•Type
-FmtInt ← '-'⍟('¯'⊸=)⌾⊑•Repr
+FmtNum ← '¯'(⊢+=×'-'-⊣)•Repr
 
 _tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!⟩)˙)∾↑)𝕗)}
 Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
-Show  ← {⟨"tup{"∾"}"«·∾(","∾𝕊)¨, FmtInt, {𝕩.Shows@}⟩_tsel 𝕩}
+Show  ← {⟨"tup{"∾"}"«·∾(","∾𝕊)¨, FmtNum, {𝕩.Shows@}⟩_tsel 𝕩}
 Match ← {𝕨 ⟨∧´𝕊¨, ≡,≡,≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
 IsTyped←("register"⊸≡∨"constant"⊸≡) Kind
 TypeOf← {⟨types.Tup 𝕊¨, {𝕩.Type@}⟩_tsel 𝕩}
