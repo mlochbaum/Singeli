@@ -69,7 +69,7 @@ MakeStream ← {
   len←≠src←𝕩 ⋄ i←0
   Pos  ⇐ {𝕤⋄i}
   Inc  ← {𝕤⋄i+↩1}
-  Rem  ⇐ {𝕤⋄(i+1)<len}
+  Rem  ⇐ {𝕤⋄i<len}
   Peek ⇐ {𝕤⋄i⊑src}
   Next ⇐ Inc ⊢ Peek
 }
