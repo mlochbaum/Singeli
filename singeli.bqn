@@ -27,7 +27,7 @@ Tokenize←{
 numbers ← {
   _be ← {𝕗⊸×⊸+˜´⌽}
   Nat ← (10 _be ⊣ "Ill-formed number"!·∧´0⊸≤∧≤⟜9) -⟜'0'
-  LC ← +⟜(32×1="A["⊸⍋)  # Lowercase
+  LC ← +⟜(32×1="A["⊸⍋) '_'⊸≠⊸/  # Lowercase, underscores removed
   da ← dig∾'a'+↕26
   Read ⇐ {
     (≠𝕩)>s←⌊´𝕩⊐"bx" ? # Base n with 0x9abc or 31bNUMBER
