@@ -580,13 +580,22 @@ env ← {
 }
 
 program ← {
-  AddFunction⇐Export⇐!∘0
+  AddFunction⇐Export⇐!∘0 ⋄ trace⇐@
   _with ⇐ {
     fns←⟨⟩ ⋄ AddFunction ↩ { f ← 𝕏 ≠fns ⋄ fns∾⟜<↩f ⋄ f }
     exp←⟨⟩ ⋄ Export ↩ { exp ∾⟜<↩ 𝕨‿𝕩 }
-    𝕨𝔽𝕩
+    s←Stack@ ⋄ _trace_↩s._trace_
+    𝕨 𝔽⎊s.Report 𝕩
     AddFunction↩Export↩!∘0
     ∾ ⟨∾DispFunction¨fns, DispExport¨exp⟩
+  }
+  Stack ← {𝕤
+    ⟨_trace_⇐_while_⟩ ⇐ ⟨Dump⇐Arr⟩ ← MakeStack@
+    Report ⇐ {𝕤
+      •Show •CurrentError@
+      ast.Show¨ ⌽ Dump@
+      •Exit 1
+    }
   }
   J ← 1↓·∾" "⊸∾¨
   Disp ← J Show¨⌾(1⊸↓)
@@ -635,7 +644,7 @@ nodes ← {
     Visit←{⟨𝕏caller,𝕏¨params⟩}
     ⟨node,Dump,Disp,Scope⟩⇐d←Defaults "run"‿visit
     Oper ⇐ {𝕤⋄ operator.Run ⟨⊑Visit o.oper,params⟩}
-    Eval ⇐ {𝕎𝕩}´ d.Eval
+    Eval ⇐ {𝕎 program._trace_ caller 𝕩}´ d.Eval
   }
   Call ⇐ { Run ⟨Ident"call" , <⊸∾´𝕩⟩ }
   Phrase ⇐ {
@@ -791,7 +800,7 @@ nodes ← {
     }
     Eval ⇐ {
       e←o.Eval 𝕩
-      for←E fn
+      For←(E fn) program._trace_ fn
       lsv←var.Get∘{𝕎𝕩}⟜𝕩¨ ls
       For ⟨E¨ptri, E from, E to, blocks.New ind‿ptrs‿body‿lsv‿𝕩⟩
     }
