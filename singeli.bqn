@@ -95,15 +95,17 @@ Parse ← {src 𝕊 tok‿lc:  # Tokens; line and column numbers
     Tr ← {
       e ← (+`(𝕩≤¯1»𝕨≠⊸+¨𝕩))⊔𝕩⋈¨𝕨
       l ← "^"⌾(1⊑¯1⊑⊑) ⌽ "|"⌾(1⊸⊑)¨⊸∾` (1+≠e)↑e
-      (∾⊢⥊⟜' '⊸∾¨˜⊣-·»+⟜≠¨)˝∘⍉∘>¨ l
+      {∾((-⟜»𝕨)∾≠¯1⊑𝕩)↑¨""<⊸∾𝕩}˝∘⍉∘>¨ l
     }
     •Out¨ t Tr○((r=e)⊸/) c
     •Out ""
-    •Out {∾"Expected "‿𝕨‿" but saw "‿𝕩}⟜•Repr´⍟(1<≡) 𝕨
+    F ← (⥊lf)⊸≡◶•Repr‿"end of line"
+    •Out {∾"Expected "‿𝕨‿" but saw "‿𝕩}⟜F´⍟(1<≡) 𝕨
     •Exit 1
   }
   MakeTokStream ← {
     ⟨Inc⇐Next⟩←Pos‿Rem‿Peek⇐MakeStream 𝕩
+    Peek ↩ Peek ⊣ "File ended unexpectedly" Asrt Rem
     Next ⇐ Peek⊸Is
     Get  ⇐ Inc ⊢ {𝕩 (⊢ ⊣ (𝕨•Repr⊘⊣⊢)⊸⋈ Asrt Is˜) Peek@}
     Try  ⇐ 1∘Inc⍟⊢∘Next
@@ -117,7 +119,7 @@ Parse ← {src 𝕊 tok‿lc:  # Tokens; line and column numbers
 
   When  ← {Test‿Cont:       ( ⥊∘< Cont)⍟Test   ⟨⟩  }
   While ← {Test‿Cont‿init: {(𝕊∾⟜<⟜Cont)⍟Test𝕩} Cont¨↕init}
-  _seq ← {≡¨⊸((≠⟜1∧(<sep)≢¨⊢)/>⟜0◶{𝕏@}‿Get¨) 𝔽}
+  _seq ← {≡¨⊸((≠⟜1∧(<sep)≢¨⊢)/>⟜0◶{𝕏@}‿(Get⊢)¨) 𝔽}
 
   _begin_ ← {𝕘 Get (⊑∘𝔽⊑)˙}
   _ifASCII ← {(@+128)⊸≤◶𝔽‿1}
