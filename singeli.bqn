@@ -115,7 +115,7 @@ Parse ← {src 𝕊 tok‿lc:  # Tokens; line and column numbers
   # Node creation and error tracking
   c ← nodes
   ⟨_whileParse_⇐_while_, DumpStack⇐Arr⟩ ← MakeStack@
-  _node_ ← {𝔽 𝔾_whileParse_⟨Pos@,𝕗⟩ 𝕩}
+  _node_ ← {p←Pos@ ⋄ p 𝔽 𝔾_whileParse_⟨p,𝕗⟩ 𝕩}
 
   When  ← {Test‿Cont:       ( ⥊∘< Cont)⍟Test   ⟨⟩  }
   While ← {Test‿Cont‿init: {(𝕊∾⟜<⟜Cont)⍟Test𝕩} Cont¨↕init}
@@ -584,7 +584,7 @@ program ← {
   _with ⇐ {
     fns←⟨⟩ ⋄ AddFunction ↩ { f ← 𝕏 ≠fns ⋄ fns∾⟜<↩f ⋄ f }
     exp←⟨⟩ ⋄ Export ↩ { exp ∾⟜<↩ 𝕨‿𝕩 }
-    s←Stack@ ⋄ _trace_↩s._trace_
+    ⟨_trace_⟩↩s←Stack@
     𝕨 𝔽⎊s.Report 𝕩
     AddFunction↩Export↩!∘0
     ∾ ⟨∾DispFunction¨fns, DispExport¨exp⟩
@@ -614,6 +614,7 @@ nodes ← {
     Eval ⇐ {𝕊env:{𝕩.Eval  env}}
   }
   Defaults ← {
+    pos ⇐ 𝕨⊣¯1
     node‿visit ⇐ 𝕩
     Visit o.verify
     Dump ⇐ {𝕤⋄⟨node,Visit o.dump⟩}
@@ -626,23 +627,23 @@ nodes ← {
   # Node types
   Ident ← {
     name⇐𝕩
-    ⟨node,Dump⟩⇐Defaults "ident"‿⟨⟩
+    ⟨node,pos,Dump⟩⇐𝕨 Defaults "ident"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
     Oper⇐{𝕤⋄operator.Lookup name}
     Eval⇐!∘0 ⋄ Scope⇐{Eval↩var.Get∘(𝕩.Get name)}
   }
-  Value ← {
-    name←𝕨
-    Eval⇐𝕩˙
-    ⟨node,Dump,Oper,Scope⟩⇐Defaults "value"‿⟨⟩
+  _value ← {
+    name←𝕩
+    Eval⇐(𝔽𝕩)˙
+    ⟨node,pos,Dump,Oper,Scope⟩⇐𝕨 Defaults "value"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
   }
-  Word ⇐ (⊑⊏∊dig˙)◶⟨Ident, Value⟜numbers.Read⟩
-  Symbol ⇐ Value⟜(symbols.New 1↓¯1↓⊢)
+  Word ⇐ (⊑⊏∘⊢∊dig˙)◶⟨Ident, numbers.Read _value⟩
+  Symbol ⇐ (symbols.New 1↓¯1↓⊢)_value
   Run ⇐ {
     ⟨caller,params⟩←𝕩
     Visit←{⟨𝕏caller,𝕏¨params⟩}
-    ⟨node,Dump,Disp,Scope⟩⇐d←Defaults "run"‿visit
+    ⟨node,pos,Dump,Disp,Scope⟩⇐d←𝕨 Defaults "run"‿visit
     Oper ⇐ {𝕤⋄ operator.Run ⟨⊑Visit o.oper,params⟩}
     Eval ⇐ {𝕎 program._trace_ caller 𝕩}´ d.Eval
   }
@@ -651,7 +652,7 @@ nodes ← {
     things←𝕩
     ToName⇐{𝕤⋄ (1=≠)◶@‿(("ident"≡{𝕩.node})◶@‿{𝕩.name}⊑) things }
     Visit←{⟨𝕏¨things⟩}
-    ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "phrase"‿visit
+    ⟨node,pos,Dump,Disp,Scope,Eval⟩⇐𝕨 Defaults "phrase"‿visit
     Oper⇐{𝕤
       n ← o.Oper¨⊸operator.Parse things
       Scope↩{𝕨n.Scope𝕩} ⋄ Eval↩{𝕨n.Eval𝕩} ⋄ Disp↩{𝕨n.Disp𝕩}
@@ -670,7 +671,7 @@ nodes ← {
     conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "match"_pc¨ pmatch)
     uPar‿iPar←(⍷⋈⊐)params
     Visit←{((iPar⊏uPar)∾⟜(∾""<⊸∾":"⊸∾¨)¨tname)∾⟨𝕏¨conds,𝕏result⟩}
-    ⟨node,Dump,Disp,Oper⟩⇐Defaults "lambda"‿visit
+    ⟨node,pos,Dump,Disp,Oper⟩⇐𝕨 Defaults "lambda"‿visit
     Scope⇐{ Visit o.Scope (uPar∾uTyp) scopes.New 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value
       next ← ({𝕩.Get@}𝕨)⊣{"No matching generator definition"!0˙}
@@ -687,14 +688,14 @@ nodes ← {
   Arg ⇐ {
     ⟨name,type⟩←𝕩
     Visit←{⟨name,𝕏type⟩}
-    ⟨node,Dump,Disp,Oper⟩⇐Defaults "arg"‿visit
+    ⟨node,pos,Dump,Disp,Oper⟩⇐𝕨 Defaults "arg"‿visit
     v←@ ⋄ Scope⇐{ type.Scope 𝕩 ⋄ v ↩ 𝕩.Add name }
     Eval⇐{ u←V𝕩 ⋄ u.SetType t←type.Eval 𝕩 ⋄ u.Set functions.NextArg t }
   }
   Function ⇐ {
     ⟨args,type,result⟩←𝕩
     Visit←{⟨𝕏¨args,𝕏¨type,𝕏result⟩}
-    ⟨node,Dump,Disp,Oper⟩⇐Defaults "function"‿visit
+    ⟨node,pos,Dump,Disp,Oper⟩⇐𝕨 Defaults "function"‿visit
     Scope⇐{ Visit o.Scope scopes.New 𝕩 }
     Eval⇐{
       ev←o.Eval args env.New 𝕩
@@ -707,7 +708,7 @@ nodes ← {
     ⟨name,decl,type,value⟩←𝕩
     name PhraseToName˜↩@
     Visit←{⟨name∾decl/":",𝕏¨type,𝕏value⟩}
-    ⟨node,Dump,Disp,Oper⟩⇐Defaults "assign"‿visit
+    ⟨node,pos,Dump,Disp,Oper⟩⇐𝕨 Defaults "assign"‿visit
     GetVar←!∘0 ⋄ Scope⇐{
       Visit o.Scope 𝕩
       getVar ↩ decl◶⟨𝕩.Get, 𝕩.Add⟩ name
@@ -722,7 +723,7 @@ nodes ← {
   Define ⇐ {
     ⟨name,value⟩←𝕩
     Visit←{⟨name,𝕏value⟩}
-    ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
+    ⟨node,pos,Dump,Disp,Oper⟩⇐𝕨 Defaults "define"‿visit
     v0←v←@ ⋄ Scope ⇐ {
       value.Scope 𝕩
       v0‿v ↩ ("lambda"≡value.node)◶⟨ @⋈𝕩.Add , 𝕩.AddLam ⟩ name
@@ -733,13 +734,13 @@ nodes ← {
     ⟨type,op,fn,prec⟩←𝕩
     !"value"≡prec.node ⋄ !IsNum prec↩prec.Eval@
     Visit←{𝕤⋄⟨type,op,fn,•Repr prec⟩}
-    ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "opdef"‿visit
+    ⟨node,pos,Dump,Disp,Scope,Eval⟩⇐𝕨 Defaults "opdef"‿visit
     Oper⇐{𝕤⋄ operator.Add type‿op‿fn‿prec}
   }
   Export ⇐ {
     ⟨name,value⟩ ← {Show 𝕩.Eval@}¨⌾⊑ 𝕩
     Visit←{⟨name,𝕏value⟩}
-    ⟨node,Dump,Disp,Oper,Scope⟩⇐d←Defaults "export"‿visit
+    ⟨node,pos,Dump,Disp,Oper,Scope⟩⇐d←𝕨 Defaults "export"‿visit
     Eval ⇐ { program.Export¨⟜<´ d.Eval 𝕩 }
   }
   Include ⇐ {
@@ -748,7 +749,7 @@ nodes ← {
   Body ⇐ {
     statements←𝕩
     Visit←{⟨𝕏¨statements⟩}
-    ⟨node,Dump,Disp,Oper⟩⇐d←Defaults "body"‿visit
+    ⟨node,pos,Dump,Disp,Oper⟩⇐d←𝕨 Defaults "body"‿visit
     sc←@ ⋄ Scope⇐{ Visit o.Scope sc ↩ scopes.New 𝕩 }
     Eval⇐{ ¯1⊑⊑d.Eval (sc.Names@) env.New 𝕩 }
     # Hack for include statements
@@ -757,7 +758,7 @@ nodes ← {
   If ⇐ {
     ⟨cond,then,else⟩←𝕩
     Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
-    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "if"‿visit
+    ⟨node,pos,Dump,Disp,Oper,Scope⟩⇐𝕨 Defaults "if"‿visit
     Eval ⇐ {
       c ← cond.Eval𝕩
       lf ← functions.Label@
@@ -773,7 +774,7 @@ nodes ← {
   While ⇐ {
     ⟨testFirst,cond,stmt⟩←𝕩
     Visit←{⟨𝕏cond,𝕏stmt⟩}
-    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "while"‿visit
+    ⟨node,pos,Dump,Disp,Oper,Scope⟩⇐𝕨 Defaults "while"‿visit
     Eval ⇐ {
       functions.Goto¨ lc ← functions.Label¨↕testFirst
       functions.SetLabel lt ← functions.Label@
@@ -791,7 +792,7 @@ nodes ← {
     ptri←Ident¨ptrs
     vardisp←1↓∾(","⊸∾¨ptrs)∾" over "⊸∾¨ind
     Visit←{⟨𝕏fn,vardisp⊣𝕏¨ptri,𝕏from,𝕏to,𝕏body⟩}
-    ⟨node,Dump,Disp,Oper⟩⇐d←Defaults "for"‿visit
+    ⟨node,pos,Dump,Disp,Oper⟩⇐d←𝕨 Defaults "for"‿visit
     ls←@
     Scope ⇐ {
       (o.Scope 𝕩)¨ ∾⟨fn⟩‿ptri‿⟨from,to⟩
