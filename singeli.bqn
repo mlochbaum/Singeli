@@ -23,7 +23,22 @@ Tokenize←{
   k∨↩»⊸∨(»(bt⊏xd)∧𝕩='e')∧(𝕩='-')∧«xd        # Negative exponents 12e-3
   ts←n∨¬k∨ign                               # Token start mask
   lc←(1+/𝕩=lf){(⊢⋈¨𝕩-⊏⟜(0∾𝕨))𝕨⍋𝕩}/ts        # Line/column numbers
-  ⟨𝕩⊔˜1-˜(ign>≠`ab∧s∨d)¬⊸×+`ts, lc⟩
+  ⟨𝕩⊔˜1-˜(ign>≠`ab∧s∨d)¬⊸×+`ts, Source 𝕩‿lc⟩
+}
+
+# Position handler for error reporting
+Source ← {
+  src‿lc←𝕩
+  { pos 𝕊 disp:
+    r‿c←<˘⍉>pos⊏lc
+    •Out src/˜(src=lf)(⊣<+`⊸=)e←¯1⊑r
+    Tr ← {
+      e ← (+`(𝕩≤¯1»𝕨≠⊸+¨𝕩))⊔𝕩⋈¨𝕨
+      l ← "^"⌾(1⊑¯1⊑⊑) ⌽ "|"⌾(1⊸⊑)¨⊸∾` (1+≠e)↑e
+      {∾((-⟜»𝕨)∾≠¯1⊑𝕩)↑¨""<⊸∾𝕩}˝∘⍉∘>¨ l
+    }
+    •Out¨ disp Tr○((r=e)⊸/) c
+  }
 }
 
 numbers ← {
@@ -76,7 +91,7 @@ MakeStream ← {
   Next ⇐ Inc ⊢ Peek
 }
 
-Parse ← {src 𝕊 tok‿lc:  # Tokens; line and column numbers
+Parse ← {𝕊 tokens‿ShowTrace:
   # Three kinds of token tests, distinguished by depth.
   Is ← ≡∘⊢◶⟨
     {𝕏𝕨}   # 0 Function to apply
@@ -85,19 +100,11 @@ Parse ← {src 𝕊 tok‿lc:  # Tokens; line and column numbers
   ⟩
   sep ← ⟨";", ⥊lf⟩
 
-  ! (¯1⊑tok) Is sep
+  ! (¯1⊑tokens) Is sep
 
   Asrt ← {𝕨𝕊1:@;
     l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.define,"define",c.export,"export",c.for,"for",c.function,"function",c.if,"if",c.lambda,"lambda",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.while,"while",c.word,"word"⟩
-    p‿t←<˘⟨⊏⟜lc,L⟩⊑⊸{𝕎𝕩}˘⍉>DumpStack@
-    r‿c←<˘⍉>p
-    •Out src/˜(src=lf)(⊣<+`⊸=)e←¯1⊑r
-    Tr ← {
-      e ← (+`(𝕩≤¯1»𝕨≠⊸+¨𝕩))⊔𝕩⋈¨𝕨
-      l ← "^"⌾(1⊑¯1⊑⊑) ⌽ "|"⌾(1⊸⊑)¨⊸∾` (1+≠e)↑e
-      {∾((-⟜»𝕨)∾≠¯1⊑𝕩)↑¨""<⊸∾𝕩}˝∘⍉∘>¨ l
-    }
-    •Out¨ t Tr○((r=e)⊸/) c
+    ShowTrace⟜L´ <˘⍉>DumpStack@
     •Out ""
     F ← (⥊lf)⊸≡◶•Repr‿"end of line"
     •Out {∾"Expected "‿𝕨‿" but saw "‿𝕩}⟜F´⍟(1<≡) 𝕨
@@ -110,7 +117,7 @@ Parse ← {src 𝕊 tok‿lc:  # Tokens; line and column numbers
     Get  ⇐ Inc ⊢ {𝕩 (⊢ ⊣ (𝕨•Repr⊘⊣⊢)⊸⋈ Asrt Is˜) Peek@}
     Try  ⇐ 1∘Inc⍟⊢∘Next
   }
-  ⟨Next,Get,Peek,Try,Rem,Pos⟩ ← MakeTokStream tok
+  ⟨Next,Get,Peek,Try,Rem,Pos⟩ ← MakeTokStream tokens
 
   # Node creation and error tracking
   c ← nodes
@@ -831,7 +838,7 @@ ast ← {
   Show ⇐ {•Out ∾∾⟜lf¨ 𝕩.Disp @}
   baseScope ← builtins.names scopes.New scopes.Init@
   baseEnv   ← builtins.values env.Fixed @
-  Build ⇐ Parse⟜Tokenize
+  Build ⇐ Parse∘Tokenize
   Compile ⇐ {
     t ← 𝕨 files.Build 𝕩
     t.Oper operator._with @
