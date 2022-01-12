@@ -122,7 +122,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   # Node creation and error tracking
   c ← nodes
   ⟨_whileParse_⇐_while_, DumpStack⇐Arr⟩ ← MakeStack@
-  _node_ ← {p←Pos@ ⋄ p 𝔽 𝔾_whileParse_⟨p,𝕗⟩ 𝕩}
+  _node_ ← {p←Pos@ ⋄ (ShowTrace○⋈⟜"")‿p 𝔽 𝔾_whileParse_⟨p,𝕗⟩ 𝕩}
 
   When  ← {Test‿Cont:       ( ⥊∘< Cont)⍟Test   ⟨⟩  }
   While ← {Test‿Cont‿init: {(𝕊∾⟜<⟜Cont)⍟Test𝕩} Cont¨↕init}
@@ -599,8 +599,9 @@ program ← {
   Stack ← {𝕤
     ⟨_trace_⇐_while_⟩ ⇐ ⟨Dump⇐Arr⟩ ← MakeStack@
     Report ⇐ {𝕤
-      •Show •CurrentError@
-      ast.Show¨ ⌽ Dump@
+      •Out (∧`lf⊸≠)⊸/⎊•Repr •CurrentError@
+      •Out ""
+      {S‿p←𝕩.pos⋄p S 𝕩}¨ ⌽ Dump@
       •Exit 1
     }
   }
@@ -621,7 +622,7 @@ nodes ← {
     Eval ⇐ {𝕊env:{𝕩.Eval  env}}
   }
   Defaults ← {
-    pos ⇐ 𝕨⊣¯1
+    pos ⇐ 𝕨 ⊣ {ast.Show𝕩}‿¯1
     node‿visit ⇐ 𝕩
     Visit o.verify
     Dump ⇐ {𝕤⋄⟨node,Visit o.dump⟩}
