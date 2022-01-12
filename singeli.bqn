@@ -122,7 +122,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   # Node creation and error tracking
   c ← nodes
   ⟨_whileParse_⇐_while_, DumpStack⇐Arr⟩ ← MakeStack@
-  _node_ ← {p←Pos@ ⋄ (ShowTrace○⋈⟜"")‿p 𝔽 𝔾_whileParse_⟨p,𝕗⟩ 𝕩}
+  _node_ ← {p←Pos@ ⋄ (ShowTrace○⋈⟜""⊢)‿p 𝔽 𝔾_whileParse_⟨p,𝕗⟩ 𝕩}
 
   When  ← {Test‿Cont:       ( ⥊∘< Cont)⍟Test   ⟨⟩  }
   While ← {Test‿Cont‿init: {(𝕊∾⟜<⟜Cont)⍟Test𝕩} Cont¨↕init}
@@ -131,7 +131,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   _begin_ ← {𝕘 Get (⊑∘𝔽⊑)˙}
   _ifASCII ← {(@+128)⊸≤◶𝔽‿1}
   Name ← ∊⟜alph _begin_ "name"
-  Oper ← ∊⟜oc _ifASCII _begin_ "oper"
+  Oper ← ∊⟜oc _ifASCII _begin_ "operator"
   Word ← c.word _node_ (∊⟜(wc∾oc)_ifASCII _begin_ "word")
   Symbol ← c.symbol _node_ ('''⊸=_begin_"symbol")
 
@@ -255,25 +255,32 @@ Parse ← {𝕊 tokens‿ShowTrace:
 }
 
 operator ← {
+  Err ← { (𝕩≠⊸⥊•Out‿({𝕎𝕩}´)) {𝕎𝕩}¨ 𝕩 ⋄ •Exit 1 }
   Parse ⇐ {ops 𝕊 val:
     Peek‿Next‿Rem ← MakeStream ops {null‿left‿bind‿R⇐𝕨 ⋄ value⇐𝕩}¨ val
     E ← {𝕊test: {𝕊∘{𝕩 LeD Next@}⍟(Test Peek)⍟Rem 𝕩} NuD Next@ }
     NuD ← { 𝕩.null ≢⟜@◶{𝕩.value}‿{nodes.Run ⟨𝕩.R 𝕨.V@, ⟨E 𝕨.t⟩⟩} 𝕩 }
-    LeD ← { !@≢l←𝕩.left ⋄ nodes.Run ⟨𝕩.R l.V@, ⟨𝕨, E l.t⟩⟩ }
+    LeD ← { Unk⍟(@≡l←𝕩.left)𝕩 ⋄ nodes.Run ⟨𝕩.R l.V@, ⟨𝕨, E l.t⟩⟩ }
+    Unk ← { Err "Unknown operator"‿𝕩.value.pos }
     E 1
   }
   New ← {𝕤
     null ⇐ left ⇐ @
     bind ⇐ ¯∞
     R ⇐ ⊢
-    Op ← {val‿p‿c←𝕩 ⋄ V⇐nodes.Word∘val ⋄ T⇐p C {𝕩.bind}}  # Value and test
-    AddNull ⇐ {𝕊⟨value, prec⟩: AddNull↩!∘0
-      null ↩ Op ⟨value, prec, <⟩
+    Op ← {𝕊val‿p‿c‿a:
+      V ⇐ nodes.Word∘val
+      T ⇐ (p C {𝕩.bind}){{⊣AC𝕏}⍟a𝕗}
     }
-    AddLeft ⇐ {𝕊⟨value, prec, assoc⟩: AddLeft↩!∘0
+    AddNull ⇐ {𝕨𝕊⟨value, prec⟩: AddNull↩𝕨_dup
+      null ↩ Op ⟨value, prec, <, 0⟩
+    }
+    AddLeft ⇐ {𝕨𝕊⟨value, prec, assoc⟩: AddLeft↩𝕨_dup
       bind ↩ prec
-      left ↩ Op ⟨value, prec, ("lrn"⊸⊐⌾<assoc)⊑<‿≤‿(!∘≠⊢<)⟩
+      left ↩ Op ⟨value, prec, ('r'=assoc)⊑<‿≤, 'n'=assoc⟩
     }
+    _dup ← { Err "Duplicate operator definition:"‿𝕨‿"Previously defined here:"‿𝕗 }
+    AC ← 𝕩{1≡𝕩?@; Err ("Associativity for operator "∾𝕗∾" must be disambiguated")‿𝕨.value.pos }
   }
   Run ⇐ {𝕊⟨op,params⟩: null‿left‿bind⇐op ⋄ R⇐nodes.Run op.R⋈params˙}
   nil ⇐ New @
@@ -283,10 +290,10 @@ operator ← {
     n←⟨⟩ ⋄ o←⟨⟩
     _get ← {(n⊸⊐⌾<𝕩) =⟜(≠n)◶{𝕨⊑o}‿𝔽 𝕩}
     Lookup ↩ nil _get
-    Define ← {n∾↩<𝕩 ⋄ o∾↩<r←New@ ⋄ r} _get
-    Add ↩ {𝕊type‿name‿value‿prec:
+    Define ← {n∾↩<𝕩 ⋄ o∾↩<r←New𝕩 ⋄ r} _get
+    Add ↩ {𝕨𝕊type‿name‿value‿prec:
       p ← Define name
-      (type≠'p')◶⟨p.AddNull, p.AddLeft∾⟜type⟩ ⟨value,prec⟩
+      (type≠'p')◶⟨𝕨p.AddNull⊢, 𝕨p.AddLeft∾⟜type⟩ ⟨value,prec⟩
     }
     𝕨𝔽𝕩
     Lookup↩Add↩!∘0
@@ -601,7 +608,7 @@ program ← {
     Report ⇐ {𝕤
       •Out (∧`lf⊸≠)⊸/⎊•Repr •CurrentError@
       •Out ""
-      {S‿p←𝕩.pos⋄p S 𝕩}¨ ⌽ Dump@
+      {S‿p←𝕩.pos⋄𝕩 S p}¨ ⌽ Dump@
       •Exit 1
     }
   }
@@ -622,7 +629,7 @@ nodes ← {
     Eval ⇐ {𝕊env:{𝕩.Eval  env}}
   }
   Defaults ← {
-    pos ⇐ 𝕨 ⊣ {ast.Show𝕩}‿¯1
+    pos ⇐ 𝕨 ⊣ {ast.Show𝕨}‿¯1
     node‿visit ⇐ 𝕩
     Visit o.verify
     Dump ⇐ {𝕤⋄⟨node,Visit o.dump⟩}
@@ -743,7 +750,7 @@ nodes ← {
     !"value"≡prec.node ⋄ !IsNum prec↩prec.Eval@
     Visit←{𝕤⋄⟨type,op,fn,•Repr prec⟩}
     ⟨node,pos,Dump,Disp,Scope,Eval⟩⇐𝕨 Defaults "opdef"‿visit
-    Oper⇐{𝕤⋄ operator.Add type‿op‿fn‿prec}
+    Oper⇐{𝕤⋄ pos operator.Add type‿op‿fn‿prec}
   }
   Export ⇐ {
     ⟨name,value⟩ ← {Show 𝕩.Eval@}¨⌾⊑ 𝕩
