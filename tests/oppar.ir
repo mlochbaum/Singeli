@@ -1,0 +1,4 @@
+beginFn f0 f64 0
+ret !18:f64
+endFn
+
