@@ -259,8 +259,9 @@ operator ← {
   Parse ⇐ {ops 𝕊 val:
     Peek‿Next‿Rem ← MakeStream ops {null‿left‿bind‿R⇐𝕨 ⋄ value⇐𝕩}¨ val
     E ← {𝕊test: {𝕊∘{𝕩 LeD Next@}⍟(Test Peek)⍟Rem 𝕩} NuD Next@ }
-    NuD ← { 𝕩.null ≢⟜@◶{𝕩.value}‿{nodes.Run ⟨𝕩.R 𝕨.V@, ⟨E 𝕨.t⟩⟩} 𝕩 }
-    LeD ← { Unk⍟(@≡l←𝕩.left)𝕩 ⋄ nodes.Run ⟨𝕩.R l.V@, ⟨𝕨, E l.t⟩⟩ }
+    NuD ← { 𝕩.null ≢⟜@◶{𝕩.value}‿{𝕩 Run ⟨𝕩.R 𝕨.V@, ⟨E 𝕨.t⟩⟩} 𝕩 }
+    LeD ← { Unk⍟(@≡l←𝕩.left)𝕩 ⋄ 𝕩 Run ⟨𝕩.R l.V@, ⟨𝕨, E l.t⟩⟩ }
+    Run ← {𝕩.value.pos}⊸nodes.Run
     Unk ← { Err "Unknown operator"‿𝕩.value.pos }
     E 1
   }
@@ -608,7 +609,7 @@ program ← {
     Report ⇐ {𝕤
       •Out (∧`lf⊸≠)⊸/⎊•Repr •CurrentError@
       •Out ""
-      {S‿p←𝕩.pos⋄𝕩 S p}¨ ⌽ Dump@
+      {S‿p←𝕩⋄S p}¨ ⌽ Dump@
       •Exit 1
     }
   }
@@ -629,7 +630,7 @@ nodes ← {
     Eval ⇐ {𝕊env:{𝕩.Eval  env}}
   }
   Defaults ← {
-    pos ⇐ 𝕨 ⊣ {ast.Show𝕨}‿¯1
+    pos ⇐ 𝕨 ⊣ !‿¯1
     node‿visit ⇐ 𝕩
     Visit o.verify
     Dump ⇐ {𝕤⋄⟨node,Visit o.dump⟩}
@@ -660,7 +661,7 @@ nodes ← {
     Visit←{⟨𝕏caller,𝕏¨params⟩}
     ⟨node,pos,Dump,Disp,Scope⟩⇐d←𝕨 Defaults "run"‿visit
     Oper ⇐ {𝕤⋄ operator.Run ⟨⊑Visit o.oper,params⟩}
-    Eval ⇐ {𝕎 program._trace_ caller 𝕩}´ d.Eval
+    Eval ⇐ {𝕎 program._trace_ pos 𝕩}´ d.Eval
   }
   Call ⇐ { Run ⟨Ident"call" , <⊸∾´𝕩⟩ }
   Phrase ⇐ {
@@ -816,7 +817,7 @@ nodes ← {
     }
     Eval ⇐ {
       e←o.Eval 𝕩
-      For←(E fn) program._trace_ fn
+      For←(E fn) program._trace_ pos
       lsv←var.Get∘{𝕎𝕩}⟜𝕩¨ ls
       For ⟨E¨ptri, E from, E to, blocks.New ind‿ptrs‿body‿lsv‿𝕩⟩
     }
