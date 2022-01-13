@@ -279,10 +279,10 @@ operator ← {
     }
     AddLeft ⇐ {𝕨𝕊⟨value, prec, assoc⟩: AddLeft↩𝕨_dup
       bind ↩ prec
-      left ↩ Op ⟨value, prec, ('r'=assoc)⊑<‿≤, 'n'=assoc⟩
+      left ↩ Op ⟨value, prec, ("lrn"⊸⊐⌾<assoc)⊑⟨<,≤,<-=⟩, 'n'=assoc⟩
     }
     _dup ← { Err "Duplicate operator definition:"‿𝕨‿"Previously defined here:"‿𝕗 }
-    AC ← 𝕩{1≡𝕩?@; Err ("Associativity for operator "∾𝕗∾" must be disambiguated")‿𝕨.value.pos }
+    AC ← 𝕩{ Err ("Associativity for operator "∾𝕗∾" must be disambiguated")‿𝕨.value.pos }⍟(0⊸>)
   }
   Run ⇐ {𝕨𝕊⟨op,params⟩: null‿left‿bind⇐op ⋄ R⇐𝕨 nodes.Run op.R⋈params˙}
   nil ⇐ New @
