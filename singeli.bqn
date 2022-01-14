@@ -41,6 +41,7 @@ Source ← {
   }
 }
 DispSource ← {𝕎𝕩}´
+Err ← { (𝕩≠⊸⥊•Out‿DispSource) {𝕎𝕩}¨ 𝕩 ⋄ •Exit 1 }
 
 numbers ← {
   _be ← {𝕗⊸×⊸+˜´⌽}
@@ -256,7 +257,6 @@ Parse ← {𝕊 tokens‿ShowTrace:
 }
 
 operator ← {
-  Err ← { (𝕩≠⊸⥊•Out‿DispSource) {𝕎𝕩}¨ 𝕩 ⋄ •Exit 1 }
   Parse ⇐ {ops 𝕊 val:
     Peek‿Next‿Rem ← MakeStream ops {null‿left‿bind‿R⇐𝕨 ⋄ value⇐𝕩}¨ val
     E ← {𝕊test: {𝕊∘{𝕩 LeD Next@}⍟(Test Peek)⍟Rem 𝕩} NuD Next@ }
@@ -561,17 +561,17 @@ var ← {
   }
 }
 scopes ← {
-  noLambda ← var.Fixed {"Unhandled case"!0˙}
-  null←{Get⇐"Undefined name: "⊸∾!0˙ ⋄ GetLam⇐noLambda˙}
+  noLambda ← var.Fixed {!∘"Unhandled case"}
+  null←{Get⇐{Err⟨"Undefined name: "∾𝕩,𝕨⟩} ⋄ GetLam⇐noLambda˙}
   New⇐{
     n←𝕨⊣⟨⟩ ⋄ Names⇐{𝕤⋄n}
     Sel ←{𝕩⊑env.Vars}
-    Make←{c←≠n⋄n∾↩<𝕩⋄c}
+    Make←{c←≠n⋄n∾↩<1⊑𝕩⋄c}
     Par ←{𝕏∘env.Parent}
-    _find ← { (n⊸⊐⌾<𝕩) =⟜(≠n)◶𝕗 𝕩 }
-    Get ⇐ ⟨Sel⊣, Par 𝕩.Get∘⊢⟩ _find
-    Add ⇐ Sel {("Duplicate definition: "∾𝕩)!0}‿Make _find
-    Lam ← Par⍟(noLambda⊸≢) 𝕩.GetLam∘⊢
+    _find ← { (n⊸⊐⌾<𝕩) =⟜(≠n)◶𝕗 𝕨‿𝕩 }
+    Get ⇐ ⟨Sel⊣, Par 𝕩.Get´∘⊢⟩ _find
+    Add ⇐ Sel {Err⟨"Duplicate definition: ",⊑𝕩⟩}‿Make _find  # Track previous definition?
+    Lam ← Par⍟(noLambda⊸≢) 𝕩.GetLam´∘⊢
     AddLam ⇐ ⟨⋈˜Sel∘⊣, Lam⋈Sel∘Make⟩ _find
     GetLam ⇐ ⟨Sel⊣, Lam⟩ _find
   }
@@ -646,7 +646,7 @@ nodes ← {
     ⟨node,Dump⟩⇐Defaults "ident"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
     Oper⇐{𝕤⋄operator.Lookup name}
-    Eval⇐!∘0 ⋄ Scope⇐{Eval↩var.Get∘(𝕩.Get name)}
+    Eval⇐!∘0 ⋄ Scope⇐{Eval↩var.Get∘(pos 𝕩.Get name)}
   }
   _value ← {
     name←𝕩
@@ -702,10 +702,10 @@ nodes ← {
     }
   }
   Arg ⇐ {
-    ⟨name,type⟩←𝕩
+    ⟨name,type⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨name,𝕏type⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "arg"‿visit
-    v←@ ⋄ Scope⇐{ type.Scope 𝕩 ⋄ v ↩ 𝕩.Add name }
+    v←@ ⋄ Scope⇐{ type.Scope 𝕩 ⋄ v ↩ pos 𝕩.Add name }
     Eval⇐{ u←V𝕩 ⋄ u.SetType t←type.Eval 𝕩 ⋄ u.Set functions.NextArg t }
   }
   Function ⇐ {
@@ -721,13 +721,13 @@ nodes ← {
     }functions._with
   }
   Assign ⇐ {
-    ⟨name,decl,type,value⟩←𝕩
+    ⟨name,decl,type,value⟩←𝕩 ⋄ pos←𝕨
     name PhraseToName˜↩@
     Visit←{⟨name∾decl/":",𝕏¨type,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "assign"‿visit
     GetVar←!∘0 ⋄ Scope⇐{
       Visit o.Scope 𝕩
-      getVar ↩ decl◶⟨𝕩.Get, 𝕩.Add⟩ name
+      getVar ↩ pos decl◶⟨𝕩.Get, 𝕩.Add⟩ name
     }
     Eval⇐{
       u ← GetVar 𝕩
@@ -737,12 +737,12 @@ nodes ← {
     }
   }
   Define ⇐ {
-    ⟨name,value⟩←𝕩
+    ⟨name,value⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
     v0←v←@ ⋄ Scope ⇐ {
       value.Scope 𝕩
-      v0‿v ↩ ("lambda"≡value.node)◶⟨ @⋈𝕩.Add , 𝕩.AddLam ⟩ name
+      v0‿v ↩ pos ("lambda"≡value.node)◶⟨ @⋈𝕩.Add , 𝕩.AddLam ⟩ name
     }
     Eval⇐{ u←V𝕩 ⋄ u.Set (V0𝕩) value.Eval 𝕩 }
   }
@@ -812,7 +812,7 @@ nodes ← {
     ls←@
     Scope ⇐ {
       (o.Scope 𝕩)¨ ∾⟨fn⟩‿ptri‿⟨from,to⟩
-      ls ↩ {𝕏}∘𝕩.Get¨ "load"‿"store"
+      ls ↩ (<pos) {𝕏}∘𝕩.Get¨ "load"‿"store"
       body.Scope (ind∾ptrs) scopes.New 𝕩
     }
     Eval ⇐ {
