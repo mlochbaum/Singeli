@@ -564,13 +564,14 @@ scopes ← {
   noLambda ← var.Fixed {!∘"Unhandled case"}
   null←{Get⇐{Err⟨"Undefined name: "∾𝕩,𝕨⟩} ⋄ GetLam⇐noLambda˙}
   New⇐{
-    n←𝕨⊣⟨⟩ ⋄ Names⇐{𝕤⋄n}
+    p←@¨n←𝕨⊣⟨⟩ ⋄ Names⇐{𝕤⋄n}
     Sel ←{𝕩⊑env.Vars}
-    Make←{c←≠n⋄n∾↩<1⊑𝕩⋄c}
+    Make←{c←≠n⋄p‿n∾⟜<¨↩𝕩⋄c}
+    Dup ←{Err⟨"Duplicate definition: ",⊑𝕩,"Previously defined here: ",𝕨⊑p⟩}
     Par ←{𝕏∘env.Parent}
     _find ← { (n⊸⊐⌾<𝕩) =⟜(≠n)◶𝕗 𝕨‿𝕩 }
     Get ⇐ ⟨Sel⊣, Par 𝕩.Get´∘⊢⟩ _find
-    Add ⇐ Sel {Err⟨"Duplicate definition: ",⊑𝕩⟩}‿Make _find  # Track previous definition?
+    Add ⇐ Sel Dup‿Make _find
     Lam ← Par⍟(noLambda⊸≢) 𝕩.GetLam´∘⊢
     AddLam ⇐ ⟨⋈˜Sel∘⊣, Lam⋈Sel∘Make⟩ _find
     GetLam ⇐ ⟨Sel⊣, Lam⟩ _find
