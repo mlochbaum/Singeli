@@ -454,7 +454,7 @@ functions ← {kname⇐"function"
       Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, types.Cast⟩ 𝕩⟩
     }
     Return⇐!∘"Early return from function with no explicit result type" _ret_ 1 @⊣´⊢
-    Finish⇐{SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
+    Finish⇐{"Explicit result type needed"!IsTyped 𝕩⋄SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
     Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨shows,Show rType⟩∾(•Repr∘≠⊸∾Show¨args)}
   }
   IsType ← "type"≡Kind
