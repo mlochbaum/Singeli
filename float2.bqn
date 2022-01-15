@@ -16,6 +16,7 @@ Add ⇐ {a𝕊b:
 }
 
 Neg ⇐ -
+Floor‿Ceil ⇐ ⌊‿⌈
 Sub ⇐ Add⟜Neg
 
 Cmp ⇐ × · (0=⊑)⊸⊑ Sub

@@ -44,6 +44,12 @@ DispSource ← {𝕎𝕩}´
 Err ← { (𝕩≠⊸⥊•Out‿DispSource) {𝕎𝕩}¨ 𝕩 ⋄ •Exit 1 }
 
 numbers ← {
+  f ← •Import "float2.bqn"
+  From ⇐ {f.From 𝕩.value}⍟(1≠•Type)
+  Match ⇐ ≡○From
+  Wrap ← {kind⇐"number"⋄value⇐𝕩⋄Shows⇐FmtNum∘f.From∘𝕩⋄Matches⇐Match}
+  Unwrap ← {𝕩.value}
+
   _be ← {𝕗⊸×⊸+˜´⌽}
   Nat ← (10 _be ⊣ "Ill-formed number"!·∧´0⊸≤∧≤⟜9) -⟜'0'
   LC ← +⟜(32×1="A["⊸⍋) '_'⊸≠⊸/  # Lowercase, underscores removed
@@ -58,6 +64,23 @@ numbers ← {
       Pos ← ⊐⟜"."⊸(Nat∘↑ + ·(0<≠)◶⟨0,Nat÷10⋆≠⟩+⟜1⊸↓)
       ⊐⟜"e"⊸(Pos _n∘↑ × <⟜≠◶⟨1,10⋆·Nat _n+⟜1⊸↓⟩) 𝕩
   }⟜LC⎊{Err⟨•CurrentError@,𝕨⟩}
+
+  Cast ⇐ {q‿l𝕊n:
+    "Cannot cast float to integer"!IsInt n
+    "Constant doesn't fit"!1=(-⟜(1⊸⊑÷2˙)⍟(q='i')⟨0,2⋆l⟩)⊸⍋⌾<n
+  }⍟('f'≠⊑∘⊣)
+  builtins‿_cmp ⇐ {
+    N←1=•Type ⋄ W←Wrap ⋄ U←Unwrap ⋄ P←N◶U‿f.To ⋄ B←U⍟(¬N)
+    E←f.To 2⋆From
+    pr‿val ← <˘⍉∘‿2⥊ ⟨
+      {𝕏⊑}     ,⟨"neg",N◶⟨W∘f.Neg○U,-⟩⟩‿⟨"not",¬∘B⟩
+      {W∘𝕏○P}  ,⟨"add"‿f.Add, "sub"‿f.Sub, "mul"‿f.Mul, "div"‿f.Div⟩
+      {W P⊸𝕏⟜E},⟨"shl", f.Mul⟩‿⟨"shr", f.Floor f.Div⟩
+      {𝕏○B}    ,⟨ "and"‿∧, "or"‿∨, "xor"‿≠ ⟩
+    ⟩
+    builtins ⇐ ⍉>∾ ({{𝕏´}∘𝕏}¨⌾(1⊸↓) {𝕏⚇0}¨ pr) {⟨"__"⊸∾,𝕎⟩⊸({𝕎𝕩}¨)¨𝕩}¨ val
+    _cmp ⇐ {(f.Cmp 𝔽 0˙)○P}
+  }
 }
 
 architectures ← {
@@ -317,7 +340,7 @@ FmtNum ← '¯'(⊢+=×'-'-⊣)•Repr
 _tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!⟩)˙)∾↑)𝕗)}
 Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
 Show  ← {⟨"tup{"∾"}"«·∾(","∾𝕊)¨, FmtNum, {𝕩.Shows@}⟩_tsel 𝕩}
-Match ← {𝕨 ⟨∧´𝕊¨, ≡,≡,≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
+Match ← {𝕨 ⟨∧´𝕊¨, numbers.Match,≡,≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
 IsTyped←("register"⊸≡∨"constant"⊸≡) Kind
 TypeOf← {⟨types.Tup 𝕊¨, {𝕩.Type@}⟩_tsel 𝕩}
 
@@ -392,14 +415,11 @@ types ← {kname⇐"type"
 
   Cast ⇐ {
     Num←{t𝕊n:
-      C←{𝕊q‿l:
-        "Cannot cast float to integer"!IsInt n
-        "Constant doesn't fit"!1=(-⟜(1⊸⊑÷2˙)⍟(q='i')⟨0,2⋆l⟩)⊸⍋⌾<n
-      }⍟('f'≠⊑)
-      ⟨ tPRIM,C, 0!˜"Cannot cast number to "∾Show ⟩ _cases t
+      ⟨ tPRIM,numbers.Cast⟜n, !"Cannot cast number to "∾Show ⟩ _cases t
       t constants.New n
     }
     Obj←{
+      "number"≡𝕩.kind ? 𝕨 Num numbers.From 𝕩 ;
       ! 𝕩 TypeOf⊸MT 𝕨
       𝕩
     }
@@ -407,8 +427,8 @@ types ← {kname⇐"type"
   }
 
   builtins ⇐ ∾˘⍉∘‿2⥊⟨
-    ⟨"cast","eltype","vcount","width","__vec","__pnt"⟩
-    ⟨ Cast´, VType⊑ , VCount⊑, Size⊑ ,   Vec´,   Ptr⊑⟩
+    ⟨"cast","eltype","vcount","width",          "__vec","__pnt"⟩
+    ⟨ Cast´, VType⊑ , VCount⊑, Size⊑ ,numbers.From⊸Vec´,   Ptr⊑⟩
     "isfloat"‿"issigned"‿"isint"
     {𝕩_isQual⊑}¨⟨'f'⊸≡ ⋄ 'i'⊸≡ ⋄ ⊑∘∊⟜"iu"⟩
   ⟩
@@ -510,7 +530,7 @@ builtins ← {
     E ← "Unhandled type" ! 0˙
     (e{k‿o←𝕨⋄∧○(k≡⊢)◶⟨𝕏,O˙⟩}´𝕩){o←𝕨𝔽○Kind𝕩⋄𝕨O𝕩}
   }
-  Ty2 ← {𝕏⚇0´}∘Kinds "number"‿"type"⋈¨⋈
+  Ty2 ← {𝕏⚇0´}∘Kinds "number"‿"type"⋈¨{𝕏numbers._cmp}⊸⋈
   Fmt ← 2↓·∾·", "⊸∾¨Show⎊("("∾")"∾˜Kind⎊"unknown")¨
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
@@ -523,13 +543,10 @@ builtins ← {
       ⟨"type",TypeOf∘⊑⟩, ⟨"kind",symbols.New Kind∘⊑⟩
       ⟨"typekind",symbols.New types.TypeKind∘⊑⟩
       ⟨"load",Load⟩, ⟨"store",¯1⊸(⊑Store↓)⟩
-      ⟨"tup",⊢⟩, ⟨"tupsel",⊑´⟩
+      ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑´⟩
       ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓⟩, ⟨"apply",{𝕎𝕩}´⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓⟩
-      ⟨"__neg",-∘⊑⟩
-      ⟨"__add",+´⟩, ⟨"__sub",-´⟩, ⟨"__mul",×´⟩, ⟨"__div",÷´⟩
-      ⟨"__and",∧´⟩, ⟨"__or" ,∨´⟩, ⟨"__xor",≠´⟩, ⟨"__not",¬∘⊑⟩
-      ⟨"__shr",⌊÷⟜(2⋆⊢)⟩, ⟨"__shl", ⊣×2⋆⊢⟩
     ⟩
+    numbers.builtins
     types.builtins
     >⟨
       "__eq"‿"__ne"‿"__lt"‿"__gt"‿"__le"‿"__ge"
@@ -697,7 +714,7 @@ nodes ← {
       CT ← {∧´((∧´IsTyped¨)_and_(AllEq{𝕩.type}¨)⊏⟜𝕩)¨iTyp}
       Check _and_ CT◶Next‿{
         F←Next 𝕩˙
-        try ← result.eval{𝕨.Eval◶F‿𝕏}´conds
+        try ← result.eval{numbers.From∘𝕨.Eval◶F‿𝕏}´conds
         Try ((iPar∊⊸/𝕩)∾{𝕩.type}¨iTyp⊑¨⊸⊏𝕩) env.Fixed e
       }
     }
@@ -749,7 +766,7 @@ nodes ← {
   }
   OpDef ⇐ {
     ⟨type,op,fn,prec⟩←𝕩 ⋄ pos←𝕨
-    !"value"≡prec.node ⋄ !IsNum prec↩prec.Eval@
+    !"value"≡prec.node ⋄ prec↩numbers.From prec.Eval@
     Visit←{𝕤⋄⟨type,op,fn,•Repr prec⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "opdef"‿visit
     Oper⇐{𝕤⋄ pos operator.Add type‿op‿fn‿prec}
