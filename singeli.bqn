@@ -47,7 +47,7 @@ numbers ← {
   f ← •Import "float2.bqn"
   From ⇐ {f.From 𝕩.value}⍟(1≠•Type)
   Match ⇐ ≡○From
-  Wrap ← {kind⇐"number"⋄value⇐𝕩⋄Shows⇐FmtNum∘f.From∘𝕩⋄Matches⇐Match}
+  Wrap ← {kind⇐"number"⋄value⇐𝕩⋄Matches⇐Match⋄Shows⇐FmtLarge∘𝕩}
   Unwrap ← {𝕩.value}
 
   _be ← {𝕗⊸×⊸+˜´⌽}
@@ -58,17 +58,26 @@ numbers ← {
     (≠𝕩)>s←⌊´𝕩⊐"bx" ? # Base n with 0x9abc or 31bNUMBER
       b ← ('b'=s⊑𝕩)◶⟨16⊣·!"0"⊸≡,Nat⟩ s↑𝕩
       "Invalid base" ! b≤≠da
-      b _be (b↑da) (≠∘⊣(⊢⊣"Invalid digits"!∧´∘>)⊐) (1+s)↓𝕩
+      d ← (b↑da) (≠∘⊣(⊢⊣"Invalid digits"!∧´∘>)⊐) (1+s)↓𝕩
+      E←b _be ⋄ EE←{h‿l←f.To∘E¨𝕨-⊸(↓⋈↑)𝕩⋄Wrap l f.Add (f.To b⋆𝕨)f.Mul h}
+      (⌊53÷2⋆⁼b) <⟜≠◶E‿EE d
     ;
       _n ← {('-'=⊑)◶⟨𝔽, -∘𝔽 1⊸↓⟩}
       Pos ← ⊐⟜"."⊸(Nat∘↑ + ·(0<≠)◶⟨0,Nat÷10⋆≠⟩+⟜1⊸↓)
       ⊐⟜"e"⊸(Pos _n∘↑ × <⟜≠◶⟨1,10⋆·Nat _n+⟜1⊸↓⟩) 𝕩
   }⟜LC⎊{Err⟨•CurrentError@,𝕨⟩}
 
-  Cast ⇐ {q‿l𝕊n:
-    "Cannot cast float to integer"!IsInt n
-    "Constant doesn't fit"!1=(-⟜(1⊸⊑÷2˙)⍟(q='i')⟨0,2⋆l⟩)⊸⍋⌾<n
-  }⍟('f'≠⊑∘⊣)
+  InRange ← {1=⊑0⍋˜-˜´⟜(⌽𝕨)¨𝕩}
+  FmtLarge ← {
+    ⌊⊸≡𝕩 ? (f.Abs 𝕩) InRange 2⋆53‿64 ? "0x"∾da⊏˜⌽ 16‿16 f._repr 𝕩 ;
+    FmtNum f.From 𝕩
+  }
+
+  Cast ⇐ {'f'‿l𝕊n:1; q‿l𝕊n:
+    n ↩ (1≠•Type)◶⋈‿Unwrap n
+    "Cannot cast float to integer"!⌊⊸≡n
+    "Constant doesn't fit"!n InRange -⟜(1⊸⊑÷2˙)⍟(q='i') ⟨0,2⋆l⟩
+  }
   builtins‿_cmp ⇐ {
     N←1=•Type ⋄ W←Wrap ⋄ U←Unwrap ⋄ P←N◶U‿f.To ⋄ B←U⍟(¬N)
     E←f.To 2⋆From
@@ -419,7 +428,7 @@ types ← {kname⇐"type"
       t constants.New n
     }
     Obj←{
-      "number"≡𝕩.kind ? 𝕨 Num numbers.From 𝕩 ;
+      "number"≡𝕩.kind ? 𝕨 Num 𝕩 ;
       ! 𝕩 TypeOf⊸MT 𝕨
       𝕩
     }

@@ -16,6 +16,7 @@ Add ⇐ {a𝕊b:
 }
 
 Neg ⇐ -
+Abs ⇐ -⍟(0>⊑)
 Floor‿Ceil ⇐ ⌊‿⌈
 Sub ⇐ Add⟜Neg
 
@@ -41,3 +42,5 @@ Div ⇐ {b𝕊a:
   diff ← ⊑ b Sub a Mul yn‿0
   yn‿0 Add xn Mul12 diff
 }
+
+_repr ⇐ { len‿b _𝕣: {c←0 ⋄ {𝕩+↩c⋄c↩⌊𝕩÷b⋄b|𝕩}¨𝕩} ·+´ b|⌊∘÷⟜b⍟(↕len)¨ }
