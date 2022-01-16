@@ -79,7 +79,8 @@ numbers ← {
     "Constant doesn't fit"!n InRange -⟜(1⊸⊑÷2˙)⍟(q='i') ⟨0,2⋆l⟩
   }
   builtins‿_cmp ⇐ {
-    N←1=•Type ⋄ W←Wrap ⋄ U←Unwrap ⋄ P←N◶U‿f.To ⋄ B←U⍟(¬N)
+    N←1=•Type ⋄ W←Wrap ⋄ U←Unwrap ⋄ P←N◶U‿f.To
+    B←{"Boolean expected"!⊑𝕩∊0‿1⋄𝕩}∘From
     E←f.To 2⋆From
     pr‿val ← <˘⍉∘‿2⥊ ⟨
       {𝕏⊑}     ,⟨"neg",N◶⟨W∘f.Neg○U,-⟩⟩‿⟨"not",¬∘B⟩
