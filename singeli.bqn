@@ -374,7 +374,7 @@ types ← {kname⇐"type"
   }
   tVOID‿tPRIM‿tVEC‿tPTR‿tFUN‿tTUP ← ↕6
   TypeKind⇐{
-    "typekind argument must be type"!IsType 𝕩
+    "typekind argument must be type"!Is 𝕩
     𝕩.typeKind⊑"void"‿"primitive"‿"vector"‿"pointer"‿"function"‿"tuple"
   }
   IsVoid ⇐ {tVOID≡𝕩.typeKind}
@@ -385,22 +385,22 @@ types ← {kname⇐"type"
     'f', 2⋆  5+↕2  #        32/64
   ⟩
 
-  IsType ← kname≡Kind
-  Vec ← {n𝕊t: "Vector size should be a constant integer"!IsNat n ⋄ !IsType t ⋄ tVEC New ⟨n,t⟩}
-  Ptr ← { 𝕊t: "Pointer type wasn't type"!IsType t ⋄ tPTR New t}
-  Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´IsType¨ t ⋄ tTUP New t}
+  Is ⇐ kname≡Kind
+  Vec ← {n𝕊t: "Vector size should be a constant integer"!IsNat n ⋄ !Is t ⋄ tVEC New ⟨n,t⟩}
+  Ptr ← { 𝕊t: "Pointer type wasn't type"!Is t ⋄ tPTR New t}
+  Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´Is¨ t ⋄ tTUP New t}
   Fun ⇐ tFUN New ⋈
 
-  _isQual ← {{tPRIM≡𝕩.typeKind}◶⟨0,𝔽{⊑𝕩.dat}⟩ TypeOf⍟(¬IsType)}
+  _isQual ← {{tPRIM≡𝕩.typeKind}◶⟨0,𝔽{⊑𝕩.dat}⟩ TypeOf⍟(¬Is)}
 
-  Deref ⇐ { !IsType 𝕩 ⋄ !tPTR=𝕩.typeKind ⋄ 𝕩.dat }
+  Deref ⇐ { !Is 𝕩 ⋄ !tPTR=𝕩.typeKind ⋄ 𝕩.dat }
 
   _cases ← {
     Kind←{𝕩.typeKind} ⋄ Dat←{𝕩.dat}
     c ← ⌊‿2⥊𝕗
     k ← ⊏˘c
     d ← (1⊏˘c) ∾ ((≠⥊c)↓𝕗)»⟨!∘0⟩
-    (k⊸⊐⌾< ⊢⊘(≠◶⊢‿¯1)○Kind)◶({𝕏○Dat}¨d) ⊣ @○(!IsType)
+    (k⊸⊐⌾< ⊢⊘(≠◶⊢‿¯1)○Kind)◶({𝕏○Dat}¨d) ⊣ @○(!Is)
   }
 
   Size ← ⟨
@@ -479,7 +479,7 @@ functions ← {kname⇐"function"
     Instrs⇐Arr
     Append⇐{ Push𝕩⋄@ ; (1⊸⊑⊣𝕊) ⟨"new",Next𝕨⟩∾symbols.New⌾⊑𝕩 }
     SetRType⇐{
-      SetRType↩!∘0 ⋄ !IsType rType↩𝕩
+      SetRType↩!∘0 ⋄ !types.Is rType↩𝕩
       type ↩ args types.Fun rType
     }
     _ret_←{
@@ -490,7 +490,6 @@ functions ← {kname⇐"function"
     Finish⇐{"Explicit result type needed"!IsTyped 𝕩⋄SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
     Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨shows,Show rType⟩∾(•Repr∘≠⊸∾Show¨args)}
   }
-  IsType ← "type"≡Kind
   _with ⇐ {
     fs←current
     f←current↩program.AddFunction new
