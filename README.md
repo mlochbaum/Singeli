@@ -63,6 +63,42 @@ While this loop *is* an ordinary generator (allowing other loops to call it), sp
 
 Outside the loop, these variables are pointers, and inside it, they are individual values. It's `exec` in the loops definition that performs this conversion, using the given index `i` to index into each pointer in `vars`. Each variable tracks whether its value was set inside the loop and writes to memory if this is the case.
 
+## Generators
+
+A generator is essentially a compile-time function, which takes values called parameters and returns a result. There are a few ways to create generators:
+
+    # Anonymous generator, immediately invoked
+    def a_sq = ({x} => x*x){a}
+
+    # Named generator with two cases
+    def min{a, b} = a
+    def min{a, b & b<a} = b
+
+    # Generated function
+    triple{T}(x:T) = x + x + x
+
+These are all effectively the same thing: there's a parameter list in `{}`, and a definition. When invoked, the body is evaluated with the parameters set to the values provided. Depending on the definition, this evaluation might end not with a static value, but with a computation to be performed at runtime (this always happens for functions). Generators are dynamically typed, and naturally have no constraints on the parameters or result. But the parameter list can include conditions that determine whether to accept a particular set of parameters. These are described in the next section; first let's go through the syntax for each case.
+
+An anonymous generator is written `{params} => body`. It needs to come at the beginning of a subexpression, which usually means it needs to be parenthesized. Otherwise `{params}` might be interpreted as a generator call on the previous word, for example. `body` can be either a single expression, or a block consisting of multiple expressions surrounded by `{}`.
+
+A named generator is a statement rather than an expression: `def name{params} = body`. `name` can be followed by multiple parameter lists, defining a nested generator. This form also allows multiple definitions. When the generator is called, these definitions are scanned, beginning with the last, for one that applies to the arguments. That is, when applying the generator, it tests the arguments against all its conditions, then runs if they match and otherwise calls the previous definition.
+
+A function can also have generator parameters. This case is discussed in the section on [functions](#functions).
+
+### Conditions
+
+The parameter list in a generator definition has to give the names of parameters, but it can also include some other constraints on them:
+
+* The number of parameters
+* Two parameters with the same name match
+* A `par:typ` parameter must be a typed value with the given type
+* A `par==val` parameter matches the given value
+* Explicit conditions `& cond` must hold (result in `1`)
+
+Each of the values `typ`, `val`, and `cond` can be an expression, which is fully evaluated whenever the condition is reached. Parameter names are all bound before evaluating any conditions, so that a condition can refer to parameter values, even ones that come after it in the source code.
+
+The value `typ` can also be a name, which functions something like an extra parameter: the underlying parameter must be typed and the name is set to its type (like any parameter, this value is accessible to conditions). Built-in type names such as `i16` and `f64` can't be used here, but other names will be shadowed. If you have an alias like `def size = u64`, parenthesize it to use it as a value, as in `par:(size)`.
+
 ## Operators
 
 Operators are formed from the characters `!$%&*+-/<=>?\^|~`. Any number of these will stick together to form a single token unless separated by spaces. Additionally, non-ASCII characters can be used as operators, and don't stick to each other.

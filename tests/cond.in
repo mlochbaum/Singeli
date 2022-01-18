@@ -1,0 +1,11 @@
+def g{x,y}               = emit{f64, 'g2', x, y}
+def g{g,f=='sym'}        = emit{f64, 'g2s', g}
+def g{a, a}              = g{a}
+def g{b==tup{a}, a}      = g{__add{10,a}}
+def g{x}                 = emit{f64, 'g1', x}
+def g{w:T, x:T}          = emit{T, 'g2T', w, x}
+def g{x:T & __le{T,i32}} = emit{T, 'g1i', x}
+
+fn(a:i16, b:u1, c:f32) : u8 = {
+  emit{u8, 'out', g{a,a}, g{a,c}, g{3,3}, g{tup{4},4}, g{5,'sym'}, g{a}}
+}

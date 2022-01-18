@@ -1,0 +1,11 @@
+beginFn f0 u8 3 i16 u1 f32
+new v3 emit i16 g2T v0 v0
+new v4 emit f64 g2 v0 v2
+new v5 emit f64 g1 3
+new v6 emit f64 g1 14
+new v7 emit f64 g2s 5
+new v8 emit i16 g1i v0
+new v9 emit u8 out v3 v4 v5 v6 v7 v8
+ret v9
+endFn
+
