@@ -51,6 +51,7 @@ numbers ← {kname⇐"number"
   Unwrap ← {6=•Type𝕩?kname≡𝕩.kind?𝕩.value; !"Expected number"}
   Promote ← NN◶f.To‿Unwrap
   From ⇐ f.From∘Unwrap⍟NN
+  GetBool ⇐ {"Boolean expected"!⊑𝕩∊0‿1⋄𝕩}∘From
   Match ⇐ ∧○Is◶⟨0,≡○Promote⟩
 
   _be ← {𝕗⊸×⊸+˜´⌽}
@@ -81,19 +82,18 @@ numbers ← {kname⇐"number"
     "Cannot cast float to integer"!⌊⊸≡n
     "Constant doesn't fit"!n InRange -⟜(1⊸⊑÷2˙)⍟(q='i') ⟨0,2⋆l⟩
   }
-  builtins‿_cmp ⇐ {
-    W←Wrap ⋄ U←Unwrap ⋄ P←Promote
-    B←{"Boolean expected"!⊑𝕩∊0‿1⋄𝕩}∘From
+  builtins ⇐ {
+    W←Wrap ⋄ P←Promote ⋄ B←GetBool
     E←f.To 2⋆From
     pr‿val ← <˘⍉∘‿2⥊ ⟨
-      {𝕏⊑}     ,⟨"neg",NN◶⟨-,W∘f.Neg○U⟩⟩‿⟨"not",¬∘B⟩
+      {𝕏⊑}     ,⟨"neg",NN◶⟨-,W∘f.Neg○Unwrap⟩⟩‿⟨"not",¬∘B⟩
       {W∘𝕏○P}  ,⟨"add"‿f.Add, "sub"‿f.Sub, "mul"‿f.Mul, "div"‿f.Div⟩
       {W P⊸𝕏⟜E},⟨"shl", f.Mul⟩‿⟨"shr", f.Floor f.Div⟩
       {𝕏○B}    ,⟨ "and"‿∧, "or"‿∨, "xor"‿≠ ⟩
     ⟩
-    builtins ⇐ ⍉>∾ ({{𝕏´}∘𝕏}¨⌾(1⊸↓) {𝕏⚇0}¨ pr) {⟨"__"⊸∾,𝕎⟩⊸({𝕎𝕩}¨)¨𝕩}¨ val
-    _cmp ⇐ {(f.Cmp 𝔽 0˙)○P}
+    ⍉>∾ ({{𝕏´}∘𝕏}¨⌾(1⊸↓) {𝕏⚇0}¨ pr) {⟨"__"⊸∾,𝕎⟩⊸({𝕎𝕩}¨)¨𝕩}¨ val
   }
+  _cmp ⇐ {(f.Cmp 𝔽 0˙)○Promote}
 }
 
 architectures ← {
@@ -727,7 +727,7 @@ nodes ← {
       CT ← {∧´((∧´IsTyped¨)_and_(AllEq{𝕩.type}¨)⊏⟜𝕩)¨iTyp}
       Check _and_ CT◶Next‿{
         F←Next 𝕩˙
-        try ← result.eval{numbers.From∘𝕨.Eval◶F‿𝕏}´conds
+        try ← result.eval{numbers.GetBool∘𝕨.Eval◶F‿𝕏}´conds
         Try ((iPar∊⊸/𝕩)∾{𝕩.type}¨iTyp⊑¨⊸⊏𝕩) env.Fixed e
       }
     }
