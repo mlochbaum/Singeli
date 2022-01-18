@@ -628,7 +628,7 @@ program ← {
   AddFunction⇐Export⇐!∘0 ⋄ trace⇐@
   _with ⇐ {
     fns←⟨⟩ ⋄ AddFunction ↩ { f ← 𝕏 ≠fns ⋄ fns∾⟜<↩f ⋄ f }
-    exp←⟨⟩ ⋄ Export ↩ { exp ∾⟜<↩ 𝕨‿𝕩 }
+    exp←⟨⟩ ⋄ Export ↩ { "Exporting non-function" ! "function"≡Kind 𝕩 ⋄ exp ∾⟜<↩ 𝕨‿𝕩 }
     ⟨_trace_⟩↩s←Stack@
     𝕨 𝔽⎊s.Report 𝕩
     AddFunction↩Export↩!∘0
@@ -784,10 +784,10 @@ nodes ← {
     Oper⇐{𝕤⋄ pos operator.Add type‿op‿fn‿prec}
   }
   Export ⇐ {
-    ⟨name,value⟩ ← {Show 𝕩.Eval@}¨⌾⊑ 𝕩
+    ⟨name,value⟩ ← {Show 𝕩.Eval@}¨⌾⊑ 𝕩 ⋄ pos←𝕨
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper,Scope⟩⇐d←Defaults "export"‿visit
-    Eval ⇐ { program.Export¨⟜<´ d.Eval 𝕩 }
+    Eval ⇐ { program.Export program._trace_ pos¨⟜<´ d.Eval 𝕩 }
   }
   Include ⇐ {
     {𝕩.NoScope@⋄𝕩} files.Include Show (⊑𝕩).Eval@
