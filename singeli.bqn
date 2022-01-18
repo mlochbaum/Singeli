@@ -45,9 +45,10 @@ Err ← { (𝕩≠⊸⥊•Out‿DispSource) {𝕎𝕩}¨ 𝕩 ⋄ •Exit 1 }
 
 numbers ← {
   f ← •Import "float2.bqn"
+  NN ← 1≠•Type  # Not native number
   Wrap ← {kind⇐"number"⋄value⇐𝕩⋄Matches⇐Match⋄Shows⇐FmtLarge∘𝕩}
   Unwrap ← {6=•Type𝕩?"number"≡𝕩.kind?𝕩.value; !"Expected number"}
-  From ⇐ f.From∘Unwrap⍟(1≠•Type)
+  From ⇐ f.From∘Unwrap⍟NN
   Match ⇐ ≡○From
 
   _be ← {𝕗⊸×⊸+˜´⌽}
@@ -73,17 +74,17 @@ numbers ← {
     FmtNum f.From 𝕩
   }
 
-  Cast ⇐ {'f'‿l𝕊n:1; q‿l𝕊n:
-    n ↩ (1≠•Type)◶⋈‿Unwrap n
+  Cast ⇐ {'f'‿l𝕊n:1; q‿l𝕊n: # 1 if valid; error otherwise
+    n NN◶⋈‿Unwrap↩
     "Cannot cast float to integer"!⌊⊸≡n
     "Constant doesn't fit"!n InRange -⟜(1⊸⊑÷2˙)⍟(q='i') ⟨0,2⋆l⟩
   }
   builtins‿_cmp ⇐ {
-    N←1=•Type ⋄ W←Wrap ⋄ U←Unwrap ⋄ P←N◶U‿f.To
+    W←Wrap ⋄ U←Unwrap ⋄ P←NN◶f.To‿U
     B←{"Boolean expected"!⊑𝕩∊0‿1⋄𝕩}∘From
     E←f.To 2⋆From
     pr‿val ← <˘⍉∘‿2⥊ ⟨
-      {𝕏⊑}     ,⟨"neg",N◶⟨W∘f.Neg○U,-⟩⟩‿⟨"not",¬∘B⟩
+      {𝕏⊑}     ,⟨"neg",NN◶⟨-,W∘f.Neg○U⟩⟩‿⟨"not",¬∘B⟩
       {W∘𝕏○P}  ,⟨"add"‿f.Add, "sub"‿f.Sub, "mul"‿f.Mul, "div"‿f.Div⟩
       {W P⊸𝕏⟜E},⟨"shl", f.Mul⟩‿⟨"shr", f.Floor f.Div⟩
       {𝕏○B}    ,⟨ "and"‿∧, "or"‿∨, "xor"‿≠ ⟩
