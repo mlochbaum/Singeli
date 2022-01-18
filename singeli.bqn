@@ -45,10 +45,10 @@ Err ← { (𝕩≠⊸⥊•Out‿DispSource) {𝕎𝕩}¨ 𝕩 ⋄ •Exit 1 }
 
 numbers ← {
   f ← •Import "float2.bqn"
-  From ⇐ {f.From 𝕩.value}⍟(1≠•Type)
-  Match ⇐ ≡○From
   Wrap ← {kind⇐"number"⋄value⇐𝕩⋄Matches⇐Match⋄Shows⇐FmtLarge∘𝕩}
-  Unwrap ← {𝕩.value}
+  Unwrap ← {6=•Type𝕩?"number"≡𝕩.kind?𝕩.value; !"Expected number"}
+  From ⇐ f.From∘Unwrap⍟(1≠•Type)
+  Match ⇐ ≡○From
 
   _be ← {𝕗⊸×⊸+˜´⌽}
   Nat ← (10 _be ⊣ "Ill-formed number"!·∧´0⊸≤∧≤⟜9) -⟜'0'
