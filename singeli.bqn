@@ -639,7 +639,8 @@ program ← {
     Report ⇐ {𝕤
       •Out (∧`lf⊸≠)⊸/⎊•Repr •CurrentError@
       •Out ""
-      DispSource¨ ⌽ Dump@
+      Rep ← (•Out"Repeated "∾•Repr∾" times:"˙)⍟(1⊸≠)
+      ⊐⊸(/⁼∘⊣ {Rep𝕨 ⋄ DispSource𝕩}¨ ∊⊸/) ⌽ Dump@
       •Exit 1
     }
   }
