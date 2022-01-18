@@ -43,13 +43,15 @@ Source ← {
 DispSource ← {𝕎𝕩}´
 Err ← { (𝕩≠⊸⥊•Out‿DispSource) {𝕎𝕩}¨ 𝕩 ⋄ •Exit 1 }
 
-numbers ← {
+numbers ← {kname⇐"number"
   f ← •Import "float2.bqn"
   NN ← 1≠•Type  # Not native number
-  Wrap ← {kind⇐"number"⋄value⇐𝕩⋄Matches⇐Match⋄Shows⇐FmtLarge∘𝕩}
-  Unwrap ← {6=•Type𝕩?"number"≡𝕩.kind?𝕩.value; !"Expected number"}
+  Is ← kname≡{Kind𝕩}
+  Wrap ← {kind⇐kname⋄value⇐𝕩⋄Matches⇐Match⋄Shows⇐FmtLarge∘𝕩}
+  Unwrap ← {6=•Type𝕩?kname≡𝕩.kind?𝕩.value; !"Expected number"}
+  Promote ← NN◶f.To‿Unwrap
   From ⇐ f.From∘Unwrap⍟NN
-  Match ⇐ ≡○From
+  Match ⇐ ∧○Is◶⟨0,≡○Promote⟩
 
   _be ← {𝕗⊸×⊸+˜´⌽}
   Nat ← (10 _be ⊣ "Ill-formed number"!·∧´0⊸≤∧≤⟜9) -⟜'0'
@@ -80,7 +82,7 @@ numbers ← {
     "Constant doesn't fit"!n InRange -⟜(1⊸⊑÷2˙)⍟(q='i') ⟨0,2⋆l⟩
   }
   builtins‿_cmp ⇐ {
-    W←Wrap ⋄ U←Unwrap ⋄ P←NN◶f.To‿U
+    W←Wrap ⋄ U←Unwrap ⋄ P←Promote
     B←{"Boolean expected"!⊑𝕩∊0‿1⋄𝕩}∘From
     E←f.To 2⋆From
     pr‿val ← <˘⍉∘‿2⥊ ⟨
