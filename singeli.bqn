@@ -54,7 +54,7 @@ numbers ← {kname⇐"number"
   GetBool ⇐ {"Boolean expected"!⊑𝕩∊0‿1⋄𝕩}∘From
   Match ⇐ ∧○Is◶⟨0,≡○Promote⟩
 
-  _be ← {𝕗⊸×⊸+˜´⌽}
+  _be ← {𝕗⊸×⊸+˜´⌽∘⊢}
   Nat ← (10 _be ⊣ "Ill-formed number"!·∧´0⊸≤∧≤⟜9) -⟜'0'
   LC ← +⟜(32×1="A["⊸⍋) '_'⊸≠⊸/  # Lowercase, underscores removed
   da ← dig∾'a'+↕26
