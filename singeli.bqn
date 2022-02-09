@@ -642,7 +642,7 @@ program ← {
       •Out ""
       Rep ← (•Out"Repeated "∾•Repr∘⊣∾" times:"∾1⊸<◶⟨""," ("∾•Repr∾" entries)"˙⟩∘⊢)´⍟=
       l ← ≠s ← Dump@
-      n ← (↕l)-˜⍷⊸(⊣≠⊸↓⊢⊒∾)⊐s
+      n ← (↕l)-˜l⊸=⊸+⍷⊸(⊣≠⊸↓⊢⊒∾)⊐s
       n ⊏˜↩ i ← /»⊸≠n
       r ← l⊸«⊸-i
       i‿r‿n (n≤r)⊸/¨↩
