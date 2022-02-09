@@ -640,17 +640,20 @@ program ← {
     Report ⇐ {𝕤
       •Out (∧`lf⊸≠)⊸/⎊•Repr •CurrentError@
       •Out ""
+      # DispSource¨ ⌽ Dump@
+      # ^ would be the easy way, but we want to compress repeats
       Rep ← (•Out"Repeated "∾•Repr∘⊣∾" times:"∾1⊸<◶⟨""," ("∾•Repr∾" entries)"˙⟩∘⊢)´⍟=
       l ← ≠s ← Dump@
-      n ← (↕l)-˜l⊸=⊸+⍷⊸(⊣≠⊸↓⊢⊒∾)⊐s
-      n ⊏˜↩ i ← /»⊸≠n
-      r ← l⊸«⊸-i
-      i‿r‿n (n≤r)⊸/¨↩
-      j‿c ← (⊢⋈-⟜(n⊸|)∘-)⟜(i⌈»)i+r+n
-      j‿n‿c (0<c)⊸/¨↩
-      jc←j-+`»c-n
-      s /˜↩ 1≠`n≠○(l↑·/⁼j⊸+)c
-      ((n⋈¨˜c÷n)⌾((jc+n-1)⊸⊏) 1¨s) Rep⊸DispSource¨○⌽ s
+      n ← (↕l)-˜ l⊸=⊸+ ⍷⊸(⊣≠⊸↓⊢⊒∾)⊐s  # Distance to next repetition
+      n ⊏˜↩ i ← /»⊸≠n                 # Split into blocks of equal distance
+      e ← n+l«i                       # Last possible endpoint
+      Sc ← {𝕨𝕊n‿i‿e:e-n|⍟(+˜⊸≤)e-𝕨⌈i} # Full reps (if ≥2) not overlapping previous
+      i ⌈↩» e ↩ 0 Sc` <˘⍉>⟨n,i,e⟩     # Adjust start and end
+      i‿n‿e (i<e)⊸/¨↩                 # Filter out empties
+      c ← e-i                         # Count including all reps
+      s /˜↩ 1≠`e≠○(l↑/⁼)i+n           # Remove extra iterations
+      ic←i-+`»c-n                     # Index after that
+      ((n⋈¨˜c÷n)⌾((ic+n-1)⊸⊏) 1¨s) Rep⊸DispSource¨○⌽ s
       •Exit 1
     }
   }
