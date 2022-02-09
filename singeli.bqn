@@ -642,7 +642,6 @@ program ← {
       •Out ""
       # DispSource¨ ⌽ Dump@
       # ^ would be the easy way, but we want to compress repeats
-      Rep ← (•Out"Repeated "∾•Repr∘⊣∾" times:"∾1⊸<◶⟨""," ("∾•Repr∾" entries)"˙⟩∘⊢)´⍟=
       l ← ≠s ← Dump@
       n ← (↕l)-˜ l⊸=⊸+ ⍷⊸(⊣≠⊸↓⊢⊒∾)⊐s  # Distance to next repetition
       n ⊏˜↩ i ← /»⊸≠n                 # Split into blocks of equal distance
@@ -650,10 +649,12 @@ program ← {
       Sc ← {𝕨𝕊n‿i‿e:e-n|⍟(+˜⊸≤)e-𝕨⌈i} # Full reps (if ≥2) not overlapping previous
       i ⌈↩» e ↩ 0 Sc` <˘⍉>⟨n,i,e⟩     # Adjust start and end
       i‿n‿e (i<e)⊸/¨↩                 # Filter out empties
-      c ← e-i                         # Count including all reps
-      s /˜↩ 1≠`e≠○(l↑/⁼)i+n           # Remove extra iterations
-      ic←i-+`»c-n                     # Index after that
-      ((n⋈¨˜c÷n)⌾((ic+n-1)⊸⊏) 1¨s) Rep⊸DispSource¨○⌽ s
+      f ← i+n                         # End of displayed reps
+      df ← {DispSource 𝕩˙}¨ s
+      rt ← (1<n) ("Repeated "∾•Repr∘⊢∾" times:"∾/⟜" {{{")¨ (e-i)÷n
+      df rt⊸({𝕏⊣·•Out𝕨˙}¨)⌾((f-1)⊸⊏)↩
+      df {•Out∘("}}}"∾@+10)⊢𝕏}¨⌾((i/˜1<n)⊸⊏)↩
+      {𝕏@}¨ ⌽ df /˜ 1≠`e≠○(l↑/⁼)f     # Remove extra iterations
       •Exit 1
     }
   }
