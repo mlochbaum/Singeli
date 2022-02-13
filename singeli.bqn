@@ -234,7 +234,9 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Seps ← {Try∘sep◶@‿𝕊⍟Rem𝕩}
   Body ← {𝕤
     Get "{"
-    While ⟨¬Try∘"}"∘Seps, Statement, 0⟩
+    b ← While ⟨¬Try∘"}"∘Seps, Statement, 0⟩
+    "Empty body" Asrt 0<≠b
+    b
   }
   # 𝕩 indicates if preceding token was =
   Result ← c.body _node_ (Next∘"{"◶⟨
@@ -433,7 +435,7 @@ types ← {kname⇐"type"
     }
     Obj←{
       "number"≡𝕩.kind ? 𝕨 Num 𝕩 ;
-      ! 𝕩 TypeOf⊸MT 𝕨
+      "Cast failed" ! 𝕩 TypeOf⊸MT 𝕨
       𝕩
     }
     𝕨 ⟨⟨tTUP,⊢⟩_cases⊸(𝕊¨)˜, Num˜, Obj˜⟩_tsel˜ 𝕩
@@ -829,7 +831,7 @@ nodes ← {
       functions.Goto¨ lt ← functions.Label¨ else
       functions.SetLabel lf
       lt { 𝕩.Eval m ⋄ functions.SetLabel 𝕨 }¨ else
-      {Shows⇐!∘"Can't use if statement result as value"}
+      {Shows⇐!∘"Can't use if statement result as value"⋄kind⇐"error"}
     }
   }
   While ⇐ {
@@ -843,7 +845,7 @@ nodes ← {
       stmt.Eval m
       functions.SetLabel¨ lc
       (cond.Eval m) functions.Goto lt
-      {Shows⇐!∘"Can't use while statement result as value"}
+      {Shows⇐!∘"Can't use while statement result as value"⋄kind⇐"error"}
     }
   }
   n0 ← Word "0"
