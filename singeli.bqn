@@ -756,12 +756,12 @@ nodes ← {
     Eval⇐{ u←V𝕩 ⋄ u.SetType t←type.Eval 𝕩 ⋄ u.Set functions.NextArg t }
   }
   Function ⇐ {
-    ⟨args,type,result⟩←𝕩
+    ⟨args,type,result⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨𝕏¨args,𝕏¨type,𝕏result⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "function"‿visit
     Scope⇐{ Visit o.Scope scopes.New 𝕩 }
     Eval⇐{
-      ev←o.Eval args env.New 𝕩
+      Ev←(o.Eval args env.New 𝕩) program._trace_ pos
       Ev¨ args
       𝕨.SetRType∘Ev¨ type
       Ev result
