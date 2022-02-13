@@ -1,0 +1,14 @@
+beginFn f0 void 0
+new v0 val i32 !0:i32
+new v1 val u64 !0:u64
+goto l0
+lbl l1
+new v2 emit i32 op + v0 !2:i32
+mut v0 v2
+new v3 emit u64 op + v1 !1:u64
+mut v1 v3
+lbl l0
+new v4 emit u1 op < v1 !4:u64
+gotoT v4 l1
+endFn
+

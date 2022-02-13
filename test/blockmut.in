@@ -1,0 +1,17 @@
+include 'skin/c'
+include 'arch/c'
+
+def for{vars,begin,end,block} = {
+  i:u64 = begin
+  while (i < end) {
+    exec{i, vars, block}
+    i = i+1
+  }
+}
+
+fn() : void = {
+  b:i32 = 0
+  @for(i from 0 to 4) {
+    b = b+2
+  }
+}

@@ -521,6 +521,7 @@ blocks ← {kname⇐"block"
   New ⇐ {𝕊 ind‿ptrs‿body‿ls‿e:
     kind⇐kname
     shows⇐"{block}" ⋄ Matches⇐≡
+    e env.Mut↩
     Exec⇐{
       ! ptrs≡○≠1⊑𝕩
       r ← body.Eval be ← ⟨≠ind,ls,𝕩⟩ env.Block e
