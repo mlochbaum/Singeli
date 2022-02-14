@@ -217,11 +217,12 @@ Parse ← {𝕊 tokens‿ShowTrace:
   For ← c.for _node_ {𝕤
     OA← "@for: multiple variables must use ""over"""⊸Asrt
     TA← "@for: ""from"" missing ""to"""⊸Asrt
+    NA← "@for: loop variable must be a name"⊸Asrt
     Expr ← "over"‿"from"‿"to"_exprEnd # Shadow
     Get "@"
     f ← Callable@
     Get "("
-    to← Expr@ ⋄ NE←{𝕤⋄ n←c.PhraseToName to ⋄ to↩Expr@ ⋄ n}
+    to← Expr@ ⋄ NE←{𝕤⋄ NA@≢n←c.PhraseTryName to ⋄ to↩Expr@ ⋄ n}
     pe← While ⟨Try∘",", Name, 0⟩
     ps← pe ⊢◶{OA 0=≠𝕨⋄⟨⟩}‿{(<NE@)∾𝕨} Try"over" # Pointers
     fr← When ⟨Try"from", Expr⟩                 # Start index
