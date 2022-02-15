@@ -397,7 +397,7 @@ types ← {kname⇐"type"
 
   _isQual ← {{tPRIM≡𝕩.typeKind}◶⟨0,𝔽{⊑𝕩.dat}⟩ TypeOf⍟(¬Is)}
 
-  Deref ⇐ { !Is 𝕩 ⋄ !tPTR=𝕩.typeKind ⋄ 𝕩.dat }
+  Deref ⇐ { Is 𝕩 ? tPTR=𝕩.typeKind ? 𝕩.dat ; !"Expected pointer" }
 
   _cases ← {
     Kind←{𝕩.typeKind} ⋄ Dat←{𝕩.dat}
