@@ -440,7 +440,7 @@ types ← {kname⇐"type"
     }
     Obj←{
       "number"≡𝕩.kind ? 𝕨 Num 𝕩 ;
-      "Cast failed" ! 𝕩 TypeOf⊸MT 𝕨
+      "Cast failed" ! IsTyped◶⟨0,TypeOf MT 𝕨˙⟩ 𝕩
       𝕩
     }
     𝕨 ⟨⟨tTUP,⊢⟩_cases⊸(𝕊¨)˜, Num˜, Obj˜⟩_tsel˜ 𝕩
@@ -828,15 +828,21 @@ nodes ← {
     Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
     ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "if"‿visit
     Eval ⇐ {
-      c ← cond.Eval𝕩
-      lf ← functions.Label@
-      c functions.GotoF lf
-      m ← env.Mut 𝕩
-      then.Eval m
-      functions.Goto¨ lt ← functions.Label¨ else
-      functions.SetLabel lf
-      lt { 𝕩.Eval m ⋄ functions.SetLabel 𝕨 }¨ else
-      {Shows⇐!∘"Can't use if statement result as value"⋄kind⇐"error"}
+      c ← cond.Eval e←𝕩
+      { IsTyped c ?
+        lf ← functions.Label@
+        c functions.GotoF lf
+        m ← env.Mut e
+        then.Eval m
+        functions.Goto¨ lt ← functions.Label¨ else
+        functions.SetLabel lf
+        lt { 𝕩.Eval m ⋄ functions.SetLabel 𝕨 }¨ else
+        {Shows⇐!∘"Can't use if statement result as value"⋄kind⇐"error"}
+      ;
+        numbers.GetBool c ? then.Eval e ;
+        r ← {Shows⇐!∘"Can't use if-0 statement result as value"⋄kind⇐"error"}
+        r ⊣´ { 𝕩.Eval e }¨ else
+      }
     }
   }
   While ⇐ {

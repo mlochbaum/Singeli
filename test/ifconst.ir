@@ -1,0 +1,7 @@
+beginFn f0 i64 1 i64
+new v1 emit i64 op * !2:i64 v0
+new v2 emit i64 op - v1 !1:i64
+new v3 emit i64 op + v2 !2:i64
+ret v3
+endFn
+
