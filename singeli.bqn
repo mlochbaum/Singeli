@@ -240,9 +240,10 @@ Parse ← {𝕊 tokens‿ShowTrace:
     b
   }
   # 𝕩 indicates if preceding token was =
-  Result ← c.body _node_ (Next∘"{"◶⟨
-    Expr‿sep _seq "Missing = before body?"Asrt⊢
+  Result ← c.body _node_ (("{"‿"@"⊸⊐⌾<Peek)◶⟨
     Body
+    ⋈For
+    Expr‿sep _seq "Missing = before body?"Asrt⊢
   ⟩)
 
   Params ← {𝕤
