@@ -199,20 +199,29 @@ Parse ← {𝕊 tokens‿ShowTrace:
     a
   }
 
-  Statement ← {
+  StSub ← {
   "def":    Define@ ;
-  "if":     c.if     _node_ ("if"‿"("‿Expr‿")"‿Statement‿(When∘⟨Try∘"else"∘Seps,Statement⟩)_seq)@ ;
-  "while":  c.while  _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Statement _seq)@ ;
-  "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Statement‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
+  "if":     c.if     _node_ ("if"‿"("‿Expr‿")"‿Block‿(When∘⟨Try∘"else"∘Seps,Block⟩)_seq)@ ;
+  "while":  c.while  _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Block _seq)@ ;
+  "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
   "@":      For@ ;
-  "{":      c.body   _node_ Body@ ;
   𝕩:
     n ← Expr@
     d ← Try ":"
     e ← Try "="
     t ← When ⟨d>e, {e↩Try"="⋄𝕩}∘Expr⟩
     c.assign _node_ {⟨𝕩,d,t,Expr@⟩}⍟e n
-  }∘Peek
+  }
+  Statement ← StSub Peek
+
+  Seps ← {Try∘sep◶@‿𝕊⍟Rem𝕩}
+  Body ← {𝕤
+    Get "{"
+    b ← While ⟨¬Try∘"}"∘Seps, Statement, 0⟩
+    "Empty body" Asrt 0<≠b
+    b
+  }
+  Block ← "{"⊸≡◶⟨StSub, c.body _node_ Body⟩ Peek
 
   For ← c.for _node_ {𝕤
     OA← "@for: multiple variables must use ""over"""⊸Asrt
@@ -228,17 +237,10 @@ Parse ← {𝕊 tokens‿ShowTrace:
     fr← When ⟨Try"from", Expr⟩                 # Start index
     i ← ⊢◶{𝕤⋄TA 0=≠fr⋄⟨⟩}‿{𝕤⋄⟨NE@⟩} Try"to"    # Index variable
     Get ")"
-    b ← Statement@
+    b ← Block@
     ⟨f,ps,i,fr,to,b⟩
   }
 
-  Seps ← {Try∘sep◶@‿𝕊⍟Rem𝕩}
-  Body ← {𝕤
-    Get "{"
-    b ← While ⟨¬Try∘"}"∘Seps, Statement, 0⟩
-    "Empty body" Asrt 0<≠b
-    b
-  }
   # 𝕩 indicates if preceding token was =
   Result ← c.body _node_ (("{"‿"@"⊸⊐⌾<Peek)◶⟨
     Body
