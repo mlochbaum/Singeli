@@ -150,6 +150,22 @@ Generators are great for compile-time computation, but all run-time computation 
 
 The body of a function can be either a plain expression like `a*b` above, or can be enclosed in curly braces `{}` to allow multiple statements. It returns the value of the last expression. The return type is given with `:` following the argument list, but can often be omitted (if it's left out and the body uses braces, `=` is also optional).
 
+## Control flow
+
+Singeli's built-in control flow statements are `if`-(`else`), and (`do`)-`while`. The semantics are just like in C, and the syntax is pretty similar too. You can use a single statement, or multiple statements enclosed in braces. Here are a few examples:
+
+    if (a < 4) a = a + 1
+
+    if (a > b) { c = a }
+    else { c = b }
+
+    do {
+      doThing{c}
+      c = c + 1
+    } while (c < a)
+
+Note that `if` can also be used as a constant-time switch: if the argument is a number, it must be 0 or 1, and compiles only one block, or none if the condition is 0 and there's no `else`.
+
 ## Built-in generators
 
 The following generators are pre-defined in any program. They're placed in a parent scope of the main program, so these names can be shadowed by the program.
