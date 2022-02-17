@@ -36,7 +36,7 @@ Here, `x` must be a typed value, and have type `T`, and the two `n` parameters m
 
 The end goal here is to define functions for use by some other program. Functions are declared with a parenthesis syntax at the top level, possibly with generator-like parameters. Types use `value:type` syntax rather than `type value`.
 
-    fn{T}(a:T, len:u64) : {
+    fn{T}(a:T, len:u64) : void = {
       while (len > 0) {
         a = a + 1
         len = len - 1
@@ -61,7 +61,7 @@ While this loop *is* an ordinary generator (allowing other loops to call it), sp
       src = 1 + dst
     }
 
-Outside the loop, these variables are pointers, and inside it, they are individual values. It's `exec` in the loops definition that performs this conversion, using the given index `i` to index into each pointer in `vars`. Each variable tracks whether its value was set inside the loop and writes to memory if this is the case.
+Outside the loop, these variables are pointers, and inside it, they are individual values. It's `exec` in the loop's definition that performs this conversion, using the given index `i` to index into each pointer in `vars`. Each variable tracks whether its value was set inside the loop and writes to memory if this is the case.
 
 ## Generators
 
@@ -98,6 +98,30 @@ The parameter list in a generator definition has to give the names of parameters
 Each of the values `typ`, `val`, and `cond` can be an expression, which is fully evaluated whenever the condition is reached. Parameter names are all bound before evaluating any conditions, so that a condition can refer to parameter values, even ones that come after it in the source code.
 
 The value `typ` can also be a name, which functions something like an extra parameter: the underlying parameter must be typed and the name is set to its type (like any parameter, this value is accessible to conditions). Built-in type names such as `i16` and `f64` can't be used here, but other names will be shadowed. If you have an alias like `def size = u64`, parenthesize it to use it as a value, as in `par:(size)`.
+
+## Kinds of value
+
+A generator is one kind of value—that is, something that's first-class at compile time. Like most values, it doesn't exist at runtime. Hopefully it's already done what's needed! In fact it's one of the more complicated kinds of value. Here's the full list:
+
+| Kind      | Summary
+|-----------|--------
+| number    | A compile-time, high-precision number
+| symbol    | A compile-time string
+| tuple     | A compile-time list of values
+| generator | Takes and returns values at compile time
+| type      | A specific type that a runtime value can have
+| constant  | A typed value known at compile time
+| register  | A typed value, unknown until runtime
+| function  | Takes and returns typed values at runtime
+| block     | Used for `@for` loops
+
+The simplest are discussed in this section, and others have dedicated sections below.
+
+Numbers are floating-point, with enough precision to represent both double-precision floats and 64-bit integers (signed or unsigned) exactly. Specifically, they're implemented as pairs of doubles, giving about 105 bits of precision over the same exponent range as a double. A number can be written in scientific notation like `45` or `1.3e-12`, in hex like `0xf3cc0`, or in an arbitrary base with the base preceding `b`, like `2b110101` or `32b0jbm1` (digits like hex, extending past `f`). Numbers are case-insensitive and can contain underscores, which will be removed.
+
+Symbols are Unicode strings, written as a literal using single quotes: `'symbol'`. They're used with the `emit{}` generator to emit instructions, and in export statements to identify the function name that should be exposed.
+
+Constants consist of a value and a type. They appear when a value such as a number is cast, for example by creating a variable `v:f64 = 6` or with an explicit `cast{f64, 6}`. For programming, constants work like registers (variables), so there's never any need to consider them specifically. Just cast a compile-time value if you need it to have a particular type—say, when calling a function that could take several different types.
 
 ## Operators
 
