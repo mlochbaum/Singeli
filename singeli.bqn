@@ -273,8 +273,14 @@ Parse ← {𝕊 tokens‿ShowTrace:
     b ← Result Try"="
     ⟨a,r,b⟩
   } _withParams
+  Const ← {𝕤
+    t ← When ⟨Try":", Expr⟩
+    Get "="
+    c.run _node_ ((c.Word"cast") ⋈ t∾<)⍟(0<≠t) Expr@
+  }
+  FunConst ← (Next∘"("‿"{"◶Const‿Function)
   Generator ← {𝕤⋄ Get"=" ⋄ Result 1} _withParams
-  DefFun ← c.define _node_ (      Name‿Function  _seq)
+  DefFun ← c.define _node_ (      Name‿FunConst  _seq)
   Define ← c.define _node_ ("def"‿Name‿Generator _seq)
 
   Export ← c.export _node_ ((While∘⟨Try∘",",Symbol,1⟩)‿"="‿Callable‿sep _seq)
