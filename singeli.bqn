@@ -177,7 +177,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   AddArgs   ← {  (c.call _node_ (⊢⋈"("‿")"_args))⍟(Next"(") 𝕩}
   Expr0 ← {𝕤
     Vec ← c.run _node_ ((c.Word"__vec") ⋈ "["‿Expr‿"]"‿Expr0 _seq)
-    Par ← ⊑ "("‿Expr‿")" _seq
+    Par ← ⊑ "("‿Stmt‿")" _seq
     ARes← c.body _node_ (Next∘"{"◶⟨⋈Expr, Body⟩)
     Anon← c.lambda _node_ (Params‿"=>"‿ARes _seq)
     (⊑"[({'"⊐⊏)◶Vec‿Par‿Anon‿Symbol‿Word Peek@
@@ -212,12 +212,12 @@ Parse ← {𝕊 tokens‿ShowTrace:
     t ← When ⟨d>e, {e↩Try"="⋄𝕩}∘Expr⟩
     c.assign _node_ {⟨𝕩,d,t,Expr@⟩}⍟e n
   }
-  Statement ← StSub Peek
+  Stmt ← StSub Peek
 
   Seps ← {Try∘sep◶@‿𝕊⍟Rem𝕩}
   Body ← {𝕤
     Get "{"
-    b ← While ⟨¬Try∘"}"∘Seps, Statement, 0⟩
+    b ← While ⟨¬Try∘"}"∘Seps, Stmt, 0⟩
     "Empty body" Asrt 0<≠b
     b
   }
