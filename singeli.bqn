@@ -465,6 +465,7 @@ registers ← {kname⇐"register"
     kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
     shows⇐"v"∾•Repr𝕩 ⋄ Matches⇐≡
     used⇐0 ⋄ SetUsed⇐{𝕤⋄used↩1}
+    mut⇐0  ⋄ SetMut ⇐{𝕤⋄mut ↩1}
   }
 }
 constants ← {kname⇐"constant"
@@ -517,7 +518,7 @@ functions ← {kname⇐"function"
   Return ⇐ { current.Return 𝕩 }
   Emit ⇐ { (⊑𝕩) Append "emit" <⊸∾ 𝕩 }
   Copy ⇐ { (⊑𝕩) Append "val" <⊸∾ 𝕩 }
-  Mut  ⇐ { Append "mut"‿𝕨‿𝕩 ⋄ 𝕨 }
+  Mut  ⇐ { Append "mut"‿𝕨‿𝕩 ⋄ 𝕨.SetMut@ ⋄ 𝕨 }
   Call ⇐ {
     f ← ⊑𝕩
     ! "function"≡Kind f
@@ -534,7 +535,6 @@ blocks ← {kname⇐"block"
   New ⇐ {𝕊 ind‿ptrs‿body‿ls‿e:
     kind⇐kname
     shows⇐"{block}" ⋄ Matches⇐≡
-    e env.Mut↩
     Exec⇐{
       ! ptrs≡○≠1⊑𝕩
       r ← body.Eval be ← ⟨≠ind,ls,𝕩⟩ env.Block e
@@ -593,15 +593,6 @@ var ← {
       Set↩Set ·G 𝕩⊸types.Cast
     }
   }
-  # Transform variable to use Mut, for control structure bodies
-  Mut⇐{
-    ⟨Get⟩⇐𝕩 ⋄ v←@
-    Set⇐{!"register"≡Kind v↩Get@ ⋄ (Set↩v⊸functions.Mut) 𝕩}
-  }
-  # Variable that tracks when it's been set, for block exec
-  Marked⇐{
-    write⇐0 ⋄ ⟨Get⟩⇐v←New 𝕩 ⋄ Set⇐{write↩1⋄v.Set𝕩}
-  }
 }
 scopes ← {
   noLambda ← var.Fixed {!∘"Unhandled case"}
@@ -626,14 +617,13 @@ env ← {
   Parent⇐{𝕩.parent}
   Make ←{ vars⇐𝕨 ⋄ parent⇐𝕩 }
   New  ⇐{ (var.New∘@¨ 𝕨) Make 𝕩 }
-  Mut  ⇐{ vars‿parent⇐⟨var.Mut¨𝕩.vars,env.Mut 𝕩.parent⟩ }⍟(@⊸≢)
   Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
   Block⇐{⟨ni,Load‿Store,ind‿ptrs⟩ 𝕊 par:
     pi ← ptrs ⋈¨ <ind
     pv ← Load¨ pi
-    vars‿parent ⇐ ((var.Fixed∘ind¨↕ni)∾(var.Marked¨pv)) Make par
+    vars‿parent ⇐ (var.Fixed¨(ind¨↕ni)∾pv) Make par
     Stores ⇐ {𝕤
-      m←{𝕩.write}¨v←ni↓vars
+      m←{(𝕩.Get@).mut}¨v←ni↓vars
       v var.Get⊸(Store∾⟜<˜)¨○(m⊸/) pi
     }
   }
@@ -789,9 +779,14 @@ nodes ← {
     }
     Eval⇐{
       u ← GetVar 𝕩
-      v ← value.Eval𝕩
-      u var.SetType⟜(≠◶⟨TypeOf v˙, (o.Eval𝕩)∘⊑⟩)⍟decl type
-      u.Set v
+      v ← value.Eval 𝕩
+      e ← o.Eval 𝕩
+      { decl ?
+        u var.SetType⟜(≠◶⟨TypeOf v˙, E∘⊑⟩) type
+        u.Set v
+      ;
+        (u.Get@) functions.Mut v
+      }
     }
   }
   Define ⇐ {
@@ -838,11 +833,10 @@ nodes ← {
       { IsTyped c ?
         lf ← functions.Label@
         c functions.GotoF lf
-        m ← env.Mut e
-        then.Eval m
+        then.Eval e
         functions.Goto¨ lt ← functions.Label¨ else
         functions.SetLabel lf
-        lt { 𝕩.Eval m ⋄ functions.SetLabel 𝕨 }¨ else
+        lt { 𝕩.Eval e ⋄ functions.SetLabel 𝕨 }¨ else
         {Shows⇐!∘"Can't use if statement result as value"⋄kind⇐"error"}
       ;
         numbers.GetBool c ? then.Eval e ;
@@ -858,10 +852,9 @@ nodes ← {
     Eval ⇐ {
       functions.Goto¨ lc ← functions.Label¨↕testFirst
       functions.SetLabel lt ← functions.Label@
-      m ← env.Mut 𝕩
-      stmt.Eval m
+      stmt.Eval 𝕩
       functions.SetLabel¨ lc
-      (cond.Eval m) functions.Goto lt
+      (cond.Eval 𝕩) functions.Goto lt
       {Shows⇐!∘"Can't use while statement result as value"⋄kind⇐"error"}
     }
   }

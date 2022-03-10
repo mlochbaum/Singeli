@@ -6,7 +6,8 @@ new v5 emit f64 si_load v0 v4
 new v6 emit f64 si_load v1 v4
 new v7 emit f64 si_load v2 v4
 new v8 emit f64 op v7 v6
-new v9 emit f64 si_store v0 v4 v8
+mut v5 v8
+new v9 emit f64 si_store v0 v4 v5
 new v10 emit u64 op + v4 !1:u64
 mut v4 v10
 lbl l0

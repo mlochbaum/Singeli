@@ -1,11 +1,12 @@
 beginFn f0 i64 1 i64
 new v1 emit i64 newvar v0
-new v2 emit i64 test v1
+mut v0 v1
+new v2 emit i64 test v0
 gotoF v2 l0
-new v3 emit i64 mutvar v1
-mut v1 v3
+new v3 emit i64 mutvar v0
+mut v0 v3
 lbl l0
-ret v1
+ret v0
 endFn
 
 export f0 i64 1 i64 efn
