@@ -616,6 +616,14 @@ scopes ← {
     GetLam ⇐ ⟨Sel⊣, Lam⟩ _find
   }
   Init⇐New null˙
+
+  queue ← ⟨⟩
+  _defer ⇐ { queue∾↩<𝔽‿𝕩 }
+  _run ⇐ {
+    𝔽 _defer 𝕩
+    _while_ ← {𝔽⍟𝔾∘𝔽_𝕣_𝔾∘𝔽⍟𝔾𝕩}
+    {𝕊:d←⊑queue⋄queue↓˜↩1⋄{𝕎𝕩}´d}_while_{𝕊:0<≠queue} @
+  }
 }
 env ← {
   Vars  ⇐{𝕩.vars}
@@ -741,7 +749,7 @@ nodes ← {
     uPar‿iPar←(⍷⋈⊐)params
     Visit←{((iPar⊏uPar)∾⟜(∾""<⊸∾":"⊸∾¨)¨tname)∾⟨𝕏¨conds,𝕏result⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "lambda"‿visit
-    Scope⇐{ Visit o.Scope (uPar∾uTyp) scopes.New 𝕩 }
+    Scope⇐{ Visit scopes._defer o.Scope (uPar∾uTyp) scopes.New 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value
       next ← ({𝕩.Get@}𝕨)⊣{"No matching generator definition"!0˙}
       AllEq ← ∧´⊏Match¨1⊸↓
@@ -765,7 +773,7 @@ nodes ← {
     ⟨args,type,result⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨𝕏¨args,𝕏¨type,𝕏result⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "function"‿visit
-    Scope⇐{ Visit o.Scope scopes.New 𝕩 }
+    Scope⇐{ Visit scopes._defer o.Scope scopes.New 𝕩 }
     Eval⇐{
       Ev←(o.Eval args env.New 𝕩) program._trace_ pos
       Ev¨ args
@@ -773,9 +781,9 @@ nodes ← {
       Ev result
     }functions._with
   }
-  Assign ⇐ { pos 𝕊 ⟨name,1,type,val⟩: # Declaration
+  Assign ⇐ { pos 𝕊 ⟨name,1,type,value⟩: # Declaration
     name PhraseToName˜↩@
-    Visit←{⟨name∾":",𝕏¨type,𝕏val⟩}
+    Visit←{⟨name∾":",𝕏¨type,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "assign"‿visit
     GetVar←!∘0 ⋄ Scope⇐{
       Visit o.Scope 𝕩
@@ -783,7 +791,7 @@ nodes ← {
     }
     Eval⇐{
       u ← GetVar 𝕩
-      v ← val.Eval 𝕩
+      v ← value.Eval 𝕩
       u var.SetType ≠◶⟨TypeOf v˙, (o.Eval𝕩)∘⊑⟩ type
       u.Set v
     }
@@ -871,7 +879,7 @@ nodes ← {
     Scope ⇐ {
       (o.Scope 𝕩)¨ ∾⟨fn⟩‿ptri‿⟨from,to⟩
       ls ↩ (<pos) {𝕏}∘𝕩.Get¨ "load"‿"store"
-      body.Scope (ind∾ptrs) scopes.New 𝕩
+      body.Scope scopes._defer (ind∾ptrs) scopes.New 𝕩
     }
     Eval ⇐ {
       e←o.Eval 𝕩
@@ -909,7 +917,7 @@ ast ← {
   Compile ⇐ {
     t ← 𝕨 files.Build 𝕩
     t.Oper operator._with @
-    t.Scope baseScope
+    t.Scope scopes._run baseScope
     t.Eval program._with baseEnv
   }
 }
