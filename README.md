@@ -150,6 +150,23 @@ Generators are great for compile-time computation, but all run-time computation 
 
 The body of a function can be either a plain expression like `a*b` above, or can be enclosed in curly braces `{}` to allow multiple statements. It returns the value of the last expression. The return type is given with `:` following the argument list, but can often be omitted (if it's left out and the body uses braces, `=` is also optional).
 
+## Registers
+
+A function's arguments, and variables that it manipulates at runtime, are represented with typed slots called registers. Registers are first-class values, meaning they can be passed around and manipulated at compile time. For example, a generator can take a register as a parameter and set its value. Copies of registers, made by passing parameters or `def` statements, exhibit aliasing, like pass-by-reference.
+
+In a function, registers can be declared using `name : type = value` syntax, where the type can be omitted if the value is already typed. The initial value is required. A function argument is also declared as a register, but it doesn't use an initial value as that's passed in when the function is called.
+
+    x:i32 = 25   # Type specified: numbers are untyped
+    y := x + 1   # Type inferred
+
+The runtime value of a register can be changed with `name = value` syntax, with no `:`.
+
+    x = x + 1    # Increment
+
+This does *not* change the compile time value of `x` or `y`, which is a register. Declaration and reassignment do essentially the same thing at compile time, but at runtime they're two different things. Declaration is basically a `def` statement bundled with an assignment of the initial value. Assignment is a plain function that acts on a register and a value, and could even be wrapped in a generator `assign{name,value}` if you wanted. In fact, the left-hand side of an assignment (but not a declaration) can be a full expression, as long as it resolves to a register at compile time. Try `(if (0) a; else b) = c` for example.
+
+At runtime, the register represents one value at a time, so whenever it's used it's the current value that will be visible. If you want to save the value somewhere, make another register, like `x0 := x`.
+
 ## Control flow
 
 Singeli's built-in control flow statements are `if`-(`else`), and (`do`)-`while`. The semantics are just like in C, and the syntax is pretty similar too. You can use a single statement, or multiple statements enclosed in braces. Here are a few examples:
