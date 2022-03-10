@@ -767,7 +767,11 @@ nodes ← {
     Visit←{⟨name,𝕏type⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "arg"‿visit
     v←@ ⋄ Scope⇐{ type.Scope 𝕩 ⋄ v ↩ pos 𝕩.Add name }
-    Eval⇐{ u←V𝕩 ⋄ u.SetType t←type.Eval 𝕩 ⋄ u.Set functions.NextArg t }
+    Eval⇐{
+      u←V𝕩 ⋄ t←type.Eval 𝕩
+      "Argument type must be a type" ! program._trace_ pos types.Is t
+      u.SetType t
+      u.Set functions.NextArg t }
   }
   Function ⇐ {
     ⟨args,type,result⟩←𝕩 ⋄ pos←𝕨
@@ -792,7 +796,13 @@ nodes ← {
     Eval⇐{
       u ← GetVar 𝕩
       v ← value.Eval 𝕩
-      u var.SetType ≠◶⟨TypeOf v˙, (o.Eval𝕩)∘⊑⟩ type
+      t ← { ≠type ?
+        ("Variable type must be a type"!types.Is)⊸⊢ (⊑type).Eval 𝕩
+      ;
+        "Explicit type needed for untyped initial value" ! IsTyped v
+        TypeOf v
+      } program._trace_ pos 𝕩
+      u var.SetType t
       u.Set v
     }
   ;
