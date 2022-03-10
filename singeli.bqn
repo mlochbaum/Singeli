@@ -518,7 +518,12 @@ functions ← {kname⇐"function"
   Return ⇐ { current.Return 𝕩 }
   Emit ⇐ { (⊑𝕩) Append "emit" <⊸∾ 𝕩 }
   Copy ⇐ { (⊑𝕩) Append "val" <⊸∾ 𝕩 }
-  Mut  ⇐ { Append "mut"‿𝕨‿𝕩 ⋄ 𝕨.SetMut@ ⋄ 𝕨 }
+  Mut  ⇐ {
+    "Can't assign to non-register" ! "register"≡Kind 𝕨
+    Append "mut"‿𝕨‿𝕩
+    𝕨.SetMut@
+    𝕨
+  }
   Call ⇐ {
     f ← ⊑𝕩
     ! "function"≡Kind f
@@ -768,26 +773,22 @@ nodes ← {
       Ev result
     }functions._with
   }
-  Assign ⇐ {
-    ⟨name,decl,type,value⟩←𝕩 ⋄ pos←𝕨
+  Assign ⇐ { pos 𝕊 ⟨name,1,type,val⟩: # Declaration
     name PhraseToName˜↩@
-    Visit←{⟨name∾decl/":",𝕏¨type,𝕏value⟩}
+    Visit←{⟨name∾":",𝕏¨type,𝕏val⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "assign"‿visit
     GetVar←!∘0 ⋄ Scope⇐{
       Visit o.Scope 𝕩
-      getVar ↩ pos decl◶⟨𝕩.Get, 𝕩.Add⟩ name
+      getVar ↩ pos 𝕩.Add name
     }
     Eval⇐{
       u ← GetVar 𝕩
-      v ← value.Eval 𝕩
-      e ← o.Eval 𝕩
-      { decl ?
-        u var.SetType⟜(≠◶⟨TypeOf v˙, E∘⊑⟩) type
-        u.Set v
-      ;
-        (u.Get@) functions.Mut v
-      }
+      v ← val.Eval 𝕩
+      u var.SetType ≠◶⟨TypeOf v˙, (o.Eval𝕩)∘⊑⟩ type
+      u.Set v
     }
+  ;
+    𝕨 Run ⟨{functions.Mut´𝕩}˙_value"=" , 0‿3⊏𝕩⟩
   }
   Define ⇐ {
     ⟨name,value⟩←𝕩 ⋄ pos←𝕨
