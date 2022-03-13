@@ -249,6 +249,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ⟩)
 
   Params ← {𝕤
+    Get "{"
+    Try "}" ? (0⥊<↕3)‿⟨⟩ ;
     ExprA ← ⟨"&"⟩_exprEnd
     Param ← {𝕤
       n ← Name@
@@ -256,7 +258,6 @@ Parse ← {𝕊 tokens‿ShowTrace:
       t ← When ⟨(≠e)◶Try‿0":", ExprA⟩
       n‿e‿t
     }
-    Get "{"
     a ← While ⟨Try∘",", Param, 1⟩
     c ← While ⟨Try∘"&", ExprA, 0⟩
     Get "}"
