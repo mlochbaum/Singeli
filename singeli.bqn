@@ -465,9 +465,11 @@ registers ← {kname⇐"register"
   New ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
     shows⇐"v"∾•Repr𝕩 ⋄ Matches⇐≡
-    used⇐0 ⋄ SetUsed⇐{𝕤⋄used↩1}
-    mut⇐0  ⋄ SetMut ⇐{𝕤⋄mut ↩1}
+    used⇐0 ⋄ Claim ⇐{𝕤⋄used↩1}  # Stored in a variable
+    mut ⇐0 ⋄ SetMut⇐{𝕤⋄mut ↩1}  # Changed (for blocks)
   }
+  Claim ⇐ {𝕩.Claim@⋄𝕩}
+  IsUsed ⇐ {kname≡Kind𝕩 ? 𝕩.used ; 𝕨}
 }
 constants ← {kname⇐"constant"
   New ⇐ {
@@ -518,10 +520,10 @@ functions ← {kname⇐"function"
   Append ← { 𝕨 current.Append 𝕩 }
   Return ⇐ { current.Return 𝕩 }
   Emit ⇐ { (⊑𝕩) Append "emit" <⊸∾ 𝕩 }
-  Copy ⇐ { (⊑𝕩) Append "val" <⊸∾ 𝕩 }
+  Copy ⇐ {   𝕨  Append "val"‿𝕨‿𝕩 }
   Mut  ⇐ {
-    "Can't assign to non-register" ! "register"≡Kind 𝕨
-    Append "mut"‿𝕨‿𝕩
+    "Can't assign to non-register" ! 0 registers.IsUsed 𝕨
+    Append "mut"‿𝕨‿(𝕨.type types.Cast 𝕩)
     𝕨.SetMut@
     𝕨
   }
@@ -589,14 +591,12 @@ builtins ← {
 
 var ← {
   Get⇐{𝕩.Get@}
-  SetType⇐{𝕨.SetType𝕩}
   Fixed⇐{ Get⇐𝕩˙ }
   New⇐{
     v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩𝕩}
-    SetType⇐{SetType↩!∘0
-      C ← functions.Copy 𝕩⋈⊢
-      G ← ("register"≡Kind∘⊢)◶⟨ C , {𝕩.SetUsed@⋄𝕩} C⍟{𝕩.used} ⟩
-      Set↩Set ·G 𝕩⊸types.Cast
+    SetRegister⇐{SetRegister↩!∘0
+      Claim‿IsUsed ← registers
+      Set Claim 𝕨⊸functions.Copy⍟(1⊸IsUsed) 𝕨 types.Cast 𝕩
     }
   }
 }
@@ -634,7 +634,7 @@ env ← {
   Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
   Block⇐{⟨ni,Load‿Store,ind‿ptrs⟩ 𝕊 par:
     pi ← ptrs ⋈¨ <ind
-    pv ← Load¨ pi
+    pv ← registers.Claim∘Load¨ pi
     vars‿parent ⇐ (var.Fixed¨(ind¨↕ni)∾pv) Make par
     Stores ⇐ {𝕤
       m←{(𝕩.Get@).mut}¨v←ni↓vars
@@ -771,8 +771,8 @@ nodes ← {
     Eval⇐{
       u←V𝕩 ⋄ t←type.Eval 𝕩
       "Argument type must be a type" ! program._trace_ pos types.Is t
-      u.SetType t
-      u.Set functions.NextArg t }
+      t u.SetRegister functions.NextArg t
+    }
   }
   Function ⇐ {
     ⟨args,type,result⟩←𝕩 ⋄ pos←𝕨
@@ -803,8 +803,7 @@ nodes ← {
         "Explicit type needed for untyped initial value" ! IsTyped v
         TypeOf v
       } program._trace_ pos 𝕩
-      u var.SetType t
-      u.Set v
+      t u.SetRegister v
     }
   ;
     𝕨 Run ⟨{functions.Mut´𝕩}˙_value"=" , 0‿3⊏𝕩⟩
