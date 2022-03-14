@@ -61,7 +61,7 @@ ProcType ← {
 proto ← (¯1↓⍟(""‿"void"≡⊑)ProcType¨)¨ GetVoid "return"‿"parameter"
 cpuid‿cat ← GetCont∘(⥊<)¨ "CPUID"‿"category"
 cpuid ↩ isaList ⊐ ⊑¨cpuid
-#instrs ← 0‿1⊸⊑¨¨ GetVoid ⟨"instruction"⟩
+#instrs ← 0‿1⊸⊑¨¨ GetVoid ⟨"instruction"⟩  # x86 instruction name
 
 #⌜
 # Format as Singeli definition
@@ -84,5 +84,7 @@ MakeDef ← {name 𝕊 prot:
     Br ∾1↓⥊(<", ")≍˘⟨rt, "'"(∾∾⊣)name⟩ ∾ an
   ⟩
 }
-filter ← (¬·∨´"&bm"∊·∾1⊑¨⊢)¨ proto  # Ignore a lot of unhandled types
-•Out¨ (cpuid≍˘cat) ⍋⊸⊏○(filter⊸/) names MakeDef¨ proto
+filter ← ¬ (∨˝"_ss"‿"_sd"(⊣≡-∘≠⊸↑)⌜names) ∨ (∨´"&bm"∊·∾1⊑¨⊢)¨ proto
+filter ∧↩ cpuid<≠isaList
+defs ← (cpuid≍˘cat) ⍋⊸⊏○(filter⊸/) names MakeDef¨ proto
+•Out¨ ∾ 1↓⥊(<2⥊<⟨⟩) ∾˘ ("#"⊸∾¨isaList) <⊸≍˘ (∧filter/cpuid) ⊔ defs
