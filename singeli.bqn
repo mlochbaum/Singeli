@@ -470,6 +470,7 @@ registers ← {kname⇐"register"
   }
   Claim ⇐ {𝕩.Claim@⋄𝕩}
   IsUsed ⇐ {kname≡Kind𝕩 ? 𝕩.used ; 𝕨}
+  ClaimCopy ⇐ { Claim functions.Copy⍟(1⊸IsUsed) 𝕩 }
 }
 constants ← {kname⇐"constant"
   New ⇐ {
@@ -520,7 +521,7 @@ functions ← {kname⇐"function"
   Append ← { 𝕨 current.Append 𝕩 }
   Return ⇐ { current.Return 𝕩 }
   Emit ⇐ { (⊑𝕩) Append "emit" <⊸∾ 𝕩 }
-  Copy ⇐ {   𝕨  Append "val"‿𝕨‿𝕩 }
+  Copy ⇐ { t←TypeOf𝕩 ⋄ t Append "val"‿t‿𝕩 }
   Mut  ⇐ {
     "Can't assign to non-register" ! 0 registers.IsUsed 𝕨
     Append "mut"‿𝕨‿(𝕨.type types.Cast 𝕩)
@@ -594,10 +595,6 @@ var ← {
   Fixed⇐{ Get⇐𝕩˙ }
   New⇐{
     v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩𝕩}
-    SetRegister⇐{SetRegister↩!∘0
-      Claim‿IsUsed ← registers
-      Set Claim 𝕨⊸functions.Copy⍟(1⊸IsUsed) 𝕨 types.Cast 𝕩
-    }
   }
 }
 scopes ← {
@@ -771,7 +768,7 @@ nodes ← {
     Eval⇐{
       u←V𝕩 ⋄ t←type.Eval 𝕩
       "Argument type must be a type" ! program._trace_ pos types.Is t
-      t u.SetRegister functions.NextArg t
+      u.Set registers.Claim functions.NextArg t
     }
   }
   Function ⇐ {
@@ -797,13 +794,15 @@ nodes ← {
     Eval⇐{
       u ← GetVar 𝕩
       v ← value.Eval 𝕩
-      t ← { ≠type ?
-        ("Variable type must be a type"!types.Is)⊸⊢ (⊑type).Eval 𝕩
+      c ← { ≠type ?
+        t ← (⊑type).Eval 𝕩
+        "Variable type must be a type" ! types.Is t
+        t types.Cast v
       ;
         "Explicit type needed for untyped initial value" ! IsTyped v
-        TypeOf v
+        v
       } program._trace_ pos 𝕩
-      t u.SetRegister v
+      u.Set registers.ClaimCopy c
     }
   ;
     𝕨 Run ⟨{functions.Mut´𝕩}˙_value"=" , 0‿3⊏𝕩⟩
