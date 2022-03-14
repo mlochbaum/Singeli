@@ -465,12 +465,13 @@ registers ← {kname⇐"register"
   New ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
     shows⇐"v"∾•Repr𝕩 ⋄ Matches⇐≡
-    used⇐0 ⋄ Claim ⇐{𝕤⋄used↩1}  # Stored in a variable
-    mut ⇐0 ⋄ SetMut⇐{𝕤⋄mut ↩1}  # Changed (for blocks)
+    stat⇐1 ⋄ SetStat⇐{  stat↩𝕩}  # Assigned? 1 free, 2 :=, 3 def
+    mut ⇐0 ⋄ SetMut ⇐{𝕤⋄mut ↩1}  # Changed (for blocks)
   }
-  Claim ⇐ {𝕩.Claim@⋄𝕩}
-  IsUsed ⇐ {kname≡Kind𝕩 ? 𝕩.used ; 𝕨}
-  ClaimCopy ⇐ { Claim functions.Copy⍟(1⊸IsUsed) 𝕩 }
+  Status ⇐ { kname≡Kind𝕩 ? 𝕩.stat ; 0 }
+  Claim ⇐ { 𝕩.SetStat 2 ⋄ 𝕩 }
+  Save  ⇐ { 𝕩.SetStat 3 ⋄ 𝕩 }⍟(1=Status)
+  ClaimCopy ⇐ Claim {functions.Copy𝕩}⍟(1≠Status)
 }
 constants ← {kname⇐"constant"
   New ⇐ {
@@ -523,7 +524,7 @@ functions ← {kname⇐"function"
   Emit ⇐ { (⊑𝕩) Append "emit" <⊸∾ 𝕩 }
   Copy ⇐ { t←TypeOf𝕩 ⋄ t Append "val"‿t‿𝕩 }
   Mut  ⇐ {
-    "Can't assign to non-register" ! 0 registers.IsUsed 𝕨
+    "Can't assign to non-register" ! 2 = registers.Status 𝕨
     Append "mut"‿𝕨‿(𝕨.type types.Cast 𝕩)
     𝕨.SetMut@
     𝕨
@@ -597,6 +598,7 @@ var ← {
     v←𝕩 ⋄ Get⇐{𝕤⋄v}
     Set⇐{
       {𝕊:Set↩"Can't extend a non-generator"!0˙}⍟⊢"generator"≢Kind𝕩
+      registers.Save 𝕩
       v↩𝕩
     }
   }

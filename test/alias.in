@@ -1,0 +1,10 @@
+f(x:i32) = {
+  def d = emit{i32, 'change', x}
+  a := d     # New handle
+  b := x     # New handle
+  def c = b  # Aliases b
+  a = 4
+  c = d
+  x = a
+  b
+}
