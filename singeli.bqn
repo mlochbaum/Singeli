@@ -594,7 +594,11 @@ var ← {
   Get⇐{𝕩.Get@}
   Fixed⇐{ Get⇐𝕩˙ }
   New⇐{
-    v←𝕩 ⋄ Get⇐{𝕤⋄v} ⋄ Set⇐{v↩𝕩}
+    v←𝕩 ⋄ Get⇐{𝕤⋄v}
+    Set⇐{
+      {𝕊:Set↩"Can't extend a non-generator"!0˙}⍟⊢"generator"≢Kind𝕩
+      v↩𝕩
+    }
   }
 }
 scopes ← {
@@ -815,7 +819,7 @@ nodes ← {
       value.Scope 𝕩
       v0‿v ↩ pos ("lambda"≡value.node)◶⟨ @⋈𝕩.Add , 𝕩.AddLam ⟩ name
     }
-    Eval⇐{ u←V𝕩 ⋄ u.Set (V0𝕩) value.Eval 𝕩 }
+    Eval⇐{ u←V𝕩 ⋄ u.Set program._trace_ pos (V0𝕩) value.Eval 𝕩 }
   }
   OpDef ⇐ {
     ⟨type,op,fn,prec⟩←𝕩 ⋄ pos←𝕨
