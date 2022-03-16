@@ -312,7 +312,7 @@ operator ← {
     NuD ← { 𝕩.null ≢⟜@◶{𝕩.value}‿{𝕩 Run ⟨𝕩.R 𝕨.V@, ⟨E 𝕨.t⟩⟩} 𝕩 }
     LeD ← { Unk⍟(@≡l←𝕩.left)𝕩 ⋄ 𝕩 Run ⟨𝕩.R l.V@, ⟨𝕨, E l.t⟩⟩ }
     Run ← {𝕩.value.pos}⊸nodes.Run
-    Unk ← { Err "Unknown operator"‿𝕩.value.pos }
+    Unk ← { Err "Unknown infix operator"‿𝕩.value.pos }
     Mis ← {𝕊: Err "Missing right operand"‿(¯1⊑val).pos }
     E 1
   }
