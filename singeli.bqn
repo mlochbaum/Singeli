@@ -186,7 +186,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   _exprEnd ← {endTok _𝕣:
     end ← endTok∾sep∾⥊¨",:=)}]"
     Call ← { Op←∨´(oc∾"[")=⊏ ⋄ c←¬Next op ⋄ AddArgs⍟c Callable𝕩 }
-    c.phrase _node_ (While∘⟨¬Next∘end, Call, 0⟩)
+    c.phrase _node_ (While∘⟨¬Next∘end, Call, 1⟩)
   }
   Expr ← ⟨⟩_exprEnd
 
