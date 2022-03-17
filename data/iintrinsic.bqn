@@ -85,6 +85,7 @@ MakeDef ← {name 𝕊 prot:
   ⟩
 }
 filter ← ¬ (∨˝"_ss"‿"_sd"(⊣≡-∘≠⊸↑)⌜names) ∨ (∨´"&bm"∊·∾1⊑¨⊢)¨ proto
+filter ∧↩ ¬ (∨´"svml"⍷⊢)¨ names
 filter ∧↩ cpuid<≠isaList
 defs ← (cpuid≍˘cat) ⍋⊸⊏○(filter⊸/) names MakeDef¨ proto
 •Out¨ ∾ 1↓⥊(<2⥊<⟨⟩) ∾˘ ("#"⊸∾¨isaList) <⊸≍˘ (∧filter/cpuid) ⊔ defs
