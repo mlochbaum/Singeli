@@ -453,7 +453,12 @@ types ← {kname⇐"type"
       "Cast failed" ! IsTyped◶⟨0,TypeOf MT 𝕨˙⟩ 𝕩
       𝕩
     }
-    𝕨 ⟨⟨tTUP,⊢⟩_cases⊸(𝕊¨)˜, Num˜, Obj˜⟩_tsel˜ 𝕩
+    Tup←{
+      ptr ← 0
+      c ← ⟨tTUP,⊢,tPTR,{ptr↩1⋄𝕩}⟩_cases⍟(0≠•Type) 𝕨
+      𝕨 constants.New⍟ptr c Cast¨ 𝕩
+    }
+    𝕨 ⟨Tup˜, Num˜, Obj˜⟩_tsel˜ 𝕩  # _tsel selects on 𝕨; swap to use 𝕩
   }
 
   builtins ⇐ ∾˘⍉∘‿2⥊⟨
