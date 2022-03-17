@@ -307,7 +307,9 @@ Parse ← {𝕊 tokens‿ShowTrace:
 }
 
 operator ← {
-  Parse ⇐ {ops 𝕊 val:
+  Parse ⇐ {
+  ⟨op⟩ 𝕊 ⟨v⟩: v⊣´{𝕩.V@}¨@⊸≢¨⊸/op.left‿op.null ;
+  ops 𝕊 val:
     Peek‿Next‿Rem ← MakeStream ops {null‿left‿bind‿R⇐𝕨 ⋄ value⇐𝕩}¨ val
     E ← {𝕊test: {𝕊∘{𝕩 LeD Next@}⍟(Test Peek)⍟Rem 𝕩} NuD Rem◶Mis‿Next@ }
     NuD ← { 𝕩.null ≢⟜@◶{𝕩.value}‿{𝕩 Run ⟨𝕩.R 𝕨.V@, ⟨E 𝕨.t⟩⟩} 𝕩 }
