@@ -586,7 +586,7 @@ builtins ← {
       ⟨"type",TypeOf∘⊑⟩, ⟨"kind",symbols.New Kind∘⊑⟩
       ⟨"typekind",symbols.New types.TypeKind∘⊑⟩
       ⟨"load",Load⟩, ⟨"store",¯1⊸(⊑Store↓)⟩
-      ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑´⟩, ⟨"merge",∾⟩
+      ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑´⟩, ⟨"tuplen",≠∘⊑⟩, ⟨"merge",∾⟩
       ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓⟩, ⟨"apply",{𝕎𝕩}´⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓⟩
     ⟩
     numbers.builtins
