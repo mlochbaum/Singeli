@@ -21,11 +21,6 @@ def __sub = arith{__sub, 'op -'}
 def __mul = arith{__mul, 'op *'}
 def __div = arith{__div, 'op /'}
 
-def __add{a,b:P & match{'pointer',typekind{P}}}  = emit{P, 'op +', cast{u64,a}, b}
-def __add{a:P,b & match{'pointer',typekind{P}}}  = emit{P, 'op +', a, cast{u64,b}}
-def __sub{a:P,b & match{'pointer',typekind{P}}}  = emit{P, 'op -', a, cast{u64,b}}
-def __sub{a:P,b:P & match{'pointer',typekind{P}}}  = emit{u64, 'op -', a, b}
-
 def __eq  = compare{__eq, 'op =='}
 def __ne  = compare{__ne, 'op !='}
 def __gt  = compare{__gt, 'op >' }
