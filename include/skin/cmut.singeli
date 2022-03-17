@@ -1,0 +1,27 @@
+# C operators that modify variables/registers
+oper prefix ++ __incr 60
+oper prefix -- __decr 60
+def __decr{a}   = __decr{a,1}
+def __incr{a}   = __incr{a,1}
+
+oper infix right +=  __incr   5
+oper infix right -=  __decr   5
+oper infix right *=  __setmul 5
+oper infix right /=  __setdiv 5
+oper infix right %=  __setmod 5
+oper infix right <<= __setshl 5
+oper infix right >>= __setshr 5
+oper infix right &=  __setand 5
+oper infix right ^=  __setxor 5
+oper infix right |=  __setor  5
+
+def __incr  {a,b} = { a = __add{a,b} }
+def __decr  {a,b} = { a = __sub{a,b} }
+def __setmul{a,b} = { a = __mul{a,b} }
+def __setdiv{a,b} = { a = __div{a,b} }
+def __setmod{a,b} = { a = __mod{a,b} }
+def __setshl{a,b} = { a = __shl{a,b} }
+def __setshr{a,b} = { a = __shr{a,b} }
+def __setand{a,b} = { a = __and{a,b} }
+def __setxor{a,b} = { a = __xor{a,b} }
+def __setor {a,b} = { a = __or {a,b} }
