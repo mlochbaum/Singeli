@@ -523,12 +523,18 @@ functions ← {kname⇐"function"
   Return ⇐ { current.Return 𝕩 }
   Emit ⇐ { (⊑𝕩) Append "emit" <⊸∾ 𝕩 }
   Copy ⇐ { t←TypeOf𝕩 ⋄ t Append "val"‿t‿𝕩 }
+  _destructure ← {
+    0≠•Type𝕩 ? 𝕨𝔽⚇0𝕩;
+    "Single assignment target but multiple values" ! 0=•Type𝕨
+    "Assignment tuple length mismatch" ! 𝕨 ≡○≢ 𝕩
+    𝕨𝕊¨𝕩
+  }
   Mut  ⇐ {
     "Can't assign to non-register" ! 2 = registers.Status 𝕨
     Append "mut"‿𝕨‿(𝕨.type types.Cast 𝕩)
     𝕨.SetMut@
     𝕨
-  }
+  }_destructure
   Call ⇐ {
     f ← ⊑𝕩
     ! "function"≡Kind f
