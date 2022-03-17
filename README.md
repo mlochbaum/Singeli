@@ -1,6 +1,6 @@
 # Singeli
 
-It works, and is fairly usable (now with real error reporting!). We are beginning to use Singeli for [CBQN](https://github.com/dzaima/CBQN), where it's enabled if built with `$ make o3n-singeli`. Expect occasional bugs and lots of missing features.
+Status: Singeli is now nice to use when everything works: parse and stack traces for errors, and the interactive [Singeli playground](https://github.com/dzaima/singeliPlayground) tool. I'm still fixing lots of broken error reports and some language bugs as dzaima and I spend more time programming with it. Currently it's used for some SIMD functionality in [CBQN](https://github.com/dzaima/CBQN), where it's enabled if built with `$ make o3n-singeli`.
 
 Singeli is a domain-specific language for building [SIMD](https://en.wikipedia.org/wiki/SIMD) algorithms with flexible abstractions and control over every instruction emitted. It's implemented in [BQN](https://mlochbaum.github.io/BQN), with a frontend that emits IR and a backend that converts it to C. Other backends like LLVM or machine code are possible—it should be easy to support other CPU architectures but there are no plans to target GPUs.
 
