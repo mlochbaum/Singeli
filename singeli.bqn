@@ -211,7 +211,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
     d ← Try ":"
     e ← Try "="
     t ← When ⟨d>e, {e↩Try"="⋄𝕩}∘Expr⟩
-    c.assign _node_ {⟨𝕩,d,t,Expr@⟩}⍟e n
+    ToName ← (Asrt@⊸≢)⊸⊢∘c.PhraseTryName
+    c.assign _node_ {⟨ToName⍟d 𝕩,d,t,Expr@⟩}⍟e n
   }
   Stmt ← StSub Peek
 
@@ -755,7 +756,6 @@ nodes ← {
     }
   }
   PhraseTryName ⇐ {"phrase"≡𝕩.node}◶@‿{𝕩.ToName@}
-  PhraseToName ⇐ @ (⊢⊣!∘≢) PhraseTryName
   notTypeVar ← types.primTypes≠⊸↑builtins.names
   Lambda ⇐ {
     ⟨⟨paramsPlus,conds⟩,result⟩←𝕩 ⋄ pos←𝕨
@@ -804,7 +804,6 @@ nodes ← {
     }functions._with
   }
   Assign ⇐ { pos 𝕊 ⟨name,1,type,value⟩: # Declaration
-    name PhraseToName˜↩@
     Visit←{⟨name∾":",𝕏¨type,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "assign"‿visit
     GetVar←!∘0 ⋄ Scope⇐{
