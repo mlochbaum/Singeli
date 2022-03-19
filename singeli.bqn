@@ -404,17 +404,13 @@ types ← {kname⇐"type"
     'i', 2⋆  3+↕4  #   8/16/32/64
     'f', 2⋆  5+↕2  #        32/64
   ⟩
-  GetPrim ← (@«primTypes) ⊑˜ qw⊸⊐⌾<
+  _getPrim ← {{𝕏@} (⟨!∘𝕗⟩«primTypes) ⊑˜ qw⊸⊐⌾<}
 
   Is ⇐ kname≡Kind
   Vec ← {n𝕊t: "Vector size should be a constant integer"!IsNat n ⋄ !Is t ⋄ tVEC New ⟨n,t⟩}
   Ptr ← { 𝕊t: "Pointer type wasn't type"!Is t ⋄ tPTR New t}
   Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´Is¨ t ⋄ tTUP New t}
   Fun ⇐ tFUN New ⋈
-
-  _isQual ← {{tPRIM≡𝕩.typeKind}◶⟨0,𝔽{⊑𝕩.dat}⟩ TypeOf⍟(¬Is)}
-
-  Deref ⇐ { Is 𝕩 ? tPTR=𝕩.typeKind ? 𝕩.dat ; !"Expected pointer" }
 
   _cases ← {
     Kind←{𝕩.typeKind} ⋄ Dat←{𝕩.dat}
@@ -424,10 +420,15 @@ types ← {kname⇐"type"
     (k⊸⊐⌾< ⊢⊘(≠◶⊢‿¯1)○Kind)◶({𝕏○Dat}¨⌾((≠k)⊸↑)d) ⊣ @○(!Is)
   }
 
-  Size ← ⟨
+  Quality ← ⟨tPRIM,{symbols.New ⋈⊑𝕩}, !∘"Non-primitive type"⟩_cases
+  _isQual ← {⟨tPRIM,𝔽⊑,0⟩_cases TypeOf⍟(¬Is)}
+
+  Deref ⇐ { Is 𝕩 ? tPTR=𝕩.typeKind ? 𝕩.dat ; !"Expected pointer" }
+
+  Width ← ⟨
     tPRIM, 1⊸⊑
-    tVEC,  ×⟜{Size𝕩}´
-    tTUP,  +´{Size𝕩}¨
+    tVEC,  ×⟜{Width𝕩}´
+    tTUP,  +´{Width𝕩}¨
     tPTR,  ptrWidth
     {!∾⟨"Can't find width of ",TypeKind𝕩," types"⟩}
   ⟩_cases
@@ -479,7 +480,7 @@ types ← {kname⇐"type"
     {!∾⟨"Can't promote from type ",𝕩," to non-subset ",𝕨⟩}
   ⟩_cc
   Reinterpret ← ⟨
-    ≡○Size, {functions.Emit⟨𝕨, symbols.New "si_promote", 𝕩⟩}
+    ≡○Width, {functions.Emit⟨𝕨, symbols.New "si_promote", 𝕩⟩}
     {!∾⟨"Can't reinterpret type ",𝕩," as different-width type ",𝕨⟩}
   ⟩_cc
 
@@ -487,23 +488,29 @@ types ← {kname⇐"type"
     "First argument of promote must be a type or number"!"number"≡Kind𝕨
     n←numbers.From 𝕨
     t←TypeOf 𝕩
-    (1 + n ×∘- Size t)◶⟨
+    (1 + n ×∘- Width t)◶⟨
       !∘"Can't decrease width in promotion"
       ⊢
       ⟨
-        tPRIM, ("Invalid width"!@≢⊢)⊸⊢∘GetPrim 𝕨⌾(1⊸⊑)
+        tPRIM, "Invalid width"_getPrim 𝕨⌾(1⊸⊑)
         !∘"Can't increase width of non-primitive type"
       ⟩_cases∘t⊸Promote
     ⟩ 𝕩
   }
+  GetQual ← {
+    n←("symbol"≡Kind)◶""‿Show 𝕩
+    "Quality must be a single-letter symbol (i,u,f)"!1=≠n
+    ⊑n
+  }
+  PrimType ← "Invalid primitive type specification"_getPrim GetQual⌾⊑
 
   builtins ⇐ ∾˘⍉∘‿2⥊⟨
     ⟨"cast","promote"             ,"reinterpret"⟩
     ⟨ Cast´,Is∘⊣◶IncWidth‿Promote´, Reinterpret´⟩
     ⟨"eltype","vcount","width",          "__vec","__pnt"⟩
-    ⟨ VType⊑ , VCount⊑, Size⊑ ,numbers.From⊸Vec´,   Ptr⊑⟩
-    "isfloat"‿"issigned"‿"isint"
-    {𝕩_isQual⊑}¨⟨'f'⊸≡ ⋄ 'i'⊸≡ ⋄ ⊑∘∊⟜"iu"⟩
+    ⟨ VType⊑ , VCount⊑, Width⊑ ,numbers.From⊸Vec´,   Ptr⊑⟩
+    "primtype"‿"quality"‿"isfloat"‿"issigned"‿"isint"
+    ⟨PrimType , Quality⊑⟩∾{𝕩_isQual⊑}¨⟨'f'⊸≡ ⋄ 'i'⊸≡ ⋄ ⊑∘∊⟜"iu"⟩
   ⟩
 }
 
