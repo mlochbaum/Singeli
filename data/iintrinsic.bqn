@@ -27,7 +27,7 @@ ParseAttr ← {
 # Now process the contents
 isaList ← "SSE"‿"SSE2"‿"SSE3"‿"SSSE3"‿"SSE4.1"‿"SSE4.2"‿"AVX"‿"AVX2"‿"FMA"
 
-names‿GetCont‿GetVoid ← {
+names‿GetCont‿GetVoid‿svml ← {
   parent‿open‿cont ← ParseXml xml
   findOpen ← {(⍷𝕩)⊸⊐⊏(⊔⊐𝕩)˙} (∧`' '⊸≠)⊸/¨ open
   _on_ ← {𝔽○((∾FindOpen𝕘)⊸⊏)}
@@ -36,7 +36,9 @@ names‿GetCont‿GetVoid ← {
   IG ← intr⊏⊔
   GetCont ⇐ { parent IG _on_𝕩 cont }
   GetVoid ⇐ { parent IG⟜((¯1⊑·ParseAttr ¯1⊸↓)¨)_on_𝕩 open }
-  names ⇐ ≡¨⟜(<"name")⊸(⊑∘/)˝∘(⍉1⊑ParseAttr)¨ intr⊏open
+  at ← (1⊑ParseAttr)¨ intr⊏open
+  names ⇐ ≡¨⟜(<"name")⊸(⊑∘/)˝∘⍉¨ at
+  svml ⇐ (⊑"tech"‿"SVML"∊⊢)¨ at
 }
 
 ProcType ← {
@@ -85,7 +87,6 @@ MakeDef ← {name 𝕊 prot:
   ⟩
 }
 filter ← ¬ (∨˝"_ss"‿"_sd"(⊣≡-∘≠⊸↑)⌜names) ∨ (∨´"&bm"∊·∾1⊑¨⊢)¨ proto
-filter ∧↩ ¬ (∨´"svml"⍷⊢)¨ names
-filter ∧↩ cpuid<≠isaList
+filter ∧↩ svml < cpuid<≠isaList
 defs ← (cpuid≍˘cat) ⍋⊸⊏○(filter⊸/) names MakeDef¨ proto
 •Out¨ ∾ 1↓⥊(<2⥊<⟨⟩) ∾˘ ("#"⊸∾¨isaList) <⊸≍˘ (∧filter/cpuid) ⊔ defs
