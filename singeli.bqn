@@ -389,7 +389,7 @@ types ← {kname⇐"type"
       T⊸{∾𝕨‿" -> "‿𝕩}⟜Show´# Function:    ⟨t, q‿r‿s⟩   (…,…,…) -> …
       T                    # Tuple:       q‿r‿s        (…,…,…)
     ⟩∘dat
-    Matches⇐{𝕨MT𝕩}
+    Matches⇐{𝕨Equiv𝕩}
   }
   tVOID‿tPRIM‿tVEC‿tPTR‿tFUN‿tTUP ← ↕6
   TypeKind⇐{
@@ -431,19 +431,21 @@ types ← {kname⇐"type"
   VCount ← ⟨ tVEC,⊑, 1 ⟩ _cases
   VType ← ⟨ tVEC,1⊸⊑, tPTR,⊢ ⟩ _cases
 
-  _sub ← {
-    L ← ¯1⊸⊑
+  _typeRel_ ← {
     𝕨 ⟨
-      tVEC,  =○⊑ _and_ (𝕊○L)
-      tPTR,  𝕊
+      tVEC,  =○⊑ _and_ (𝕊○(¯1⊸⊑))
+      tPTR,  (@≢𝕘)⊑𝕊‿𝕘
       tTUP,  =○≠ _and_ (∧´𝕊¨)
-      tPRIM, ≠○⊑◶⟨𝔽○L, ('f'≠⊑∘⊣)_and_(<○L)⟩
+      tPRIM, 𝔽
       0
     ⟩ _cases 𝕩
   }
-  Subtype  ⇐ ≤ _sub
-  SSubtype ⇐ < _sub
-  MT ⇐ Subtype ∧ Subtype˜
+  _cmpPrim ← {
+    L←¯1⊸⊑ ⋄ ≠○⊑◶⟨𝔽○L, ('f'≠⊑∘⊣)_and_(<○L)⟩
+  }
+  Equiv    ← ≡          _typeRel_ @
+  Subtype  ⇐ ≤ _cmpPrim _typeRel_ 1
+  SSubtype ⇐ < _cmpPrim _typeRel_ 0
 
   _asCast ← {
     Fail ← {!∾⟨"Cannot cast ",Kind𝕩," to ",Show𝕨⟩}
@@ -464,7 +466,7 @@ types ← {kname⇐"type"
     (Conv ⊣ Fail○Show⍟(¬Test˜)⟜TypeOf)_asCast
   }
   Cast ⇐ ⟨
-    MT, ⊢
+    Equiv, ⊢
     {!∾⟨"Explicit conversion required to change ",𝕩," to ",𝕨⟩}
   ⟩_cc
   Promote ← ⟨
