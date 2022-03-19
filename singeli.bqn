@@ -97,6 +97,7 @@ numbers ← {kname⇐"number"
   _cmp ⇐ {(f.Cmp 𝔽 0˙)○Promote}
 }
 
+ptrWidth ← 64  # Hard-code for now
 architectures ← {
   # 𝕩 is a list of extension dependency chains.
   New ⇐ {
@@ -426,6 +427,8 @@ types ← {kname⇐"type"
     tPRIM, 1⊸⊑
     tVEC,  ×⟜{Size𝕩}´
     tTUP,  +´{Size𝕩}¨
+    tPTR,  ptrWidth
+    {!∾⟨"Can't find width of ",TypeKind𝕩," types"⟩}
   ⟩_cases
 
   VCount ← ⟨ tVEC,⊑, 1 ⟩ _cases
@@ -471,12 +474,18 @@ types ← {kname⇐"type"
   ⟩_cc
   Promote ← ⟨
     Subtype, {functions.Emit⟨𝕨, symbols.New "si_promote", 𝕩⟩}
-    {!∾⟨"Cannot promote from type ",𝕩," to non-subset ",𝕨⟩}
+    {!∾⟨"Can't promote from type ",𝕩," to non-subset ",𝕨⟩}
+  ⟩_cc
+  Reinterpret ← ⟨
+    ≡○Size, {functions.Emit⟨𝕨, symbols.New "si_promote", 𝕩⟩}
+    {!∾⟨"Can't reinterpret type ",𝕩," as different-width type ",𝕨⟩}
   ⟩_cc
 
   builtins ⇐ ∾˘⍉∘‿2⥊⟨
-    ⟨"cast","promote","eltype","vcount","width",          "__vec","__pnt"⟩
-    ⟨ Cast´, Promote´, VType⊑ , VCount⊑, Size⊑ ,numbers.From⊸Vec´,   Ptr⊑⟩
+    ⟨"cast","promote","reinterpret"⟩
+    ⟨ Cast´, Promote´, Reinterpret´⟩
+    ⟨"eltype","vcount","width",          "__vec","__pnt"⟩
+    ⟨ VType⊑ , VCount⊑, Size⊑ ,numbers.From⊸Vec´,   Ptr⊑⟩
     "isfloat"‿"issigned"‿"isint"
     {𝕩_isQual⊑}¨⟨'f'⊸≡ ⋄ 'i'⊸≡ ⋄ ⊑∘∊⟜"iu"⟩
   ⟩
