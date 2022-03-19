@@ -19,6 +19,7 @@ prelude ← 1⌽"
 #include<stdbool.h>
 #include<xmmintrin.h>
 #include<immintrin.h>
+#define si_promote(A) A
 #define si_load(A, B) A[B]
 #define si_store(A, B, C) A[B] = C
 #define si_assert(A) if (!(A)) __builtin_unreachable();

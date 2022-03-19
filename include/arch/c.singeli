@@ -1,14 +1,14 @@
-def promote{fn} = {
+def ar_promote{fn} = {
   def fn{a:T,b & match{'number',kind{b}}} = fn{a , cast{T,b}}
   def fn{a,b:T & match{'number',kind{a}}} = fn{cast{T,a} , b}
 }
-def arith{fn, op} = {
+def ar_arith{fn, op} = {
   def fn{a:T,b:T} = emit{T, op, a, b}
-  promote{fn}
+  ar_promote{fn}
 }
-def compare{fn, op} = {
+def ar_compare{fn, op} = {
   def fn{a:T,b:T} = emit{u1, op, a, b}
-  promote{fn}
+  ar_promote{fn}
 }
 
 def __pnt{a:T & match{'pointer',typekind{T}}} = load{a,0}
@@ -16,19 +16,19 @@ def __pnt{a:T & match{'pointer',typekind{T}}} = load{a,0}
 def arith1{fn, op} = { def fn{a:T} = emit{T, op, a}; fn }
 def __neg = arith1{__neg, '-'}
 
-def __add = arith{__add, 'op +'}
-def __sub = arith{__sub, 'op -'}
-def __mul = arith{__mul, 'op *'}
-def __div = arith{__div, 'op /'}
+def __add = ar_arith{__add, 'op +'}
+def __sub = ar_arith{__sub, 'op -'}
+def __mul = ar_arith{__mul, 'op *'}
+def __div = ar_arith{__div, 'op /'}
 
-def __eq  = compare{__eq, 'op =='}
-def __ne  = compare{__ne, 'op !='}
-def __gt  = compare{__gt, 'op >' }
-def __ge  = compare{__ge, 'op >='}
-def __lt  = compare{__lt, 'op <' }
-def __le  = compare{__le, 'op <='}
+def __eq  = ar_compare{__eq, 'op =='}
+def __ne  = ar_compare{__ne, 'op !='}
+def __gt  = ar_compare{__gt, 'op >' }
+def __ge  = ar_compare{__ge, 'op >='}
+def __lt  = ar_compare{__lt, 'op <' }
+def __le  = ar_compare{__le, 'op <='}
 
-def logic = arith
+def logic = ar_arith
 def __and = logic{__and, 'op &'}
 def __or  = logic{__or , 'op |'}
 def __xor = logic{__xor, 'op ^'}

@@ -419,7 +419,7 @@ types ← {kname⇐"type"
     c ← ⌊‿2⥊𝕗
     k ← ⊏˘c
     d ← (1⊏˘c) ∾ ((≠⥊c)↓𝕗)»⟨!∘0⟩
-    (k⊸⊐⌾< ⊢⊘(≠◶⊢‿¯1)○Kind)◶({𝕏○Dat}¨d) ⊣ @○(!Is)
+    (k⊸⊐⌾< ⊢⊘(≠◶⊢‿¯1)○Kind)◶({𝕏○Dat}¨⌾((≠k)⊸↑)d) ⊣ @○(!Is)
   }
 
   Size ← ⟨
@@ -445,27 +445,36 @@ types ← {kname⇐"type"
   SSubtype ⇐ < _sub
   MT ⇐ Subtype ∧ Subtype˜
 
-  Cast ⇐ {
-    Num←{t𝕊n:
-      ⟨ tPRIM,numbers.Cast⟜n, !"Cannot cast number to "∾Show ⟩ _cases t
+  _asCast ← {
+    Fail ← {!∾⟨"Cannot cast ",Kind𝕩," to ",Show𝕨⟩}
+    Num ← {t𝕊n:
+      ⟨ tPRIM,numbers.Cast⟜n, Fail⟜n ⟩ _cases t
       t constants.New n
     }
-    Obj←{
-      "number"≡𝕩.kind ? 𝕨 Num 𝕩 ;
-      "Cast failed" ! IsTyped◶⟨0,TypeOf MT 𝕨˙⟩ 𝕩
-      𝕩
-    }
-    Tup←{
+    Cast ← 𝕊
+    Tup ← {
       ptr ← 0
-      c ← ⟨tTUP,⊢,tPTR,{ptr↩1⋄𝕩}⟩_cases⍟(0≠•Type) 𝕨
+      c ← ⟨ tTUP,⊢, tPTR,{ptr↩1⋄𝕩}, Fail⟜𝕩 ⟩_cases⍟(0≠•Type) 𝕨
       𝕨 constants.New⍟ptr c Cast¨ 𝕩
     }
+    Obj ← ("number"≢{𝕩.kind})◶⟨Num,IsTyped∘⊢◶⟨Fail˜,𝔽⟩⟩
     𝕨 ⟨Tup˜, Num˜, Obj˜⟩_tsel˜ 𝕩  # _tsel selects on 𝕨; swap to use 𝕩
   }
+  _cc ← { Test‿Conv‿Fail _𝕣:
+    (Conv ⊣ Fail○Show⍟(¬Test˜)⟜TypeOf)_asCast
+  }
+  Cast ⇐ ⟨
+    MT, ⊢
+    {!∾⟨"Explicit conversion required to change ",𝕩," to ",𝕨⟩}
+  ⟩_cc
+  Promote ← ⟨
+    Subtype, {functions.Emit⟨𝕨, symbols.New "si_promote", 𝕩⟩}
+    {!∾⟨"Cannot promote from type ",𝕩," to non-subset ",𝕨⟩}
+  ⟩_cc
 
   builtins ⇐ ∾˘⍉∘‿2⥊⟨
-    ⟨"cast","eltype","vcount","width",          "__vec","__pnt"⟩
-    ⟨ Cast´, VType⊑ , VCount⊑, Size⊑ ,numbers.From⊸Vec´,   Ptr⊑⟩
+    ⟨"cast","promote","eltype","vcount","width",          "__vec","__pnt"⟩
+    ⟨ Cast´, Promote´, VType⊑ , VCount⊑, Size⊑ ,numbers.From⊸Vec´,   Ptr⊑⟩
     "isfloat"‿"issigned"‿"isint"
     {𝕩_isQual⊑}¨⟨'f'⊸≡ ⋄ 'i'⊸≡ ⋄ ⊑∘∊⟜"iu"⟩
   ⟩
