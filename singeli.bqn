@@ -142,7 +142,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ! (¯1⊑tokens) Is sep
 
   Asrt ← {𝕨𝕊1:@;
-    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.define,"define",c.export,"export",c.for,"for",c.function,"function",c.if,"if",c.lambda,"lambda",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.while,"while",c.word,"word"⟩
+    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.define,"define",c.export,"export",c.for,"for",c.function,"function",c.if,"if",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.while,"while",c.word,"word"⟩
     ShowTrace⟜L´ <˘⍉>DumpStack@
     •Out ""
     F ← (⥊lf)⊸≡◶•Repr‿"end of line"
@@ -292,7 +292,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
     pre ← (⊑≢Get) "prefix"‿"infix"
     pre◶⟨'p', Next◶⟨'n', ⊑∘Get∘1⟩⟩ "none"‿"left"‿"right"
   }
-  OpDef ← c.opDef _node_ ("oper"‿OpType‿Oper‿Name‿Word _seq)
+  Number ← c.number _node_ (∊⟜dig _begin_ "number")
+  OpDef ← c.opDef _node_ ("oper"‿OpType‿Oper‿Name‿Number _seq)
 
   Include ← c.include _node_ ("include"‿Symbol _seq)
 
@@ -546,7 +547,7 @@ functions ← {kname⇐"function"
   }_destructure
   Call ⇐ {
     f ← ⊑𝕩
-    ! "function"≡Kind f
+    "Calling non-function" ! "function"≡Kind f
     t ← f.rType
     t Append ⟨"call",t,f⟩ ∾ ≠⊸∾ 1↓𝕩
   }
@@ -561,14 +562,14 @@ blocks ← {kname⇐"block"
     kind⇐kname
     shows⇐"{block}" ⋄ Matches⇐≡
     Exec⇐{
-      ! ptrs≡○≠1⊑𝕩
+      "Wrong number of pointer arguments in block exec" ! ptrs≡○≠1⊑𝕩
       r ← body.Eval be ← ⟨≠ind,ls,𝕩⟩ env.Block e
       be.Stores @
       r
     }
   }
   Exec ⇐ {𝕊 ind‿vars‿block:
-    ! "block"≡Kind block
+    "Executing non-block" ! "block"≡Kind block
     block.Exec ind‿vars
   }
 }
@@ -734,7 +735,8 @@ nodes ← {
     ⟨node,Dump,Oper,Scope⟩⇐Defaults "value"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
   }
-  Word ⇐ (⊑⊏∘⊢∊dig˙)◶⟨Ident, numbers.Read _value⟩
+  Number ⇐ numbers.Read
+  Word ⇐ (⊑⊏∘⊢∊dig˙)◶⟨Ident, Number _value⟩
   Symbol ⇐ (symbols.New 1↓¯1↓⊢)_value
   Run ⇐ {
     𝕨𝕊⟨⟨infix⟩,params⟩: CondNode´ 𝕩;
@@ -839,7 +841,6 @@ nodes ← {
   }
   OpDef ⇐ {
     ⟨type,op,fn,prec⟩←𝕩 ⋄ pos←𝕨
-    !"value"≡prec.node ⋄ prec↩numbers.From prec.Eval@
     Visit←{𝕤⋄⟨type,op,fn,•Repr prec⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "opdef"‿visit
     Oper⇐{𝕤⋄ pos operator.Add type‿op‿fn‿prec}
