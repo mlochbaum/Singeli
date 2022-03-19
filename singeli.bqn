@@ -399,11 +399,12 @@ types ← {kname⇐"type"
   }
   IsVoid ⇐ {tVOID≡𝕩.typeKind}
 
-  primTypes ⇐ (tVOID New ⟨⟩)∾∾(<(tPRIM New ⋈)¨´)˘ ∘‿2⥊⟨
+  primTypes ⇐ (tVOID New ⟨⟩) ∾ tPRIM New¨ qw ← ∾⋈¨¨˝⍉ ∘‿2⥊⟨
     'u', 2⋆0∾3+↕4  # 1/8/16/32/64
     'i', 2⋆  3+↕4  #   8/16/32/64
     'f', 2⋆  5+↕2  #        32/64
   ⟩
+  GetPrim ← (@«primTypes) ⊑˜ qw⊸⊐⌾<
 
   Is ⇐ kname≡Kind
   Vec ← {n𝕊t: "Vector size should be a constant integer"!IsNat n ⋄ !Is t ⋄ tVEC New ⟨n,t⟩}
@@ -451,7 +452,8 @@ types ← {kname⇐"type"
   SSubtype ⇐ < _cmpPrim _typeRel_ 0
 
   _asCast ← {
-    Fail ← {!∾⟨"Cannot cast ",Kind𝕩," to ",Show𝕨⟩}
+    "Can't cast to non-type"!Is𝕨
+    Fail ← {!∾⟨"Can't cast ",Kind𝕩," to ",Show𝕨⟩}
     Num ← {t𝕊n:
       ⟨ tPRIM,numbers.Cast⟜n, Fail⟜n ⟩ _cases t
       t constants.New n
@@ -481,9 +483,23 @@ types ← {kname⇐"type"
     {!∾⟨"Can't reinterpret type ",𝕩," as different-width type ",𝕨⟩}
   ⟩_cc
 
+  IncWidth ← {
+    "First argument of promote must be a type or number"!"number"≡Kind𝕨
+    n←numbers.From 𝕨
+    t←TypeOf 𝕩
+    (1 + n ×∘- Size t)◶⟨
+      !∘"Can't decrease width in promotion"
+      ⊢
+      ⟨
+        tPRIM, ("Invalid width"!@≢⊢)⊸⊢∘GetPrim 𝕨⌾(1⊸⊑)
+        !∘"Can't increase width of non-primitive type"
+      ⟩_cases∘t⊸Promote
+    ⟩ 𝕩
+  }
+
   builtins ⇐ ∾˘⍉∘‿2⥊⟨
-    ⟨"cast","promote","reinterpret"⟩
-    ⟨ Cast´, Promote´, Reinterpret´⟩
+    ⟨"cast","promote"             ,"reinterpret"⟩
+    ⟨ Cast´,Is∘⊣◶IncWidth‿Promote´, Reinterpret´⟩
     ⟨"eltype","vcount","width",          "__vec","__pnt"⟩
     ⟨ VType⊑ , VCount⊑, Size⊑ ,numbers.From⊸Vec´,   Ptr⊑⟩
     "isfloat"‿"issigned"‿"isint"
