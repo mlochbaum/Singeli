@@ -345,7 +345,7 @@ operator ← {
   _with ⇐ {
     n←⟨⟩ ⋄ o←⟨⟩
     _get ← {(n⊸⊐⌾<𝕩) =⟜(≠n)◶{𝕨⊑o}‿𝔽 𝕩}
-    Lookup ↩ nil _get
+    Lookup ↩ {𝕨?@≢c←nodes.CondOp𝕩?c; nil _get𝕩}
     Define ← {n∾↩<𝕩 ⋄ o∾↩<r←New𝕩 ⋄ r} _get
     Add ↩ {𝕨𝕊type‿name‿value‿prec:
       p ← Define name
@@ -706,7 +706,7 @@ nodes ← {
     Verify ⇐ {𝕩.node}
     Dump ⇐ {𝕩.Dump@}
     Disp ⇐ {𝕩.Disp@}
-    Oper ⇐ {𝕩.Oper@}
+    Oper ⇐ {𝕩.Oper 0}
     Scope⇐ {𝕊sc :{𝕩.Scope sc }}
     Eval ⇐ {𝕊env:{𝕩.Eval  env}}
   }
@@ -725,7 +725,7 @@ nodes ← {
     name⇐𝕩 ⋄ pos⇐𝕨⊣@
     ⟨node,Dump⟩⇐Defaults "ident"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
-    Oper⇐{𝕤⋄operator.Lookup name}
+    Oper⇐{𝕩 operator.Lookup name}
     Eval⇐!∘0 ⋄ Scope⇐{Eval↩var.Get∘(pos 𝕩.Get name)}
   }
   _value ← {
@@ -737,6 +737,7 @@ nodes ← {
   Word ⇐ (⊑⊏∘⊢∊dig˙)◶⟨Ident, numbers.Read _value⟩
   Symbol ⇐ (symbols.New 1↓¯1↓⊢)_value
   Run ⇐ {
+    𝕨𝕊⟨⟨infix⟩,params⟩: CondNode´ 𝕩;
     ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨
     Visit←{⟨𝕏caller,𝕏¨params⟩}
     ⟨node,Dump,Disp,Scope⟩⇐d←Defaults "run"‿visit
@@ -749,8 +750,8 @@ nodes ← {
     ToName⇐{𝕤⋄ (1=≠)◶@‿(("ident"≡{𝕩.node})◶@‿{𝕩.name}⊑) things }
     Visit←{⟨𝕏¨things⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "phrase"‿visit
-    Oper⇐{𝕤
-      n ← o.Oper¨⊸operator.Parse things
+    Oper⇐{𝕊cond:
+      ⟨node⟩↩n ← {𝕩.Oper cond}¨⊸operator.Parse things
       Scope↩{𝕨n.Scope𝕩} ⋄ Eval↩{𝕨n.Eval𝕩} ⋄ Disp↩{𝕨n.Disp𝕩}
       operator.nil
     }
@@ -861,18 +862,54 @@ nodes ← {
     # Hack for include statements
     NoScope⇐{𝕤⋄ Scope↩d.Scope ⋄ Eval↩¯1⊑·⊑d.Eval }
   }
+
+  LazyLabel ← {𝕤
+    label ⇐ 𝕩
+    GotoC ⇐ {
+      label functions.Label⍟(@⊸≡)↩
+      GotoC ↩ {𝕩 𝕨◶functions.GotoF‿functions.Goto label}
+      𝕨GotoC𝕩
+    }
+  }
+  CondNode ⇐ {
+    terms ← 𝕩
+    name‿_ev ← 𝕨 ⋄ Eval⇐terms _ev
+    Visit←{⟨name,𝕏¨terms⟩}
+    ⟨node,Dump,Disp,Scope⟩⇐d←Defaults "cond"‿visit
+  }
+  CondEval ← {
+    "cond"≡𝕨.node ? 𝕨.Eval 𝕩 ;
+    n𝕊⟨jv‿label,e⟩:
+    c ← n.Eval e
+    { IsTyped c ? jv label.GotoC c ⋄ ¬jv ; numbers.GetBool c }
+  }
+  CAccum ← {𝕊id: {
+    ⟨jv‿label,e⟩←𝕩
+    l ← LazyLabel@
+    i ← (⊑𝕗) CondEval ⟨¬id,l⟩⌾⊑⍟(id=jv) 𝕩
+    c ← (1⊑𝕗) CondEval⟜𝕩⍟((¬id)≢⊢) i
+    functions.SetLabel⍟(@⊸≢) l.label
+    c
+  }}
+  condNodes ← ⟨
+    { name⇐"not" ⋄ infix⇐0 ⋄ _ev ⇐ { ¬ (⊑𝕗) CondEval ¬⌾(⊑⊑)𝕩 } }
+    { name⇐"and" ⋄ infix⇐1 ⋄ ev ⇐ CAccum 1 }
+    { name⇐"or"  ⋄ infix⇐1 ⋄ ev ⇐ CAccum 0 }
+  ⟩
+  CO ← {𝕊n: bind⇐¯∞⋄R⇐⊢⋄null‿left⇐n.infix⌽{V⇐n˙ ⋄ T⇐¯∞<{𝕩.bind}}‿@}
+  condOp ⇐ ({𝕩.name}¨ {𝕨⊸⊐⌾< =⟜(≠𝕨)◶⟨⊑⟜𝕩,@⟩ ⊢} CO¨) condNodes
   If ⇐ {
     ⟨cond,then,else⟩←𝕩
     Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
-    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "if"‿visit
+    ⟨node,Dump,Disp,Scope⟩⇐Defaults "if"‿visit
+    Oper⇐{𝕊: cond.Oper 1 ⋄ {𝕏then⋄𝕏¨else}o.oper }
     Eval ⇐ {
-      c ← cond.Eval e←𝕩
-      { IsTyped c ?
-        lf ← functions.Label@
-        c functions.GotoF lf
+      lf ← LazyLabel@
+      c ← cond CondEval ⟨0‿lf, e←𝕩⟩
+      { @≢lf.label ?
         then.Eval e
         functions.Goto¨ lt ← functions.Label¨ else
-        functions.SetLabel lf
+        functions.SetLabel lf.label
         lt { 𝕩.Eval e ⋄ functions.SetLabel 𝕨 }¨ else
         {Shows⇐!∘"Can't use if statement result as value"⋄kind⇐"error"}
       ;
@@ -885,16 +922,18 @@ nodes ← {
   While ⇐ {
     ⟨testFirst,cond,stmt⟩←𝕩
     Visit←{⟨𝕏cond,𝕏stmt⟩}
-    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "while"‿visit
+    ⟨node,Dump,Disp,Scope⟩⇐Defaults "while"‿visit
+    Oper⇐{𝕊: cond.Oper 1 ⋄ o.Oper stmt }
     Eval ⇐ {
       functions.Goto¨ lc ← functions.Label¨↕testFirst
       functions.SetLabel lt ← functions.Label@
       stmt.Eval 𝕩
       functions.SetLabel¨ lc
-      (cond.Eval 𝕩) functions.Goto lt
+      "Infinite loop" ! 1 ≢ cond CondEval ⟨1‿(LazyLabel lt), 𝕩⟩
       {Shows⇐!∘"Can't use while statement result as value"⋄kind⇐"error"}
     }
   }
+
   n0 ← Word "0"
   For ⇐ {
     ⟨fn,ptrs,ind,from,to,body⟩←𝕩 ⋄ pos←𝕨
@@ -944,7 +983,7 @@ ast ← {
   Build ⇐ Parse∘Tokenize
   Compile ⇐ {
     t ← 𝕨 files.Build 𝕩
-    t.Oper operator._with @
+    t.Oper operator._with 0
     t.Scope scopes._run baseScope
     t.Eval program._with baseEnv
   }
