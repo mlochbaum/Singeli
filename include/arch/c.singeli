@@ -11,15 +11,25 @@ def ar_compare{fn, op} = {
   ar_promote{fn}
 }
 
-def __pnt{a:T & match{'pointer',typekind{T}}} = load{a,0}
+def ar_isptr{T} = match{'pointer',typekind{T}}
+def __pnt{a:T & ar_isptr{T}} = load{a,0}
 
-def arith1{fn, op} = { def fn{a:T} = emit{T, op, a}; fn }
-def __neg = arith1{__neg, '-'}
+def ar_arith1{fn, op} = { def fn{a:T} = emit{T, op, a}; fn }
+def __neg = ar_arith1{__neg, '-'}
 
 def __add = ar_arith{__add, 'op +'}
 def __sub = ar_arith{__sub, 'op -'}
 def __mul = ar_arith{__mul, 'op *'}
 def __div = ar_arith{__div, 'op /'}
+
+def ar_ptrwidth = width{__pnt{void}}
+def ar_isize = primtype{'i',ar_ptrwidth}
+def ar_ptrdiff{a} = cast{ar_isize, a}
+def ar_ptrdiff{a:T} = promote{ar_ptrwidth, a}
+def __add{a  ,b:P & ar_isptr{P}}  = emit{P, 'op +', ar_ptrdiff{a}, b}
+def __add{a:P,b   & ar_isptr{P}}  = emit{P, 'op +', a, ar_ptrdiff{b}}
+def __sub{a:P,b   & ar_isptr{P}}  = emit{P, 'op -', a, ar_ptrdiff{b}}
+def __sub{a:P,b:P & ar_isptr{P}}  = emit{ar_isize, 'op -', a, b}
 
 def __eq  = ar_compare{__eq, 'op =='}
 def __ne  = ar_compare{__ne, 'op !='}
@@ -28,17 +38,17 @@ def __ge  = ar_compare{__ge, 'op >='}
 def __lt  = ar_compare{__lt, 'op <' }
 def __le  = ar_compare{__le, 'op <='}
 
-def logic = ar_arith
-def __and = logic{__and, 'op &'}
-def __or  = logic{__or , 'op |'}
-def __xor = logic{__xor, 'op ^'}
-def logic1 = arith1
+def ar_logic = ar_arith
+def __and = ar_logic{__and, 'op &'}
+def __or  = ar_logic{__or , 'op |'}
+def __xor = ar_logic{__xor, 'op ^'}
+def ar_logic1 = ar_arith1
 
-def __not = logic1{__not, '~'}
+def __not = ar_logic1{__not, '~'}
 def __not{a:u1} = emit{u1, '!', a}
 
-def __shl = logic{__shl, 'op <<'}
-def __shr = logic{__shr, 'op >>'}
+def __shl = ar_logic{__shl, 'op <<'}
+def __shr = ar_logic{__shr, 'op >>'}
 
 def cast_p{T, x} = emit{T, '(void*)', x}
 def cast_i{T, x} = emit{T, '', x}
