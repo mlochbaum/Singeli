@@ -19,9 +19,6 @@ prelude ← 1⌽"
 #include<stdbool.h>
 #include<xmmintrin.h>
 #include<immintrin.h>
-#define si_promote(A) A
-#define si_load(A, B) A[B]
-#define si_store(A, B, C) A[B] = C
 #define si_assert(A) if (!(A)) __builtin_unreachable();
 "
 
@@ -124,11 +121,16 @@ Export ← {
   ∾⟨ret," (*const ",exp,")(",param,") = ",val,";"⟩
 }
 ⟨New⟩ ← {
-  Call ← {𝕨‿"("‿𝕩‿")"}⟜List
+  Special ← {
+    "^promote"𝕊⟨t,v⟩  : ∾"("‿(as.Type t)‿")"‿v ;
+    "^load"   𝕊⟨p,i  ⟩: ∾p‿"["‿i‿"]" ;
+    "^store"  𝕊⟨p,i,v⟩: ∾p‿"["‿i‿"] = "‿v
+  }
+  Call ← 1⊸↑⊸≡⟜"^"◶⟨{𝕨‿"("‿𝕩‿")"}⟜List, Special⟩
   code‿op ← <˘⍉>⟨
     "val" ‿(⋈ Lit)
     "call"‿{ decl.Call fn ← Rename 𝕩 ⋄ fn Call (Lit𝕩˙)¨ ↕I32 𝕩 }
-    "emit"‿(Name (≡⟜"op")◶⟨
+    "emit"‿(Name ≡⟜"op"◶⟨
         Call⟜(as.Lit¨All)
         { o←Name 𝕩 ⋄ ⟨Lit 𝕩," ",o," ",Lit 𝕩⟩ }
       ⟩ ⊢)

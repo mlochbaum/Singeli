@@ -476,11 +476,11 @@ types ← {kname⇐"type"
     {!∾⟨"Explicit conversion required to change ",𝕩," to ",𝕨⟩}
   ⟩_cc
   Promote ← ⟨
-    Subtype, {functions.Emit⟨𝕨, symbols.New "si_promote", 𝕩⟩}
+    Subtype, {functions.Emit⟨𝕨, symbols.New "^promote", 𝕨, 𝕩⟩}
     {!∾⟨"Can't promote from type ",𝕩," to non-subset ",𝕨⟩}
   ⟩_cc
   Reinterpret ← ⟨
-    ≡○Width, {functions.Emit⟨𝕨, symbols.New "si_promote", 𝕩⟩}
+    ≡○Width, {functions.Emit⟨𝕨, symbols.New "^promote", 𝕨, 𝕩⟩}
     {!∾⟨"Can't reinterpret type ",𝕩," as different-width type ",𝕨⟩}
   ⟩_cc
 
@@ -616,8 +616,8 @@ blocks ← {kname⇐"block"
     block.Exec ind‿vars
   }
 }
-Load ← {  𝕊 ptr‿i: functions.Emit ⟨types.Deref TypeOf ptr, symbols.New "si_load", ptr, i⟩ }
-Store← {v 𝕊 ptr‿i: functions.Emit ⟨types.Deref TypeOf ptr, symbols.New "si_store", ptr, i, v⟩ }
+Load ← {  𝕊 ptr‿i: functions.Emit ⟨types.Deref TypeOf ptr, symbols.New "^load", ptr, i⟩ }
+Store← {v 𝕊 ptr‿i: functions.Emit ⟨types.Deref TypeOf ptr, symbols.New "^store", ptr, i, v⟩ }
 
 
 builtins ← {
