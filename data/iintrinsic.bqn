@@ -81,24 +81,27 @@ sname ∾¨↩ proto (1<≠∘⊢)◶⟨""¨,Disamb⟩¨⌾(id⊸⊔) names
 #⌜
 # Format as Singeli definition
 MakeDef ← {instr 𝕊 prot:
+  # Utilities
+  Br←"{"∾∾⟜"}" ⋄ A←∾⟜Br ⋄ M←{"match"A∾𝕨‿","‿𝕩}
+  Int←<⊸(≍˘) ⋄ J←∾1↓·⥊Int
+  _mk‿_mt ← {𝕊p: {("'"(∾∾⊣)𝕗)M(p∾"kind")⊸A}}¨ ""‿"type"
+  # Test if 𝕩 is of type 𝕨
+  IsB ← { " & "J⟨"vector"_mt𝕨,"isint"A"eltype"A𝕨,("width"A𝕨) M 1↓𝕩⟩ }
+  IsT ← ('b'=⊑∘⊢)◶M‿IsB
+  # Type handling and formatting
   pn‿pt ← <˘⍉> prot
   an←1↓pn ⋄ ! ∊⟜""‿"dst"‿"k"⌾< ⊑pn
   rt‿at ← (⊑⋈1⊸↓) pt
-  at ("__pnt{"∾1⊸↓∾"}"˙)⍟('*'=⊑)¨↩
+  at ("__pnt" A 1⊸↓)⍟('*'=⊑)¨↩
   vf ← ¬ if ← "IMM"⊸≡¨ at
   tn ← ⥊¨'T'-⊐vf/at
-  IsT ← {
-    'b'=⊑𝕩 ? ∾⟨"match{'vector',typekind{",𝕨,"}} & ",(∾"width{"‿𝕨‿"}")𝕊1↓𝕩⟩;
-    ∾"match{"‿𝕨‿","‿𝕩‿"}"
-  }
   vars ← an (∾⟜":"⊸∾¨⟜tn ⋈ tn IsT¨○⍷⊢)○(vf⊸/) at
-  imms ← (⊢ ⋈ ("match{'number',kind{"∾∾⟜"}}")¨) if/an
+  imms ← (⊢ ⋈ "number"_mk¨) if/an
   rt ↩ (≠at)⊸=◶⟨⊑⟜tn, rt⟩ at⊸⊐⌾< rt
-  Br ← "{"∾∾⟜"}"
   ∾⟨
-    Br ∾ 1↓⥊ ∾ ⟨", "," & "⟩ <⊸(≍˘)¨ vars ∾¨ imms
+    Br ∾ 1↓⥊ ∾ ⟨", "," & "⟩ Int¨ vars ∾¨ imms
     " = emit"
-    Br ∾1↓⥊(<", ")≍˘⟨rt, "'"(∾∾⊣)instr⟩ ∾ an
+    Br ", "J ⟨rt, "'"(∾∾⊣)instr⟩ ∾ an
   ⟩
 }
 defs ← cpuid ⊔○((⍋cat)⊸⊏) sname {∾"def _"‿𝕨‿𝕩}¨ names MakeDef¨ proto
