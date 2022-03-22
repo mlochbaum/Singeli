@@ -65,9 +65,19 @@ cpuid‿cat ← GetCont∘(⥊<)¨ "CPUID"‿"category"
 cpuid ↩ isaList ⊐ ⊑¨cpuid
 #instrs ← 0‿1⊸⊑¨¨ GetVoid ⟨"instruction"⟩  # x86 instruction name
 
+filter ← ¬ (∨˝"_ss"‿"_sd"(⊣≡-∘≠⊸↑)⌜names) ∨ (∨´"&bm"∊·∾1⊑¨⊢)¨ proto
+filter ∧↩ svml < cpuid<≠isaList
+names‿proto‿cpuid‿cat filter⊸/¨↩
+
+_seg ← {(2𝔽·+`'_'⊸=)⊸/¨}
+sname ← =_seg names
+id ← ⊐ sname ≍˘ 1↓¨proto
+Disamb ← { U←{¬∧´∊𝕩} ⋄ 𝕩 <_seg⊸(∾¨˜⍟U˜)⍟U ("_"∾·¬∘∊⟜"[]"⊸/1⊑⊑)¨𝕨 }
+sname ∾¨↩ proto (1<≠∘⊢)◶⟨""¨,Disamb⟩¨⌾(id⊸⊔) names
+
 #⌜
 # Format as Singeli definition
-MakeDef ← {name 𝕊 prot:
+MakeDef ← {instr 𝕊 prot:
   pn‿pt ← <˘⍉> prot
   an←1↓pn ⋄ ! ∊⟜""‿"dst"‿"k"⌾< ⊑pn
   rt‿at ← (⊑⋈1⊸↓) pt
@@ -79,14 +89,10 @@ MakeDef ← {name 𝕊 prot:
   rt ↩ (≠at)⊸=◶⟨⊑⟜tn, rt⟩ at⊸⊐⌾< rt
   Br ← "{"∾∾⟜"}"
   ∾⟨
-    "def "
-    "_"∾(2=·+`'_'⊸=)⊸/⍟(0<≠an) name
     Br ∾ 1↓⥊ ∾ ⟨", "," & "⟩ <⊸(≍˘)¨ vars ∾¨ imms
     " = emit"
-    Br ∾1↓⥊(<", ")≍˘⟨rt, "'"(∾∾⊣)name⟩ ∾ an
+    Br ∾1↓⥊(<", ")≍˘⟨rt, "'"(∾∾⊣)instr⟩ ∾ an
   ⟩
 }
-filter ← ¬ (∨˝"_ss"‿"_sd"(⊣≡-∘≠⊸↑)⌜names) ∨ (∨´"&bm"∊·∾1⊑¨⊢)¨ proto
-filter ∧↩ svml < cpuid<≠isaList
-defs ← (cpuid≍˘cat) ⍋⊸⊏○(filter⊸/) names MakeDef¨ proto
-•Out¨ ∾ 1↓⥊(<2⥊<⟨⟩) ∾˘ ("#"⊸∾¨isaList) <⊸≍˘ (∧filter/cpuid) ⊔ defs
+defs ← cpuid ⊔○((⍋cat)⊸⊏) sname {∾"def _"‿𝕨‿𝕩}¨ names MakeDef¨ proto
+•Out¨ ∾ 1↓⥊(<2⥊<⟨⟩) ∾˘ ("#"⊸∾¨isaList) <⊸≍˘ defs
