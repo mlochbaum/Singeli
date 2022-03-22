@@ -70,7 +70,7 @@ cpuid ↩ isaList ⊐ ⊑¨cpuid
 filter ← ∧´ filters ← ⟨
   ¬ ∨˝"_ss"‿"_sd"(⊣≡-∘≠⊸↑)⌜names
   svml < cpuid<≠isaList
-  ¬ (∨´"&"∊·∾1⊑¨⊢)¨ proto
+  ¬ (∨´·("&b"∧´∘∊⊢)¨1⊑¨⊢)¨ proto
   (⊑'b'∊1⊑⊑)◶⟨1,⊑·(⊏∊1⊸↓)1⊑¨⊢⟩¨ proto
 ⟩
 names‿proto‿cpuid‿cat filter⊸/¨↩
