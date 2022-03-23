@@ -895,7 +895,7 @@ nodes ← {
     Eval ⇐ { program.Export program._trace_ pos¨⟜<´ d.Eval 𝕩 }
   }
   Include ⇐ {
-    {𝕩.NoScope@⋄𝕩} files.Include Show (⊑𝕩).Eval@
+    {𝕩.NoScope@⋄𝕩} 𝕨 files.Include Show (⊑𝕩).Eval@
   }
   Body ⇐ {
     statements←𝕩
@@ -1009,6 +1009,7 @@ files ← {
   }
   Include ⇐ {
     f ← ('.'=⊑)◶⟨"include/",path⟩⊸•file.At 𝕩∾".singeli"
+    Err⍟(¬•file.Exists f) "File not found"‿𝕨
     log ∾↩ <f
     op←path ⋄ a←Load f ⋄ path↩op ⋄ a
   }
