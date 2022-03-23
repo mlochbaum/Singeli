@@ -946,7 +946,7 @@ nodes ← {
     ⟨cond,then,else⟩←𝕩
     Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
     ⟨node,Dump,Disp,Scope⟩⇐Defaults "if"‿visit
-    Oper⇐{𝕊: cond.Oper 1 ⋄ {𝕏then⋄𝕏¨else}o.oper }
+    Oper⇐{𝕊: cond.Oper 1 ⋄ {𝕏then⋄𝕏¨else}o.oper ⋄ operator.nil }
     Eval ⇐ {
       lf ← LazyLabel@
       c ← cond CondEval ⟨0‿lf, e←𝕩⟩
@@ -967,7 +967,7 @@ nodes ← {
     ⟨testFirst,cond,stmt⟩←𝕩
     Visit←{⟨𝕏cond,𝕏stmt⟩}
     ⟨node,Dump,Disp,Scope⟩⇐Defaults "while"‿visit
-    Oper⇐{𝕊: cond.Oper 1 ⋄ o.Oper stmt }
+    Oper⇐{𝕊: cond.Oper 1 ⋄ o.Oper stmt ⋄ operator.nil }
     Eval ⇐ {
       functions.Goto¨ lc ← functions.Label¨↕testFirst
       functions.SetLabel lt ← functions.Label@
