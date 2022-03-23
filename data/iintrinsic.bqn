@@ -67,6 +67,8 @@ cpuid‿cat ← GetCont∘(⥊<)¨ "CPUID"‿"category"
 cpuid ↩ isaList ⊐ ⊑¨cpuid
 #instrs ← 0‿1⊸⊑¨¨ GetVoid ⟨"instruction"⟩  # x86 instruction name
 
+#⌜
+# Singeli-specific adjustments; try to fix wrong signedness
 filter ← ∧´ filters ← ⟨
   ¬ ∨˝"_ss"‿"_sd"(⊣≡-∘≠⊸↑)⌜names
   svml < cpuid<≠isaList
@@ -77,6 +79,11 @@ names‿proto‿cpuid‿cat filter⊸/¨↩
 
 _seg ← {(𝔽·+`'_'⊸=)⊸/}
 sname ← 3⊸=_seg⊸(∾˜)⍟("_mask"⊸≡)⟜(2⊸=_seg)¨ names
+
+pi ← ("pi"≡¯2↑·(¬·∨`'0'⊸≤∧'9'⊸≥)⊸/(∧`⌾⌽'_'⊸≠)⊸/)¨names
+pi ∧↩ ¬sname∊"_movemask"‿"_mullo"‿"_srl"‿"_srli"‿"_srlv"‿"_abs"
+proto ((-´"iu")×(<<0‿1)×'u'=⊢)⊸+⌾(pi⊸/)↩
+
 id ← ⊐ sname ≍˘ 1↓¨proto
 Disamb ← { U←{¬∧´∊𝕩} ⋄ 𝕩 2⊸<_seg¨⊸(∾¨˜⍟U˜)⍟U ("_"∾·¬∘∊⟜"[]"⊸/1⊑⊑)¨𝕨 }
 sname ∾¨↩ proto (1<≠∘⊢)◶⟨""¨,Disamb⟩¨⌾(id⊸⊔) names
