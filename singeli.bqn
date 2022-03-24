@@ -565,6 +565,7 @@ functions ← {kname⇐"function"
   _with ⇐ {
     fs←current
     f←current↩program.AddFunction new
+    {𝕩.Set f} 𝕨  # Passed in by nodes.Define, pretty hacky
     f.Finish f 𝔽 𝕩
     current↩fs
     f
@@ -880,7 +881,10 @@ nodes ← {
       value.Scope 𝕩
       v0‿v ↩ pos ("lambda"≡value.node)◶⟨ @⋈𝕩.Add , 𝕩.AddLam ⟩ name
     }
-    Eval⇐{ u←V𝕩 ⋄ u.Set program._trace_ pos (V0𝕩) value.Eval 𝕩 }
+    Eval⇐{
+      f←"function"≡value.node  # Set value in Eval for function recursion
+      u←V𝕩 ⋄ u.Set program._trace_ pos⍟(¬f) (f◶⟨V0,u˙⟩𝕩) value.Eval 𝕩
+    }
   }
   OpDef ⇐ {
     ⟨type,op,fn,prec⟩←𝕩 ⋄ pos←𝕨

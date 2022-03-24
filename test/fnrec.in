@@ -1,0 +1,7 @@
+include 'arch/c'
+include 'skin/c'
+
+fact(x:u8) : u64 = {
+  if (x <= 1) return{1}
+  promote{u64,x} * fact(x - 1)
+}
