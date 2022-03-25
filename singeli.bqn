@@ -820,11 +820,17 @@ nodes ← {
       AllEq ← ∧´⊏Match¨1⊸↓
       Check ← {iPar (≡○≢)_and_(∧´AllEq¨∘⊔) 𝕩}
       CT ← {∧´((∧´IsTyped¨)_and_(AllEq{𝕩.type}¨)⊏⟜𝕩)¨iTyp}
+      Exec ← result.Eval∘⊢ ⋄ _cached ← {𝔽}
+      {result.node≢"function"?@;
+        args←res←⟨⟩
+        Exec ↩ {args∾↩<𝕨 ⋄ {Set⇐{res∾↩<𝕩}}result.Eval𝕩}
+        _cached ↩ {i←args⊸⊐⌾<𝕩⋄i<≠res?i⊑res;𝔽𝕩} # ⊐ should use Match
+      }
       Check _and_ CT◶Next‿{
         F←Next 𝕩˙
-        try ← result.eval{numbers.GetBool∘𝕨.Eval◶F‿𝕏}´conds
+        try ← (⊑⟨𝕩˙⊸exec⟩){numbers.GetBool∘𝕨.Eval◶F‿𝕏}´conds
         Try ((iPar∊⊸/𝕩)∾{𝕩.type}¨iTyp⊑¨⊸⊏𝕩) env.Fixed e
-      }
+      }_cached
     }
   }
   Arg ⇐ {
