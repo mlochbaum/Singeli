@@ -192,11 +192,15 @@ Parse ← {𝕊 tokens‿ShowTrace:
   }
   Expr ← ⟨⟩_exprEnd
 
+  LFs ← {𝕊⍟Try ⟨lf⟩}
+  Div ← {LFs@ ⋄ 1∘LFs⍟⊢ Try 𝕩}
+
   _args ← {𝕗 _argsFn_ Expr}
   _argsFn_ ← {𝕤
     Get ⊑𝕗
     Try 1⊑𝕗 ? ⟨⟩ ;
-    a ← While ⟨Try∘",", 𝔾, 1⟩
+    LFs@
+    a ← While ⟨Div∘",", 𝔾, 1⟩
     Get 1⊑𝕗
     a
   }
@@ -261,8 +265,9 @@ Parse ← {𝕊 tokens‿ShowTrace:
       t ← When ⟨(≠e)◶Try‿0":", ExprA⟩
       n‿e‿t
     }
-    a ← While ⟨Try∘",", Param, 1⟩
-    c ← While ⟨Try∘"&", ExprA, 0⟩
+    LFs@
+    a ← While ⟨Div∘",", Param, 1⟩
+    c ← While ⟨Div∘"&", ExprA, 0⟩
     Get "}"
     a‿c
   }
