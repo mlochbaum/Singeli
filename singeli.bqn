@@ -631,8 +631,14 @@ builtins ← {
     E ← "Unhandled type" ! 0˙
     (e{k‿o←𝕨⋄∧○(k≡⊢)◶⟨𝕏,O˙⟩}´𝕩){o←𝕨𝔽○Kind𝕩⋄𝕨O𝕩}
   }
-  Ty2 ← {𝕏⚇0´}∘Kinds "number"‿"type"⋈¨{𝕏numbers._cmp}⊸⋈
+  Ty2 ← {𝕏⚇0´}∘Kinds ⊣∾⟜(<·"symbol"⌾⊑⊢´)∘⊢⍟(⊑∊⟜=‿≠)"number"‿"type"⋈¨{𝕏numbers._cmp}⊸⋈
   Fmt ← 2↓·∾·", "⊸∾¨Show⎊("("∾")"∾˜Kind⎊"unknown")¨
+  Merge ← {
+    0<⌈´=¨𝕩 ? ∾𝕩 ;
+    m←"merge: arguments must include at least one tuple or all be symbols"
+    (m!"symbol"≡Kind)¨ 𝕩
+    symbols.New ∾ Show¨𝕩
+  }
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
     ⍉> ⟨
@@ -644,7 +650,7 @@ builtins ← {
       ⟨"type",TypeOf∘⊑⟩, ⟨"kind",symbols.New Kind∘⊑⟩
       ⟨"typekind",symbols.New types.TypeKind∘⊑⟩
       ⟨"load",Load⟩, ⟨"store",¯1⊸(⊑Store↓)⟩
-      ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑´⟩, ⟨"tuplen",≠∘⊑⟩, ⟨"merge",∾⟩
+      ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑´⟩, ⟨"tuplen",≠∘⊑⟩, ⟨"merge",Merge⟩
       ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓⟩, ⟨"apply",{𝕎𝕩}´⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓⟩
     ⟩
     numbers.builtins
