@@ -234,13 +234,14 @@ Parse ← {𝕊 tokens‿ShowTrace:
     OA← "@for: multiple variables must use ""over"""⊸Asrt
     TA← "@for: ""from"" missing ""to"""⊸Asrt
     NA← "@for: loop variable must be a name"⊸Asrt
-    Expr ← "over"‿"from"‿"to"_exprEnd # Shadow
+    Expr ← "in"‿"over"‿"from"‿"to"_exprEnd # Shadow
     Get "@"
     f ← Callable@
     Get "("
-    to← Expr@ ⋄ NE←{𝕤⋄ NA@≢n←c.PhraseTryName to ⋄ to↩Expr@ ⋄ n}
-    pe← While ⟨Try∘",", Name, 0⟩
-    ps← pe ⊢◶{OA 0=≠𝕨⋄⟨⟩}‿{(<NE@)∾𝕨} Try"over" # Pointers
+    to← Expr@ ⋄ NE←{𝕤⋄ NA@≢n←⋈⍟(𝕨⊣0)c.PhraseTryName⍟(𝕨⊣1) to ⋄ to↩Expr@ ⋄ n}
+    {Try"in"? to↩⟨NE@,to⟩; @}
+    pe← While ⟨Try∘",", Try∘"in"◶⟨⋈,⋈⟜Expr⟩ Name, 0⟩
+    ps← pe ⊢◶{OA 0=≠𝕨⋄⟨⟩}‿{(<NE˜0==to)∾𝕨} Try"over" # Pointers
     fr← When ⟨Try"from", Expr⟩                 # Start index
     i ← ⊢◶{𝕤⋄TA 0=≠fr⋄⟨⟩}‿{𝕤⋄⟨NE@⟩} Try"to"    # Index variable
     Get ")"
@@ -1002,22 +1003,23 @@ nodes ← {
   n0 ← Word "0"
   For ⇐ {
     ⟨fn,ptrs,ind,from,to,body⟩←𝕩 ⋄ pos←𝕨
+    ptri←Ident¨ptrn←⊑¨ptrs
+    ptrv←ptrs(1⊑∾⟜<)¨ptri
     from↩n0⊣´from
-    ptri←Ident¨ptrs
-    vardisp←1↓∾(","⊸∾¨ptrs)∾" over "⊸∾¨ind
-    Visit←{⟨𝕏fn,vardisp⊣𝕏¨ptri,𝕏from,𝕏to,𝕏body⟩}
+    vardisp←1↓∾(","⊸∾¨ptrn)∾" over "⊸∾¨ind
+    Visit←{⟨𝕏fn,vardisp⊣𝕏¨ptri≍˘ptrv,𝕏from,𝕏to,𝕏body⟩}
     ⟨node,Dump,Disp,Oper⟩⇐d←Defaults "for"‿visit
     ls←@
     Scope ⇐ {
-      (o.Scope 𝕩)¨ ∾⟨fn⟩‿ptri‿⟨from,to⟩
+      (o.Scope 𝕩)¨ ∾⟨fn⟩‿ptrv‿⟨from,to⟩
       ls ↩ (<pos) {𝕏}∘𝕩.Get¨ "load"‿"store"
-      body.Scope scopes._defer (ind∾ptrs) scopes.New 𝕩
+      body.Scope scopes._defer (ind∾ptrn) scopes.New 𝕩
     }
     Eval ⇐ {
       e←o.Eval 𝕩
       For←(E fn) program._trace_ pos
       lsv←var.Get∘{𝕎𝕩}⟜𝕩¨ ls
-      For ⟨E¨ptri, E from, E to, blocks.New ind‿ptrs‿body‿lsv‿𝕩⟩
+      For ⟨E¨ptrv, E from, E to, blocks.New ind‿ptrn‿body‿lsv‿𝕩⟩
     }
   }
 }
