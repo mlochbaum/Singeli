@@ -183,6 +183,104 @@ Singeli's built-in control flow statements are `if`-(`else`), and (`do`)-`while`
 
 Note that `if` can also be used as a constant-time switch: if the argument is a number, it must be 0 or 1, and compiles only one block, or none if the condition is 0 and there's no `else`.
 
+### For loops
+
+A for "loop" looks a lot like the for-each loops that are becoming common in high-level as well as low-level languages. Appearances are decieving, since it's really a special kind of generator call that can evaluate the block when it executes. But it covers the for-each functionality pretty well, with the right `for` generator.
+
+    # Loop over three pointers with a specific range
+    # Expressions in the descriptor like len/2 are only evaluated once
+    @for (dst, a, b over i from len/2 to len) {
+      dst = a + b + i
+    }
+
+    # Use "in" to give the element a different name from the pointer
+    @other_for (x in src over n) x = 2*x
+
+The name after `@` is just a name, and is called as a generator. The following definition of `for` gives a typical C-like loop. It's passed a block and evaluates it with `exec`; the details are discussed below.
+
+    def for{vars,begin,end,block} = {
+      i:u64 = begin
+      while (i<end) {
+        exec{i, vars,block}
+        i = i+1
+      }
+    }
+
+#### Descriptor
+
+The *descriptor* is the part in parentheses, and lists the variables and range to use for the loop. It provides the `vars` (a tuple of pointers), `begin`, and `end` parameters to the `for` generator above, and it defines which names are used in the main block of the loop, which then forms the `block` parameter.
+
+Here's the pattern. Square brackets `[]` indicate an optional part, and the `…` means more pointers can appear, separated by commas.
+
+    [name ["in" pointer], … "over"]
+      [index ["from" begin] "to"]
+        end
+
+That's a lot of options! You can have any number of pointers, and can leave the index out—although an oddity is that you have to include it if you want a starting value different from the default of `0`. Some possibilities with the typical interpretations are listed below.
+
+- `@for (num)`: repeat `num` times
+- `@for (x in arr over len)`: iterate over elements
+- `@for (i to num)`: iterate over a range
+- `@for (i from a to b)`: same, with a half-open range `[a,b)`
+- `@for (dst, src over i to len)`: iterate over two pointers with an index
+
+Other than the fixed default starting point of `0`, the interpretation of the start and endpoint is all done by the generator that's used for the loop. It could ignore those values and always run exactly once, run backwards, or something else.
+
+#### For generator
+
+Once the descriptor and body are parsed, the following values are passed to whatever generator is named after `@`, and the result of the loop is whatever comes out. The names `vars` and so on are only for explanation, as they are nameless in Singeli compilation.
+
+- `vars`: a tuple, the values of all pointers listed before "over"
+- `begin`: the value of the expression after "from"
+- `end`: the value of the expression at the end, (after "to" if it's there)
+- `block`: a special value produced from the for loop's body
+
+Most of the time the generator will evaluate the block—otherwise what's the point? This is done with the built-in generator `exec{}`, which is where the magic happens. It's called with `exec{index, ptrs, block}`, where `ptrs` is a tuple of pointers (it doesn't have match `vars` created by the for loop), `block` is a for loop block value, and `index` is an index. Then it:
+
+- loads a value from each pointer with `load{p, index}`,
+- evaluates the block using these loaded values and `index`,
+- stores any modified values with `store{p, index, new_value}`, and
+- returns the result of block evaluation (probably to be ignored)
+
+Here are some examples.
+
+    # The standard for loop, yet again
+    def for{vars,begin,end,block} = {
+      i:u64 = begin
+      while (i<end) {
+        exec{i, vars,block}
+        i = i+1
+      }
+    }
+
+    # Loop expanded at compile time, implemented with recursion
+    # Assumes begin and end are constant, to use compile-time if
+    # Each exec{} compiles to code with a constant index
+    def for_const{vars,begin,end,block} = {
+      if (begin<end) {
+        for_const{vars,begin,end-1,block}
+        exec{end-1, vars,block}
+      }
+    }
+
+    # Loop over vectors of length vlen
+    def for_vec{vlen}{vars,begin,end,block} = {
+      # Cast each pointer to a vector
+      def vptr{ptr:P} = reinterpret{*[vlen]eltype{P}, ptr}
+      def vvars = each{vptr, vars}
+
+      # Endpoints for vector part
+      def vb = (begin+(vlen-1))/vlen  # Round up
+      def ve = end/vlen               # Round down
+
+      # Do the loops
+      for{ vars, begin,   vlen*vb, block}
+      for{vvars, vb,      ve,      block}
+      for{ vars, vlen*ve, end,     block}
+    }
+
+`for_vec` showcases the flexibility of this approach. Since `for` is a normal generator, it can be called to avoid rewriting the same `while`-based logic everywhere. And since any pointer can be passed to `exec`, modified pointers `vvars` with a different type are fair game. This means `block` will need to handle two different variable types, `T` and `[vlen]T`—fortunately Singeli is designed to support exactly this kind of polymorphism. And it's a requirement you control since you can decide what kind of for loop to use. Finally, `for_vec` takes another parameter *before* being called as a loop. It's invoked with, say, `@for_vec{8} (…)`.
+
 ## Built-in generators
 
 The following generators are pre-defined in any program. They're placed in a parent scope of the main program, so these names can be shadowed by the program.
