@@ -1,4 +1,6 @@
+constant c0 u64 !4:u64
+
 beginFn f0 u64 0
-ret !4:u64
+ret c0
 endFn
 

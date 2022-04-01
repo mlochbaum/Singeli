@@ -283,10 +283,11 @@ Parse ← {𝕊 tokens‿ShowTrace:
     b ← Result Try"="
     ⟨a,r,b⟩
   } _withParams
-  Const ← {𝕤
+  Const ← c.const _node_ {𝕤
     t ← When ⟨¬Next"=", Expr⟩
     Get "="
-    c.run _node_ ((c.Word"cast") ⋈ t∾<)⍟(0<≠t) Expr@
+    v ← Expr@
+    t‿v
   }
   FunConst ← (Try∘":"◶Function‿Const)
   Generator ← {𝕤⋄ Get"=" ⋄ Result 1} _withParams
@@ -537,6 +538,10 @@ constants ← {kname⇐"constant"
     kind⇐kname ⋄ type⇐𝕨 ⋄ value⇐𝕩
     shows⇐∾"!:"∾⟜Show¨𝕩‿𝕨 ⋄ Matches⇐≡
   }
+  Static ⇐ {
+    kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
+    shows⇐"c"∾•Repr𝕩 ⋄ Matches⇐≡
+  }
 }
 
 NewLabel  ← { shows⇐"l"∾•Repr𝕩 }
@@ -719,14 +724,15 @@ env ← {
 }
 
 program ← {
-  AddFunction⇐Export⇐!∘0 ⋄ trace⇐@
+  AddFunction⇐AddConstant⇐Export⇐!∘0 ⋄ trace⇐@
   _with ⇐ {
     fns←⟨⟩ ⋄ AddFunction ↩ { f ← 𝕏 ≠fns ⋄ fns∾⟜<↩f ⋄ f }
+    cns←⟨⟩ ⋄ AddConstant ↩ { c ← (t←TypeOf𝕩) constants.Static ≠cns ⋄ cns∾⟜<↩t‿𝕩 ⋄ c }
     exp←⟨⟩ ⋄ Export ↩ { "Exporting non-function" ! "function"≡Kind 𝕩 ⋄ exp ∾⟜<↩ 𝕨‿𝕩 }
     ⟨_trace_⟩↩s←Stack@
     𝕨 𝔽⎊s.Report 𝕩
-    AddFunction↩Export↩!∘0
-    ∾ ⟨∾DispFunction¨fns, DispExport¨exp⟩
+    AddFunction↩AddConstant↩Export↩!∘0
+    ∾ ⟨DispConstants cns, ∾DispFunction¨fns, DispExport¨exp⟩
   }
   Stack ← {𝕤
     ⟨_trace_⇐_while_⟩ ⇐ ⟨Dump⇐Arr⟩ ← MakeStack@
@@ -753,6 +759,7 @@ program ← {
   }
   J ← 1↓·∾" "⊸∾¨
   Disp ← J Show¨⌾(1⊸↓)
+  DispConstants←{ ∾⟜(<⟨⟩)⍟(0<≠) (↕≠𝕩) {∾⟨"constant c",•Repr𝕨,∾(" "∾Show)¨𝕩⟩}¨ 𝕩 }
   DispFunction←{ ∾⟨"beginFn "∾𝕩.Prot@⟩‿(Disp¨ 𝕩.Instrs@)‿⟨"endFn",""⟩ }
   DispExport←{ "export " ∾ J {𝕩.Prot@}⌾⊑ ⌽𝕩 }
 }
@@ -868,6 +875,16 @@ nodes ← {
       Ev result
     }functions._with
   }
+  _setType ← { pos type‿env _𝕣 v:
+    { ≠type ?
+      t ← (⊑type).Eval 𝕩
+      "Variable type must be a type" ! types.Is t
+      t types.Cast v
+    ;
+      "Explicit type needed for untyped initial value" ! IsTyped v
+      v
+    } program._trace_ pos env
+  }
   Assign ⇐ { pos 𝕊 ⟨name,1,type,value⟩: # Declaration
     Visit←{⟨name∾":",𝕏¨type,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "assign"‿visit
@@ -877,19 +894,17 @@ nodes ← {
     }
     Eval⇐{
       u ← GetVar 𝕩
-      v ← value.Eval 𝕩
-      c ← { ≠type ?
-        t ← (⊑type).Eval 𝕩
-        "Variable type must be a type" ! types.Is t
-        t types.Cast v
-      ;
-        "Explicit type needed for untyped initial value" ! IsTyped v
-        v
-      } program._trace_ pos 𝕩
-      u.Set registers.ClaimCopy c
+      v ← pos type‿𝕩 _setType value.Eval 𝕩
+      u.Set registers.ClaimCopy v
     }
   ;
     𝕨 Run ⟨{functions.Mut´𝕩}˙_value"=" , 0‿3⊏𝕩⟩
+  }
+  Const ⇐ {
+    ⟨type,value⟩←𝕩 ⋄ pos←𝕨
+    Visit←{⌽⟨𝕏¨type,":",𝕏value⟩}
+    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "assign"‿visit
+    Eval⇐{ program.AddConstant pos type‿𝕩 _setType value.Eval 𝕩 }
   }
   Define ⇐ {
     ⟨name,value⟩←𝕩 ⋄ pos←𝕨

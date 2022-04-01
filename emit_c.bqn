@@ -120,6 +120,16 @@ Export ← {
   param ← ","Join atype {∾𝕨‿" "‿𝕩}¨ aname
   ∾⟨ret," (*const ",exp,")(",param,") = ",val,";"⟩
 }
+Define ← {𝕊 ty‿id‿val:
+  {'{'=⊑1↑⊑val? '*'=¯1⊑ty? ty↓˜↩¯1⋄id∾↩"[]"; @}
+  ∾ ty‿" "‿id‿" = "∾val
+}
+Constant ← {
+  name ← Name 𝕩
+  type ← Type 𝕩
+  val ← Lit 𝕩
+  ∾⟨"static ",Define type‿name‿val,";"⟩
+}
 ⟨New⟩ ← {
   Special ← {
     "^promote"𝕊⟨t,v⟩  : ∾"("‿(as.Type t)‿")"‿v ;
@@ -142,22 +152,22 @@ Export ← {
     c ← code⊸⊐⌾< kind
     (∾"Unknown new: `"‿kind‿"`") ! c<≠code
     val ← (c⊑op) {𝕎𝕩} 𝕩
-    {'{'=⊑1↑⊑val? '*'=¯1⊑ty? ty↓˜↩¯1⋄id∾↩"[]"; @}
-    ∾ {"void"≡ty?⟨⟩; ty‿" "‿id‿" = "} ∾ val
+    {"void"≡ty?∾val; Define ty‿id‿val}
   }
 }
 
 code‿op ← (⊑¨ ⋈ 1⊸↓¨) ⟨
-  "export" ‿ 0‿0‿⟨Export⟩
-  "beginFn"‿ 1‿0‿⟨BeginFn⟩
-  "lbl"    ‿ 0‿1‿⟨Name,":"⟩
-  "ret"    ‿ 0‿1‿⟨"  ","return","void"⊸≢◶⟨""," "⊸∾⟩ Lit⟩
-  "gotoF"  ‿ 0‿1‿⟨"  ","if (!(",Lit,")) ","goto ",Name⟩
-  "gotoT"  ‿ 0‿1‿⟨"  ","if (",Lit,") ","goto ",Name⟩
-  "goto"   ‿ 0‿1‿⟨"  ","goto ",Name⟩
-  "new"    ‿ 0‿1‿⟨"  ",New⟩
-  "mut"    ‿ 0‿1‿⟨"  ",Name," = ",Lit⟩
-  "endFn"  ‿¯1‿1‿⟨"}"⟩
+  "export"  ‿ 0‿0‿⟨Export⟩
+  "constant"‿ 0‿0‿⟨Constant⟩
+  "beginFn" ‿ 1‿0‿⟨BeginFn⟩
+  "lbl"     ‿ 0‿1‿⟨Name,":"⟩
+  "ret"     ‿ 0‿1‿⟨"  ","return","void"⊸≢◶⟨""," "⊸∾⟩ Lit⟩
+  "gotoF"   ‿ 0‿1‿⟨"  ","if (!(",Lit,")) ","goto ",Name⟩
+  "gotoT"   ‿ 0‿1‿⟨"  ","if (",Lit,") ","goto ",Name⟩
+  "goto"    ‿ 0‿1‿⟨"  ","goto ",Name⟩
+  "new"     ‿ 0‿1‿⟨"  ",New⟩
+  "mut"     ‿ 0‿1‿⟨"  ",Name," = ",Lit⟩
+  "endFn"   ‿¯1‿1‿⟨"}"⟩
 ⟩
 
 Generate
