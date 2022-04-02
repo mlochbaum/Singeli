@@ -540,7 +540,7 @@ constants ← {kname⇐"constant"
   }
   Static ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
-    shows⇐"c"∾•Repr𝕩 ⋄ Matches⇐≡
+    shows⇐"$c"∾•Repr𝕩 ⋄ Matches⇐≡
   }
 }
 
