@@ -1,0 +1,6 @@
+beginFn f0 void 1 *u8
+new v1 emit u8 ^load v0 2
+mut v1 !3:u8
+new v2 emit u8 ^store v0 2 v1
+endFn
+

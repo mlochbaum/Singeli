@@ -1,0 +1,5 @@
+fn(x:__pnt{u8}) : void = {
+  def for{vars,begin,end,block} = { exec{end, vars,block} }
+  def xg{r} = x
+  @for (a in xg{4} to 2) { a = 3 }
+}

@@ -238,12 +238,12 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Get "@"
     f ← Callable@
     Get "("
-    to← Expr@ ⋄ NE←{𝕤⋄ NA@≢n←⋈⍟(𝕨⊣0)c.PhraseTryName⍟(𝕨⊣1) to ⋄ to↩Expr@ ⋄ n}
-    {Try"in"? to↩⟨NE@,to⟩; @}
+    to← Expr@ ⋄ NE←{𝕤⋄ n←⋈∘{NA@≢𝕩⋄𝕩}∘c.PhraseTryName⍟𝕩 to ⋄ to↩Expr@ ⋄ n}
+    {Try"in"? to↩⟨⊑NE 1,to⟩; @}
     pe← While ⟨Try∘",", Try∘"in"◶⟨⋈,⋈⟜Expr⟩ Name, 0⟩
-    ps← pe ⊢◶{OA 0=≠𝕨⋄⟨⟩}‿{(<NE˜0==to)∾𝕨} Try"over" # Pointers
-    fr← When ⟨Try"from", Expr⟩                 # Start index
-    i ← ⊢◶{𝕤⋄TA 0=≠fr⋄⟨⟩}‿{𝕤⋄⟨NE@⟩} Try"to"    # Index variable
+    ps← {Try"over"?(<NE 0==to)∾𝕩; OA 0=≠𝕩⋄⟨⟩} pe # Pointers
+    fr← When ⟨Try"from", Expr⟩                   # Start index
+    i ← {¬Try"to"?TA 0=≠fr⋄⟨⟩; 0<=to?ps∾↩<NE 0⋄⟨⟩; NE 1}  # Index variable
     Get ")"
     b ← Block@
     ⟨f,ps,i,fr,to,b⟩
