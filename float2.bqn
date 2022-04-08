@@ -43,4 +43,7 @@ Div ⇐ {b𝕊a:
   yn‿0 Add xn Mul12 diff
 }
 
-_repr ⇐ { len‿b _𝕣: {c←0 ⋄ {𝕩+↩c⋄c↩⌊𝕩÷b⋄b|𝕩}¨𝕩} ·+´ b|⌊∘÷⟜b⍟(↕len)¨ }
+_repr ⇐ { len‿b _𝕣:
+  ! ⌊⊸= 2⋆⁼b # Need division by b to be exact
+  {c←0 ⋄ {𝕩+↩c⋄c↩⌊𝕩÷b⋄b|𝕩}¨𝕩} ·+´ b|⌊∘÷⟜b⍟(↕len)¨
+}
