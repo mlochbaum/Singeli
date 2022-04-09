@@ -524,7 +524,7 @@ types ← {kname⇐"type"
 registers ← {kname⇐"register"
   New ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
-    shows⇐"v"∾•Repr𝕩 ⋄ Matches⇐≡
+    shows⇐"v"∾•Repr𝕩 ⋄ fmtType⇐1 ⋄ Matches⇐≡
     stat⇐1 ⋄ SetStat⇐{  stat↩𝕩}  # Assigned? 1 free, 2 :=, 3 def
     mut ⇐0 ⋄ SetMut ⇐{𝕤⋄mut ↩1}  # Changed (for blocks)
   }
@@ -536,11 +536,11 @@ registers ← {kname⇐"register"
 constants ← {kname⇐"constant"
   New ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ value⇐𝕩
-    shows⇐∾"!:"∾⟜Show¨𝕩‿𝕨 ⋄ Matches⇐≡
+    shows⇐∾"!:"∾⟜Show¨𝕩‿𝕨 ⋄ fmtType⇐0 ⋄ Matches⇐≡
   }
   Static ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
-    shows⇐"$c"∾•Repr𝕩 ⋄ Matches⇐≡
+    shows⇐"$c"∾•Repr𝕩 ⋄ fmtType⇐1 ⋄ Matches⇐≡
   }
 }
 
@@ -638,7 +638,8 @@ builtins ← {
     (e{k‿o←𝕨⋄∧○(k≡⊢)◶⟨𝕏,O˙⟩}´𝕩){o←𝕨𝔽○Kind𝕩⋄𝕨O𝕩}
   }
   Ty2 ← {𝕏⚇0´}∘Kinds ⊣∾⟜(<·"symbol"⌾⊑⊢´)∘⊢⍟(⊑∊⟜=‿≠)"number"‿"type"⋈¨{𝕏numbers._cmp}⊸⋈
-  Fmt ← 2↓·∾·", "⊸∾¨Show⎊("("∾")"∾˜Kind⎊"unknown")¨
+  TypeSuff ← IsTyped◶0‿{𝕩.fmtType}◶""‿{":"∾Fmt TypeOf𝕩}
+  Fmt ← 2↓·∾·", "⊸∾¨(Show∾TypeSuff)⎊("("∾")"∾˜Kind⎊"unknown")¨
   Merge ← {
     0<⌈´=¨𝕩 ? ∾𝕩 ;
     m←"merge: arguments must include at least one tuple or all be symbols"
