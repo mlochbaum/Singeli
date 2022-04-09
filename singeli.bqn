@@ -397,7 +397,7 @@ types ← {kname⇐"type"
       T⊸{∾𝕨‿" -> "‿𝕩}⟜Show´# Function:    ⟨t, q‿r‿s⟩   (…,…,…) -> …
       T                    # Tuple:       q‿r‿s        (…,…,…)
     ⟩∘dat
-    Matches⇐{𝕨Equiv𝕩}
+    Matches⇐{𝕨Is∘⊢◶0‿Equiv𝕩}
   }
   tVOID‿tPRIM‿tVEC‿tPTR‿tFUN‿tTUP ← ↕6
   TypeKind⇐{
