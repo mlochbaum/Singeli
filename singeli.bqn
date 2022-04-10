@@ -48,7 +48,7 @@ numbers ← {kname⇐"number"
   NN ← 1≠•Type  # Not native number
   Is ← kname≡{Kind𝕩}
   Wrap ← {kind⇐kname⋄value⇐𝕩⋄Matches⇐Match⋄Shows⇐FmtLarge∘𝕩}
-  Unwrap ← {6=•Type𝕩?kname≡𝕩.kind?𝕩.value; !"Expected number"}
+  Unwrap ← {6=•Type𝕩?kname≡𝕩.kind?𝕩.value; !"Expected constant number"}
   Promote ← NN◶f.To‿Unwrap
   From ⇐ f.From∘Unwrap⍟NN
   GetBool ⇐ {"Boolean expected"!⊑𝕩∊0‿1⋄𝕩}∘From
