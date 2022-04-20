@@ -143,7 +143,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ! (¯1⊑tokens) Is sep
 
   Asrt ← {𝕨𝕊1:@;
-    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.define,"define",c.export,"export",c.for,"for",c.function,"function",c.if,"if",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.while,"while",c.word,"word"⟩
+    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.const,"const",c.define,"define",c.export,"export",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.while,"while",c.word,"word"⟩
     ShowTrace⟜L´ <˘⍉>DumpStack@
     •Out ""
     F ← (⥊lf)⊸≡◶•Repr‿"end of line"
@@ -953,7 +953,7 @@ nodes ← {
       𝕨GotoC𝕩
     }
   }
-  CondNode ⇐ {
+  CondNode ← {
     terms ← 𝕩
     name‿_ev ← 𝕨 ⋄ Eval⇐terms _ev
     Visit←{⟨name,𝕏¨terms⟩}
