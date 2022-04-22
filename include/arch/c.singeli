@@ -6,6 +6,10 @@ def ar_arith{fn, op} = {
   def fn{a:T,b:T & match{'primitive',typekind{T}}} = emit{T, op, a, b}
   ar_promote{fn}
 }
+def ar_sh{fn, op} = {
+  def fn{a:T,b:I & isint{T} & isint{I}} = emit{T, op, a, b}
+  ar_promote{fn}
+}
 def ar_compare{fn, op} = {
   def pk{T} = {
     def k=typekind{T}
@@ -54,8 +58,8 @@ def ar_logic1 = ar_arith1
 def __not = ar_logic1{__not, '~'}
 def __not{a:u1} = emit{u1, '!', a}
 
-def __shl = ar_logic{__shl, 'op <<'}
-def __shr = ar_logic{__shr, 'op >>'}
+def __shl = ar_sh{__shl, 'op <<'}
+def __shr = ar_sh{__shr, 'op >>'}
 
 def cast_p{T, x} = emit{T, '(void*)', x}
 def cast_i{T, x} = emit{T, '', x}
