@@ -43,6 +43,12 @@ Div ⇐ {b𝕊a:
   yn‿0 Add xn Mul12 diff
 }
 
+Mod ⇐ {
+  b𝕊a‿0: a>0 ? h←a÷2 ⋄ Add12´ a⊸+⌾⊑⍟(<⟜-´) (h-˜a|h+⊢)⍟(h<|)¨b ;
+  # Not correctly rounded but probably okay
+  b𝕊a: a Sub b Mul (Floor a Div b)
+}
+
 _repr ⇐ { len‿b _𝕣:
   ! ⌊⊸= 2⋆⁼b # Need division by b to be exact
   {c←0 ⋄ {𝕩+↩c⋄c↩⌊𝕩÷b⋄b|𝕩}¨𝕩} ·+´ b|⌊∘÷⟜b⍟(↕len)¨

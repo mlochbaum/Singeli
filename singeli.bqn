@@ -87,7 +87,7 @@ numbers ← {kname⇐"number"
     E←f.To 2⋆From
     pr‿val ← <˘⍉∘‿2⥊ ⟨
       ⊢        ,⟨"neg",NN◶⟨-,W∘f.Neg○Unwrap⟩⟩‿⟨"not",¬∘B⟩
-      {W∘𝕏○P}  ,⟨"add"‿f.Add, "sub"‿f.Sub, "mul"‿f.Mul, "div"‿f.Div, "mod"‿(!∘"modulus unimplemented")⟩
+      {W∘𝕏○P}  ,⟨"add"‿f.Add, "sub"‿f.Sub, "mul"‿f.Mul, "div"‿f.Div, "mod"‿f.Mod⟩
       {W P⊸𝕏⟜E},⟨"shl", f.Mul⟩‿⟨"shr", f.Floor f.Div⟩
       {𝕏○B}    ,⟨ "and"‿∧, "or"‿∨, "xor"‿≠ ⟩
     ⟩
