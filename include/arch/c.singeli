@@ -3,18 +3,25 @@ def ar_promote{fn} = {
   def fn{a,b:T & match{'number',kind{a}}} = fn{cast{T,a} , b}
 }
 def ar_arith{fn, op} = {
-  def fn{a:T,b:T} = emit{T, op, a, b}
+  def fn{a:T,b:T & match{'primitive',typekind{T}}} = emit{T, op, a, b}
   ar_promote{fn}
 }
 def ar_compare{fn, op} = {
-  def fn{a:T,b:T} = emit{u1, op, a, b}
+  def pk{T} = {
+    def k=typekind{T}
+    if (match{'primitive',k} or match{'pointer',k}) 1; else 0
+  }
+  def fn{a:T,b:T & pk{T}} = emit{u1, op, a, b}
   ar_promote{fn}
 }
 
 def ar_isptr{T} = match{'pointer',typekind{T}}
 def __pnt{a:T & ar_isptr{T}} = load{a,0}
 
-def ar_arith1{fn, op} = { def fn{a:T} = emit{T, op, a}; fn }
+def ar_arith1{fn, op} = {
+  def fn{a:T & match{'primitive',typekind{T}}} = emit{T, op, a}
+  fn
+}
 def __neg = ar_arith1{__neg, '-'}
 
 def __add = ar_arith{__add, 'op +'}
