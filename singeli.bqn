@@ -646,6 +646,12 @@ builtins ← {
     (m!"symbol"≡Kind)¨ 𝕩
     symbols.New ∾ Show¨𝕩
   }
+  Slice ← {
+    "slice: one or two slicing values expected"!(2⊸≤∧≤⟜3)≠𝕩
+    s←¬=l←⊑𝕩
+    "slice: first argument must be a tuple or symbol"!s◶⟨1,"symbol"≡Kind⟩𝕩
+    l Show⍟s↩ ⋄ i←l≠⊸(0⌈⊣⌊+⍟(0⊸>)¨)numbers.From¨1↓𝕩 ⋄ symbols.New⍟s (⊑i)↓(1↓i)↑´˜l
+  }
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
     ⍉> ⟨
@@ -657,7 +663,8 @@ builtins ← {
       ⟨"type",TypeOf∘⊑⟩, ⟨"kind",symbols.New Kind∘⊑⟩
       ⟨"typekind",symbols.New types.TypeKind∘⊑⟩
       ⟨"load",Load⟩, ⟨"store",¯1⊸(⊑Store↓)⟩
-      ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑´⟩, ⟨"tuplen",≠∘⊑⟩, ⟨"merge",Merge⟩
+      ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑´⟩, ⟨"tuplen",≠∘⊑⟩
+      ⟨"merge",Merge⟩, ⟨"slice",Slice⟩
       ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓⟩, ⟨"apply",{𝕎𝕩}´⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓⟩
     ⟩
     numbers.builtins
