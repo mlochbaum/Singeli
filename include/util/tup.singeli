@@ -1,0 +1,91 @@
+# Tuple utilities
+
+# Local utils
+def tup_n{x} = match{'number',kind{x}}
+def tup_sl{l, start, len} = slice{l, start, __add{start,len}}
+
+# Tuple is empty
+def empty{tup} = __eq{0, tuplen{tup}}
+
+# Constant-time evaluation returning a list
+def collect{vars,begin,end,block & __le{begin,end}} = {
+  def c{i,l} = {
+    def r = exec{i, vars, block}
+    merge{tup{r}, c{__add{i,1}, l}}
+  }
+  def c{l,l} = tup{}
+  c{begin,end}
+}
+
+# Integers [0,n)
+def iota{n & tup_n{n}} = @collect (i to n) i
+
+# All indices into tuple t
+def inds{t} = iota{tuplen{t}}
+
+# Tuple of n copies of v
+def copy{n, v & tup_n{n}} = @collect (n) v
+
+# Merge a tuple of tuples
+def join{l} = apply{merge,l}
+
+# Shift l into r, retaining length of r, or vice-versa
+def shiftright{l, r} = slice{merge{l, r}, 0, tuplen{r}}
+def shiftleft {l, r} = slice{merge{l, r}, __neg{tuplen{l}}}
+
+# Reversed tuple
+def reverse{t} = {
+  def n = tuplen{t}
+  @collect(i to n) tupsel{__sub{__sub{n,1},i}, t}
+}
+
+# Tuple of length n made from t repeated cyclically
+def cycle{n, t & tup_n{n}} = {
+  def l = tuplen{t}
+  def m = __mod{n, l}; def e = slice{t, 0, m}
+  if (__eq{m,n}) e
+  else join{merge{copy{__div{__sub{n,m},l}, t}, tup{e}}}
+}
+
+# Split into groups of length n, possibly less for the last
+def split{n, list & tup_n{n}} = {
+  def l = tuplen{list}
+  def d = __div{__add{l, __mod{__neg{l},n}}, n}
+  @collect (i to d) tup_sl{list, __mul{i, n}, n}
+}
+def split{n, list & match{'tuple',kind{n}}} = {
+  def start = shiftright{0, scan{__add,n}}
+  each{bind{tup_sl, list}, start, n}
+}
+
+# Transpose tuple of tuples, assuming each has the same length
+def flip{tup} = {
+  def is = inds{tupsel{0,tup}}
+  each{{i} => each{bind{tupsel, i}, tup}, is}
+}
+
+# Left fold, with or without initial element
+def fold{fn, init, list} = {
+  if (empty{list}) init
+  else fold{fn, fn{init, tupsel{0,list}}, slice{list,1}}
+}
+def fold{fn, list} = fold{fn, tupsel{0,list}, slice{list,1}}
+
+# Inclusive left scan
+def scan{fn, init, list} = tup_scan_sub{fn, {e} => fn{init, e}, list}
+def scan{fn, list}       = tup_scan_sub{fn, {e} => e, list}
+def tup_scan_sub{fn, get, list} = {
+  if (empty{list}) list
+  else {
+    def r = get{tupsel{0,list}}
+    merge{tup{r}, scan{fn, r, slice{list,1}}}
+  }
+}
+
+# Copy list elements based on list, constant, or generator (like filter)
+def replicate{reps, list} = join{each{copy, reps, list}}
+def replicate{r, list & tup_n{r}} = join{each{bind{copy, r}, list}}
+def replicate{f, list & match{'generator',kind{f}}} = replicate{each{f,list}, list}
+
+# For boolean i, return indices of 1s
+def indices{i} = replicate{i, iota{tuplen{i}}}
