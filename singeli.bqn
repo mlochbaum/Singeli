@@ -83,13 +83,13 @@ numbers ← {kname⇐"number"
     "Constant doesn't fit"!n InRange -⟜(1⊸⊑÷2˙)⍟(q='i') ⟨0,2⋆l⟩
   }
   builtins ⇐ {
-    W←Wrap ⋄ P←Promote ⋄ B←f.Bits
+    W←Wrap ⋄ P←{𝕊:Promote𝕩 ; 𝕊⁼:W𝕩} ⋄ B←f.Bits∘P
     E←f.To 2⋆From
     pr‿val ← <˘⍉∘‿2⥊ ⟨
       ⊢        ,⟨"neg",NN◶⟨-,W∘f.Neg○Unwrap⟩⟩‿⟨"not",¬GetBool⟩
-      {W∘𝕏○P}  ,⟨"add"‿f.Add, "sub"‿f.Sub, "mul"‿f.Mul, "div"‿f.Div, "mod"‿f.Mod⟩
+      {𝕏⌾P}    ,⟨"add"‿f.Add, "sub"‿f.Sub, "mul"‿f.Mul, "div"‿f.Div, "mod"‿f.Mod⟩
       {W P⊸𝕏⟜E},⟨"shl", f.Mul⟩‿⟨"shr", f.Floor f.Div⟩
-      {W 𝕏⌾B○P},⟨ "and"‿∧, "or"‿∨, "xor"‿≠ ⟩
+      {𝕏⌾B}    ,⟨ "and"‿∧, "or"‿∨, "xor"‿≠ ⟩
     ⟩
     arg ← 1‿3/{𝕏⊑}‿{𝕏´}
     ⍉>∾ (arg {𝕎∘𝕏}¨ {{𝕏⚇0}∘𝕏⚇0}¨ pr) {⟨"__"⊸∾,𝕎⟩⊸({𝕎𝕩}¨)¨𝕩}¨ val
