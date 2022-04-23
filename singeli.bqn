@@ -43,6 +43,11 @@ Source ← {
 DispSource ← {𝕎𝕩}´
 Err ← { (𝕩≠⊸⥊•Out‿DispSource) {𝕎𝕩}¨ 𝕩 ⋄ •Exit 1 }
 
+# Parameter checks for builtins (_p1 and _p2 to use BQN monad/dyad)
+_e1 ← {𝔽⊣"Expected one parameter" !1=≠} ⋄ _p1←{𝔽⊑_e1}
+_e2 ← {𝔽⊣"Expected two parameters"!2=≠} ⋄ _p2←{𝔽´_e2}
+_v1 ← {𝔽⊣"Expected at least one parameter"!1≤≠}
+
 numbers ← {kname⇐"number"
   f ← •Import "float2.bqn"
   NN ← 1≠•Type  # Not native number
@@ -91,7 +96,7 @@ numbers ← {kname⇐"number"
       {W P⊸𝕏⟜E},⟨"shl", f.Mul⟩‿⟨"shr", f.Floor f.Div⟩
       {𝕏⌾B}    ,⟨ "and"‿∧, "or"‿∨, "xor"‿≠ ⟩
     ⟩
-    arg ← 1‿3/{𝕏⊑}‿{𝕏´}
+    arg ← 1‿3/{𝕏_p1}‿{𝕏_p2}
     ⍉>∾ (arg {𝕎∘𝕏}¨ {{𝕏⚇0}∘𝕏⚇0}¨ pr) {⟨"__"⊸∾,𝕎⟩⊸({𝕎𝕩}¨)¨𝕩}¨ val
   }
   _cmp ⇐ {(f.Cmp 𝔽 0˙)○Promote}
@@ -492,7 +497,7 @@ types ← {kname⇐"type"
   ⟩_cc
 
   IncWidth ← {
-    "First argument of promote must be a type or number"!"number"≡Kind𝕨
+    "First parameter of promote must be a type or number"!"number"≡Kind𝕨
     n←numbers.From 𝕨
     t←TypeOf 𝕩
     (1 + n ×∘- Width t)◶⟨
@@ -512,12 +517,12 @@ types ← {kname⇐"type"
   PrimType ← "Invalid primitive type specification"_getPrim GetQual⌾⊑
 
   builtins ⇐ ∾˘⍉∘‿2⥊⟨
-    ⟨"cast","promote"             ,"reinterpret"⟩
-    ⟨ Cast´,Is∘⊣◶IncWidth‿Promote´, Reinterpret´⟩
-    ⟨"eltype","vcount","width",          "__vec","__pnt"⟩
-    ⟨ VType⊑ , VCount⊑, Width⊑ ,numbers.From⊸Vec´,   Ptr⊑⟩
-    "primtype"‿"quality"‿"isfloat"‿"issigned"‿"isint"
-    ⟨PrimType , Quality⊑⟩∾{𝕩_isQual⊑}¨⟨'f'⊸≡ ⋄ 'i'⊸≡ ⋄ ⊑∘∊⟜"iu"⟩
+    ⟨"cast"   ,             "promote"   ,"reinterpret"⟩
+    ⟨ Cast _p2,Is∘⊣◶IncWidth‿Promote _p2, Reinterpret _p2⟩
+    ⟨"eltype"   ,"vcount"   ,"width"   ,          "__vec"   ,"__pnt"⟩
+    ⟨ VType _p1 , VCount _p1, Width _p1,numbers.From⊸Vec _p2,   Ptr _p1⟩
+    ⟨"primtype"   ,"quality","isfloat","issigned","isint"⟩
+    ⟨ PrimType _e2, Quality _p1⟩∾{𝕩_isQual _p1}¨⟨'f'⊸≡ ⋄ 'i'⊸≡ ⋄ ⊑∘∊⟜"iu"⟩
   ⟩
 }
 
@@ -642,14 +647,14 @@ builtins ← {
   Fmt ← 2↓·∾·", "⊸∾¨(Show∾TypeSuff)⎊("("∾")"∾˜Kind⎊"unknown")¨
   Merge ← {
     0<⌈´=¨𝕩 ? ∾𝕩 ;
-    m←"merge: arguments must include at least one tuple or all be symbols"
+    m←"merge: parameters must include at least one tuple or all be symbols"
     (m!"symbol"≡Kind)¨ 𝕩
     symbols.New ∾ Show¨𝕩
   }
   Slice ← {
     "slice: one or two slicing values expected"!(2⊸≤∧≤⟜3)≠𝕩
     s←¬=l←⊑𝕩
-    "slice: first argument must be a tuple or symbol"!s◶⟨1,"symbol"≡Kind⟩𝕩
+    "slice: first parameter must be a tuple or symbol"!s◶⟨1,"symbol"≡Kind⟩𝕩
     l Show⍟s↩ ⋄ i←l≠⊸(0⌈⊣⌊+⍟(0⊸>)¨)numbers.From¨1↓𝕩 ⋄ symbols.New⍟s (⊑i)↓(1↓i)↑´˜l
   }
   names‿values ⇐ <˘∾≍⟨
@@ -658,14 +663,14 @@ builtins ← {
       ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"}⊣•Out∘Fmt⟩
       ⟨"call",functions.Call⟩, ⟨"emit",functions.Emit⟩,
       ⟨"return",functions.Return⟩, ⟨"exec",blocks.Exec⟩
-      ⟨"match",Match´⟩
-      ⟨"hastype",IsTyped∘⊑ _and_ ({𝕩.type}⊸Match´)⟩
-      ⟨"type",TypeOf∘⊑⟩, ⟨"kind",symbols.New Kind∘⊑⟩
-      ⟨"typekind",symbols.New types.TypeKind∘⊑⟩
-      ⟨"load",Load⟩, ⟨"store",¯1⊸(⊑Store↓)⟩
-      ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑´⟩, ⟨"tuplen",≠∘⊑⟩
+      ⟨"match",Match _p2⟩
+      ⟨"hastype",IsTyped∘⊑ _and_ ({𝕩.type}⊸Match´)_e2⟩
+      ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
+      ⟨"typekind",symbols.New types.TypeKind _p1⟩
+      ⟨"load",Load⟩, ⟨"store",¯1⊸(⊑Store↓)_v1⟩
+      ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑_p2⟩, ⟨"tuplen",≠_p1⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩
-      ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓⟩, ⟨"apply",{𝕎𝕩}´⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓⟩
+      ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓_v1⟩, ⟨"apply",{𝕎𝕩}_p2⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓_v1⟩
     ⟩
     numbers.builtins
     types.builtins
