@@ -62,6 +62,4 @@ def __not{a:u1} = emit{u1, '!', a}
 def __shl = ar_sh{__shl, 'op <<'}
 def __shr = ar_sh{__shr, 'op >>'}
 
-def cast_p{T, x} = emit{T, '(void*)', x}
 def cast_i{T, x} = emit{T, '', x}
-def assert{X} = emit{void, 'si_assert', X}
