@@ -1,8 +1,8 @@
 # Singeli
 
-Status: Singeli is now nice to use when everything works: parse and stack traces for errors, and the interactive [Singeli playground](https://github.com/dzaima/singeliPlayground) tool. I'm still fixing lots of broken error reports and some language bugs as dzaima and I spend more time programming with it. Currently it's used for some SIMD functionality in [CBQN](https://github.com/dzaima/CBQN), where it's enabled if built with `$ make o3n-singeli`.
-
 Singeli is a domain-specific language for building [SIMD](https://en.wikipedia.org/wiki/SIMD) algorithms with flexible abstractions and control over every instruction emitted. It's implemented in [BQN](https://mlochbaum.github.io/BQN), with a frontend that emits IR and a backend that converts it to C. Other backends like LLVM or machine code are possible—it should be easy to support other CPU architectures but there are no plans to target GPUs.
+
+I'd call it usable at this point, although there will surely be some implementation bugs, mostly in error reporting. As for debugging your own code, there are parse and stack traces for compilation errors, and `show{}` prints whatever you want at compile time. Runtime errors are harder, as the emitted C code is opaque so you're basically stuck emitting `printf()` calls to see anything. Prototyping with the interactive [Singeli playground](https://github.com/dzaima/singeliPlayground) tool is very helpful in avoiding the need to do this.
 
 To compile input.singeli:
 
@@ -10,7 +10,9 @@ To compile input.singeli:
 $ singeli input.singeli [-o output.c]
 ```
 
-For options see `$ singeli -h`. To run `./singeli` as an executable, ensure that CBQN is installed as `bqn` in your executable path, or call as `/path/to/bqn singeli …`.
+For options see `$ singeli -h`. To run `./singeli` as an executable, ensure that [CBQN](https://github.com/dzaima/CBQN) is installed as `bqn` in your executable path, or call as `/path/to/bqn singeli …`.
+
+Singeli [is used](https://github.com/dzaima/CBQN/tree/master/src/singeli/src) for CBQN's SIMD primitive implementations when built with `$ make o3n-singeli` (requires AVX2). It's also the implementation language for [SingeliSort](https://github.com/mlochbaum/SingeliSort).
 
 Early design discussion for Singeli took place at [topanswers.xyz](https://topanswers.xyz/apl?q=1623); now it's in the [BQN forum](https://mlochbaum.github.io/BQN/community/forums.html).
 
