@@ -32,7 +32,7 @@ def __add = ar_arith{__add, 'op +'}
 def __sub = ar_arith{__sub, 'op -'}
 def __mul = ar_arith{__mul, 'op *'}
 def __div = ar_arith{__div, 'op /'}
-def __mod = ar_arith{__div, 'op %'}
+def __mod = ar_arith{__mod, 'op %'}
 
 def ar_ptrwidth = width{__pnt{void}}
 def ar_isize = primtype{'i',ar_ptrwidth}
