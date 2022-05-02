@@ -1,0 +1,9 @@
+fn(a:u1) : u8 = {
+  def w = setlabel{}
+  def l = makelabel{}
+  if (a) goto{l}
+  return{5}
+  goto{w}
+  setlabel{l}
+  6
+}

@@ -115,6 +115,7 @@ A generator is one kind of value—that is, something that's first-class at comp
 | constant  | A typed value known at compile time
 | register  | A typed value, unknown until runtime
 | function  | Takes and returns typed values at runtime
+| label     | Target for `goto{}`
 | block     | Used for `@for` loops
 
 The simplest are discussed in this section, and others have dedicated sections below.
@@ -124,6 +125,8 @@ Numbers are floating-point, with enough precision to represent both double-preci
 Symbols are Unicode strings, written as a literal using single quotes: `'symbol'`. They're used with the `emit{}` generator to emit instructions, and in export statements to identify the function name that should be exposed.
 
 Constants consist of a value and a type. They appear when a value such as a number is cast, for example by creating a variable `v:f64 = 6` or with an explicit `cast{f64, 6}`. For programming, constants work like registers (variables), so there's never any need to consider them specifically. Just cast a compile-time value if you need it to have a particular type—say, when calling a function that could take several different types.
+
+Labels are for `goto{}` and related builtins described [here](#program).
 
 ## Operators
 
@@ -299,6 +302,10 @@ The following generators are pre-defined in any program. They're placed in a par
 | `exec{ind,vars,block}` | Execute `block` on pointers `vars` at index `i`
 | `load{ptr,ind}`        | Return value at `ptr+ind`
 | `store{ptr,ind,val}`   | Store `val` at `ptr+ind`
+| `makelabel{}`          | Create a label value
+| `setlabel{label}`      | Set label to the current position
+| `setlabel{}`           | Short for `setlabel{makelabel{}}`
+| `goto{label}`          | Jump to the position set for a label
 
 ### Values
 

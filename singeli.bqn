@@ -549,7 +549,9 @@ constants ← {kname⇐"constant"
   }
 }
 
-NewLabel  ← { shows⇐"l"∾•Repr𝕩 }
+labels ← {kname⇐"label"
+  New⇐{ kind⇐kname ⋄ shows⇐"l"∾•Repr𝕩 ⋄ Matches⇐≡ }
+}
 symbols ← {kname⇐"symbol"
   M←(kname≡Kind∘⊢)_and_(≡○Show)
   New⇐{ kind⇐kname ⋄ shows⇐𝕩 ⋄ Matches⇐M }
@@ -561,7 +563,7 @@ functions ← {kname⇐"function"
     kind⇐kname ⋄ shows⇐"f"∾•Repr id⇐𝕩 ⋄ Matches⇐≡ ⋄ type⇐@
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType⇐@
     Next⇐{ 𝕩 registers.New handle+↩1 }
-    NextLabel⇐{𝕤⋄ NewLabel label+↩1 }
+    NextLabel⇐{𝕤⋄ labels.New label+↩1 }
     NextArg⇐{ args∾↩𝕩 ⋄ Next 𝕩 }
     ⟨Push,Arr⟩←MakeStack@
     Instrs⇐Arr
@@ -611,10 +613,15 @@ functions ← {kname⇐"function"
     t ← f.rType
     t Append ⟨"call",t,f⟩ ∾ ≠⊸∾ 1↓𝕩
   }
-  _instr ← { Append (𝕨𝔽𝕩)<⊸∾𝕨⋈𝕩 }
+  _instr ← { Append (𝕨𝔽𝕩)<⊸∾𝕨⋈𝕩 ⋄ 𝕩 }
   SetLabel ⇐ "lbl"_instr
   Goto     ⇐ "goto"⊘"gotoT"_instr
   GotoF    ⇐ "gotoF"_instr
+  builtins ⇐ ⍉> ⟨
+    ⟨"call",Call⟩, ⟨"emit",Emit⟩, ⟨"return",Return⟩
+    ⟨"makelabel",Label⟩, ⟨"goto",Goto _p1⟩
+    ⟨"setlabel",SetLabel _p1 ⋈∘Label⍟(0=≠)⟩
+  ⟩
 }
 
 blocks ← {kname⇐"block"
@@ -661,8 +668,7 @@ builtins ← {
     Show¨⊸≍ types.primTypes
     ⍉> ⟨
       ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"}⊣•Out∘Fmt⟩
-      ⟨"call",functions.Call⟩, ⟨"emit",functions.Emit⟩,
-      ⟨"return",functions.Return⟩, ⟨"exec",blocks.Exec⟩
+      ⟨"exec",blocks.Exec⟩
       ⟨"match",Match _p2⟩
       ⟨"hastype",IsTyped∘⊑ _and_ ({𝕩.type}⊸Match´)_e2⟩
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
@@ -672,6 +678,7 @@ builtins ← {
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩
       ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓_v1⟩, ⟨"apply",{𝕎𝕩}_p2⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓_v1⟩
     ⟩
+    functions.builtins
     numbers.builtins
     types.builtins
     >⟨
