@@ -311,9 +311,13 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Include ← c.include _node_ ("include"‿Symbol _seq)
 
   Program ← c.body _node_ {𝕤
-    Line ← "def"‿"oper"‿"include"⊸⊐⌾<◶⟨
+    LLine ← "def"‿"oper"‿"include"⊸⊐⌾<◶⟨
       Define, OpDef, Include, ('''=⊑)◶DefFun‿Export
     ⟩∘Peek
+    Line ← {𝕤
+      n ← ¬ Try "local"
+      {𝕩.NonLocal@⋄𝕩}⍟n LLine@
+    }
     Seps@
     While ⟨Rem, Seps⊢Line, 0⟩
   }
@@ -705,6 +709,7 @@ scopes ← {
   null←{Get⇐{Err⟨"Undefined name: "∾𝕩,𝕨⟩} ⋄ GetLam⇐noLambda˙}
   New⇐{
     p←@¨n←𝕨⊣⟨⟩ ⋄ Names⇐{𝕤⋄n}
+    parent ⇐ 𝕩  # For nonlocal
     Sel ←{𝕩⊑env.Vars}
     Make←{c←≠n⋄p‿n∾⟜<¨↩𝕩⋄c}
     Dup ←{Err⟨"Duplicate definition: ",⊑𝕩,"Previously defined here: ",𝕨⊑p⟩}
@@ -929,38 +934,42 @@ nodes ← {
     ⟨name,value⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
+    N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
     v0←v←@ ⋄ Scope ⇐ {
       value.Scope 𝕩
-      v0‿v ↩ pos ("lambda"≡value.node)◶⟨ @⋈𝕩.Add , 𝕩.AddLam ⟩ name
+      s ← N 𝕩
+      v0‿v ↩ pos ("lambda"≡value.node)◶⟨ @⋈s.Add , s.AddLam ⟩ name
     }
     Eval⇐{
       f←"function"≡value.node  # Set value in Eval for function recursion
-      u←V𝕩 ⋄ u.Set program._trace_ pos⍟(¬f) (f◶⟨V0,u˙⟩𝕩) value.Eval 𝕩
+      e ← N 𝕩
+      u←V e ⋄ u.Set program._trace_ pos⍟(¬f) (f◶⟨V0,u˙⟩e) value.Eval 𝕩
     }
   }
   OpDef ⇐ {
     ⟨type,op,fn,prec⟩←𝕩 ⋄ pos←𝕨
     Visit←{𝕤⋄⟨type,op,fn,•Repr prec⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "opdef"‿visit
+    NonLocal ⇐ ⊢
     Oper⇐{𝕤⋄ pos operator.Add type‿op‿fn‿prec}
   }
   Export ⇐ {
     ⟨name,value⟩ ← {Show 𝕩.Eval@}¨⌾⊑ 𝕩 ⋄ pos←𝕨
     Visit←{⟨name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper,Scope⟩⇐d←Defaults "export"‿visit
+    NonLocal ⇐ ⊢
     Eval ⇐ { program.Export program._trace_ pos¨⟜<´ d.Eval 𝕩 }
   }
   Include ⇐ {
-    {𝕩.NoScope@⋄𝕩} 𝕨 files.Include Show (⊑𝕩).Eval@
+    𝕨 files.Include Show (⊑𝕩).Eval@
   }
   Body ⇐ {
     statements←𝕩
     Visit←{⟨𝕏¨statements⟩}
     ⟨node,Dump,Disp,Oper⟩⇐d←Defaults "body"‿visit
-    sc←@ ⋄ Scope⇐{ Visit o.Scope sc ↩ scopes.New 𝕩 }
-    Eval⇐{ ¯1⊑⊑d.Eval (sc.Names@) env.New 𝕩 }
-    # Hack for include statements
-    NoScope⇐{𝕤⋄ Scope↩d.Scope ⋄ Eval↩¯1⊑·⊑d.Eval }
+    N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
+    sc←@ ⋄ Scope⇐{ Visit o.Scope sc ↩ scopes.New N 𝕩 }
+    Eval⇐{ ¯1⊑⊑d.Eval (sc.Names@) env.New N 𝕩 }
   }
 
   LazyLabel ← {𝕤
@@ -1086,8 +1095,8 @@ ast ← {
   Compile ⇐ {
     t ← 𝕨 files.Build 𝕩
     t.Oper operator._with 0
-    t.Scope scopes._run baseScope
-    t.Eval program._with baseEnv
+    t.Scope scopes._run sc ← scopes.New baseScope
+    t.Eval program._with (sc.Names@) env.New baseEnv
   }
 }
 
