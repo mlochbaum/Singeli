@@ -726,12 +726,11 @@ env ← {
   New  ⇐{ (var.New∘@¨ 𝕨) Make 𝕩 }
   Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
   Block⇐{⟨ni,Load‿Store,ind‿ptrs⟩ 𝕊 par:
-    pi ← ptrs ⋈¨ <ind
-    pv ← registers.Claim∘Load¨ pi
+    Cl ← registers.Claim ⊣ "@for load: result must consist of registers"!"register"≡Kind
+    pv ← Cl⚇0∘Load∘⋈⟜ind¨ ptrs
     vars‿parent ⇐ (var.Fixed¨(ind¨↕ni)∾pv) Make par
     Stores ⇐ {𝕤
-      m←{(𝕩.Get@).mut}¨v←ni↓vars
-      v var.Get⊸(Store∾⟜<˜)¨○(m⊸/) pi
+      ptrs {Store𝕨‿ind‿𝕩}⍟{𝕩.mut}⚇0⟜var.Get¨ ni↓vars
     }
   }
 }

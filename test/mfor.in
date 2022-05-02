@@ -1,0 +1,9 @@
+fn(x:__pnt{i32}, y:__pnt{u8}) : void = {
+  def for{vars,begin,end,block} = {
+    exec{0, vars,block}
+  }
+  def istup{t} = match{'tuple', kind{t}}
+  def load{p, i & istup{p}} = each{{p}=>load{p,i}, p}
+  def store{p, i, v & istup{p}} = each{{p,v}=>store{p,i,v}, p,v}
+  @for (a in tup{x,y} over 3) tupsel{1,a} = 2
+}
