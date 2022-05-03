@@ -341,40 +341,42 @@ operator ← {
     Mis ← {𝕊: Err "Missing right operand"‿(¯1⊑val).pos }
     E 1
   }
-  New ← {𝕤
-    null ⇐ left ⇐ @
-    bind ⇐ ¯∞
-    R ⇐ ⊢
+  Run ⇐ {𝕨𝕊⟨op,params⟩: null‿left‿bind⇐op ⋄ R⇐𝕨 nodes.Run op.R⋈params˙}
+  Compose ← {pre𝕊in: ⟨null⟩⇐pre ⋄ left‿bind⇐in ⋄ R⇐⊢ }
+  nil ⇐ { null⇐left⇐@ ⋄ bind⇐¯∞ ⋄ R⇐⊢ }
+
+  Tab ⇐ { par 𝕊 new:
+    p←n←o←⟨⟩  # pos, name, output
+    Ind ← { n⊸⊐⌾<𝕩 }
+    Add ⇐ {
+      i ← Ind 1⊑𝕩
+      i<≠n ? Err⟨"Duplicate operator definition:",⊑𝕩,"Previously defined here:",i⊑p⟩ ;
+      p‿n‿o ∾⟜<¨↩ r←New⌾(2⊸⊑)𝕩 ⋄ 2⊑r
+    }
+    Get ⇐ { i←Ind𝕩 ⋄ (i=≠n)◶⟨i⊑o˙,par.Get⟩ 𝕩 }
+  }
+  NewScope ⇐ {
+    parent ⇐ 𝕩
     Op ← {𝕊val‿p‿c‿a:
       V ⇐ nodes.Word∘val
       T ⇐ (p C {𝕩.bind}){{⊣AC𝕏}⍟a𝕗}
     }
-    AddNull ⇐ {𝕨𝕊⟨value, prec⟩: AddNull↩𝕨_dup
-      null ↩ Op ⟨value, prec, <, 0⟩
-    }
-    AddLeft ⇐ {𝕨𝕊⟨value, prec, assoc⟩: AddLeft↩𝕨_dup
-      bind ↩ prec
-      left ↩ Op ⟨value, prec, ("lrn"⊸⊐⌾<assoc)⊑⟨<,≤,<-=⟩, 'n'=assoc⟩
-    }
-    _dup ← { Err "Duplicate operator definition:"‿𝕨‿"Previously defined here:"‿𝕗 }
     AC ← 𝕩{ Err ("Associativity for operator "∾𝕗∾" must be disambiguated")‿𝕨.value.pos }⍟(0⊸>)
-  }
-  Run ⇐ {𝕨𝕊⟨op,params⟩: null‿left‿bind⇐op ⋄ R⇐𝕨 nodes.Run op.R⋈params˙}
-  nil ⇐ New @
-
-  Lookup⇐Add⇐!∘0
-  _with ⇐ {
-    n←⟨⟩ ⋄ o←⟨⟩
-    _get ← {(n⊸⊐⌾<𝕩) =⟜(≠n)◶{𝕨⊑o}‿𝔽 𝕩}
-    Lookup ↩ {𝕨?@≢c←nodes.CondOp𝕩?c; nil _get𝕩}
-    Define ← {n∾↩<𝕩 ⋄ o∾↩<r←New𝕩 ⋄ r} _get
-    Add ↩ {𝕨𝕊type‿name‿value‿prec:
-      p ← Define name
-      (type≠'p')◶⟨𝕨p.AddNull⊢, 𝕨p.AddLeft∾⟜type⟩ ⟨value,prec⟩
+    tabs ⇐ nul‿lef ← parent.tabs Tab¨ ⟨
+      {𝕨𝕊⟨value, prec⟩: null ⇐ Op ⟨value, prec, <, 0⟩ }
+      {𝕨𝕊⟨value, prec, assoc⟩:
+        bind ⇐ prec
+        left ⇐ Op ⟨value, prec, ("lrn"⊸⊐⌾<assoc)⊑⟨<,≤,<-=⟩, 'n'=assoc⟩
+      }
+    ⟩
+    Add ⇐ {𝕨𝕊type‿name‿value‿prec:
+      l←type≠'p'
+      (l⊑tabs).Add ⟨𝕨, name, value‿prec∾l⥊type⟩
     }
-    𝕨𝔽𝕩
-    Lookup↩Add↩!∘0
+    Lookup ⇐ nul.Get Compose lef.Get
   }
+  nilScope ⇐ { tabs ⇐ 2⥊{Get⇐nil˙} } # Lookup ⇐ nil˙
+  CondScope ⇐ { 𝕊 par: Lookup ⇐ {@≢c←nodes.CondOp𝕩?c; par.Lookup 𝕩} }
 }
 
 
@@ -715,7 +717,7 @@ scopes ← {
     parent ⇐ 𝕩  # For nonlocal
     Sel ←{𝕩⊑env.Vars}
     Make←{c←≠n⋄p‿n∾⟜<¨↩𝕩⋄c}
-    Dup ←{Err⟨"Duplicate definition: ",⊑𝕩,"Previously defined here: ",𝕨⊑p⟩}
+    Dup ←{Err⟨"Duplicate definition:",⊑𝕩,"Previously defined here:",𝕨⊑p⟩}
     Par ←{𝕏∘env.Parent}
     _find ← { (n⊸⊐⌾<𝕩) =⟜(≠n)◶𝕗 𝕨‿𝕩 }
     Get ⇐ ⟨Sel⊣, Par 𝕩.Get´∘⊢⟩ _find
@@ -797,7 +799,7 @@ nodes ← {
     Verify ⇐ {𝕩.node}
     Dump ⇐ {𝕩.Dump@}
     Disp ⇐ {𝕩.Disp@}
-    Oper ⇐ {𝕩.Oper 0}
+    Oper ⇐ {𝕊op :{𝕩.Oper  op }}
     Scope⇐ {𝕊sc :{𝕩.Scope sc }}
     Eval ⇐ {𝕊env:{𝕩.Eval  env}}
   }
@@ -806,9 +808,9 @@ nodes ← {
     Visit o.verify
     Dump ⇐ {𝕤⋄⟨node,Visit o.dump⟩}
     Disp ⇐ {𝕤⋄node <⊸∾ "  "⊸∾¨ ∾∾ @ ⥊∘<∘⊢⍟((2×≡)+≡⟜@)¨○Visit o.disp}
-    Oper ⇐ {𝕤⋄Visit o.oper ⋄ operator.nil}
+    Oper ⇐ {Visit o.Oper  𝕩 ⋄ operator.nil}
     Scope⇐ {Visit o.Scope 𝕩⋄@}
-    Eval ⇐ {Visit o.Eval 𝕩}
+    Eval ⇐ {Visit o.Eval  𝕩}
   }
 
   # Node types
@@ -816,7 +818,7 @@ nodes ← {
     name⇐𝕩 ⋄ pos⇐𝕨⊣@
     ⟨node,Dump⟩⇐Defaults "ident"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
-    Oper⇐{𝕩 operator.Lookup name}
+    Oper⇐{𝕩.Lookup name}
     Eval⇐!∘0 ⋄ Scope⇐{Eval↩var.Get∘(pos 𝕩.Get name)}
   }
   _value ← {
@@ -833,7 +835,7 @@ nodes ← {
     ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨
     Visit←{⟨𝕏caller,𝕏¨params⟩}
     ⟨node,Dump,Disp,Scope⟩⇐d←Defaults "run"‿visit
-    Oper ⇐ {𝕤⋄ pos operator.Run ⟨⊑Visit o.oper,params⟩}
+    Oper ⇐ {𝕤⋄ pos operator.Run ⟨⊑Visit o.Oper 𝕩, params⟩}
     Eval ⇐ {𝕎 program._trace_ pos 𝕩}´ d.Eval
   }
   Call ⇐ { 𝕨 Run ⟨Ident"call" , <⊸∾´𝕩⟩ }
@@ -842,8 +844,8 @@ nodes ← {
     ToName⇐{𝕤⋄ (1=≠)◶@‿(("ident"≡{𝕩.node})◶@‿{𝕩.name}⊑) things }
     Visit←{⟨𝕏¨things⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "phrase"‿visit
-    Oper⇐{𝕊cond:
-      ⟨node⟩↩n ← {𝕩.Oper cond}¨⊸operator.Parse things
+    Oper⇐{
+      ⟨node⟩↩n ← (o.Oper 𝕩)¨⊸operator.Parse things
       Scope↩{𝕨n.Scope𝕩} ⋄ Eval↩{𝕨n.Eval𝕩} ⋄ Disp↩{𝕨n.Disp𝕩}
       operator.nil
     }
@@ -953,8 +955,8 @@ nodes ← {
     ⟨type,op,fn,prec⟩←𝕩 ⋄ pos←𝕨
     Visit←{𝕤⋄⟨type,op,fn,•Repr prec⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "opdef"‿visit
-    NonLocal ⇐ ⊢
-    Oper⇐{𝕤⋄ pos operator.Add type‿op‿fn‿prec}
+    N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
+    Oper⇐{pos (N𝕩).Add type‿op‿fn‿prec}
   }
   Export ⇐ {
     ⟨name,value⟩ ← {Show 𝕩.Eval@}¨⌾⊑ 𝕩 ⋄ pos←𝕨
@@ -969,9 +971,10 @@ nodes ← {
   Body ⇐ {
     statements←𝕩
     Visit←{⟨𝕏¨statements⟩}
-    ⟨node,Dump,Disp,Oper⟩⇐d←Defaults "body"‿visit
+    ⟨node,Dump,Disp⟩⇐d←Defaults "body"‿visit
     N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
-    sc←@ ⋄ Scope⇐{ Visit o.Scope sc ↩ scopes.New N 𝕩 }
+    Oper⇐{ d.Oper operator.NewScope N 𝕩 }
+    sc←@ ⋄ Scope⇐{ d.Scope sc ↩ scopes.New N 𝕩 }
     Eval⇐{ ¯1⊑⊑d.Eval (sc.Names@) env.New N 𝕩 }
   }
 
@@ -1014,7 +1017,7 @@ nodes ← {
     ⟨cond,then,else⟩←𝕩
     Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
     ⟨node,Dump,Disp,Scope⟩⇐Defaults "if"‿visit
-    Oper⇐{𝕊: cond.Oper 1 ⋄ {𝕏then⋄𝕏¨else}o.oper ⋄ operator.nil }
+    Oper ⇐ { cond.Oper operator.CondScope 𝕩 ⋄ {𝕏then⋄𝕏¨else}o.Oper 𝕩 ⋄ operator.nil }
     Eval ⇐ {
       lf ← LazyLabel@
       c ← cond CondEval ⟨0‿lf, e←𝕩⟩
@@ -1035,7 +1038,7 @@ nodes ← {
     ⟨testFirst,cond,stmt⟩←𝕩
     Visit←{⟨𝕏cond,𝕏stmt⟩}
     ⟨node,Dump,Disp,Scope⟩⇐Defaults "while"‿visit
-    Oper⇐{𝕊: cond.Oper 1 ⋄ o.Oper stmt ⋄ operator.nil }
+    Oper ⇐ { cond.Oper operator.CondScope 𝕩 ⋄ stmt.Oper 𝕩 ⋄ operator.nil }
     Eval ⇐ {
       functions.Goto¨ lc ← functions.Label¨↕testFirst
       functions.SetLabel lt ← functions.Label@
@@ -1097,7 +1100,7 @@ ast ← {
   Build ⇐ Parse∘Tokenize
   Compile ⇐ {
     t ← 𝕨 files.Build 𝕩
-    t.Oper operator._with 0
+    t.Oper operator.NewScope operator.nilScope
     t.Scope scopes._run sc ← scopes.New baseScope
     t.Eval program._with (sc.Names@) env.New baseEnv
   }
