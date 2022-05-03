@@ -315,8 +315,11 @@ Parse ← {𝕊 tokens‿ShowTrace:
       Define, OpDef, Include, ('''=⊑)◶DefFun‿Export
     ⟩∘Peek
     Line ← {𝕤
-      n ← ¬ Try "local"
-      {𝕩.NonLocal@⋄𝕩}⍟n LLine@
+      l ← Try "local"
+      {
+        l ? Try"{" ? c.body _node_ While ⟨¬Try∘"}"∘Seps, Line, 0⟩ ;
+        {𝕩.NonLocal@⋄𝕩}⍟(¬l) LLine@
+      }
     }
     Seps@
     While ⟨Rem, Seps⊢Line, 0⟩

@@ -1,31 +1,32 @@
-local def promote{fn} = {
-  def fn{a:T,b & match{'number',kind{b}}} = fn{a , cast{T,b}}
-  def fn{a,b:T & match{'number',kind{a}}} = fn{cast{T,a} , b}
-}
-local def arith{fn, op} = {
-  def fn{a:T,b:T & match{'primitive',typekind{T}}} = emit{T, op, a, b}
-  promote{fn}
-}
-local def sh{fn, op} = {
-  def fn{a:T,b:I & isint{T} & isint{I}} = emit{T, op, a, b}
-  promote{fn}
-}
-local def compare{fn, op} = {
-  def pk{T} = {
-    def k=typekind{T}
-    if (match{'primitive',k} or match{'pointer',k}) 1; else 0
+local {
+  def promote{fn} = {
+    def fn{a:T,b & match{'number',kind{b}}} = fn{a , cast{T,b}}
+    def fn{a,b:T & match{'number',kind{a}}} = fn{cast{T,a} , b}
   }
-  def fn{a:T,b:T & pk{T}} = emit{u1, op, a, b}
-  promote{fn}
+  def arith{fn, op} = {
+    def fn{a:T,b:T & match{'primitive',typekind{T}}} = emit{T, op, a, b}
+    promote{fn}
+  }
+  def arith1{fn, op} = {
+    def fn{a:T & match{'primitive',typekind{T}}} = emit{T, op, a}
+    fn
+  }
+  def sh{fn, op} = {
+    def fn{a:T,b:I & isint{T} & isint{I}} = emit{T, op, a, b}
+    promote{fn}
+  }
+  def compare{fn, op} = {
+    def pk{T} = {
+      def k=typekind{T}
+      if (match{'primitive',k} or match{'pointer',k}) 1; else 0
+    }
+    def fn{a:T,b:T & pk{T}} = emit{u1, op, a, b}
+    promote{fn}
+  }
+  def logic = arith
+  def logic1 = arith1
 }
 
-local def isptr{T} = match{'pointer',typekind{T}}
-def __pnt{a:T & isptr{T}} = load{a,0}
-
-local def arith1{fn, op} = {
-  def fn{a:T & match{'primitive',typekind{T}}} = emit{T, op, a}
-  fn
-}
 def __neg = arith1{__neg, '-'}
 
 def __add = arith{__add, 'op +'}
@@ -34,10 +35,15 @@ def __mul = arith{__mul, 'op *'}
 def __div = arith{__div, 'op /'}
 def __mod = arith{__mod, 'op %'}
 
-local def ptrwidth = width{__pnt{void}}
-local def isize = primtype{'i',ptrwidth}
-local def ptrdiff{a} = cast{isize, a}
-local def ptrdiff{a:T} = promote{ptrwidth, a}
+local {
+  def isptr{T} = match{'pointer',typekind{T}}
+  def ptrwidth = width{__pnt{void}}
+  def isize = primtype{'i',ptrwidth}
+  def ptrdiff{a} = cast{isize, a}
+  def ptrdiff{a:T} = promote{ptrwidth, a}
+}
+def __pnt{a:T & isptr{T}} = load{a,0}
+
 def __add{a  ,b:P & isptr{P}}  = emit{P, 'op +', ptrdiff{a}, b}
 def __add{a:P,b   & isptr{P}}  = emit{P, 'op +', a, ptrdiff{b}}
 def __sub{a:P,b   & isptr{P}}  = emit{P, 'op -', a, ptrdiff{b}}
@@ -50,11 +56,9 @@ def __ge  = compare{__ge, 'op >='}
 def __lt  = compare{__lt, 'op <' }
 def __le  = compare{__le, 'op <='}
 
-local def logic = arith
 def __and = logic{__and, 'op &'}
 def __or  = logic{__or , 'op |'}
 def __xor = logic{__xor, 'op ^'}
-local def logic1 = arith1
 
 def __not = logic1{__not, '~'}
 def __not{a:u1} = emit{u1, '!', a}
