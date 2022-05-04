@@ -288,6 +288,32 @@ Here are some examples.
 
 `for_vec` showcases the flexibility of this approach. Since `for` is a normal generator, it can be called to avoid rewriting the same `while`-based logic everywhere. And since any pointer can be passed to `exec`, modified pointers `vvars` with a different type are fair game. This means `block` will need to handle two different variable types, `T` and `[vlen]T`—fortunately Singeli is designed to support exactly this kind of polymorphism. And it's a requirement you control since you can decide what kind of for loop to use. Finally, `for_vec` takes another parameter *before* being called as a loop. It's invoked with, say, `@for_vec{8} (…)`.
 
+## Including files
+
+The `include` statement can be used at the top level of a program. It evaluates the specified file as though it were part of the current one. The filename is a symbol, which loads from a relative path if it starts with `.` and from Singeli's built-in scripts (kept in the [include/](include/) source folder) otherwise.
+
+    include 'arch/c'    # Built-in library
+    include './things'  # Relative path
+
+As a result, an included file's definitions affect the file that includes it, any files that include *that* file, and other files included after that one. These far reaching consequences might not be wanted for all definitions, so the `local` keyword restricts a top-level definition to apply only to the current file, and not anything else that includes it.
+
+    local def fn{a,b} = b              # Local generator
+    local b:u8 = 3                     # Local typed constant
+    local oper infix left ++ merge 30  # Local operator
+    local include 'skin/c'             # Local lots of operators
+
+The `local` keyword restricts the scope of compile-time value and operator definitions. It doesn't do anything at runtime: all the functions and so on are still placed together in one big output file (and `local export` is no different from `export`).
+
+For larger sets of definitions, `local` also allows a block syntax. The contents of the block behave like a separate file included with `local include`, and more `local` statements are allowed inside—they'll apply inside the block but not to the rest of the file.
+
+    local {
+      # All this stuff can be seen by the rest of the file,
+      # but not outside it
+      include 'skin/c'
+      def t = 5
+      def s = t + 1
+    }
+
 ## Built-in generators
 
 The following generators are pre-defined in any program. They're placed in a parent scope of the main program, so these names can be shadowed by the program.
