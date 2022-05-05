@@ -7,11 +7,7 @@ local {
   def __pnt{t} = tupsel{0,t}
   def tail{tup} = slice{tup, 1}
 
-  def iskind{k}{x} = match{k, kind{x}}
-  def num   = iskind{'number'}
-  def istup = iskind{'tuple'}
-  def gen   = iskind{'generator'}
-
+  include 'util/kind'
   def sl{l, start, len} = slice{l, start, start + len}
 }
 
@@ -29,13 +25,13 @@ def collect{vars,begin,end,block & begin<=end} = {
 }
 
 # Integers [0,n)
-def iota{n & num{n}} = @collect (i to n) i
+def iota{n & knum{n}} = @collect (i to n) i
 
 # All indices into tuple t
 def inds{t} = iota{$t}
 
 # Tuple of n copies of v
-def copy{n, v & num{n}} = @collect (n) v
+def copy{n, v & knum{n}} = @collect (n) v
 
 # Merge a tuple of tuples
 def join{l} = apply{merge,l}
@@ -48,7 +44,7 @@ def shiftleft {l, r} = slice{merge{l, r}, - $l}
 def reverse{t} = each{{i}=>tupsel{i,t}, ($t-1) - inds{t}}
 
 # Tuple of length n made from t repeated cyclically
-def cycle{n, t & num{n}} = {
+def cycle{n, t & knum{n}} = {
   def l = $t
   def m = n % l; def e = slice{t, 0, m}
   if (m == n) e
@@ -56,12 +52,12 @@ def cycle{n, t & num{n}} = {
 }
 
 # Split into groups of length n, possibly less for the last
-def split{n, list & num{n}} = {
+def split{n, list & knum{n}} = {
   def l = $list
   def d = (l + (-l)%n) / n
   @collect (i to d) sl{list, i*n, n}
 }
-def split{n, list & istup{n}} = {
+def split{n, list & ktup{n}} = {
   def start = shiftright{0, scan{+,n}}
   each{bind{sl, list}, start, n}
 }
@@ -99,8 +95,8 @@ local def scan_sub{fn, get, list} = {
 
 # Copy list elements based on list, constant, or generator (like filter)
 def replicate{reps, list} = join{each{copy, reps, list}}
-def replicate{r, list & num{r}} = join{each{bind{copy, r}, list}}
-def replicate{f, list & gen{f}} = replicate{each{f,list}, list}
+def replicate{r, list & knum{r}} = join{each{bind{copy, r}, list}}
+def replicate{f, list & kgen{f}} = replicate{each{f,list}, list}
 
 # For boolean i, return indices of 1s
 def indices{i} = replicate{i, inds{i}}
