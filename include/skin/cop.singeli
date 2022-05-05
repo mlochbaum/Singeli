@@ -1,5 +1,4 @@
 oper prefix      -  __neg 30
-oper prefix      $  __vec 50
 oper prefix      *  __pnt 60
 
 oper infix none  == __eq  20
