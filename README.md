@@ -190,6 +190,8 @@ Singeli's built-in control flow statements are `if`-(`else`), and (`do`)-`while`
 
 Note that `if` can also be used as a constant-time switch: if the argument is a number, it must be 0 or 1, and compiles only one block, or none if the condition is 0 and there's no `else`.
 
+In any `if` or `while` condition, the pseudo-operators `and`, `or`, and `not` can be used to make a compound condition. These are implemented by manipulating jumps, never with logic instructions. `and` and `or` are short-circuiting, meaning that they don't evaluate the second part of the condition if the result is determined by the first.
+
 ### For loops
 
 A for "loop" looks a lot like the for-each loops that are becoming common in high-level as well as low-level languages. Appearances are decieving, since it's really a special kind of generator call that can evaluate the block when it executes. But it covers the for-each functionality pretty well, with the right `for` generator.
