@@ -523,7 +523,7 @@ types ← {kname⇐"type"
     "Quality must be a single-letter symbol (i,u,f)"!1=≠n
     ⊑n
   }
-  PrimType ← "Invalid primitive type specification"_getPrim GetQual⌾⊑
+  PrimType ← "Invalid primitive type specification"_getPrim ⟨GetQual,numbers.From⟩ {𝕎𝕩}¨ ⊢
 
   builtins ⇐ ∾˘⍉∘‿2⥊⟨
     ⟨"cast"   ,             "promote"   ,"reinterpret"⟩
