@@ -2,8 +2,8 @@
 
 local {
   include 'skin/cop'
-  oper prefix $ tuplen 30
-  oper prefix > tail 50
+  oper $ tuplen prefix 30
+  oper > tail   prefix 50
   def __pnt{t} = tupsel{0,t}
   def tail{tup} = slice{tup, 1}
 

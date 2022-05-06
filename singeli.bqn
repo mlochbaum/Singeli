@@ -306,7 +306,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     pre◶⟨'p', Next◶⟨'n', ⊑∘Get∘1⟩⟩ "none"‿"left"‿"right"
   }
   Number ← c.number _node_ (∊⟜dig _begin_ "number")
-  OpDef ← c.opDef _node_ ("oper"‿OpType‿Oper‿Name‿Number _seq)
+  OpDef ← c.opDef _node_ ("oper"‿Oper‿Name‿OpType‿Number _seq)
 
   Include ← c.include _node_ ("include"‿Symbol _seq)
 
@@ -952,7 +952,7 @@ nodes ← {
     }
   }
   OpDef ⇐ {
-    ⟨type,op,fn,prec⟩←𝕩 ⋄ pos←𝕨
+    ⟨op,fn,type,prec⟩←𝕩 ⋄ pos←𝕨
     Visit←{𝕤⋄⟨type,op,fn,•Repr prec⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "opdef"‿visit
     N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}

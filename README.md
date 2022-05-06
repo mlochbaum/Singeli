@@ -24,9 +24,9 @@ The primary tool for abstraction is the **generator**. Written with `{parameters
 
     def gen{fn, arg} = fn{arg, arg + 1}
 
-In fact, `+` is also a generator, if it's defined. Singeli has no built-in operators but allows the user to define infix or prefix operator syntax for a generator. For example, the following line from [include/skin/c.singeli](include/skin/c.singeli) makes `+` a left-associative infix operator with precedence 30 (there can be one infix and one prefix definition).
+In fact, `+` is also a generator, if it's defined. Singeli has no built-in operators but allows the user to define infix or prefix operator syntax for a generator. For example, the following line from [include/skin/cop.singeli](include/skin/cop.singeli) makes `+` a left-associative infix operator with precedence 30 (there can be one infix and one prefix definition).
 
-    oper infix left  +  __add 30
+    oper +  __add infix left  30
 
 Generators can be extended with additional definitions. Each definition overrides the previous ones on its domain, which means that applying a generator searches backwards through all definitions visible in the current scope until it finds one that fits. `gen` above applies to any two arguments, but a definition can be narrowed using types and conditions:
 
@@ -134,8 +134,8 @@ Operators are formed from the characters `!$%&*+-/<=>?\^|~`. Any number of these
 
 The `oper` statement, which can only appear at the top level in the program, defines a new operator, and applies to all code later in the program (operators are handled with a Pratt parser, which naturally allows this). Here are the two declarations of `-` taken from [include/skin/c.singeli](include/skin/c.singeli).
 
-    oper prefix      -  __neg 30
-    oper infix left  -  __sub 30
+    oper -  __neg prefix      30
+    oper -  __sub infix left  30
 
 The declaration lists the operator's form (arity, and associativity for infix operators), spelling, generator, and precedence. After the declaration, applying the operator runs the associated generator.
 
@@ -301,7 +301,7 @@ As a result, an included file's definitions affect the file that includes it, an
 
     local def fn{a,b} = b              # Local generator
     local b:u8 = 3                     # Local typed constant
-    local oper infix left ++ merge 30  # Local operator
+    local oper ++ merge infix left 30  # Local operator
     local include 'skin/c'             # Local lots of operators
 
 The `local` keyword restricts the scope of compile-time value and operator definitions. It doesn't do anything at runtime: all the functions and so on are still placed together in one big output file (and `local export` is no different from `export`).

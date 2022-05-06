@@ -1,5 +1,5 @@
-oper prefix $ gen 50
-oper infix none $ gen 50
+oper $ gen prefix 50
+oper $ gen infix none 50
 
 def gen{a}{b,c} = __mul{a,__sub{b,c}}
 def gen{a,b}{c} = __add{a,__mul{b,c}}
