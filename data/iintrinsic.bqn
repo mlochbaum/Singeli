@@ -95,7 +95,7 @@ MakeDef ← {instr 𝕊 prot:
   Br←"{"∾∾⟜"}" ⋄ A←∾⟜Br ⋄ M←{"match"A∾𝕨‿","‿𝕩}
   Int←<⊸(≍˘) ⋄ J←∾1↓·⥊Int
   # Test if 𝕩 is of type 𝕨
-  IsT ← (∊⟜"bm"⌾<⊑∘⊢)◶M‿{ "ii_intvec"A∾⟨1↓𝕩,",",𝕨⟩ }
+  IsT ← (∊⟜"bm"⌾<⊑∘⊢)◶M‿{ "intvec"A∾⟨1↓𝕩,",",𝕨⟩ }
   # Type handling and formatting
   pn‿pt ← <˘⍉> prot
   an←1↓pn ⋄ ! ∊⟜""‿"dst"‿"k"⌾< ⊑pn
@@ -104,7 +104,7 @@ MakeDef ← {instr 𝕊 prot:
   vf ← ¬ if ← "IMM"⊸≡¨ at
   tn ← ⥊¨'T'-⊐vf/at
   vars ← an (∾⟜":"⊸∾¨⟜tn ⋈ tn IsT¨○⍷⊢)○(vf⊸/) at
-  imms ← (⊢ ⋈ "ii_num"⊸A¨) if/an
+  imms ← (⊢ ⋈ "num"⊸A¨) if/an
   rt ↩ (≠at)⊸=◶⟨⊑⟜tn, rt⟩ at⊸⊐⌾< rt
   ∾⟨
     Br ∾ 1↓⥊ ∾ ⟨", "," & "⟩ Int¨ vars ∾¨ imms
@@ -114,7 +114,9 @@ MakeDef ← {instr 𝕊 prot:
 }
 defs ← cpuid ⊔○((⍋cat)⊸⊏) sname {∾"def _"‿𝕨‿𝕩}¨ names MakeDef¨ proto
 •Out 1⌽"
-def ii_intvec{w,T} = 0
-def ii_intvec{w,T & match{'vector',typekind{T}} & isint{eltype{T}} & match{w,width{T}}} = 1
-def ii_num{T} = match{'number',kind{T}}"
+local {
+  def intvec{w,T} = 0
+  def intvec{w,T & match{'vector',typekind{T}} & isint{eltype{T}} & match{w,width{T}}} = 1
+  def num{T} = match{'number',kind{T}}
+}"
 •Out¨ ∾ 1↓⥊(<2⥊<⟨⟩) ∾˘ ("#"⊸∾¨isaList) <⊸≍˘ defs
