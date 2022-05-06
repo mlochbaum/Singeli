@@ -132,7 +132,7 @@ Labels are for `goto{}` and related builtins described [here](#program).
 
 Operators are formed from the characters `!$%&*+-/<=>?\^|~`. Any number of these will stick together to form a single token unless separated by spaces. Additionally, non-ASCII characters can be used as operators, and don't stick to each other.
 
-The `oper` statement, which can only appear at the top level in the program, defines a new operator, and applies to all code later in the program (operators are handled with a Pratt parser, which naturally allows this). Here are the two declarations of `-` taken from [include/skin/c.singeli](include/skin/c.singeli).
+The `oper` statement, which can only appear at the top level in the program, defines a new operator, and applies to all code later in the program (operators are handled with a Pratt parser, which naturally allows this). Here are the two declarations of `-` taken from [include/skin/cop.singeli](include/skin/cop.singeli).
 
     oper -  __neg prefix      30
     oper -  __sub infix left  30
