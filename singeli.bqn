@@ -46,6 +46,7 @@ Err ← { (𝕩≠⊸⥊•Out‿DispSource) {𝕎𝕩}¨ 𝕩 ⋄ •Exit 1 }
 # Parameter checks for builtins (_p1 and _p2 to use BQN monad/dyad)
 _e1 ← {𝔽⊣"Expected one parameter" !1=≠} ⋄ _p1←{𝔽⊑_e1}
 _e2 ← {𝔽⊣"Expected two parameters"!2=≠} ⋄ _p2←{𝔽´_e2}
+_e3 ← {𝔽⊣"Expected three parameters"!3=≠}
 _v1 ← {𝔽⊣"Expected at least one parameter"!1≤≠}
 
 numbers ← {kname⇐"number"
@@ -627,7 +628,7 @@ functions ← {kname⇐"function"
   Goto     ⇐ "goto"⊘"gotoT"_instr
   GotoF    ⇐ "gotoF"_instr
   builtins ⇐ ⍉> ⟨
-    ⟨"call",Call⟩, ⟨"emit",Emit⟩, ⟨"return",Return⟩
+    ⟨"call",Call _v1⟩, ⟨"emit",Emit _v1⟩, ⟨"return",Return⟩
     ⟨"makelabel",Label⟩, ⟨"goto",Goto _p1⟩
     ⟨"setlabel",SetLabel _p1 ⋈∘Label⍟(0=≠)⟩
   ⟩
@@ -658,7 +659,7 @@ builtins ← {
     E ← "Unhandled type" ! 0˙
     (e{k‿o←𝕨⋄∧○(k≡⊢)◶⟨𝕏,O˙⟩}´𝕩){o←𝕨𝔽○Kind𝕩⋄𝕨O𝕩}
   }
-  Ty2 ← {𝕏⚇0´}∘Kinds ⊣∾⟜(<·"symbol"⌾⊑⊢´)∘⊢⍟(⊑∊⟜=‿≠)"number"‿"type"⋈¨{𝕏numbers._cmp}⊸⋈
+  Ty2 ← {𝕏⚇0 _p2}∘Kinds ⊣∾⟜(<·"symbol"⌾⊑⊢´)∘⊢⍟(⊑∊⟜=‿≠)"number"‿"type"⋈¨{𝕏numbers._cmp}⊸⋈
   TypeSuff ← IsTyped◶0‿{𝕩.fmtType}◶""‿{":"∾Fmt TypeOf𝕩}
   Fmt ← 2↓·∾·", "⊸∾¨(Show∾TypeSuff)⎊("("∾")"∾˜Kind⎊"unknown")¨
   Merge ← {
@@ -677,15 +678,16 @@ builtins ← {
     Show¨⊸≍ types.primTypes
     ⍉> ⟨
       ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"}⊣•Out∘Fmt⟩
-      ⟨"exec",blocks.Exec⟩
+      ⟨"exec",blocks.Exec _e3⟩
       ⟨"match",Match _p2⟩
       ⟨"hastype",IsTyped∘⊑ _and_ ({𝕩.type}⊸Match´)_e2⟩
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
       ⟨"typekind",symbols.New types.TypeKind _p1⟩
-      ⟨"load",Load⟩, ⟨"store",¯1⊸(⊑Store↓)_v1⟩
+      ⟨"load",Load _e2⟩, ⟨"store",¯1⊸(⊑Store↓)_e3⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑_p2⟩, ⟨"tuplen",≠_p1⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩
-      ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓_v1⟩, ⟨"apply",{𝕎𝕩}_p2⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓_v1⟩
+      ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓_v1⟩
+      ⟨"apply",{"apply: second parameter must be a tuple"!1==𝕩⋄𝕎𝕩}_p2⟩
     ⟩
     functions.builtins
     numbers.builtins
