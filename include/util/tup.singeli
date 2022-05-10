@@ -41,7 +41,7 @@ def shiftright{l, r} = slice{merge{l, r}, 0, $r}
 def shiftleft {l, r} = slice{merge{l, r}, - $l}
 
 # Reversed tuple
-def reverse{t} = each{{i}=>tupsel{i,t}, ($t-1) - inds{t}}
+def reverse{t} = tupsel{($t-1) - inds{t}, t}
 
 # Tuple of length n made from t repeated cyclically
 def cycle{n, t & knum{n}} = {
