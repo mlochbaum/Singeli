@@ -101,6 +101,10 @@ Each of the values `typ`, `val`, and `cond` can be an expression, which is fully
 
 The value `typ` can also be a name, which functions something like an extra parameter: the underlying parameter must be typed and the name is set to its type (like any parameter, this value is accessible to conditions). Built-in type names such as `i16` and `f64` can't be used here, but other names will be shadowed. If you have an alias like `def size = u64`, parenthesize it to use it as a value, as in `par:(size)`.
 
+### Variable-length parameters
+
+Up to one parameter slot can be variable-length if marked with a leading `...`. This parameter corresponds to any number (0 or more) of inputs, and its value is the tuple of those values. For example `def tup{...t} = t` returns the tuple of all parameters, replicating the functionality of the builtin `tup`.
+
 ## Kinds of value
 
 A generator is one kind of value—that is, something that's first-class at compile time. Like most values, it doesn't exist at runtime. Hopefully it's already done what's needed! In fact it's one of the more complicated kinds of value. Here's the full list:

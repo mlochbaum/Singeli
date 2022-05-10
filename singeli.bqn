@@ -19,6 +19,7 @@ Tokenize←{
   ign←(𝕩∊" "∾tab)∨≠`ab∧c∨n                  # Ignored characters
   # Other stuff
   k∨↩∨´(»⊸∧k<𝕩⊸∊)¨wc‿oc                     # Group names, numbers, and ops
+  k>↩(»𝕩='.')∧𝕩∊alph
   bt←(⌈`↕∘≠×¬)k ⋄ xd←𝕩∊dig
   k∨↩»⊸∨(»(bt⊏xd)∧𝕩='e')∧(𝕩='-')∧«xd        # Negative exponents 12e-3
   ts←n∨¬k∨ign                               # Token start mask
@@ -264,16 +265,18 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   Params ← {𝕤
     Get "{"
-    Try "}" ? (0⥊<↕3)‿⟨⟩ ;
+    Try "}" ? (0⥊<↕4)‿⟨⟩ ;
     ExprA ← ⟨"&"⟩_exprEnd
     Param ← {𝕤
+      v ← Try "..."
       n ← Name@
       e ← When ⟨     Try "==", ExprA⟩
       t ← When ⟨(≠e)◶Try‿0":", ExprA⟩
-      n‿e‿t
+      v‿n‿e‿t
     }
+    vm ← "At most one variable-length parameter allowed"
     LFs@
-    a ← While ⟨Div∘",", Param, 1⟩
+    a ← While ⟨Div∘",", Param, 1⟩ ⋄ vm Asrt 1≥+´⊑¨a
     c ← While ⟨Div∘"&", ExprA, 0⟩
     Get "}"
     a‿c
@@ -856,7 +859,7 @@ nodes ← {
   notTypeVar ← types.primTypes≠⊸↑builtins.names
   Lambda ⇐ {
     ⟨⟨paramsPlus,conds⟩,result⟩←𝕩 ⋄ pos←𝕨
-    params‿pmatch‿ptype ← <˘⍉>paramsPlus
+    pvar‿params‿pmatch‿ptype ← <˘⍉>paramsPlus
     tname ← (¬∘∊⟜(⟨@⟩∾notTypeVar)⊸/ PhraseTryName¨)¨ ptype
     uTyp‿iTyp←(⍷∘∾ ⋈ ⊐∘∾⊔·/≠¨)tname
     _pc ← {n←𝕨⋄f←𝕗 ⋄ {pos Run ⟨Ident f,⟨Ident n,𝕩⟩⟩}¨𝕩}
@@ -868,18 +871,24 @@ nodes ← {
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value
       next ← ({𝕩.Get@}𝕨)⊣{"No matching generator definition"!0˙}
       AllEq ← ∧´⊏Match¨1⊸↓
-      Check ← {iPar (≡○≢)_and_(∧´AllEq¨∘⊔) 𝕩}
+      Count‿DeVar ← (+´¬)⊸{
+        ¬∨´𝕩 ? ⟨𝕨=≠, ⊢⟩ ;
+        ⟨𝕨≤≠, (0‿𝕨-˜⋈⁼/𝕩)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)⟩
+      } pvar
       CT ← {∧´((∧´IsTyped¨)_and_(AllEq{𝕩.type}¨)⊏⟜𝕩)¨iTyp}
-      Exec ← result.Eval∘⊢ ⋄ _cached ← {𝔽}
-      {result.node≢"function"?@;
+      Exec‿_cached ← { result.node≢"function"?
+        Exec ⇐ result.Eval∘⊢ ⋄ _cached ⇐ {𝔽}
+      ;
         args←res←⟨⟩
-        Exec ↩ {args∾↩<𝕨 ⋄ {Set⇐{res∾↩<𝕩}}result.Eval𝕩}
-        _cached ↩ {i←args⊸⊐⌾<𝕩⋄i<≠res?i⊑res;𝔽𝕩} # ⊐ should use Match
+        Exec ⇐ {args∾↩<𝕨 ⋄ {Set⇐{res∾↩<𝕩}}result.Eval𝕩}
+        _cached ⇐ {i←args⊸⊐⌾<𝕩⋄i<≠res?i⊑res;𝔽𝕩} # ⊐ should use Match
       }
-      Check _and_ CT◶Next‿{
-        F←Next 𝕩˙
-        try ← (⊑⟨𝕩˙⊸exec⟩){numbers.GetBool∘𝕨.Eval◶F‿𝕏}´conds
-        Try ((iPar∊⊸/𝕩)∾{𝕩.type}¨iTyp⊑¨⊸⊏𝕩) env.Fixed e
+      {
+        Count 𝕩 ? a←DeVar𝕩 ⋄ ∧´AllEq¨iPar⊔a ? CT a ?
+        try ← (⊑⟨a˙⊸exec⟩) (Next 𝕩˙){numbers.GetBool∘𝕨.Eval◶𝔽‿𝕏}´ conds
+        Try ((iPar∊⊸/a)∾{𝕩.type}¨iTyp⊑¨⊸⊏a) env.Fixed e
+      ;
+        Next 𝕩
       }_cached
     }
   }

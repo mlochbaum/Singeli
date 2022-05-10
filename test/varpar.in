@@ -1,0 +1,9 @@
+def g1{...x} = tuplen{x}
+def g4{a, b, ...c, d} = __sub{tuplen{c},d}
+
+fn(x:u8) : u8 = {
+  x = g1{0,1,2,3}
+  x = g1{}
+  x = g4{3,2,1,0}
+  x = g4{9,8,7,6,5,4,3,2}
+}

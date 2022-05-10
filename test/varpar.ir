@@ -1,0 +1,8 @@
+beginFn f0 u8 1 u8
+mut v0 !4:u8
+mut v0 !0:u8
+mut v0 !1:u8
+mut v0 !3:u8
+ret v0
+endFn
+

@@ -66,14 +66,12 @@ def split{n, list & ktup{n}} = {
 def flip{tup} = table{tupsel, inds{*tup}, tup}
 
 # Function table mapping over all combinations
-def table_apply{fn, tups} = {
+local def table_apply{fn, tups} = {
   if (empty{tups}) fn{}
   else if (1 == $tups) each{fn, *tups}
   else each{{e} => table_apply{bind{fn,e}, >tups}, *tups}
 }
-def table{fn, a      } = table_apply{fn, tup{a    }}
-def table{fn, a, b   } = table_apply{fn, tup{a,b  }}
-def table{fn, a, b, c} = table_apply{fn, tup{a,b,c}}
+def table{fn, ...t} = table_apply{fn, t}
 
 # Left fold, with or without initial element
 def fold{fn, init, list} = {
