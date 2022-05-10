@@ -150,7 +150,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ! (¯1⊑tokens) Is sep
 
   Asrt ← {𝕨𝕊1:@;
-    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.const,"const",c.define,"define",c.export,"export",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.while,"while",c.word,"word"⟩
+    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.const,"const",c.define,"define",c.export,"export",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.while,"while",c.word,"word"⟩
     ShowTrace⟜L´ <˘⍉>DumpStack@
     •Out ""
     F ← (⥊lf)⊸≡◶•Repr‿"end of line"
@@ -214,6 +214,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   StSub ← {
   "def":    Define@ ;
+  "extend": Extend@ ;
   "if":     c.if     _node_ ("if"‿"("‿Expr‿")"‿Block‿(When∘⟨Try∘"else"∘Seps,Block⟩)_seq)@ ;
   "while":  c.while  _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Block _seq)@ ;
   "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
@@ -299,9 +300,17 @@ Parse ← {𝕊 tokens‿ShowTrace:
     t‿v
   }
   FunConst ← (Try∘":"◶Function‿Const)
+  DefFun ← c.define _node_ (Name‿FunConst  _seq)
+  
+  ExtPar ← "{"‿"}" _argsFn_ Name
+  Extender ← c.extender _node_ (ExtPar‿"="‿Body _seq)
+  Extend ← c.extend _node_ ("extend"‿Expr0‿ExtPar _seq)
+
   Generator ← {𝕤⋄ Get"=" ⋄ Result 1} _withParams
-  DefFun ← c.define _node_ (      Name‿FunConst  _seq)
-  Define ← c.define _node_ ("def"‿Name‿Generator _seq)
+  Define ← c.define _node_ {
+    Get "def" ⋄  e ← Try "extend"
+    ⟨Name, e◶Generator‿Extender⟩_seq 𝕩
+  }
 
   Export ← c.export _node_ ((While∘⟨Try∘",",Symbol,1⟩)‿"="‿Callable‿sep _seq)
 
@@ -315,8 +324,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Include ← c.include _node_ ("include"‿Symbol _seq)
 
   Program ← c.body _node_ {𝕤
-    LLine ← "def"‿"oper"‿"include"⊸⊐⌾<◶⟨
-      Define, OpDef, Include, ('''=⊑)◶DefFun‿Export
+    LLine ← "def"‿"extend"‿"oper"‿"include"⊸⊐⌾<◶⟨
+      Define, Extend, OpDef, Include, ('''=⊑)◶DefFun‿Export
     ⟩∘Peek
     Line ← {𝕤
       l ← Try "local"
@@ -704,11 +713,11 @@ builtins ← {
 
 var ← {
   Get⇐{𝕩.Get@}
-  Fixed⇐{ Get⇐𝕩˙ }
-  New⇐{
+  Fixed⇐{ kind⇐"var" ⋄ Get⇐𝕩˙ }
+  New⇐{NG←"generator"≢Kind ⋄ kind⇐"var"
     v←𝕩 ⋄ Get⇐{𝕤⋄v}
     Set⇐{
-      {𝕊:Set↩"Can't extend a non-generator"!0˙}⍟⊢"generator"≢Kind𝕩
+      {𝕊:Set↩!∘"Can't extend a non-generator"}⍟NG𝕩
       registers.Save 𝕩
       v↩𝕩
     }
@@ -745,8 +754,9 @@ env ← {
   Vars  ⇐{𝕩.vars}
   Parent⇐{𝕩.parent}
   Make ←{ vars⇐𝕨 ⋄ parent⇐𝕩 }
+  Alias⇐Make
   New  ⇐{ (var.New∘@¨ 𝕨) Make 𝕩 }
-  Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
+  Fixed⇐{ (var.New¨ 𝕨) Make 𝕩 }
   Block⇐{⟨ni,Load‿Store,ind‿ptrs⟩ 𝕊 par:
     Reg ← "register"≡Kind
     pv ← registers.Claim⍟Reg⚇0∘Load∘⋈⟜ind¨ ptrs
@@ -891,6 +901,26 @@ nodes ← {
         Next 𝕩
       }_cached
     }
+  }
+  Extender ⇐ {
+    ⟨names,result⟩←𝕩 ⋄ pos←𝕨
+    Visit←{names∾⟨𝕏¨result⟩}
+    ⟨node,Dump,Disp,Oper⟩⇐Defaults "extender"‿visit
+    Scope⇐{ Visit scopes._defer o.Scope names scopes.New 𝕩 }
+    Eval⇐{𝕨𝕊e: {
+      A ← ! program._trace_ pos
+      "Wrong number of parameters in extension" A names≡○≠𝕩
+      "Generator defined with extend must be called with extend" A ∧´ ("var"≡Kind)¨ 𝕩
+      ¯1⊑result {𝕨.Eval𝕩}¨ <𝕩 env.Alias e
+    }}
+  }
+  Extend ⇐ {
+    ⟨ext,names⟩←𝕩 ⋄ pos←𝕨
+    Visit←{⟨𝕏ext,names⟩}
+    ⟨node,Dump,Disp,Oper⟩⇐Defaults "extend"‿visit
+    NonLocal ⇐ ⊢
+    sc←@ ⋄ Scope⇐{ ext.Scope𝕩 ⋄ sc↩pos⊸𝕩.Get¨names }
+    Eval ⇐ {(ext.Eval𝕩){𝔽} program._trace_ pos sc{𝕎𝕩}¨𝕩}
   }
   Arg ⇐ {
     ⟨name,type⟩←𝕩 ⋄ pos←𝕨
