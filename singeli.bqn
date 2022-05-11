@@ -756,7 +756,7 @@ env ← {
   Make ←{ vars⇐𝕨 ⋄ parent⇐𝕩 }
   Alias⇐Make
   New  ⇐{ (var.New∘@¨ 𝕨) Make 𝕩 }
-  Fixed⇐{ (var.New¨ 𝕨) Make 𝕩 }
+  Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
   Block⇐{⟨ni,Load‿Store,ind‿ptrs⟩ 𝕊 par:
     Reg ← "register"≡Kind
     pv ← registers.Claim⍟Reg⚇0∘Load∘⋈⟜ind¨ ptrs
@@ -918,9 +918,12 @@ nodes ← {
     ⟨ext,names⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨𝕏ext,names⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "extend"‿visit
-    NonLocal ⇐ ⊢
-    sc←@ ⋄ Scope⇐{ ext.Scope𝕩 ⋄ sc↩pos⊸𝕩.Get¨names }
-    Eval ⇐ {(ext.Eval𝕩){𝔽} program._trace_ pos sc{𝕎𝕩}¨𝕩}
+    N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
+    v←@ ⋄ Scope ⇐ { ext.Scope𝕩 ⋄ v ↩ pos⊸(N𝕩).AddLam¨ names }
+    Eval ⇐ {
+      slots ← {𝕩.Set𝕨.Get@⋄𝕩}⍟≢○({𝕎𝕩}⟜(N𝕩))´¨ v
+      (ext.Eval𝕩){𝔽} program._trace_ pos slots
+    }
   }
   Arg ⇐ {
     ⟨name,type⟩←𝕩 ⋄ pos←𝕨
