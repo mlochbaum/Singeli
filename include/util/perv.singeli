@@ -1,0 +1,28 @@
+# Pervasion
+
+local include 'util/kind'
+local oper \ ktup prefix 40
+
+def extend perv1{op} = {
+  def op{a & \a} = each{op, a}
+}
+
+def extend perv2{op} = {
+  def op{a, b & \b} = each{bind{op,a}, b}
+  def op{a, b & \a} = each{{a}=>op{a,b}, a}
+  def op{a, b & \a & \b} = each{op, a, b}
+}
+
+local def anytup{e, ...t} = (if (\e) 1; else apply{anytup,t})
+local def anytup{} = 0
+
+def perv{n & knum{n}} = { def extend _{op} = {
+  def op{...t & match{n,tuplen{t}} & apply{anytup,t}} = {
+    def len{e, ...t} = (if (\e) tuplen{e}; else apply{len,t})
+    def l = apply{len,t}
+    def r{t} = (if (\t) t; else copy{l,t})
+    apply{bind{each,op}, each{r,t}}
+  }
+}}
+def perv{n==1} = perv1
+def perv{n==2} = perv2
