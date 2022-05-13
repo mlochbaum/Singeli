@@ -174,9 +174,12 @@ The runtime value of a register can be changed with `name = value` syntax, with 
 
     x = x + 1    # Increment
 
-This does *not* change the compile time value of `x` or `y`, which is a register. Declaration and reassignment do essentially the same thing at compile time, but at runtime they're two different things. Declaration is basically a `def` statement bundled with an assignment of the initial value. Assignment is a plain function that acts on a register and a value, and could even be wrapped in a generator `assign{name,value}` if you wanted. In fact, the left-hand side of an assignment (but not a declaration) can be a full expression, as long as it resolves to a register at compile time. Try `(if (0) a; else b) = c` for example.
+This does *not* change the compile time value of `x` or `y`, which is a register. Declaration and reassignment do essentially the same thing at runtime, but at compile time they're two different things. Declaration is basically a `def` statement bundled with an assignment of the initial value. Assignment is a plain function that acts on a register and a value, and can be used in generator calls. The left-hand side can be a full expression, as long as it resolves to a register at compile time—try `(if (0) a; else b) = c` for example. The built-in [file](include/skin/cmut.singeli) `skin/cmut` (part of `skin/c`) defines generators for C operators `+=`, `/=`, `>>=`, and so on, so you can write:
 
-At runtime, the register represents one value at a time, so whenever it's used it's the current value that will be visible. If you want to save the value somewhere, make another register, like `x0 := x`.
+    x += 1
+    ++x
+
+At runtime, a register represents one value at a time, so whenever it's used it's the current value that will be visible. If you want to save the value somewhere, make another register, like `x0 := x`. This can be done even in a generator, so that `def clone{old} = { new:=old }` copies any typed value. So while `skin/cmut` doesn't define `x++` because Singeli has no postfix operators, it's possible to make a generator that copies the parameter, increments it, and returns the copy.
 
 ## Control flow
 
