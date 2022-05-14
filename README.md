@@ -400,6 +400,8 @@ Possible `kind` results are `number`, `constant`, `symbol`, `tuple`, `generator`
 | `__pnt{t}`       | Pointer type with element `t`
 | `__vec{n,t}`     | Vector type with element `t` and length `n`; equivalent to `[n]t`
 
+Possible `typekind` results are `void`, `primitive`, `vector`, `pointer`, `function`, and `tuple`.
+
 ### Generators
 
 | Syntax             | Result
@@ -420,16 +422,18 @@ Possible `kind` results are `number`, `constant`, `symbol`, `tuple`, `generator`
 
 ### Arithmetic
 
-Arithmetic functions are named with a double underscore, as they're meant to be aliased to operators. The default definitions work on compile-time numbers, and sometimes types. The definitions for numbers are shown, with a C-like syntax but using `^` for exponentiation and `//` for floored division.
+Arithmetic functions are named with a double underscore, as they're meant to be aliased to operators. The default definitions work on compile-time numbers, and sometimes types. The definitions `fn{x}` or `fn{x,y}` for numbers are shown, with a C-like syntax plus `**` for exponentiation and `//` for floored division.
 
-| `__neg` | `__shr`  | `__shl` | `__add` | `__sub` | `__mul` | `__div` |
-|---------|----------|---------|---------|---------|---------|---------|
-| `-y`    | `x//2^y `| `x*2^y `| `x+y`   | `x-y`   | `x*y`   | `x/y`   |
+| `__neg` | `__shr`  | `__shl` | `__add` | `__sub` | `__mul` | `__div` | `__mod` |
+|---------|----------|---------|---------|---------|---------|---------|---------|
+| `-x`    | `x//2**y`| `x*2**y`| `x+y`   | `x-y`   | `x*y`   | `x/y`   | `x%y`   |
 
-| `__and` | `__or`      | `__xor` | `__not` |
-|---------|-------------|---------|---------|
-| `x*y`   | `x*y-(x+y)` | `x!=y`  | `1-y`   |
+| `__and` | `__or`  | `__xor` | `__not` |
+|---------|---------|---------|---------|
+| `x&y`   | `x\|y`  | `x^y`   | `!x`    |
 
 | `__eq`  | `__ne`  | `__lt`  | `__gt`  | `__le`  | `__ge`  |
 |---------|---------|---------|---------|---------|---------|
 | `x==y`  | `x!=y`  | `x<y`   | `x>y`   | `x<=y`  | `x>=y`  |
+
+Built-in arithmetic is pervasive over tuples, meaning that if one or both arguments are tuples it will map over them, recursively until reaching non-tuples.
