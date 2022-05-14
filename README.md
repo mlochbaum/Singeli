@@ -147,6 +147,29 @@ An operator can have at most one infix and one prefix definition. Prefix operato
 
 Parameters can be passed to operators before calling them, such as `a -{b} c`. This is converted to the generator call `__sub{b}{a,c}`. The arity is determined when it's called with operator syntax, and doesn't depend on any earlier calls with generator syntax.
 
+## Types
+
+Singeli's type system consists of the following type-kinds: basic `void` and primitive types as well as compound types constructed from several underlying types.
+
+| Type kind   | Description                | Example display
+|-------------|----------------------------|--------
+| `void`      | Nothing                    | `void`
+| `primitive` | A number                   | `i32`
+| `vector`    | A list of same-type values | `[4]i32`
+| `pointer`   | A pointer to memory        | `*f64`
+| `function`  | A pointer to code          | `(i8,u1) -> void`
+| `tuple`     | Multiple values            | `tup{u1,[2]u32}`
+
+The display isn't always valid Singeli code. Void and primitive types are built-in names but can be overwritten. The notation `[4]i32` resolves to `__vec{4,i32}`, where `__vec{}` is also a built-in name. And `*` indicates the built-in `__pnt{}`, which isn't defined automatically but is part of `skin/c`. The notation given for functions can't be used, and the tuple `tup{u1,[2]u32}` is technically a different value from an actual tuple type but can be used as one where a type is expected.
+
+Primitive types are written with a letter indicating the quality followed by the width in bits. The list of supported types is given below. Note the use of `u1` for boolean data. A vector of booleans such as `[128]u1` is one important use.
+
+    unsigned:   u1 u8 u16 u32 u64
+    signed int:    i8 i16 i32 i64
+    float:                f32 f64
+
+A vector type indicates that the value should be stored in a vector or SIMD register, and the backend limits which vector sizes can be used based on the target architecture.
+
 ## Functions
 
 Generators are great for compile-time computation, but all run-time computation happens in functions. Functions are declared and called with parenthesis syntax:
@@ -376,17 +399,6 @@ Possible `kind` results are `number`, `constant`, `symbol`, `tuple`, `generator`
 | `typekind{type}` | A symbol indicating the nature of the type
 | `__pnt{t}`       | Pointer type with element `t`
 | `__vec{n,t}`     | Vector type with element `t` and length `n`; equivalent to `[n]t`
-
-Possible `typekind` results are:
-
-| Type kind   | Example display
-|-------------|--------
-| `void`      | `void`
-| `primitive` | `i32`
-| `vector`    | `[4]i32`
-| `pointer`   | `*f64`
-| `function`  | `(i8,u1) -> void`
-| `tuple`     | `tup{u1,[2]u32}`
 
 ### Generators
 
