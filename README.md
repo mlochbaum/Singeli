@@ -161,6 +161,14 @@ The body of a function can be either a plain expression like `a*b` above, or can
 
 Function parameters like the `{T}` above are slightly different from arbitrary generator parameters: the function is only ever generated once for each unique set of parameters. Once generated, its handle is saved so that later calls return the saved function immediately (in contrast, a generator that declares a variable would make a new one each time). This avoids creating source code with lots of copies of functions, and also makes it possible for a function like `square{T}` to include recursion.
 
+## Export
+
+A top-level statement beginning with a literal symbol is an export. The entire statement consists of a symbol or list of symbols, followed by `=` and an expression, which needs to resolve to a function at compile time. The function is then exported with all the names given before `=`. In C this means a non-`static` function with that name is defined in the output file.
+
+    'some_function' = fn{i32}  # Export as some_function()
+
+    'fn', 'alias' = fn{i16}    # Export with two names
+
 ## Registers
 
 A function's arguments, and variables that it manipulates at runtime, are represented with typed slots called registers. Registers are first-class values, meaning they can be passed around and manipulated at compile time. For example, a generator can take a register as a parameter and set its value. Copies of registers, made by passing parameters or `def` statements, exhibit aliasing, like pass-by-reference.
@@ -311,7 +319,7 @@ As a result, an included file's definitions affect the file that includes it, an
     local oper ++ merge infix left 30  # Local operator
     local include 'skin/c'             # Local lots of operators
 
-The `local` keyword restricts the scope of compile-time value and operator definitions. It doesn't do anything at runtime: all the functions and so on are still placed together in one big output file (and `local export` is no different from `export`).
+The `local` keyword restricts the scope of compile-time value and operator definitions. It doesn't do anything at runtime: all the functions and so on are still placed together in one big output file (and `local` can be placed before an export but does nothing).
 
 For larger sets of definitions, `local` also allows a block syntax. The contents of the block behave like a separate file included with `local include`, and more `local` statements are allowed inside—they'll apply inside the block but not to the rest of the file.
 
