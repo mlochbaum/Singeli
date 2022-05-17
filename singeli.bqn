@@ -837,7 +837,7 @@ nodes ← {
     Eval⇐!∘0 ⋄ Scope⇐{Eval↩var.Get∘(pos 𝕩.Get name)}
   }
   _value ← {
-    name←𝕩
+    name←𝕩 ⋄ pos⇐𝕨⊣@
     Eval⇐(𝕨𝔽𝕩)˙
     ⟨node,Dump,Oper,Scope⟩⇐Defaults "value"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
@@ -855,7 +855,7 @@ nodes ← {
   }
   Call ⇐ { 𝕨 Run ⟨Ident"call" , <⊸∾´𝕩⟩ }
   Phrase ⇐ {
-    things←𝕩
+    things←𝕩 ⋄ pos⇐𝕨
     ToName⇐{𝕤⋄ (1=≠)◶@‿(("ident"≡{𝕩.node})◶@‿{𝕩.name}⊑) things }
     Visit←{⟨𝕏¨things⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "phrase"‿visit
