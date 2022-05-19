@@ -954,7 +954,7 @@ nodes ← {
       "Variable type must be a type" ! types.Is t
       t types.Cast v
     ;
-      "Explicit type needed for untyped initial value" ! IsTyped v
+      "Explicit type needed for untyped initial value" ! {=𝕩?∧´𝕊¨𝕩;IsTyped𝕩} v
       v
     } program._trace_ pos env
   }
@@ -968,7 +968,7 @@ nodes ← {
     Eval⇐{
       u ← GetVar 𝕩
       v ← pos type‿𝕩 _setType value.Eval 𝕩
-      u.Set registers.ClaimCopy v
+      u.Set registers.ClaimCopy⚇0 v
     }
   ;
     𝕨 Run ⟨{functions.Mut´𝕩}˙_value"=" , 0‿3⊏𝕩⟩
