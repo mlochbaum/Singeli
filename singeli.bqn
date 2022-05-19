@@ -580,7 +580,7 @@ symbols ← {kname⇐"symbol"
 }
 
 functions ← {kname⇐"function"
-  current⇐@
+  current⇐{Append⇐NextLabel⇐Return⇐!∘"No function active"}
   New ← {𝕤
     kind⇐kname ⋄ shows⇐"f"∾•Repr id⇐𝕩 ⋄ Matches⇐≡ ⋄ type⇐@
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType⇐@
