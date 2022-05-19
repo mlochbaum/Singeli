@@ -584,7 +584,7 @@ functions ← {kname⇐"function"
   New ← {𝕤
     kind⇐kname ⋄ shows⇐"f"∾•Repr id⇐𝕩 ⋄ Matches⇐≡ ⋄ type⇐@
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType⇐@
-    Next⇐{ 𝕩 registers.New handle+↩1 }
+    Next←{ 𝕩 registers.New handle+↩1 }
     NextLabel⇐{𝕤⋄ labels.New label+↩1 }
     NextArg⇐{ args∾↩𝕩 ⋄ Next 𝕩 }
     ⟨Push,Arr⟩←MakeStack@
@@ -610,7 +610,6 @@ functions ← {kname⇐"function"
     current↩fs
     f
   }
-  NextHandle ⇐ { current.Next 𝕩 }
   NextArg ⇐ { current.NextArg 𝕩 }
   Label ⇐ { current.NextLabel 𝕩 }
   Append ← { 𝕨 current.Append 𝕩 }
