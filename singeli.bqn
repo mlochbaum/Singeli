@@ -364,22 +364,22 @@ operator ← {
     Add ⇐ {
       i ← Ind 1⊑𝕩
       i<≠n ? Err⟨"Duplicate operator definition:",⊑𝕩,"Previously defined here:",i⊑p⟩ ;
-      p‿n‿o ∾⟜<¨↩ r←New⌾(2⊸⊑)𝕩 ⋄ 2⊑r
+      p‿n‿o ∾⟜<¨↩ r←(1⊑𝕩)⊸New⌾(2⊸⊑)𝕩 ⋄ 2⊑r
     }
     Get ⇐ { i←Ind𝕩 ⋄ (i=≠n)◶⟨i⊑o˙,par.Get⟩ 𝕩 }
   }
   NewScope ⇐ {
     parent ⇐ 𝕩
-    Op ← {𝕊val‿p‿c‿a:
+    Op ← {name𝕊val‿p‿c‿a:
       V ⇐ nodes.Word∘val
+      AC ← { Err ("Associativity for operator "∾name∾" must be disambiguated")‿𝕨.value.pos }⍟(0⊸>)
       T ⇐ (p C {𝕩.bind}){{⊣AC𝕏}⍟a𝕗}
     }
-    AC ← 𝕩{ Err ("Associativity for operator "∾𝕗∾" must be disambiguated")‿𝕨.value.pos }⍟(0⊸>)
     tabs ⇐ nul‿lef ← parent.tabs Tab¨ ⟨
-      {𝕨𝕊⟨value, prec⟩: null ⇐ Op ⟨value, prec, <, 0⟩ }
+      {𝕨𝕊⟨value, prec⟩: null ⇐ 𝕨 Op ⟨value, prec, <, 0⟩ }
       {𝕨𝕊⟨value, prec, assoc⟩:
         bind ⇐ prec
-        left ⇐ Op ⟨value, prec, ("lrn"⊸⊐⌾<assoc)⊑⟨<,≤,<-=⟩, 'n'=assoc⟩
+        left ⇐ 𝕨 Op ⟨value, prec, ("lrn"⊸⊐⌾<assoc)⊑⟨<,≤,<-=⟩, 'n'=assoc⟩
       }
     ⟩
     Add ⇐ {𝕨𝕊type‿name‿value‿prec:
