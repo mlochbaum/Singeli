@@ -1069,7 +1069,7 @@ nodes ← {
         functions.Goto¨ lt ← functions.Label¨ else
         functions.SetLabel lf.label
         lt { 𝕩.Eval e ⋄ functions.SetLabel 𝕨 }¨ else
-        {Shows⇐!∘"Can't use if statement result as value"⋄kind⇐"error"}
+        {Shows⇐!∘"Can't use runtime if statement result as value"⋄kind⇐"error"}
       ;
         numbers.GetBool c ? then.Eval e ;
         r ← {Shows⇐!∘"Can't use if-0 statement result as value"⋄kind⇐"error"}
