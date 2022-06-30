@@ -597,6 +597,7 @@ functions ← {kname⇐"function"
     _ret_←{
       @≢rType? types.IsVoid rType? Append⍟𝕘 ⟨"ret",⊑types.primTypes⟩ ⋄@ ;
       Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, types.Cast⟩ 𝕩⟩
+      {Shows⇐!∘"Can't use return result as value"⋄kind⇐"error"}
     }
     Return⇐!∘"Early return from function with no explicit result type" _ret_ 1 @⊣´⊢
     Finish⇐{"Explicit result type needed"!IsTyped 𝕩⋄SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
