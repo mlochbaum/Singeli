@@ -603,11 +603,11 @@ functions ← {kname⇐"function"
     Finish⇐{"Explicit result type needed"!IsTyped 𝕩⋄SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
     Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨shows,Show rType⟩∾(•Repr∘≠⊸∾Show¨args)}
   }
-  _with ⇐ {
+  _with_ ⇐ {
     fs←current
     f←current↩program.AddFunction new
     {𝕩.Set f} 𝕨  # Passed in by nodes.Define, pretty hacky
-    f.Finish f 𝔽 𝕩
+    f (f.Finish 𝔽)program._trace_ 𝕘 𝕩
     current↩fs
     f
   }
@@ -942,11 +942,11 @@ nodes ← {
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "function"‿visit
     Scope⇐{ Visit scopes._defer o.Scope scopes.New 𝕩 }
     Eval⇐{
-      Ev←(o.Eval args env.New 𝕩) program._trace_ pos
+      ev←o.Eval args env.New 𝕩
       Ev¨ args
       𝕨.SetRType∘Ev¨ type
       Ev result
-    }functions._with
+    } functions._with_ pos
   }
   _setType ← { pos type‿env _𝕣 v:
     { ≠type ?
