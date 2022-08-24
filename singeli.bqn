@@ -1096,7 +1096,7 @@ nodes ← {
   n0 ← Word "0"
   For ⇐ {
     ⟨fn,ptrs,ind,from,to,body⟩←𝕩 ⋄ pos←𝕨
-    ptri←Ident¨ptrn←⊑¨ptrs
+    ptri←pos⊸Ident¨ptrn←⊑¨ptrs
     ptrv←ptrs(1⊑∾⟜<)¨ptri
     from↩n0⊣´from
     vardisp←1↓∾(","⊸∾¨ptrn)∾" over "⊸∾¨ind
