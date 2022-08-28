@@ -404,7 +404,7 @@ IsNat ← IsInt _and_ (0⊸≤)
 IsTup ← 0=•Type
 FmtNum ← '¯'(⊢+=×'-'-⊣)•Repr
 
-_tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!⟩)˙)∾↑)𝕗)}
+_tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!∘"Unhandled kind"⟩)˙)∾↑)𝕗)}
 Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
 Show  ← {⟨"tup{"∾"}"∾˜1↓·∾(","∾𝕊)¨, FmtNum, {𝕩.Shows@}⟩_tsel 𝕩}
 Match ← {𝕨 ⟨∧´𝕊¨, numbers.Match,≡,≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
@@ -500,7 +500,8 @@ types ← {kname⇐"type"
       𝕨 constants.New⍟ptr c Cast¨ 𝕩
     }
     Obj ← ("number"≢{𝕩.kind})◶⟨Num,IsTyped∘⊢◶⟨Fail˜,𝔽⟩⟩
-    𝕨 ⟨Tup˜, Num˜, Obj˜⟩_tsel˜ 𝕩  # _tsel selects on 𝕨; swap to use 𝕩
+    # _tsel selects on 𝕨; swap to use 𝕩
+    𝕨 ⟨Tup˜, Num˜, Fail˜, Fail˜, Obj˜⟩_tsel˜ 𝕩
   }
   _cc ← { Test‿Conv‿Fail _𝕣:
     (Conv ⊣ Fail○Show⍟(¬Test˜)⟜TypeOf)_asCast
