@@ -21,7 +21,7 @@ prelude ← 1⌽"
 #include<stdbool.h>
 #include<xmmintrin.h>
 #include<immintrin.h>
-#define si_assert(A) if (!(A)) __builtin_unreachable();
+#define "∾prefix∾"assert(A) if (!(A)) __builtin_unreachable();
 "
 
 lf ← @+10
@@ -97,7 +97,7 @@ Name‿Rename‿Type‿Lit‿I32 ← {𝕏{𝕩.Next@}}¨ ⟨as.Name,as.Rename,a
 All ← {𝕩.All@}
 
 decl ← {
-  FromName ← Nat 4⊸↓  # si_f
+  FromName ← Nat (1+≠prefix)⊸↓  # si_f
   c←o←@ ⋄ Init⇐{𝕤⋄c↩↕0⋄o↩⟨⟩}
   BeginFn ⇐ { n←FromName𝕨 ⋄ n<≠c ? n⊑c ? o∾↩<𝕩 ; @}
   Call ⇐ { i←FromName𝕩 ⋄ c↑˜↩(≠c)⌈1+i ⋄ c 1⌾(i⊸⊑)↩ }
