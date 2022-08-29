@@ -9,7 +9,8 @@ short‿long‿args‿dup‿desc ← <˘⍉> ⟨
   "o"‿"out"   ‿1‿0‿"Output file (print to stdout by default)"
 # "i"‿"stdin" ‿0‿0‿"Use stdin as input, after any argument files"
   "t"‿"target"‿1‿0‿"Output type: c (default), ir"
-  "p"‿"pre"   ‿1‿0‿"Prefix for C output"
+  "p"‿"pre"   ‿1‿0‿"Preamble placed before C output"
+  "n"‿"name"  ‿1‿0‿"Prefix for names in C output"
   "d"‿"deplog"‿1‿0‿"Output file for log of included dependencies"
 ⟩
 short‿long ∾˜¨⟜<¨↩ "-"‿"--"
@@ -20,7 +21,7 @@ op ← (short⊸⊐ ⌊ long⊸⊐) •args
 op ⌈↩ c ×¬ <`⊸= op⊏args
 opts ← ((1+c)∾˜f/op) ⊔ ((op=c)(1-˜×⟜(+`))○(∾⟜1)f←¬0»op⊏args) ⊔ •args
 "Option can't be duplicated" ! ∧´ (dup∾1) ≥ 1<≠¨opts
-help‿out‿target‿pre‿deplog‿files ← (1⌾(¯1⊸⊑)args) ⊣◶⟨0<≠∘⊢,⊑¨⊢⟩¨ opts
+help‿out‿target‿pre‿namepre‿deplog‿files ← (1⌾(¯1⊸⊑)args) ⊣◶⟨0<≠∘⊢,⊑¨⊢⟩¨ opts
 
 Rel ← •wdpath⊸•file.At
 files Rel¨↩
@@ -35,7 +36,7 @@ deplog ↩ @ ⊣´ Rel¨deplog
 frontend ← •Import "singeli.bqn"
 backend ← {
   ⟨"ir"⟩≡target ? ⊢ ;
-  pre ⊑⊸{𝕨⊸𝕏}⍟(0<≠∘⊣) •Import "emit_c.bqn"
+  pre ⊑⊸{𝕨⊸𝕏}⍟(0<≠∘⊣) namepre •Import "emit_c.bqn"
 }
 output ← {
   ≠out ? (Rel⊑out) •file.Chars ⊢ ;
