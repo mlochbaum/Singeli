@@ -892,7 +892,7 @@ nodes ← {
       ;
         args←res←⟨⟩
         Exec ⇐ {args∾↩<𝕨 ⋄ {Set⇐{res∾↩<𝕩}}result.Eval𝕩}
-        _cached ⇐ {i←args⊸⊐⌾<𝕩⋄i<≠res?i⊑res;𝔽𝕩} # ⊐ should use Match
+        _cached ⇐ {i←𝕩⊸((=○≠)◶⟨0,∧´Match¨⟩)¨args⋄∨´i?(⊑/i)⊑res;𝔽𝕩}
       }
       {
         Count 𝕩 ? a←DeVar𝕩 ⋄ ∧´AllEq¨iPar⊔a ? CT a ?
