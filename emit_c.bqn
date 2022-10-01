@@ -2,9 +2,9 @@ prefix ← "_" ∾˜ "si" ⊣´ •args
 
 # x86
 arch ← {
-  Type ⇐ { bType‿w‿am‿ptrs:
+  Type ⇐ { 𝕨𝕊bType‿w‿am‿ptrs:
     u‿f ← bType = "uf"
-    (ptrs/"*") ∾˜ {
+    (" "∾𝕨) ⊢⊘(∾˜) (ptrs/"*") ∾˜ {
       0≤am      ? "Unsupported vector type" ! ∊⟜(2⋆6+↕4)⌾<l←w×am  # 64…512
                   ∾⟨"__m",•Repr l,{¬f?"i";(64=w)/"d"}⟩ ;
       f         ? "float"‿"double"⊑˜32‿64⊸⊐⌾<w ;
@@ -13,6 +13,9 @@ arch ← {
       ⊑w∊2⋆3+↕4 ? ∾⟨u/"u","int",•Repr w,"_t"⟩ ;
       !"Unsupported type"
     }
+  ;
+    𝕨𝕊⟨"fn",res‿args,ptrs⟩:
+    ∾⟨res, " (*",ptrs/"*",𝕨⊢⊘∾")(", ","Join args, ")"⟩
   }
 }
 
@@ -69,8 +72,9 @@ as ← {
   Name ⇐ ⊢
   Rename ⇐ prefix⊸∾
   I32 ⇐ ('-'=⊑)⊸(⊣-∘⊢⍟⊣Nat∘↓)
+  Nest ← +`·-˝=⌜
   Lit ⇐ (⊑"$!"⊐⊏)◶(Rename 1⊸↓)‿{
-    Bl ← {0<+`-˝"{}"=⌜𝕩} ⋄ br ← Bl𝕩
+    Bl ← 0<"{}"⊸Nest ⋄ br ← Bl𝕩
     v‿t ← (1-˜+`×¬)∘(1⌾⊑br<':'⊸=)⊸⊔ 𝕩
     {¬∨´br?
       s ← {'f':{("."/˜¬∨´"e."∊v)∾("f32"≡t)/"f"}; (('u'=𝕩)/"u")∾"ll"} ⊑t
@@ -80,21 +84,27 @@ as ← {
       "{"∾"}"∾˜∾1↓⥊(<",")≍˘ Lit¨ ((⊢-˜+`×¬)∘(Bl<','⊸=)⊔⊢)○(¯1↓4↓⊢) v
     }
   }‿⊢
-  Type ⇐ { 𝕊s:  # Singeli type to native
+  Type ⇐ { 𝕨𝕊s:  # Singeli type to native
     s ↓˜↩ ptrs ← +´∧`'*'=s
     am ← { '['≠⊑s ? ¯1 ;
       a‿t ← (1-˜+`×¬)∘(1⌾⊑']'⊸=)⊸⊔ s
       s↩t ⋄ Nat a
     }
-    "Function type backend unimplemented"!'('≠⊑s
-    arch.Type {
+    ParseFn ← {
+      s ← (','=𝕩)∧n←(1⊸=∧·∧`0⊸<)"()"Nest𝕩
+      a ← Type¨ ((1-˜+`×¬)s∨»⊸≠⊸≥n)⊔𝕩
+      !")->"≡3↑r←n¬⊸/𝕩
+      ⟨Type 3↓r, a⟩
+    }
+    𝕨 arch.Type {
       "void": 'v'‿0‿¯1‿ptrs;
+      '('=⊑𝕩? ⟨"fn",ParseFn 𝕩,ptrs⟩;
       ⟨⊑𝕩, Nat 1↓𝕩, am, ptrs⟩
     } s
   }
 }
 
-Name‿Rename‿Type‿Lit‿I32 ← {𝕏{𝕩.Next@}}¨ ⟨as.Name,as.Rename,as.Type,as.Lit,as.I32⟩
+Name‿Rename‿Type‿Lit‿I32 ← {𝕏{𝔽∘𝔾⊘(𝔽⟜𝔾)}{𝕩.Next@}}¨ ⟨as.Name,as.Rename,as.Type,as.Lit,as.I32⟩
 All ← {𝕩.All@}
 
 decl ← {
@@ -110,34 +120,26 @@ List ← ", "⊸Join
 
 BeginFn ← {𝕤
   n ← Rename 𝕩
-  ret ← Type 𝕩
+  ret ← n Type 𝕩
   argc ← I32 𝕩
   param ← List ((Type𝕩˙)∾" v"∾•Repr)¨ ↕argc
-  n⊸decl.BeginFn⊸⊢ ∾⟨"static ",ret," ",n,"(",param,") {"⟩
+  n⊸decl.BeginFn⊸⊢ ∾⟨"static ",ret,"(",param,") {"⟩
 }
 Export ← {
-  val ← ('!'=⊑)◶⟨as.Rename,as.Lit⟩ e ← Name 𝕩
-  ret ← Type 𝕩
-  {
-  'f'≡⊑e?
-    aname ← ("v"∾•Repr)¨ ↕≠ atype ← (Type𝕩˙)¨ ↕I32 𝕩
-    exp ← Name 𝕩
-    param ← ","Join atype {∾𝕨‿" "‿𝕩}¨ aname
-    ∾⟨ret," (*const ",exp,")(",param,") = ",val,";"⟩
-  ;
-    exp ← Name 𝕩
-    ∾⟨"const ",ret," ",exp," = ",val,";"⟩
-  }𝕩
+  exp ← "const "∾Name 𝕩
+  ret ← exp Type 𝕩
+  val ← ('!'=⊑)◶⟨as.Rename 1⊸↓⍟('$'=⊑),as.Lit⟩ Name 𝕩
+  ∾⟨ret," = ",val,";"⟩
 }
 Define ← {𝕊 ty‿id‿val:
-  {'{'=⊑1↑⊑val? '*'=¯1⊑ty? ty↓˜↩¯1⋄id∾↩"[]"; @}
-  ∾ ty‿" "‿id‿" = "∾val
+  {'{'=⊑1↑⊑val? '*'=⊑ty? ty↓˜↩1⋄id∾↩"[]"; @}
+  ∾ (id as.Type ty)‿" = "∾val
 }
 Constant ← {
-  name ← Rename 𝕩
-  type ← Type 𝕩
+  id   ← Rename 𝕩
+  type ← Name 𝕩 # Define turns to type
   val ← Lit 𝕩
-  ∾⟨"static ",Define type‿name‿val,";"⟩
+  ∾⟨"static ",Define type‿id‿val,";"⟩
 }
 ⟨New⟩ ← {
   Special ← {
@@ -157,7 +159,7 @@ Constant ← {
   New ⇐ {
     id   ← Name 𝕩
     kind ← Name 𝕩
-    ty   ← Type 𝕩
+    ty   ← Name 𝕩 # Define turns to type
     c ← code⊸⊐⌾< kind
     (∾"Unknown new: `"‿kind‿"`") ! c<≠code
     val ← (c⊑op) {𝕎𝕩} 𝕩

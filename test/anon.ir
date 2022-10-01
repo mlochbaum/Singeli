@@ -3,4 +3,4 @@ new v1 emit i64 anon v0 v0
 ret v1
 endFn
 
-export f0 i64 1 i64 efn
+export efn (i64)->i64 f0

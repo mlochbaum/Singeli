@@ -566,11 +566,11 @@ registers ← {kname⇐"register"
 constants ← {kname⇐"constant"
   New ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ value⇐𝕩
-    shows⇐∾"!:"∾¨s←Show¨𝕩‿𝕨 ⋄ fmtType⇐0 ⋄ Prot⇐shows∾" "∾1⊑s˙ ⋄ Matches⇐≡
+    shows⇐∾"!:"∾¨s←Show¨𝕩‿𝕨 ⋄ fmtType⇐0 ⋄ Matches⇐≡
   }
   Static ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
-    shows⇐"$c"∾•Repr𝕩 ⋄ fmtType⇐1 ⋄ Prot⇐1↓shows∾" "∾Show∘type ⋄ Matches⇐≡
+    shows⇐"$c"∾•Repr𝕩 ⋄ fmtType⇐1 ⋄ Matches⇐≡
   }
 }
 
@@ -812,7 +812,7 @@ program ← {
   Disp ← J Show¨⌾(1⊸↓)
   DispConstants←{ ∾⟜(<⟨⟩)⍟(0<≠) (↕≠𝕩) {∾⟨"constant c",•Repr𝕨,∾(" "∾Show)¨𝕩⟩}¨ 𝕩 }
   DispFunction←{ ∾⟨"beginFn "∾𝕩.Prot@⟩‿(Disp¨ 𝕩.Instrs@)‿⟨"endFn",""⟩ }
-  DispExport←{ "export " ∾ J {𝕩.Prot@}⌾⊑ ⌽𝕩 }
+  DispExport←{ "export " ∾ J <⊸∾⟜(TypeOf⋈○Show⊢)´ 𝕩 }
 }
 
 nodes ← {
