@@ -476,6 +476,7 @@ types ← {kname⇐"type"
       tPTR,  (@≢𝕘)⊑𝕊‿𝕘
       tTUP,  =○≠ _and_ (∧´𝕊¨)
       tPRIM, 𝔽
+      tVOID, 1
       0
     ⟩ _cases 𝕩
   }
@@ -603,6 +604,10 @@ functions ← {kname⇐"function"
     Return⇐!∘"Early return from function with no explicit result type" _ret_ 1 @⊣´⊢
     Finish⇐{"Explicit result type needed"!IsTyped 𝕩⋄SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
     Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨shows,Show rType⟩∾(<∘•Repr∘≠⊸∾Show¨args)}
+    CastArgs⇐{
+      args(("Wrong number of arguments: expected "∾•Repr∘⊣)!≡)○≠𝕩
+      args types.Cast¨ 𝕩
+    }
   }
   _with_ ⇐ {
     fs←current
@@ -634,7 +639,7 @@ functions ← {kname⇐"function"
     f ← ⊑𝕩
     "Calling non-function" ! "function"≡Kind f
     t ← f.rType
-    t Append ⟨"call",t,f⟩ ∾ ≠⊸∾ 1↓𝕩
+    t Append ⟨"call",t,f⟩ ∾ ≠⊸∾ f.CastArgs 1↓𝕩
   }
   _instr ← { Append (𝕨𝔽𝕩)<⊸∾𝕨⋈𝕩 ⋄ 𝕩 }
   SetLabel ⇐ "lbl"_instr
