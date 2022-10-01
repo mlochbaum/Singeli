@@ -86,6 +86,7 @@ as ← {
       a‿t ← (1-˜+`×¬)∘(1⌾⊑']'⊸=)⊸⊔ s
       s↩t ⋄ Nat a
     }
+    "Function type backend unimplemented"!'('≠⊑s
     arch.Type {
       "void": 'v'‿0‿¯1‿ptrs;
       ⟨⊑𝕩, Nat 1↓𝕩, am, ptrs⟩

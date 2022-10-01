@@ -408,7 +408,7 @@ _tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!∘"Unhandled kind"⟩)˙)∾↑)
 Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
 Show  ← {⟨"tup{"∾"}"∾˜1↓·∾(","∾𝕊)¨, FmtNum, {𝕩.Shows@}⟩_tsel 𝕩}
 Match ← {𝕨 ⟨∧´𝕊¨, numbers.Match,≡,≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
-IsTyped←("register"⊸≡∨"constant"⊸≡) Kind
+IsTyped←∊⟜"register"‿"constant"‿"function"⌾< Kind
 TypeOf← {⟨types.Tup 𝕊¨, {𝕩.Type@}⟩_tsel 𝕩}
 
 types ← {kname⇐"type"
@@ -421,7 +421,7 @@ types ← {kname⇐"type"
       ∾⟜•Repr´             # Primitive:   qual‿len     u8
       {∾"["‿𝕨‿"]"‿𝕩}○Show´ # Vector:      count‿t      [4]…
       "*"∾Show             # Pointer:     t            *…
-      T⊸{∾𝕨‿" -> "‿𝕩}⟜Show´# Function:    ⟨t, q‿r‿s⟩   (…,…,…) -> …
+      T⊸{∾𝕨‿"->"‿𝕩}⟜Show´  # Function:    ⟨q‿r‿s, t⟩   (…,…,…) -> …
       T                    # Tuple:       q‿r‿s        (…,…,…)
     ⟩∘dat
     Matches⇐{𝕨Is∘⊢◶0‿Equiv𝕩}
@@ -472,11 +472,12 @@ types ← {kname⇐"type"
 
   _typeRel_ ← {
     𝕨 ⟨
+      tVOID, 1
+      tPRIM, 𝔽
       tVEC,  =○⊑ _and_ (𝕊○(¯1⊸⊑))
       tPTR,  (@≢𝕘)⊑𝕊‿𝕘
-      tTUP,  =○≠ _and_ (∧´𝕊¨)
-      tPRIM, 𝔽
-      tVOID, 1
+      tTUP,  MTup ← =○≠ _and_ (∧´𝕊¨)
+      tFUN,  𝕊○(1⊸⊑) _and_ (MTup○⊑)
       0
     ⟩ _cases 𝕩
   }
