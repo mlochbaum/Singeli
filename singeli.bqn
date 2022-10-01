@@ -566,11 +566,11 @@ registers ← {kname⇐"register"
 constants ← {kname⇐"constant"
   New ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ value⇐𝕩
-    shows⇐∾"!:"∾⟜Show¨𝕩‿𝕨 ⋄ fmtType⇐0 ⋄ Matches⇐≡
+    shows⇐∾"!:"∾¨s←Show¨𝕩‿𝕨 ⋄ fmtType⇐0 ⋄ Prot⇐shows∾" "∾1⊑s˙ ⋄ Matches⇐≡
   }
   Static ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
-    shows⇐"$c"∾•Repr𝕩 ⋄ fmtType⇐1 ⋄ Matches⇐≡
+    shows⇐"$c"∾•Repr𝕩 ⋄ fmtType⇐1 ⋄ Prot⇐1↓shows∾" "∾Show∘type ⋄ Matches⇐≡
   }
 }
 
@@ -779,7 +779,7 @@ program ← {
   _with ⇐ {
     fns←⟨⟩ ⋄ AddFunction ↩ { f ← 𝕏 ≠fns ⋄ fns∾⟜<↩f ⋄ f }
     cns←⟨⟩ ⋄ AddConstant ↩ { c ← (t←TypeOf𝕩) constants.Static ≠cns ⋄ cns∾⟜<↩t‿𝕩 ⋄ c }
-    exp←⟨⟩ ⋄ Export ↩ { "Exporting non-function" ! "function"≡Kind 𝕩 ⋄ exp ∾⟜<↩ 𝕨‿𝕩 }
+    exp←⟨⟩ ⋄ Export ↩ { "Exports must be typed" ! IsTyped 𝕩 ⋄ exp ∾⟜<↩ 𝕨‿𝕩 }
     ⟨_trace_⟩↩s←Stack@
     𝕨 𝔽⎊s.Report 𝕩
     AddFunction↩AddConstant↩Export↩!∘0

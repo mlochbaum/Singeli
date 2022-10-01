@@ -116,12 +116,18 @@ BeginFn ← {𝕤
   n⊸decl.BeginFn⊸⊢ ∾⟨"static ",ret," ",n,"(",param,") {"⟩
 }
 Export ← {
-  val ← Rename 𝕩
+  val ← ('!'=⊑)◶⟨as.Rename,as.Lit⟩ e ← Name 𝕩
   ret ← Type 𝕩
-  aname ← ("v"∾•Repr)¨ ↕≠ atype ← (Type𝕩˙)¨ ↕I32 𝕩
-  exp ← Name 𝕩
-  param ← ","Join atype {∾𝕨‿" "‿𝕩}¨ aname
-  ∾⟨ret," (*const ",exp,")(",param,") = ",val,";"⟩
+  {
+  'f'≡⊑e?
+    aname ← ("v"∾•Repr)¨ ↕≠ atype ← (Type𝕩˙)¨ ↕I32 𝕩
+    exp ← Name 𝕩
+    param ← ","Join atype {∾𝕨‿" "‿𝕩}¨ aname
+    ∾⟨ret," (*const ",exp,")(",param,") = ",val,";"⟩
+  ;
+    exp ← Name 𝕩
+    ∾⟨"const ",ret," ",exp," = ",val,";"⟩
+  }𝕩
 }
 Define ← {𝕊 ty‿id‿val:
   {'{'=⊑1↑⊑val? '*'=¯1⊑ty? ty↓˜↩¯1⋄id∾↩"[]"; @}

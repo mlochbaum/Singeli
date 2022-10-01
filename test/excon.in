@@ -1,0 +1,3 @@
+'num' = cast{i16, 12}
+c:__pnt{i32} = tup{11,10,9}
+'arr' = c
