@@ -1,0 +1,3 @@
+fn{x}(a:u32, b:u32) = tupsel{x,tup{a,b}}
+fns:__pnt{type{fn{0}}} = tup{fn{0},fn{1}}
+'fn_arr' = fns

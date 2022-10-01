@@ -9,4 +9,4 @@ lbl l1
 ret !3:i64
 endFn
 
-export efn (i64)->i64 f0
+export efn (i64)->i64 $f0

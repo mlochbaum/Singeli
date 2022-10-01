@@ -585,7 +585,7 @@ symbols ← {kname⇐"symbol"
 functions ← {kname⇐"function"
   current⇐{Append⇐NextLabel⇐Return⇐!∘"No function active"}
   New ← {𝕤
-    kind⇐kname ⋄ shows⇐"f"∾•Repr id⇐𝕩 ⋄ Matches⇐≡ ⋄ type⇐@
+    kind⇐kname ⋄ shows⇐"$f"∾•Repr id⇐𝕩 ⋄ Matches⇐≡ ⋄ type⇐@
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType⇐@
     Next←{ 𝕩 registers.New handle+↩1 }
     NextLabel⇐{𝕤⋄ labels.New label+↩1 }
@@ -604,7 +604,7 @@ functions ← {kname⇐"function"
     }
     Return⇐!∘"Early return from function with no explicit result type" _ret_ 1 @⊣´⊢
     Finish⇐{"Explicit result type needed"!IsTyped 𝕩⋄SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
-    Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨shows,Show rType⟩∾(<∘•Repr∘≠⊸∾Show¨args)}
+    Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨1↓shows,Show rType⟩∾(<∘•Repr∘≠⊸∾Show¨args)}
     CastArgs⇐{
       args(("Wrong number of arguments: expected "∾•Repr∘⊣)!≡)○≠𝕩
       args types.Cast¨ 𝕩
