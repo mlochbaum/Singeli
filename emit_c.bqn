@@ -150,7 +150,7 @@ Constant ← {
   Call ← 1⊸↑⊸≡⟜"^"◶⟨{𝕨‿"("‿𝕩‿")"}⟜List, Special⟩
   code‿op ← <˘⍉>⟨
     "val" ‿(⋈ Lit)
-    "call"‿{ decl.Call fn ← Rename 𝕩 ⋄ fn Call (Lit𝕩˙)¨ ↕I32 𝕩 }
+    "call"‿{ fn ← Lit 𝕩 ⋄ fn Call (Lit𝕩˙)¨ ↕I32 𝕩 }
     "emit"‿(Name ≡⟜"op"◶⟨
         Call⟜(as.Lit¨All)
         { o←Name 𝕩 ⋄ ⟨Lit 𝕩," ",o," ",Lit 𝕩⟩ }

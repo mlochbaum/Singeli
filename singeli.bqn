@@ -470,6 +470,12 @@ types ← {kname⇐"type"
   VCount ← ⟨ tVEC,⊑, 1 ⟩ _cases
   VType ← ⟨ tVEC,1⊸⊑, tPTR,⊢ ⟩ _cases
 
+  FnCast ⇐ {
+    args‿ret ← ⟨tFUN,⊢, !∘"Calling non-function"⟩_cases 𝕨
+    args(("Wrong number of arguments: expected "∾•Repr∘⊣)!≡)○≠𝕩
+    ⟨args Cast¨ 𝕩, ret⟩
+  }
+
   _typeRel_ ← {
     𝕨 ⟨
       tVOID, 1
@@ -605,10 +611,6 @@ functions ← {kname⇐"function"
     Return⇐!∘"Early return from function with no explicit result type" _ret_ 1 @⊣´⊢
     Finish⇐{"Explicit result type needed"!IsTyped 𝕩⋄SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
     Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨1↓shows,Show rType⟩∾(<∘•Repr∘≠⊸∾Show¨args)}
-    CastArgs⇐{
-      args(("Wrong number of arguments: expected "∾•Repr∘⊣)!≡)○≠𝕩
-      args types.Cast¨ 𝕩
-    }
   }
   _with_ ⇐ {
     fs←current
@@ -638,9 +640,9 @@ functions ← {kname⇐"function"
   }_destructure
   Call ⇐ {
     f ← ⊑𝕩
-    "Calling non-function" ! "function"≡Kind f
-    t ← f.rType
-    t Append ⟨"call",t,f⟩ ∾ ≠⊸∾ f.CastArgs 1↓𝕩
+    "Calling non-function" ! IsTyped f
+    a‿t ← (TypeOf f) types.FnCast 1↓𝕩
+    t Append ⟨"call",t,f⟩ ∾ ≠⊸∾ a
   }
   _instr ← { Append (𝕨𝔽𝕩)<⊸∾𝕨⋈𝕩 ⋄ 𝕩 }
   SetLabel ⇐ "lbl"_instr
