@@ -105,20 +105,25 @@ numbers ← {kname⇐"number"
 }
 
 ptrWidth ← 64  # Hard-code for now
-architectures ← {
-  # 𝕩 is a list of extension dependency chains.
-  New ⇐ {
-    TSort ← {{𝕊⍟(𝕩<○≠⊢)⟜(𝕩∾·/𝕨⊸<)𝕨∨∧´∘⊏⟜𝕨¨p}⟜/0¨p←𝕩} # Topological sort
-    u ← ⍷∾𝕩
-    u ⊏˜↩ TSort ∾¨ (⊢⊔○∾(¯1↓↑)¨) (<u)⊐¨𝕩
-    m ← ∨˝∘∧⎉1‿∞˜⍟(⌈2⋆⁼≠) (≥⌜˜↕∘≠)⊸×∨´×⌜˜¨(<u)∊¨𝕩    # Dependency matrix
-    Id ← u⊸⊐
-    Set ⇐ {
-      mask ⇐ ({𝕩.mask}𝕨) ∨˝ (Id 𝕩) ⊏ m
-      Has ⇐ mask ⊑˜ Id⌾<
-    }
-  }
-  x86 ⇐ New ((⊢-˜+`×¬)' '⊸=)⊸⊔¨ •file.Lines "data/x86_ext.txt"
+archFile ← "data/x86_ext.txt"
+architecture ← {
+  # exts is a list of extension dependency chains.
+  exts ← ((⊢-˜+`×¬)' '⊸=)⊸⊔¨ •file.Lines archFile
+  TSort ← {{𝕊⍟(𝕩<○≠⊢)⟜(𝕩∾·/𝕨⊸<)𝕨∨∧´∘⊏⟜𝕨¨p}⟜/0¨p←𝕩}  # Topological sort
+  u ← ⍷∾exts
+  u ⊏˜↩ TSort ∾¨ (⊢⊔○∾(¯1↓↑)¨) (<u)⊐¨exts
+  m ← ∨˝∘∧⎉1‿∞˜⍟(⌈2⋆⁼≠) (≥⌜˜↕∘≠)⊸×∨´×⌜˜¨(<u)∊¨exts  # Dependency matrix
+  # Look up a list of symbols
+  IdErr ← {!∘(∾"Unknown architecture features:"<⊸∾' '∾¨/○⥊⟜𝕩)⍟(∨´)⥊𝕨=≠u ⋄ 𝕨}
+  FromSym ← {"Expected symbol for architecture feature"!"symbol"≡Kind𝕩⋄Show𝕩}
+  Id ← u⊸⊐⊸IdErr FromSym¨
+  # An architecture is a mask of supported features
+  init ⇐ 1¨ u
+  New ⇐ { 𝕨 ∨˝ (Id 𝕩) ⊏ m }
+  Contains ⇐ ∧´≥
+  Intersect ⇐ ∧ ⋄ Union ⇐ ∨
+  Has ⇐ ∧´⊏˜⟜Id  # Has all in list 𝕩
+  List ⇐ /⟜u
 }
 
 MakeStack ← {𝕤
@@ -589,9 +594,13 @@ symbols ← {kname⇐"symbol"
 }
 
 functions ← {kname⇐"function"
-  current⇐{Append⇐NextLabel⇐Return⇐!∘"No function active"}
+  current⇐{
+    Append⇐NextLabel⇐Return⇐SetArch⇐!∘"No function active"
+    arch ⇐ architecture.init
+  }
   New ← {𝕤
     kind⇐kname ⋄ shows⇐"$f"∾•Repr id⇐𝕩 ⋄ Matches⇐≡ ⋄ type⇐@
+    arch⇐architecture.init ⋄ SetArch⇐{arch↩𝕩}
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType⇐@
     Next←{ 𝕩 registers.New handle+↩1 }
     NextLabel⇐{𝕤⋄ labels.New label+↩1 }
@@ -624,6 +633,8 @@ functions ← {kname⇐"function"
   Label ⇐ { current.NextLabel 𝕩 }
   Append ← { 𝕨 current.Append 𝕩 }
   Return ⇐ { current.Return 𝕩 }
+  GetArch ← {𝕊: current.arch }
+  SetArch ← { current.SetArch 𝕩 }
   Emit ⇐ { (⊑𝕩) Append "emit" <⊸∾ 𝕩 }
   Copy ⇐ { t←TypeOf𝕩 ⋄ t Append "val"‿t‿𝕩 }
   _destructure ← {
@@ -652,7 +663,12 @@ functions ← {kname⇐"function"
     ⟨"call",Call _v1⟩, ⟨"emit",Emit _v1⟩, ⟨"return",Return⟩
     ⟨"makelabel",Label⟩, ⟨"goto",Goto _p1⟩
     ⟨"setlabel",SetLabel _p1 ⋈∘Label⍟(0=≠)⟩
-  ⟩
+  ⟩ ∾ { New‿Union‿Has‿List ← architecture ⋄ S←SetArch ⋄ G←GetArch ⋄ ⟨
+    ⟨"setarch",S New⟩
+    ⟨"addarch",S G Union New⟩
+    ⟨"hasarch",G⊸Has⟩
+    ⟨"listarch",symbols.New¨List∘G⟩
+  ⟩}
 }
 
 blocks ← {kname⇐"block"
