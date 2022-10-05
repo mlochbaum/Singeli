@@ -425,7 +425,7 @@ types ← {kname⇐"type"
   New ← {k𝕊d:
     kind⇐kname
     typeKind‿dat⇐𝕨‿𝕩
-    T←"("∾")"«·∾(","∾Show)¨  # Display type tuple
+    T←"("∾")"∾˜1↓·∾(","∾Show)¨  # Display type tuple
     Shows⇐typeKind◶⟨
       "void"               # Void:                     void
       ∾⟜•Repr´             # Primitive:   qual‿len     u8
