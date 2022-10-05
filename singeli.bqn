@@ -124,6 +124,11 @@ architecture ← {
   Intersect ⇐ ∧ ⋄ Union ⇐ ∨
   Has ⇐ ∧´⊏˜⟜Id  # Has all in list 𝕩
   List ⇐ /⟜u
+  # Architecture to be used for the next function created
+  next ← init
+  SeeNext ⇐ {𝕊:next}
+  NewFunction ⇐ {𝕊: r←next ⋄ next↩init ⋄ r }
+  With ⇐ { NewFunction ⊢ (⊑𝕩){𝔽} ⊣ {next↩𝕩}∘(New 1↓𝕩) }_v1
 }
 
 MakeStack ← {𝕤
@@ -600,7 +605,7 @@ functions ← {kname⇐"function"
   }
   New ← {𝕤
     kind⇐kname ⋄ shows⇐"$f"∾•Repr id⇐𝕩 ⋄ Matches⇐≡ ⋄ type⇐@
-    arch⇐architecture.init ⋄ SetArch⇐{arch↩𝕩}
+    arch⇐architecture.NewFunction@ ⋄ SetArch⇐{arch↩𝕩}
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType⇐@
     Next←{ 𝕩 registers.New handle+↩1 }
     NextLabel⇐{𝕤⋄ labels.New label+↩1 }
@@ -725,6 +730,7 @@ builtins ← {
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩
       ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓_v1⟩
       ⟨"apply",{"apply: second parameter must be a tuple"!1==𝕩⋄𝕎𝕩}_p2⟩
+      ⟨"witharch",architecture.With⟩
     ⟩
     functions.builtins
     numbers.builtins
@@ -914,9 +920,12 @@ nodes ← {
       Exec‿_cached ← { result.node≢"function"?
         Exec ⇐ result.Eval∘⊢ ⋄ _cached ⇐ {𝔽}
       ;
-        args←res←⟨⟩
-        Exec ⇐ {args∾↩<𝕨 ⋄ {Set⇐{res∾↩<𝕩}}result.Eval𝕩}
-        _cached ⇐ {i←𝕩⊸((=○≠)◶⟨0,∧´Match¨⟩)¨args⋄∨´i?(⊑/i)⊑res;𝔽𝕩}
+        args←res←arches←⟨⟩ ⋄ AN←architecture.SeeNext
+        Exec ⇐ {args∾↩<𝕨 ⋄ arches∾↩<AN@ ⋄ {Set⇐{res∾↩<𝕩}}result.Eval𝕩}
+        _cached ⇐ {
+          i ← (𝕩⊸((=○≠)◶⟨0,∧´Match¨⟩)¨args) ∧ arches≡¨<AN@
+          ∨´i ? (⊑/i)⊑res ; 𝔽𝕩
+        }
       }
       {
         Count 𝕩 ? a←DeVar𝕩 ⋄ ∧´AllEq¨iPar⊔a ? CT a ?
