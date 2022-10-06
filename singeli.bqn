@@ -107,18 +107,14 @@ numbers ← {kname⇐"number"
 ptrWidth ← 64  # Hard-code for now
 archFile ← "data/x86_ext.txt"
 architecture ← {
-  # exts is a list of extension dependency chains.
-  exts ← ((⊢-˜+`×¬)' '⊸=)⊸⊔¨ •file.Lines archFile
-  TSort ← {{𝕊⍟(𝕩<○≠⊢)⟜(𝕩∾·/𝕨⊸<)𝕨∨∧´∘⊏⟜𝕨¨p}⟜/0¨p←𝕩}  # Topological sort
-  u ← ⍷∾exts
-  u ⊏˜↩ TSort ∾¨ (⊢⊔○∾(¯1↓↑)¨) (<u)⊐¨exts
-  m ← ∨˝∘∧⎉1‿∞˜⍟(⌈2⋆⁼≠) (≥⌜˜↕∘≠)⊸×∨´×⌜˜¨(<u)∊¨exts  # Dependency matrix
+  a ← •Import "arch.bqn"
+  u‿m ← a.ArchFlagAndMat •file.Lines archFile
+  init ⇐ u a.BaseArch •args
   # Look up a list of symbols
   IdErr ← {!∘(∾"Unknown architecture features:"<⊸∾' '∾¨/○⥊⟜𝕩)⍟(∨´)⥊𝕨=≠u ⋄ 𝕨}
   FromSym ← {"Expected symbol for architecture feature"!"symbol"≡Kind𝕩⋄Show𝕩}
   Id ← u⊸⊐⊸IdErr FromSym¨
   # An architecture is a mask of supported features
-  init ⇐ 1¨ u
   New ⇐ { 𝕨 ∨˝ (Id 𝕩) ⊏ m }
   Contains ⇐ ∧´≥
   Intersect ⇐ ∧ ⋄ Union ⇐ ∨
