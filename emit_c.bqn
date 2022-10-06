@@ -63,7 +63,7 @@ StartLine ← { 𝕊 str:
   }
   Finish ⇐ {𝕤
     IsWS ← ∊⟜(" "∾@+9)
-    "Excessive IR line" Assert (≠tok) ≤◶⟨(∨´ IsWS ∨ ·∨`'#'⊸=)⊑˜, 1⟩ i+1
+    "Excessive IR line" Assert tok ≠⊸≤◶⟨(∨´ IsWS ∨ ·∨`'#'⊸=)⊑˜, 1⟩ i+1
   }
 }
 
