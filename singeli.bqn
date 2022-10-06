@@ -120,6 +120,7 @@ architecture ← {
   Intersect ⇐ ∧ ⋄ Union ⇐ ∨
   Has ⇐ ∧´⊏˜⟜Id  # Has all in list 𝕩
   List ⇐ /⟜u
+  ListExt ⇐ List init⊸<
   # Architecture to be used for the next function created
   next ← init
   SeeNext ⇐ {𝕊:next}
@@ -620,7 +621,10 @@ functions ← {kname⇐"function"
     }
     Return⇐!∘"Early return from function with no explicit result type" _ret_ 1 @⊣´⊢
     Finish⇐{"Explicit result type needed"!IsTyped 𝕩⋄SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
-    Prot⇐{𝕤⋄ 1↓∾" "⊸∾¨⟨1↓shows,Show rType⟩∾(<∘•Repr∘≠⊸∾Show¨args)}
+    Prot⇐{𝕊:
+      ext ← (0<≠)◶⟨⟩‿(⋈·'+'⌾⊑·∾','⊸∾¨) architecture.ListExt arch
+      1↓∾" "⊸∾¨⟨1↓shows,Show rType⟩∾(<∘•Repr∘≠⊸∾Show¨args)∾ext
+    }
   }
   _with_ ⇐ {
     fs←current

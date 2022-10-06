@@ -119,11 +119,16 @@ Join ← {∾1↓⥊(<𝕨)≍˘𝕩}
 List ← ", "⊸Join
 
 BeginFn ← {𝕤
+  FmtExt ← {
+    e ← ((-´"aA")×'A'⊸≤)⊸+ 1↓𝕩
+    ∾"__attribute__ ((__target__ ("""‿e‿""")))"‿lf
+  }
   n ← Rename 𝕩
   ret ← n Type 𝕩
   argc ← I32 𝕩
   param ← List ((Type𝕩˙)∾" v"∾•Repr)¨ ↕argc
-  n⊸decl.BeginFn⊸⊢ ∾⟨"static ",ret,"(",param,") {"⟩
+  exts ← All 𝕩 ⋄ !1≥≠exts ⋄ !∧´('+'=⊑)¨exts
+  n⊸decl.BeginFn⊸⊢ ∾(FmtExt¨exts)∾⟨"static ",ret,"(",param,") {"⟩
 }
 Export ← {
   exp ← "const "∾Name 𝕩
