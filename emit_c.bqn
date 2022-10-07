@@ -2,14 +2,17 @@ prefix ← "_" ∾˜ "si" ⊣´ •args
 
 # x86
 arch ← {
+  ub←uv←0 ⋄ init ⇐ {ub↩uv↩0}
+  Headers ⇐ {𝕊: 1‿ub‿(uv>0)/⟨"stdint.h","stdbool.h","immintrin.h"⟩}
   Type ⇐ { 𝕨𝕊bType‿w‿am‿ptrs:
     u‿f ← bType = "uf"
     (" "∾𝕨) ⊢⊘(∾˜) (ptrs/"*") ∾˜ {
       0≤am      ? "Unsupported vector type" ! ∊⟜(2⋆6+↕4)⌾<l←w×am  # 64…512
+                  uv ⌈↩ 5-˜2⋆⁼l
                   ∾⟨"__m",•Repr l,{¬f?"i";(64=w)/"d"}⟩ ;
       f         ? "float"‿"double"⊑˜32‿64⊸⊐⌾<w ;
       w=0       ? "void" ;
-      u∧w=1     ? "bool" ;
+      u∧w=1     ? "bool" ⊣ ub↩1 ;
       ⊑w∊2⋆3+↕4 ? ∾⟨u/"u","int",•Repr w,"_t"⟩ ;
       !"Unsupported type"
     }
@@ -19,18 +22,10 @@ arch ← {
   }
 }
 
-prelude ← 1⌽"
-#include<stdint.h>
-#include<stdbool.h>
-#include<xmmintrin.h>
-#include<immintrin.h>
-#define "∾prefix∾"assert(A) if (!(A)) __builtin_unreachable();
-"
-
 lf ← @+10
 
 Generate ← {
-  decl.Init@
+  decl.Init@ ⋄ arch.Init@
   fn ← 0  # Whether a function is active
   ProcLine ← {
     line ← StartLine 𝕩
@@ -46,7 +41,8 @@ Generate ← {
   }⍟(0<≠)
   l ← ProcLine¨ lf ((⊢-˜+`×¬)∘=⊔⊢) 𝕩
   "Unclosed function" ! 0≡fn
-  ∾ ⟨𝕨⊣prelude⟩∾(decl.Emit@)∾l
+  prelude ← lf Join ("#include<"∾∾⟜">")¨ arch.Headers@
+  ∾ ⟨∾⟜(2⥊lf)⍟(0<≠)𝕨⊣prelude⟩∾(decl.Emit@)∾l
 }
 
 StartLine ← { 𝕊 str:
