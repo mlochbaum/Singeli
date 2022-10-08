@@ -413,7 +413,7 @@ FmtNum ← '¯'(⊢+=×'-'-⊣)•Repr
 
 _tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!∘"Unhandled kind"⟩)˙)∾↑)𝕗)}
 Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
-Show  ← {⟨"tup{"∾"}"∾˜1↓·∾(","∾𝕊)¨, FmtNum, {𝕩.Shows@}⟩_tsel 𝕩}
+Show  ← {⟨"tup{"∾"}"∾˜1↓·∾(","∾𝕊)¨, FmtNum, !, {(𝕏˜@).name}, {𝕩.Shows@}⟩_tsel 𝕩}
 Match ← {𝕨 ⟨∧´𝕊¨, numbers.Match,≡,≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
 IsTyped←∊⟜"register"‿"constant"‿"function"⌾< Kind
 TypeOf← {⟨types.Tup 𝕊¨, {𝕩.Type@}⟩_tsel 𝕩}
@@ -741,6 +741,7 @@ builtins ← {
       =‿≠‿<‿>‿≤‿≥ Ty2¨ ⟨Match,¬Match⟩ ∾ ·⥊≍˘⟜({𝕏˜}¨) ⟨types.SSubtype,types.Subtype⟩
     ⟩
   ⟩
+  values {name⇐𝕩}⊸{𝕏⊘𝕨}⍟(3=•Type∘⊢)¨˜↩ names
 }
 
 var ← {
@@ -938,7 +939,7 @@ nodes ← {
         Try ((iPar∊⊸/a)∾{𝕩.type}¨iTyp⊑¨⊸⊏a) env.Fixed e
       ;
         Next 𝕩
-      }_cached
+      }_cached⊘{𝕊: {name⇐𝕩} "(generator)"⍟(0=≠) name}
     }
   }
   Extender ⇐ {
