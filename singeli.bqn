@@ -582,8 +582,8 @@ constants ← {kname⇐"constant"
     shows⇐∾"!:"∾¨s←Show¨𝕩‿𝕨 ⋄ fmtType⇐0 ⋄ Matches⇐≡
   }
   Static ⇐ {
-    kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
-    shows⇐"$c"∾•Repr𝕩 ⋄ fmtType⇐1 ⋄ Matches⇐≡
+    kind⇐kname ⋄ type‿handle⇐𝕩
+    shows⇐"$c"∾(""⊢"_"∾𝕨)∾˜•Repr handle ⋄ fmtType⇐1 ⋄ Matches⇐≡
   }
 }
 
@@ -804,7 +804,7 @@ program ← {
   AddFunction⇐AddConstant⇐Export⇐!∘0 ⋄ trace⇐@
   _with ⇐ {
     fns←⟨⟩ ⋄ AddFunction ↩ { f ← 𝕨 𝕏 ≠fns ⋄ fns∾⟜<↩f ⋄ f }
-    cns←⟨⟩ ⋄ AddConstant ↩ { c ← (t←TypeOf𝕩) constants.Static ≠cns ⋄ cns∾⟜<↩t‿𝕩 ⋄ c }
+    cns←⟨⟩ ⋄ AddConstant ↩ { c ← 𝕨 constants.Static ⟨t←TypeOf𝕩, ≠cns⟩ ⋄ cns∾⟜<↩⟨Show c,t,𝕩⟩ ⋄ c }
     exp←⟨⟩ ⋄ Export ↩ { "Exports must be typed" ! IsTyped 𝕩 ⋄ exp ∾⟜<↩ 𝕨‿𝕩 }
     ⟨_trace_⟩↩s←Stack@
     𝕨 𝔽⎊s.Report 𝕩
@@ -836,7 +836,7 @@ program ← {
   }
   J ← 1↓·∾" "⊸∾¨
   Disp ← J Show¨⌾(1⊸↓)
-  DispConstants←{ ∾⟜(<⟨⟩)⍟(0<≠) (↕≠𝕩) {∾⟨"constant c",•Repr𝕨,∾(" "∾Show)¨𝕩⟩}¨ 𝕩 }
+  DispConstants←{ ∾⟜(<⟨⟩)⍟(0<≠) (J"constant"<⊸∾Show¨⌾(1⊸↓))¨ 𝕩 }
   DispFunction←{ ∾⟨"beginFn "∾𝕩.Prot@⟩‿(Disp¨ 𝕩.Instrs@)‿⟨"endFn",""⟩ }
   DispExport←{ "export " ∾ J <⊸∾⟜(TypeOf⋈○Show⊢)´ 𝕩 }
 }
@@ -1018,7 +1018,7 @@ nodes ← {
     ⟨type,value⟩←𝕩 ⋄ pos←𝕨
     Visit←{⌽⟨𝕏¨type,":",𝕏value⟩}
     ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "assign"‿visit
-    Eval⇐{ program.AddConstant pos type‿𝕩 _setType value.Eval 𝕩 }
+    Eval⇐{ (1⊑𝕨) program.AddConstant pos type‿𝕩 _setType value.Eval 𝕩 }
   }
   Define ⇐ {
     ⟨name,value⟩←𝕩 ⋄ pos←𝕨
