@@ -910,8 +910,9 @@ nodes ← {
     Visit←{((iPar⊏uPar)∾⟜(∾""<⊸∾":"⊸∾¨)¨tname)∾⟨𝕏¨conds,𝕏result⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "lambda"‿visit
     Scope⇐{ Visit scopes._defer o.Scope (uPar∾uTyp) scopes.New 𝕩 }
-    Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value
-      next ← ({𝕩.Get@}𝕨)⊣{"No matching generator definition"!0˙}
+    Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value and name, from Define
+      next ← ({𝕩.Get@}⊑𝕨)⊣{"No matching generator definition"!0˙}
+      name ← (1⊑𝕨)⊣""
       AllEq ← ∧´⊏Match¨1⊸↓
       Count‿DeVar ← (+´¬)⊸{
         ¬∨´𝕩 ? ⟨𝕨=≠, ⊢⟩ ;
@@ -922,7 +923,10 @@ nodes ← {
         Exec ⇐ result.Eval∘⊢ ⋄ _cached ⇐ {𝔽}
       ;
         args←res←arches←⟨⟩ ⋄ AN←architecture.SeeNext
-        Exec ⇐ {args∾↩<𝕨 ⋄ arches∾↩<AN@ ⋄ {Set⇐{res∾↩<𝕩}}‿""result.Eval𝕩}
+        Exec ⇐ {
+          args∾↩<𝕨 ⋄ arches∾↩<AN@
+          {Set⇐{res∾↩<𝕩}}‿name result.Eval 𝕩
+        }
         _cached ⇐ {
           i ← (𝕩⊸((=○≠)◶⟨0,∧´Match¨⟩)¨args) ∧ arches≡¨<AN@
           ∨´i ? (⊑/i)⊑res ; 𝔽𝕩
@@ -1027,7 +1031,7 @@ nodes ← {
     Eval⇐{
       f←"function"≡value.node  # Set value in Eval for function recursion
       e ← N 𝕩
-      u←V e ⋄ u.Set program._trace_ pos⍟(¬f) (f◶⟨V0,u‿name˙⟩e) value.Eval 𝕩
+      u←V e ⋄ u.Set program._trace_ pos⍟(¬f) (name⋈˜f◶⟨V0,u˙⟩e) value.Eval 𝕩
     }
   }
   OpDef ⇐ {
