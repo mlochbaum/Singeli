@@ -601,7 +601,7 @@ functions ← {kname⇐"function"
     arch ⇐ architecture.init
   }
   New ← {𝕤
-    kind⇐kname ⋄ shows⇐"$f"∾•Repr id⇐𝕩 ⋄ Matches⇐≡ ⋄ type⇐@
+    kind⇐kname ⋄ shows⇐"$f"∾(•Repr id⇐𝕩)∾"_"⊸∾⍟(0<≠)𝕨 ⋄ Matches⇐≡ ⋄ type⇐@
     arch⇐architecture.NewFunction@ ⋄ SetArch⇐{arch↩𝕩}
     handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType⇐@
     Next←{ 𝕩 registers.New handle+↩1 }
@@ -627,9 +627,10 @@ functions ← {kname⇐"function"
     }
   }
   _with_ ⇐ {
+    u‿name ← 𝕨  # Passed in by nodes.Define, pretty hacky
     fs←current
-    f←current↩program.AddFunction new
-    {𝕩.Set f} 𝕨  # Passed in by nodes.Define, pretty hacky
+    f←current↩name program.AddFunction new
+    u.Set f
     f (f.Finish 𝔽)program._trace_ 𝕘 𝕩
     current↩fs
     f
@@ -801,7 +802,7 @@ env ← {
 program ← {
   AddFunction⇐AddConstant⇐Export⇐!∘0 ⋄ trace⇐@
   _with ⇐ {
-    fns←⟨⟩ ⋄ AddFunction ↩ { f ← 𝕏 ≠fns ⋄ fns∾⟜<↩f ⋄ f }
+    fns←⟨⟩ ⋄ AddFunction ↩ { f ← 𝕨 𝕏 ≠fns ⋄ fns∾⟜<↩f ⋄ f }
     cns←⟨⟩ ⋄ AddConstant ↩ { c ← (t←TypeOf𝕩) constants.Static ≠cns ⋄ cns∾⟜<↩t‿𝕩 ⋄ c }
     exp←⟨⟩ ⋄ Export ↩ { "Exports must be typed" ! IsTyped 𝕩 ⋄ exp ∾⟜<↩ 𝕨‿𝕩 }
     ⟨_trace_⟩↩s←Stack@
@@ -921,7 +922,7 @@ nodes ← {
         Exec ⇐ result.Eval∘⊢ ⋄ _cached ⇐ {𝔽}
       ;
         args←res←arches←⟨⟩ ⋄ AN←architecture.SeeNext
-        Exec ⇐ {args∾↩<𝕨 ⋄ arches∾↩<AN@ ⋄ {Set⇐{res∾↩<𝕩}}result.Eval𝕩}
+        Exec ⇐ {args∾↩<𝕨 ⋄ arches∾↩<AN@ ⋄ {Set⇐{res∾↩<𝕩}}‿""result.Eval𝕩}
         _cached ⇐ {
           i ← (𝕩⊸((=○≠)◶⟨0,∧´Match¨⟩)¨args) ∧ arches≡¨<AN@
           ∨´i ? (⊑/i)⊑res ; 𝔽𝕩
@@ -1026,7 +1027,7 @@ nodes ← {
     Eval⇐{
       f←"function"≡value.node  # Set value in Eval for function recursion
       e ← N 𝕩
-      u←V e ⋄ u.Set program._trace_ pos⍟(¬f) (f◶⟨V0,u˙⟩e) value.Eval 𝕩
+      u←V e ⋄ u.Set program._trace_ pos⍟(¬f) (f◶⟨V0,u‿name˙⟩e) value.Eval 𝕩
     }
   }
   OpDef ⇐ {

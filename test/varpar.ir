@@ -1,4 +1,4 @@
-beginFn f0 u8 1 u8
+beginFn f0_fn u8 1 u8
 mut v0 !4:u8
 mut v0 !0:u8
 mut v0 !1:u8

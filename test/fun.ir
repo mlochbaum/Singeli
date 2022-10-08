@@ -1,5 +1,5 @@
-beginFn f0 i64 1 i64
+beginFn f0_fn i64 1 i64
 ret v0
 endFn
 
-export efn (i64)->i64 $f0
+export efn (i64)->i64 $f0_fn

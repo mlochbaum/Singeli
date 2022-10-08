@@ -1,4 +1,4 @@
-beginFn f0 i32 1 i32
+beginFn f0_f i32 1 i32
 new v1 emit i32 change v0
 new v2 val i32 v1
 new v3 val i32 v0

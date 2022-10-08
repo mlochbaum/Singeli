@@ -104,7 +104,7 @@ Name‿Rename‿Type‿Lit‿I32 ← {𝕏{𝔽∘𝔾⊘(𝔽⟜𝔾)}{𝕩.Nex
 All ← {𝕩.All@}
 
 decl ← {
-  FromName ← Nat (1+≠prefix)⊸↓  # si_f
+  FromName ← Nat · (∧`'_'⊸≠)⊸/ (1+≠prefix)⊸↓  # si_f
   c←o←@ ⋄ Init⇐{𝕤⋄c↩↕0⋄o↩⟨⟩}
   BeginFn ⇐ { n←FromName𝕨 ⋄ n<≠c ? n⊑c ? o∾↩<𝕩 ; @}
   Call ⇐ { i←FromName𝕩 ⋄ c↑˜↩(≠c)⌈1+i ⋄ c 1⌾(i⊸⊑)↩ }

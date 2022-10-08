@@ -1,4 +1,4 @@
-beginFn f0 u8 3 i16 u1 f32
+beginFn f0_fn u8 3 i16 u1 f32
 new v3 emit i16 g2T v0 v0
 new v4 emit f64 g2 v0 v2
 new v5 emit f64 g1 3

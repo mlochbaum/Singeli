@@ -1,4 +1,4 @@
-beginFn f0 void 2 *i32 *u8
+beginFn f0_fn void 2 *i32 *u8
 new v2 emit i32 ^load v0 0
 new v3 emit u8 ^load v1 0
 mut v3 !2:u8

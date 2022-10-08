@@ -1,11 +1,11 @@
-beginFn f0 u64 1 u8
+beginFn f0_fact u64 1 u8
 new v1 emit u1 op <= v0 !1:u8
 gotoF v1 l0
 ret !1:u64
 lbl l0
 new v2 emit u64 ^promote u64 v0
 new v3 emit u8 op - v0 !1:u8
-new v4 call u64 $f0 1 v3
+new v4 call u64 $f0_fact 1 v3
 new v5 emit u64 op * v2 v4
 ret v5
 endFn
