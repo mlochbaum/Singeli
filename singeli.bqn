@@ -926,7 +926,8 @@ nodes ← {
         args←res←arches←⟨⟩ ⋄ AN←architecture.SeeNext
         Exec ⇐ {
           args∾↩<𝕨 ⋄ arches∾↩<AN@
-          {Set⇐{res∾↩<𝕩}}‿name result.Eval 𝕩
+          n ← (128⌊≠)⊸↑ name∾∾('_'∾·∊⟜(dig∾1↓alph)⊸/Show)¨𝕨
+          {Set⇐{res∾↩<𝕩}}‿n result.Eval 𝕩
         }
         _cached ⇐ {
           i ← (𝕩⊸((=○≠)◶⟨0,∧´Match¨⟩)¨args) ∧ arches≡¨<AN@
