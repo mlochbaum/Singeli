@@ -1,10 +1,10 @@
-beginFn f0_f i32 1 i32
-new v1 emit i32 change v0
+beginFn f0_f i32 1 v0_x i32
+new v1 emit i32 change v0_x
 new v2_a val i32 v1
-new v3_b val i32 v0
+new v3_b val i32 v0_x
 mut v2_a !4:i32
 mut v3_b v1
-mut v0 v2_a
+mut v0_x v2_a
 ret v3_b
 endFn
 

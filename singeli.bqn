@@ -603,16 +603,16 @@ functions ← {kname⇐"function"
   New ← {𝕤
     kind⇐kname ⋄ shows⇐"$f"∾(•Repr id⇐𝕩)∾"_"⊸∾⍟(0<≠)𝕨 ⋄ Matches⇐≡ ⋄ type⇐@
     arch⇐architecture.NewFunction@ ⋄ SetArch⇐{arch↩𝕩}
-    handle←¯1 ⋄ label←¯1 ⋄ args←⟨⟩ ⋄ rType⇐@
+    handle←¯1 ⋄ label←¯1 ⋄ args←atypes←⟨⟩ ⋄ rType⇐@
     Next←{ 𝕩 registers.New handle+↩1 }
     NextLabel⇐{𝕤⋄ labels.New label+↩1 }
-    NextArg⇐{ args∾↩𝕩 ⋄ Next 𝕩 }
+    NextArg⇐{ atypes∾↩<𝕩 ⋄ args∾↩<a←Next 𝕩 ⋄ a }
     ⟨Push,Arr⟩←MakeStack@
     Instrs⇐Arr
     Append⇐{ Push𝕩⋄@ ; (1⊸⊑⊣𝕊) ⟨"new",Next𝕨⟩∾symbols.New⌾⊑𝕩 }
     SetRType⇐{
       SetRType↩!∘0 ⋄ !types.Is rType↩𝕩
-      type ↩ args types.Fun rType
+      type ↩ atypes types.Fun rType
     }
     _ret_←{
       @≢rType? types.IsVoid rType? Append⍟𝕘 ⟨"ret",⊑types.primTypes⟩ ⋄@ ;
@@ -623,7 +623,7 @@ functions ← {kname⇐"function"
     Finish⇐{"Explicit result type needed"!IsTyped 𝕩⋄SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
     Prot⇐{𝕊:
       ext ← (0<≠)◶⟨⟩‿(⋈·'+'⌾⊑·∾','⊸∾¨) architecture.ListExt arch
-      1↓∾" "⊸∾¨⟨1↓shows,Show rType⟩∾(<∘•Repr∘≠⊸∾Show¨args)∾ext
+      1↓∾" "⊸∾¨⟨1↓shows,Show rType⟩∾((<∘•Repr∘≠∾⥊)Show¨args≍˘atypes)∾ext
     }
   }
   _with_ ⇐ {
@@ -974,7 +974,7 @@ nodes ← {
     Eval⇐{
       u←V𝕩 ⋄ t←type.Eval 𝕩
       "Argument type must be a type" ! program._trace_ pos types.Is t
-      u.Set registers.Claim functions.NextArg t
+      u.Set name registers.Claim functions.NextArg t
     }
   }
   Function ⇐ {

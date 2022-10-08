@@ -1,5 +1,5 @@
-beginFn f0_fn i64 1 i64
-new v1 emit i64 test v0
+beginFn f0_fn i64 1 v0_i i64
+new v1 emit i64 test v0_i
 gotoF v1 l0
 ret !1:i64
 goto l1

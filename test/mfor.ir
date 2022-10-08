@@ -1,7 +1,7 @@
-beginFn f0_fn void 2 *i32 *u8
-new v2 emit i32 ^load v0 0
-new v3 emit u8 ^load v1 0
+beginFn f0_fn void 2 v0_x *i32 v1_y *u8
+new v2 emit i32 ^load v0_x 0
+new v3 emit u8 ^load v1_y 0
 mut v3 !2:u8
-new v4 emit u8 ^store v1 0 v3
+new v4 emit u8 ^store v1_y 0 v3
 endFn
 

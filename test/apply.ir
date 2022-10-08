@@ -1,6 +1,6 @@
-beginFn f0_divplusmod u32 2 u32 u32
-new v2 emit u32 div v0 v1
-new v3 emit u32 mod v0 v1
+beginFn f0_divplusmod u32 2 v0_a u32 v1_b u32
+new v2 emit u32 div v0_a v1_b
+new v3 emit u32 mod v0_a v1_b
 new v4 emit u32 add v2 v3
 ret v4
 endFn

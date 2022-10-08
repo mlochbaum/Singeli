@@ -122,7 +122,7 @@ BeginFn ← {𝕤
   n ← Rename 𝕩
   ret ← n Type 𝕩
   argc ← I32 𝕩
-  param ← List ((Type𝕩˙)∾" v"∾•Repr)¨ ↕argc
+  param ← List (Type∾" "∾Name)∘𝕩¨ ↕argc
   exts ← All 𝕩 ⋄ !1≥≠exts ⋄ !∧´('+'=⊑)¨exts
   n⊸decl.BeginFn⊸⊢ ∾(FmtExt¨exts)∾⟨"static ",ret,"(",param,") {"⟩
 }

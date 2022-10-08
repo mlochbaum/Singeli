@@ -1,13 +1,13 @@
-beginFn f0_fn_i8 i8 1 i8
-ret v0
+beginFn f0_fn_i8 i8 1 v0_arg i8
+ret v0_arg
 endFn
 
-beginFn f1_fn_i16 i16 1 i16
-ret v0
+beginFn f1_fn_i16 i16 1 v0_arg i16
+ret v0_arg
 endFn
 
-beginFn f2_fn_i32 i32 1 i32
-ret v0
+beginFn f2_fn_i32 i32 1 v0_arg i32
+ret v0_arg
 endFn
 
 export e0 (i8)->i8 $f0_fn_i8

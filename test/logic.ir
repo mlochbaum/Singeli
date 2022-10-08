@@ -1,24 +1,24 @@
-beginFn f0_fn i32 1 i32
-new v1 emit u1 op >= v0 !4:i32
+beginFn f0_fn i32 1 v0_x i32
+new v1 emit u1 op >= v0_x !4:i32
 gotoT v1 l0
-new v2 emit u1 op == v0 !2:i32
+new v2 emit u1 op == v0_x !2:i32
 gotoF v2 l1
 lbl l0
-new v3 emit u1 op > v0 !6:i32
+new v3 emit u1 op > v0_x !6:i32
 gotoT v3 l1
-new v4 emit i32 op * !2:i32 v0
+new v4 emit i32 op * !2:i32 v0_x
 ret v4
 lbl l1
 goto l2
 lbl l3
-new v5 emit i32 op + v0 !1:i32
-mut v0 v5
+new v5 emit i32 op + v0_x !1:i32
+mut v0_x v5
 lbl l2
-new v6 emit u1 op < v0 !10:i32
+new v6 emit u1 op < v0_x !10:i32
 gotoF v6 l4
-new v7 emit u1 op != v0 !5:i32
+new v7 emit u1 op != v0_x !5:i32
 gotoT v7 l3
 lbl l4
-ret v0
+ret v0_x
 endFn
 
