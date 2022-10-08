@@ -1,18 +1,18 @@
 beginFn f0_loop void 4 *f64 *f64 *f64 u64
 new v4 emit *f64 op + v2 !1:i64
-new v5 val u64 !0:u64
+new v5_i val u64 !0:u64
 goto l0
 lbl l1
-new v6 emit f64 ^load v0 v5
-new v7 emit f64 ^load v1 v5
-new v8 emit f64 ^load v4 v5
+new v6 emit f64 ^load v0 v5_i
+new v7 emit f64 ^load v1 v5_i
+new v8 emit f64 ^load v4 v5_i
 new v9 emit f64 op v8 v7
 mut v6 v9
-new v10 emit f64 ^store v0 v5 v6
-new v11 emit u64 op + v5 !1:u64
-mut v5 v11
+new v10 emit f64 ^store v0 v5_i v6
+new v11 emit u64 op + v5_i !1:u64
+mut v5_i v11
 lbl l0
-new v12 emit u1 op < v5 v3
+new v12 emit u1 op < v5_i v3
 gotoT v12 l1
 endFn
 

@@ -567,14 +567,14 @@ types ← {kname⇐"type"
 registers ← {kname⇐"register"
   New ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
-    shows⇐"v"∾•Repr𝕩 ⋄ fmtType⇐1 ⋄ Matches⇐≡
+    shows⇐"v"∾•Repr𝕩 ⋄ fmtType⇐1 ⋄ Matches⇐≡ ⋄ Suffix⇐{shows∾↩"_"∾𝕩}
     stat⇐1 ⋄ SetStat⇐{  stat↩𝕩}  # Assigned? 1 free, 2 :=, 3 def
     mut ⇐0 ⋄ SetMut ⇐{𝕤⋄mut ↩1}  # Changed (for blocks)
   }
   Status ⇐ { kname≡Kind𝕩 ? 𝕩.stat ; 0 }
-  Claim ⇐ { 𝕩.SetStat 2 ⋄ 𝕩 }
+  Claim ⇐ { 𝕩.SetStat 2 ⋄ 𝕩.Suffix 𝕨 ⋄ 𝕩 }
   Save  ⇐ { 𝕩.SetStat 3 ⋄ 𝕩 }⍟(1=Status)
-  ClaimCopy ⇐ Claim {functions.Copy𝕩}⍟(1≠Status)
+  ClaimCopy ⇐ Claim⟜({functions.Copy𝕩}⍟(1≠Status))
 }
 constants ← {kname⇐"constant"
   New ⇐ {
@@ -1009,7 +1009,7 @@ nodes ← {
     Eval⇐{
       u ← GetVar 𝕩
       v ← pos type‿𝕩 _setType value.Eval 𝕩
-      u.Set registers.ClaimCopy⚇0 v
+      u.Set name⊸registers.ClaimCopy⚇0 v
     }
   ;
     𝕨 Run ⟨{functions.Mut´𝕩}˙_value"=" , 0‿3⊏𝕩⟩
