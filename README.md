@@ -157,7 +157,7 @@ Singeli's type system consists of the following type-kinds: basic `void` and pri
 | `primitive` | A number                   | `i32`
 | `vector`    | A list of same-type values | `[4]i32`
 | `pointer`   | A pointer to memory        | `*f64`
-| `function`  | A pointer to code          | `(i8,u1) -> void`
+| `function`  | A pointer to code          | `(i8,u1)->void`
 | `tuple`     | Multiple values            | `tup{u1,[2]u32}`
 
 The display isn't always valid Singeli code. Void and primitive types are built-in names but can be overwritten. The notation `[4]i32` resolves to `__vec{4,i32}`, where `__vec{}` is also a built-in name. And `*` indicates the built-in `__pnt{}`, which isn't defined automatically but is part of `skin/c`. The notation given for functions can't be used, and the tuple `tup{u1,[2]u32}` is technically a different value from an actual tuple type but can be used as one where a type is expected.
@@ -186,11 +186,13 @@ Function parameters like the `{T}` above are slightly different from arbitrary g
 
 ## Export
 
-A top-level statement beginning with a literal symbol is an export. The entire statement consists of a symbol or list of symbols, followed by `=` and an expression, which needs to resolve to a function at compile time. The function is then exported with all the names given before `=`. In C this means a non-`static` function with that name is defined in the output file.
+A top-level statement beginning with a literal symbol is an export. The entire statement consists of a symbol or list of symbols, followed by `=` and an expression giving a typed value. It's exported with all the names given before `=`. In C this means a non-`static` constant with that name is defined in the output file.
 
     'some_function' = fn{i32}  # Export as some_function()
 
     'fn', 'alias' = fn{i16}    # Export with two names
+
+    'twelve' = cast{i16, 12}   # Export a typed number
 
 ## Registers
 
