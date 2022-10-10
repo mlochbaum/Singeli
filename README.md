@@ -2,7 +2,7 @@
 
 Singeli is a domain-specific language for building [SIMD](https://en.wikipedia.org/wiki/SIMD) algorithms with flexible abstractions and control over every instruction emitted. It's implemented in [BQN](https://mlochbaum.github.io/BQN), with a frontend that emits IR and a backend that converts it to C. Other backends like LLVM or machine code are possible—it should be easy to support other CPU architectures but there are no plans to target GPUs.
 
-I'd call it usable at this point, although there will surely be some implementation bugs, mostly in error reporting. As for debugging your own code, there are parse and stack traces for compilation errors, and `show{}` prints whatever you want at compile time. Runtime errors are harder, as the emitted C code is opaque so you're basically stuck emitting `printf()` calls to see anything. Prototyping with the interactive [Singeli playground](https://github.com/dzaima/singeliPlayground) tool is very helpful in avoiding the need to do this.
+It's now proven to be pretty usable, and we're not finding many bugs any more (what we do see is mostly just broken error reporting). Debugging your compilation errors is easy since they come with parsing or stack traces, and `show{}` prints whatever you want at compile time. For runtime errors, the emitted C code is rather verbose but does embed source function and variable names you can use to get your bearings, and you can always emit `printf()` calls. The interactive [Singeli playground](https://github.com/dzaima/singeliPlayground) tool is a nice way to get parts of your code working without going through this process.
 
 To compile input.singeli:
 
