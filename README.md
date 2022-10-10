@@ -83,7 +83,7 @@ These are all effectively the same thing: there's a parameter list in `{}`, and 
 
 An anonymous generator is written `{params} => body`. It needs to come at the beginning of a subexpression, which usually means it needs to be parenthesized. Otherwise `{params}` might be interpreted as a generator call on the previous word, for example. `body` can be either a single expression, or a block consisting of multiple expressions surrounded by `{}`.
 
-A named generator is a statement rather than an expression: `def name{params} = body`. `name` can be followed by multiple parameter lists, defining a nested generator. This form also allows multiple definitions. When the generator is called, these definitions are scanned, beginning with the last, for one that applies to the arguments. That is, when applying the generator, it tests the arguments against all its conditions, then runs if they match and otherwise calls the previous definition.
+A named generator is a statement rather than an expression: `def name{params} = body`. `name` can be followed by multiple parameter lists, defining a nested generator. This form also allows multiple definitions. When the generator is called, these definitions are scanned, beginning with the last, for one that applies to the arguments. That is, when applying the generator, it tests the arguments against all its conditions, then runs if they match and otherwise calls the previous definition. Sometimes it's useful to extend many generators in the same way; see [extend](#extend) for this use case.
 
 A function can also have generator parameters. This case is discussed in the section on [functions](#functions).
 
@@ -353,6 +353,23 @@ For larger sets of definitions, `local` also allows a block syntax. The contents
       def t = 5
       def s = t + 1
     }
+
+## Extend
+
+The `extend` keyword allows for programmable generator extension, so that the same extension can be applied to multiple generators easily. It's mainly used for more "internal" Singeli definitions like in `arch/c`. In short, this repetitive code:
+
+    def sin{arg & arg<0} = -sin{-arg}
+    def tan{arg & arg<0} = -tan{-arg}
+
+could be rewritten like this:
+
+    def extend odd{fn} = {
+      def fn{arg & arg<0} = -fn{-arg}
+    }
+    extend odd{sin}
+    extend odd{tan}
+
+The `def extend` statement creates a special kind of generator that can only be called by an `extend` statement. This statement (which can appear at the top level or anywhere else) looks like a generator call, but the parameters, `sin` and `tan` above, all have to be names—the `extend` mechanism allows the call to modify their values. The generator (`odd` above) can be any expression, but needs parentheses in most cases if it's compound. This means additional information can be passed in with `extend (gen{args}){g0, g1}`, where `gen` is an ordinary generator whose body returns a generator defined with `def extend`.
 
 ## Built-in generators
 
