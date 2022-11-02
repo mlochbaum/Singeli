@@ -1130,7 +1130,7 @@ nodes ← {
       functions.SetLabel lt ← functions.Label@
       stmt.Eval 𝕩
       functions.SetLabel¨ lc
-      "Infinite loop" ! 1 ≢ cond CondEval ⟨1‿(LazyLabel lt), 𝕩⟩
+      functions.Goto∘lt⍟(1≡⊢) cond CondEval ⟨1‿(LazyLabel lt), 𝕩⟩
       {Shows⇐!∘"Can't use while statement result as value"⋄kind⇐"error"}
     }
   }
