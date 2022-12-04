@@ -1,0 +1,10 @@
+beginFn f0_fn i32 5 v0_a u64 v1_b i8 v2_c i8 v3_d i8 v4_e u64
+new v5 emit i32 go v2_c v3_d v1_b v2_c
+ret v5
+endFn
+
+beginFn f1_fn2 i32 1 v0_a u64
+new v1 call i32 $f0_fn 5 v0_a !2:i8 !3:i8 !4:i8 v0_a
+ret v1
+endFn
+

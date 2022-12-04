@@ -210,7 +210,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
   LFs ← {𝕊⍟Try ⟨lf⟩}
   Div ← {LFs@ ⋄ 1∘LFs⍟⊢ Try 𝕩}
 
-  _args ← {𝕗 _argsFn_ Expr}
+  _spreadable ← {<∘⊢⍟⊣⟜𝔽∘Try∘"..."}
+  _args ← {𝕗 _argsFn_ (Expr _spreadable)}
   _argsFn_ ← {𝕤
     Get ⊑𝕗
     Try 1⊑𝕗 ? ⟨⟩ ;
@@ -882,10 +883,14 @@ nodes ← {
   Run ⇐ {
     𝕨𝕊⟨⟨infix⟩,params⟩: CondNode´ 𝕩;
     ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨
+    spread ← 0=•Type¨params ⋄ params ⊑¨↩
+    deSpread ← (∨´spread)⊑⊢‿{
+      ∾ spread ⊣◶⟨⋈⊢,("Spread input must be tuple"!IsTup)⊸⊢⊢⟩¨𝕩
+    }
     Visit←{⟨𝕏caller,𝕏¨params⟩}
     ⟨node,Dump,Disp,Scope⟩⇐d←Defaults "run"‿visit
     Oper ⇐ {𝕤⋄ pos operator.Run ⟨⊑Visit o.Oper 𝕩, params⟩}
-    Eval ⇐ {𝕎 program._trace_ pos 𝕩}´ d.Eval
+    Eval ⇐ {𝕎∘DeSpread program._trace_ pos 𝕩}´ d.Eval
   }
   Call ⇐ { 𝕨 Run ⟨Ident"call" , <⊸∾´𝕩⟩ }
   Phrase ⇐ {
