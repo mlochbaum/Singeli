@@ -34,7 +34,7 @@ def inds{t} = iota{$t}
 def copy{n, v & knum{n}} = @collect (n) v
 
 # Merge a tuple of tuples
-def join{l} = apply{merge,l}
+def join{l} = merge{...l}
 
 # Shift l into r, retaining length of r, or vice-versa
 def shiftright{l, r} = slice{merge{l, r}, 0, $r}
@@ -66,12 +66,11 @@ def split{n, list & ktup{n}} = {
 def flip{tup} = table{tupsel, inds{*tup}, tup}
 
 # Function table mapping over all combinations
-local def table_apply{fn, tups} = {
+def table{fn, ...tups} = {
   if (empty{tups}) fn{}
   else if (1 == $tups) each{fn, *tups}
-  else each{{e} => table_apply{bind{fn,e}, >tups}, *tups}
+  else each{{e} => table{bind{fn,e}, ...>tups}, *tups}
 }
-def table{fn, ...t} = table_apply{fn, t}
 
 # Left fold, with or without initial element
 def fold{fn, init, list} = {

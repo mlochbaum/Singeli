@@ -436,7 +436,7 @@ Possible `typekind` results are `void`, `primitive`, `vector`, `pointer`, `funct
 | `tuplen{tuple}`        | Return the length of a tuple
 | `tupsel{ind,tuple}`    | Select the `ind`th element (0-indexed) from the tuple
 | `slice{tup,start,end}` | Take slice from `start` to (optional) `end`, like Javascript
-| `apply{gen,tuple}`     | Apply a generator to a tuple of parameters
+| `apply{gen,tuple}`     | `gen{...tuple}`
 | `each{gen,tuple…}`     | Map a generator over the given tuples
 
 ### Arithmetic
