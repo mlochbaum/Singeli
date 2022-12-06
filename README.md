@@ -105,6 +105,10 @@ The value `typ` can also be a name, which functions something like an extra para
 
 Up to one parameter slot can be variable-length if marked with a leading `...`. This parameter corresponds to any number (0 or more) of inputs, and its value is the tuple of those values. For example `def tup{...t} = t` returns the tuple of all parameters, replicating the functionality of the builtin `tup`.
 
+### Spread syntax
+
+When calling a generator, any parameter slot may be preceded by `...` to expand it from a tuple into multiple parameters. For example, `gen{a, ...tup{b, c}, d}` expands to `gen{a, b, c, d}`. Any expression can follow: while `...` isn't an operator, it acts like it has infinitely low precedence.
+
 ## Kinds of value
 
 A generator is one kind of value—that is, something that's first-class at compile time. Like most values, it doesn't exist at runtime. Hopefully it's already done what's needed! In fact it's one of the more complicated kinds of value. Here's the full list:
@@ -183,6 +187,8 @@ Generators are great for compile-time computation, but all run-time computation 
 The body of a function can be either a plain expression like `a*b` above, or can be enclosed in curly braces `{}` to allow multiple statements. It returns the value of the last expression. The return type is given with `:` following the argument list, but can often be omitted (if it's left out and the body uses braces, `=` is also optional).
 
 Function parameters like the `{T}` above are slightly different from arbitrary generator parameters: the function is only ever generated once for each unique set of parameters. Once generated, its handle is saved so that later calls return the saved function immediately (in contrast, a generator that declares a variable would make a new one each time). This avoids creating source code with lots of copies of functions, and also makes it possible for a function like `square{T}` to include recursion.
+
+The parenthesis syntax to call a function is really just a nicer way to use the `call{}` builtin generator. As in a generator, such a call supports [spread](#spread-syntax) arguments with `...`.
 
 ## Export
 
