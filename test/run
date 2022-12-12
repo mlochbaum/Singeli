@@ -1,6 +1,7 @@
 #! /usr/bin/env bqn
 
-steps ← {""⊸𝕏}⌾(1⊸⊑) •Import¨ "../singeli.bqn"‿"../emit_c.bqn"
+cpu ← •Import "../arch.bqn"
+steps ← {""⊸𝕏}⌾(1⊸⊑) ⟨cpu,cpu‿"si"⟩ •Import¨ "../singeli.bqn"‿"../emit_c.bqn"
 
 n ← ≠types ← "in"‿"ir"‿"c"
 files ← •file.List "."

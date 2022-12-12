@@ -1,15 +1,12 @@
-prefix ← "_" ∾˜ "si" ⊣´ •args
+cpu‿prefix ← ∾⟜"_"⌾(1⊸⊑) •args
 
-# x86
-arch ← {
+types ← {
   ub←uv←0 ⋄ init ⇐ {ub↩uv↩0}
-  Headers ⇐ {𝕊: 1‿ub‿(uv>0)/⟨"stdint.h","stdbool.h","immintrin.h"⟩}
+  Headers ⇐ {𝕊: (1‿ub/⟨"stdint.h","stdbool.h"⟩)∾cpu.Headers@}
   Type ⇐ { 𝕨𝕊bType‿w‿am‿ptrs:
     u‿f ← bType = "uf"
     (" "∾𝕨) ⊢⊘(∾˜) (ptrs/"*") ∾˜ {
-      0≤am      ? "Unsupported vector type" ! ∊⟜(2⋆6+↕4)⌾<l←w×am  # 64…512
-                  uv ⌈↩ 5-˜2⋆⁼l
-                  ∾⟨"__m",•Repr l,{¬f?"i";(64=w)/"d"}⟩ ;
+      0≤am      ? uu‿t ← cpu.VecType w‿am‿u‿f ⋄ uv⌈↩uu ⋄ t ;
       f         ? "float"‿"double"⊑˜32‿64⊸⊐⌾<w ;
       w=0       ? "void" ;
       u∧w=1     ? "bool" ⊣ ub↩1 ;
@@ -25,7 +22,7 @@ arch ← {
 lf ← @+10
 
 Generate ← {
-  decl.Init@ ⋄ arch.Init@
+  decl.Init@ ⋄ types.Init@
   fn ← 0  # Whether a function is active
   ProcLine ← {
     line ← StartLine 𝕩
@@ -41,7 +38,7 @@ Generate ← {
   }⍟(0<≠)
   l ← ProcLine¨ lf ((⊢-˜+`×¬)∘=⊔⊢) 𝕩
   "Unclosed function" ! 0≡fn
-  prelude ← lf Join ("#include<"∾∾⟜">")¨ arch.Headers@
+  prelude ← lf Join ("#include<"∾∾⟜">")¨ types.Headers@
   ∾ ⟨∾⟜(2⥊lf)⍟(0<≠)𝕨⊣prelude⟩∾(decl.Emit@)∾l
 }
 
@@ -92,7 +89,7 @@ as ← {
       !")->"≡3↑r←n¬⊸/𝕩
       ⟨Type 3↓r, a⟩
     }
-    𝕨 arch.Type {
+    𝕨 types.Type {
       "void": 'v'‿0‿¯1‿ptrs;
       '('=⊑𝕩? ⟨"fn",ParseFn 𝕩,ptrs⟩;
       ⟨⊑𝕩, Nat 1↓𝕩, am, ptrs⟩

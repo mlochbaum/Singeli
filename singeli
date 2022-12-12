@@ -34,10 +34,11 @@ deplog ↩ @ ⊣´ Rel¨deplog
   •Exit@
 ;@}
 
-frontend ← feats •Import "singeli.bqn"
+arch ← feats •Import "arch.bqn"
+frontend ← arch •Import "singeli.bqn"
 backend ← {
   ⟨"ir"⟩≡target ? ⊢ ;
-  pre ⊑⊸{𝕨⊸𝕏}⍟(0<≠∘⊣) namepre •Import "emit_c.bqn"
+  pre ⊑⊸{𝕨⊸𝕏}⍟(0<≠∘⊣) arch‿("si"⊣´namepre) •Import "emit_c.bqn"
 }
 output ← {
   ≠out ? (Rel⊑out) •file.Chars ⊢ ;

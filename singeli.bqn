@@ -1,3 +1,5 @@
+cpu ← •args
+
 tab‿lf←@+9‿10
 
 dig ← '0'+↕10
@@ -105,12 +107,10 @@ numbers ← {kname⇐"number"
   _cmp ⇐ {(f.Cmp 𝔽 0˙)○Promote}
 }
 
-ptrWidth ← 64  # Hard-code for now
-archFile ← "data/x86_ext.txt"
+ptrWidth ← cpu.width
 architecture ← {
-  a ← •Import "arch.bqn"
-  u‿m ← a.ArchFlagAndMat •file.Lines archFile
-  init ⇐ u a.BaseArch •args
+  ⟨u⇐flag,m⇐mat⟩ ← cpu
+  init ⇐ cpu.baseArch
   # Look up a list of symbols
   IdErr ← {!∘(∾"Unknown architecture features:"<⊸∾' '∾¨/○⥊⟜𝕩)⍟(∨´)⥊𝕨=≠u ⋄ 𝕨}
   FromSym ← {"Expected symbol for architecture feature"!"symbol"≡Kind𝕩⋄Show𝕩}
