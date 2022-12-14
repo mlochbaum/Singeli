@@ -27,10 +27,9 @@ arches ← ⟨
 ⟩
 
 allfeats ← ∾ archfeats ← {⟨𝕩.name⟩∾∾𝕩.ext}¨ arches
-
 ReadNative ← {𝕊:
   c ← 1⊑ •SH "cat"‿"/proc/cpuinfo"
-  f ← ⊑ "flags"⊸(⊣≡≠⊸↑)¨⊸/ (@+10) Spl c  # Line with flags
+  f ← ⊑ (∨˝"flags"‿"Features"(⊣≡≠⊸↑)⌜⊢)⊸/ (@+10) Spl c  # Line with flags
   f ↩ ' ' Spl 2↓(∨`':'⊸=)⊸/ f
   f ↩ "pni"‿"bmi1"‿"pclmulqdq"⊸⊐⊸(⊣◶⟨"sse3",¯1⊸↓,¯3⊸↓,⊢⟩¨) f
   ∊⟜(∾allfeats)⊸/ ((-´"._")×'_'⊸=)⊸+ ((-´"Aa")×'a'⊸≤)⊸+ f
