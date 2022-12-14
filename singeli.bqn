@@ -109,18 +109,17 @@ numbers ← {kname⇐"number"
 
 ptrWidth ← cpu.width
 architecture ← {
-  ⟨u⇐flag,m⇐mat⟩ ← cpu
+  feats‿mat‿FeatInd ← cpu
   init ⇐ cpu.baseArch
   # Look up a list of symbols
-  IdErr ← {!∘(∾"Unknown architecture features:"<⊸∾' '∾¨/○⥊⟜𝕩)⍟(∨´)⥊𝕨=≠u ⋄ 𝕨}
   FromSym ← {"Expected symbol for architecture feature"!"symbol"≡Kind𝕩⋄Show𝕩}
-  Id ← u⊸⊐⊸IdErr FromSym¨
+  Id ← FeatInd⟜(FromSym¨)
   # An architecture is a mask of supported features
-  New ⇐ { 𝕨 ∨˝ (Id 𝕩) ⊏ m }
+  New ⇐ { 𝕨 ∨˝ (1 Id 𝕩) ⊏ mat }
   Contains ⇐ ∧´≥
   Intersect ⇐ ∧ ⋄ Union ⇐ ∨
-  Has ⇐ ∧´⊏˜⟜Id  # Has all in list 𝕩
-  List ⇐ /⟜u
+  Has ⇐ ∧´{(0 Id 𝕩)⊏𝕨∾0}  # Has all in list 𝕩
+  List ⇐ /⟜feats
   ListExt ⇐ List init⊸<
   # Architecture to be used for the next function created
   next ← init
