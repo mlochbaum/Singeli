@@ -49,19 +49,20 @@ ReadNative ← {𝕊:
   f ← ⊑ (∨˝"flags"‿"Features"(⊣≡≠⊸↑)⌜⊢)⊸/ (@+10) Spl c  # Line with flags
   f ↩ ' ' Spl 2↓(∨`':'⊸=)⊸/ f
   f ↩ "pni"‿"bmi1"‿"pclmulqdq"⊸⊐⊸(⊣◶⟨"sse3",¯1⊸↓,¯3⊸↓,⊢⟩¨) f
-  ∊⟜(∾allfeats)⊸/ ((-´"._")×'_'⊸=)⊸+ ((-´"Aa")×'a'⊸≤)⊸+ f
+  ∊⟜allfeats⊸/ ((-´"._")×'_'⊸=)⊸+ ((-´"Aa")×'a'⊸≤)⊸+ f
 }
 
 arg ← ToUpper ∾','⊸Spl¨ •args
 arg ("NATIVE"⊸≡¨ (¬⊸/∾ReadNative)⍟((0=≠)⊸(∨´)⊣) ⊢)↩
-!∘(∾"Unknown features:"<⊸∾' '∾¨/⟜arg)⍟(∨´) ¬arg∊allfeats∾⟨"ALL"⟩
-"Incompatible features" ! ∨´ supp ← arg⊸(∧´∊)¨ archfeats
+all ← "ALL"⊸≡¨ arg
+!∘(∾"Unknown features:"<⊸∾' '∾¨/⟜arg)⍟(∨´) ¬all∨arg∊allfeats
+"Incompatible features" ! ∨´ supp ← (all¬⊸/arg)⊸(∧´∊)¨ archfeats
 arch ← ⊑ supp / arches
 
 ⟨width, VecType, Headers, feats⟩ ⇐ arch
 mat ⇐ arch.GetMat@
 
-baseArch ⇐ (⊑ ⊣◶⟨1¨,⊢⟩ 1⊸↓) (⟨"ALL"⟩∾feats)∊arg
+baseArch ⇐ (∨´all)◶⟨∊⟜arg,1¨⟩ feats
 
 FeatInd ⇐ { # 𝕨 is 0 to allow features outside current architecture
   i ← feats ⊐ 𝕩
