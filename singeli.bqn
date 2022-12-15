@@ -199,9 +199,10 @@ Parse ← {𝕊 tokens‿ShowTrace:
     (⊑"[({'"⊐⊏)◶Vec‿Par‿Anon‿Symbol‿Word Peek@
   }
   Callable ← AddParams∘Expr0
+  NoCall ← ∊⟜"and"‿"or"‿"not"⌾<∨´(oc∾"[")=⊏
+  Call ← { c←¬Next noCall ⋄ AddArgs⍟c Callable𝕩 }
   _exprEnd ← {endTok _𝕣:
     end ← endTok∾sep∾⥊¨",:=)}]"
-    Call ← { Op←∨´(oc∾"[")=⊏ ⋄ c←¬Next op ⋄ AddArgs⍟c Callable𝕩 }
     c.phrase _node_ (While∘⟨¬Next∘end, Call, 1⟩)
   }
   Expr ← ⟨⟩_exprEnd
