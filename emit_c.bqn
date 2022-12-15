@@ -2,7 +2,7 @@ cpu‿prefix ← ∾⟜"_"⌾(1⊸⊑) •args
 
 types ← {
   ub←uv←0 ⋄ init ⇐ {ub↩uv↩0}
-  Headers ⇐ {𝕊: (1‿ub/⟨"stdint.h","stdbool.h"⟩)∾cpu.Headers@}
+  Headers ⇐ {𝕊: (1‿ub/⟨"stdint.h","stdbool.h"⟩)∾cpu.Headers uv}
   Type ⇐ { 𝕨𝕊bType‿w‿am‿ptrs:
     u‿f ← bType = "uf"
     (" "∾𝕨) ⊢⊘(∾˜) (ptrs/"*") ∾˜ {
