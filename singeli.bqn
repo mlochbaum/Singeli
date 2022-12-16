@@ -332,17 +332,18 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   Include ← c.include _node_ ("include"‿Symbol _seq)
 
+  TopIf ← c.if _node_ ("if"‿"("‿Expr‿")"‿{1 Line𝕩}‿(When∘⟨Try∘"else"∘Seps,{1 Line𝕩}⟩)_seq)
+
+  LLine ← "def"‿"extend"‿"oper"‿"include"‿"if"⊸⊐⌾<◶⟨
+    Define, Extend, OpDef, Include, TopIf, ('''=⊑)◶DefFun‿Export
+  ⟩∘Peek
+  Line ← {𝕤
+    𝕨 ⊢⊘∨ Try "local" ? Try∘"{"◶⟨LLine,TopBlock⟩@ ;
+    {𝕩.NonLocal@⋄𝕩} LLine@
+  }
+  TopBlock ← c.body _node_ While∘⟨¬Try∘"}"∘Seps, Line, 0⟩
+
   Program ← c.body _node_ {𝕤
-    LLine ← "def"‿"extend"‿"oper"‿"include"⊸⊐⌾<◶⟨
-      Define, Extend, OpDef, Include, ('''=⊑)◶DefFun‿Export
-    ⟩∘Peek
-    Line ← {𝕤
-      l ← Try "local"
-      {
-        l ? Try"{" ? c.body _node_ While ⟨¬Try∘"}"∘Seps, Line, 0⟩ ;
-        {𝕩.NonLocal@⋄𝕩}⍟(¬l) LLine@
-      }
-    }
     Seps@
     While ⟨Rem, Seps⊢Line, 0⟩
   }
@@ -1105,12 +1106,16 @@ nodes ← {
   CO ← {𝕊n: bind⇐¯∞⋄R⇐⊢⋄null‿left⇐n.infix⌽{V⇐n˙ ⋄ T⇐¯∞<{𝕩.bind}}‿@}
   condOp ⇐ ({𝕩.name}¨ {𝕨⊸⊐⌾< =⟜(≠𝕨)◶⟨⊑⟜𝕩,@⟩ ⊢} CO¨) condNodes
   If ⇐ {
-    ⟨cond,then,else⟩←𝕩
+    ⟨cond,then,else⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
     ⟨node,Dump,Disp,Scope⟩⇐Defaults "if"‿visit
+    IfLabel←LazyLabel
+    NonLocal⇐{𝕊: IfLabel↩{ label⇐𝕩
+      GotoC⇐!∘"Dynamic top-level if statement unsupported"program._trace_ pos
+    }}
     Oper ⇐ { cond.Oper operator.CondScope 𝕩 ⋄ {𝕏then⋄𝕏¨else}o.Oper 𝕩 ⋄ operator.nil }
     Eval ⇐ {
-      lf ← LazyLabel@
+      lf ← IfLabel@
       c ← cond CondEval ⟨0‿lf, e←𝕩⟩
       { @≢lf.label ?
         then.Eval e
