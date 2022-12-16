@@ -157,7 +157,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ! (¯1⊑tokens) Is sep
 
   Asrt ← {𝕨𝕊1:@;
-    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.const,"const",c.define,"define",c.export,"export",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.while,"while",c.word,"word"⟩
+    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.const,"const",c.define,"define",c.export,"export",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.topifbody,"topifbody",c.while,"while",c.word,"word"⟩
     ShowTrace⟜L´ <˘⍉>DumpStack@
     •Out ""
     F ← (⥊lf)⊸≡◶•Repr‿"end of line"
@@ -332,16 +332,19 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   Include ← c.include _node_ ("include"‿Symbol _seq)
 
-  TopIf ← c.if _node_ ("if"‿"("‿Expr‿")"‿{1 Line𝕩}‿(When∘⟨Try∘"else"∘Seps,{1 Line𝕩}⟩)_seq)
+  TopIf ← c.if _node_ {𝕤
+    Body ← Try∘"{"◶⟨Line,c.topifbody _node_ MultiLine⟩
+    "if"‿"("‿Expr‿")"‿Body‿(When∘⟨Try∘"else"∘Seps,Body⟩)_seq@
+  }
 
   LLine ← "def"‿"extend"‿"oper"‿"include"‿"if"⊸⊐⌾<◶⟨
     Define, Extend, OpDef, Include, TopIf, ('''=⊑)◶DefFun‿Export
   ⟩∘Peek
   Line ← {𝕤
-    𝕨 ⊢⊘∨ Try "local" ? Try∘"{"◶⟨LLine,TopBlock⟩@ ;
+    Try "local" ? Try∘"{"◶⟨LLine,c.body _node_ MultiLine⟩@ ;
     {𝕩.NonLocal@⋄𝕩} LLine@
   }
-  TopBlock ← c.body _node_ While∘⟨¬Try∘"}"∘Seps, Line, 0⟩
+  MultiLine ← While∘⟨¬Try∘"}"∘Seps, Line, 0⟩
 
   Program ← c.body _node_ {𝕤
     Seps@
@@ -1068,6 +1071,10 @@ nodes ← {
     Oper⇐{ d.Oper operator.NewScope N 𝕩 }
     sc←@ ⋄ Scope⇐{ d.Scope sc ↩ scopes.New N 𝕩 }
     Eval⇐{ ¯1⊑⊑d.Eval (sc.Names@) env.New N 𝕩 }
+  }
+  TopIfBody ⇐ {
+    statements←𝕩 ⋄ Visit←{⟨𝕏¨statements⟩}
+    ⟨node,Dump,Disp,Oper,Scope,Eval⟩⇐Defaults "topifbody"‿visit
   }
 
   LazyLabel ← {𝕤
