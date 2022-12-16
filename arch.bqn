@@ -62,7 +62,7 @@ arch ← ⊑ supp / arches
 ⟨width, VecType, Headers, feats⟩ ⇐ arch
 mat ⇐ arch.GetMat@
 
-baseArch ⇐ (∨´all)◶⟨∊⟜arg,1¨⟩ feats
+baseArch ⇐ ∨˝∘∧⟜mat (∨´all)◶⟨∊⟜arg,1¨⟩ feats
 
 FeatInd ⇐ { # 𝕨 is 0 to allow features outside current architecture
   i ← feats ⊐ 𝕩
