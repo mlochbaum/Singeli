@@ -350,7 +350,7 @@ As a result, an included file's definitions affect the file that includes it, an
     local oper ++ merge infix left 30  # Local operator
     local include 'skin/c'             # Local lots of operators
 
-The `local` keyword restricts the scope of compile-time value and operator definitions. It doesn't do anything at runtime: all the functions and so on are still placed together in one big output file (and `local` can be placed before an export but does nothing).
+The `local` keyword restricts the scope of compile-time value and operator definitions. It doesn't do anything at runtime: all the functions and so on are still placed together in one big output file.
 
 For larger sets of definitions, `local` also allows a block syntax. The contents of the block behave like a separate file included with `local include`, and more `local` statements are allowed inside—they'll apply inside the block but not to the rest of the file.
 

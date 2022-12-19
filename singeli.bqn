@@ -337,12 +337,13 @@ Parse ← {𝕊 tokens‿ShowTrace:
     "if"‿"("‿Expr‿")"‿Body‿(When∘⟨Try∘"else"∘Seps,Body⟩)_seq@
   }
 
-  LLine ← "def"‿"extend"‿"oper"‿"include"‿"if"⊸⊐⌾<◶⟨
+  SubLine ← "def"‿"extend"‿"oper"‿"include"‿"if"⊸⊐⌾<◶⟨
     Define, Extend, OpDef, Include, TopIf, ('''=⊑)◶DefFun‿Export
-  ⟩∘Peek
+  ⟩
+  ChkLoc ← ("localizable line"⊸⋈ Asrt (¬"if"⊸≡∨'''=⊑))⊸⊢∘Peek
   Line ← {𝕤
-    Try "local" ? Try∘"{"◶⟨LLine,c.body _node_ MultiLine⟩@ ;
-    {𝕩.NonLocal@⋄𝕩} LLine@
+    Try "local" ? Try∘"{"◶⟨SubLine∘ChkLoc,c.body _node_ MultiLine⟩@ ;
+    {𝕩.NonLocal@⋄𝕩} SubLine∘Peek@
   }
   MultiLine ← While∘⟨¬Try∘"}"∘Seps, Line, 0⟩
 
