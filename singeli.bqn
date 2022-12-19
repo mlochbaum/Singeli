@@ -332,9 +332,11 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   Include ← c.include _node_ ("include"‿Symbol _seq)
 
-  TopIf ← c.if _node_ {𝕤
-    Body ← Try∘"{"◶⟨Line,c.topifbody _node_ MultiLine⟩
-    "if"‿"("‿Expr‿")"‿Body‿(When∘⟨Try∘"else"∘Seps,Body⟩)_seq@
+  TopIf ← c.topifbody _node_ {𝕤
+    cond ← ast.RunImm ⊑ "if"‿"("‿Expr‿")"_seq 𝕩
+    _mu ← {Try∘"{"◶⟨⋈𝔽,While∘⟨¬Try∘"}"∘Seps, 𝔽, 0⟩⟩}
+    BT‿BF ← cond ⌽ 0‿1{𝕨/𝕏_mu}¨⟨Try∘"include"◶Line‿(⋈Symbol),Line⟩
+    ∾∾ (⋈BT)‿(When∘⟨Try∘"else"∘Seps,BF⟩)_seq 𝕩
   }
 
   SubLine ← "def"‿"extend"‿"oper"‿"include"‿"if"⊸⊐⌾<◶⟨
@@ -1074,7 +1076,7 @@ nodes ← {
     Eval⇐{ ¯1⊑⊑d.Eval (sc.Names@) env.New N 𝕩 }
   }
   TopIfBody ⇐ {
-    statements←𝕩 ⋄ Visit←{⟨𝕏¨statements⟩}
+    statements←𝕩 ⋄ Visit←{⟨𝕏¨statements⟩} ⋄ NonLocal⇐⊢
     ⟨node,Dump,Disp,Oper,Scope,Eval⟩⇐Defaults "topifbody"‿visit
   }
 
@@ -1118,9 +1120,6 @@ nodes ← {
     Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
     ⟨node,Dump,Disp,Scope⟩⇐Defaults "if"‿visit
     IfLabel←LazyLabel
-    NonLocal⇐{𝕊: IfLabel↩{ label⇐𝕩
-      GotoC⇐!∘"Dynamic top-level if statement unsupported"program._trace_ pos
-    }}
     Oper ⇐ { cond.Oper operator.CondScope 𝕩 ⋄ {𝕏then⋄𝕏¨else}o.Oper 𝕩 ⋄ operator.nil }
     Eval ⇐ {
       lf ← IfLabel@
@@ -1207,6 +1206,12 @@ ast ← {
     t.Oper operator.NewScope operator.nilScope
     t.Scope scopes._run sc ← scopes.New baseScope
     t.Eval program._with (sc.Names@) env.New baseEnv
+  }
+  RunImm ⇐ { # For top-level if condition
+    𝕩.Oper operator.NewScope operator.nilScope
+    𝕩.Scope scopes._run baseScope
+    e←@ ⋄ {e↩𝕩}∘𝕩.Eval program._with baseEnv
+    e
   }
 }
 
