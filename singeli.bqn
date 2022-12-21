@@ -157,7 +157,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ! (¯1⊑tokens) Is sep
 
   Asrt ← {𝕨𝕊1:@;
-    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.const,"const",c.define,"define",c.export,"export",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.topifbody,"topifbody",c.while,"while",c.word,"word"⟩
+    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.const,"const",c.define,"define",c.export,"export",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.topif,"topif",c.while,"while",c.word,"word"⟩
     ShowTrace⟜L´ <˘⍉>DumpStack@
     •Out ""
     F ← (⥊lf)⊸≡◶•Repr‿"end of line"
@@ -332,11 +332,11 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   Include ← c.include _node_ ("include"‿Symbol _seq)
 
-  TopIf ← c.topifbody _node_ {𝕤
-    cond ← ast.RunImm ⊑ "if"‿"("‿Expr‿")"_seq 𝕩
-    _mu ← {Try∘"{"◶⟨⋈𝔽,While∘⟨¬Try∘"}"∘Seps, 𝔽, 0⟩⟩}
-    BT‿BF ← cond ⌽ 0‿1{𝕨/𝕏_mu}¨⟨Try∘"include"◶Line‿(⋈Symbol),Line⟩
-    ∾∾ (⋈BT)‿(When∘⟨Try∘"else"∘Seps,BF⟩)_seq 𝕩
+  _asBlock ← {While∘⟨¬Try∘"}"∘Seps, 𝔽, 0⟩}
+  TopIf ← c.topif _node_ {𝕤
+    L ← Try∘"include"◶Line‿Symbol
+    B ← Try∘"{"◶⟨⋈L, L _asBlock⟩
+    "if"‿"("‿Expr‿")"‿B‿(∾When∘⟨Try∘"else"∘Seps,B⟩)_seq 𝕩
   }
 
   SubLine ← "def"‿"extend"‿"oper"‿"include"‿"if"⊸⊐⌾<◶⟨
@@ -344,10 +344,9 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ⟩
   ChkLoc ← ("localizable line"⊸⋈ Asrt (¬"if"⊸≡∨'''=⊑))⊸⊢∘Peek
   Line ← {𝕤
-    Try "local" ? Try∘"{"◶⟨SubLine∘ChkLoc,c.body _node_ MultiLine⟩@ ;
+    Try "local" ? Try∘"{"◶⟨SubLine∘ChkLoc,c.body _node_ (𝕊 _asBlock)⟩@ ;
     {𝕩.NonLocal@⋄𝕩} SubLine∘Peek@
   }
-  MultiLine ← While∘⟨¬Try∘"}"∘Seps, Line, 0⟩
 
   Program ← c.body _node_ {𝕤
     Seps@
@@ -1075,10 +1074,6 @@ nodes ← {
     sc←@ ⋄ Scope⇐{ d.Scope sc ↩ scopes.New N 𝕩 }
     Eval⇐{ ¯1⊑⊑d.Eval (sc.Names@) env.New N 𝕩 }
   }
-  TopIfBody ⇐ {
-    statements←𝕩 ⋄ Visit←{⟨𝕏¨statements⟩} ⋄ NonLocal⇐⊢
-    ⟨node,Dump,Disp,Oper,Scope,Eval⟩⇐Defaults "topifbody"‿visit
-  }
 
   LazyLabel ← {𝕤
     label ⇐ 𝕩
@@ -1135,6 +1130,21 @@ nodes ← {
         r ← {Shows⇐!∘"Can't use if-0 statement result as value"⋄kind⇐"error"}
         r ⊣´ { 𝕩.Eval e }¨ else
       }
+    }
+  }
+  TopIf ⇐ {
+    ⟨cond,then,else⟩←𝕩 ⋄ pos←𝕨 ⋄ NonLocal⇐⊢
+    Visit←{⟨𝕏cond,𝕏¨then,𝕏¨else⟩}
+    ⟨node,Dump,Disp⟩⇐Defaults "topif"‿visit ⋄ Scope⇐Eval⇐!
+    Oper⇐{
+      # Latest we can evaluate condition without scope circularity, so do it now
+      lf ← { label⇐@ ⋄ GotoC⇐{𝕊:!program._trace_ pos"Dynamic top-level if statement unsupported"} }
+      cond.Oper operator.CondScope 𝕩
+      c ← {𝕨 CondEval ⟨0‿lf, 𝕩⟩}ast._runIfCond cond
+      body ← pos⊸Include⍟("value"≡{𝕩.node})¨ c ¬⊸⊑ then‿else
+      ⟨Scope,Eval⟩ ↩ d ← Defaults "topif"‿{⟨𝕏¨body⟩}
+      d.Oper 𝕩
+      operator.nil
     }
   }
   While ⇐ {
@@ -1207,11 +1217,9 @@ ast ← {
     t.Scope scopes._run sc ← scopes.New baseScope
     t.Eval program._with (sc.Names@) env.New baseEnv
   }
-  RunImm ⇐ { # For top-level if condition
-    𝕩.Oper operator.NewScope operator.nilScope
+  _runIfCond ⇐ { # For top-level if condition
     𝕩.Scope scopes._run baseScope
-    e←@ ⋄ {e↩𝕩}∘𝕩.Eval program._with baseEnv
-    e
+    e←@ ⋄ {e↩𝕩}∘(𝕩⊸𝔽) program._with baseEnv ⋄ e
   }
 }
 
