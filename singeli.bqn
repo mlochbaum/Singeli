@@ -332,10 +332,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   Include ← c.include _node_ ("include"‿Symbol _seq)
 
-  _asBlock ← {While∘⟨¬Try∘"}"∘Seps, 𝔽, 0⟩}
   TopIf ← c.topif _node_ {𝕤
-    L ← Try∘"include"◶Line‿Symbol
-    B ← Try∘"{"◶⟨⋈L, L _asBlock⟩
+    B ← Try∘"{"◶⟨⋈Line, MultiLine⟩
     "if"‿"("‿Expr‿")"‿B‿(∾When∘⟨Try∘"else"∘Seps,B⟩)_seq 𝕩
   }
 
@@ -344,9 +342,10 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ⟩
   ChkLoc ← ("localizable line"⊸⋈ Asrt (¬"if"⊸≡∨'''=⊑))⊸⊢∘Peek
   Line ← {𝕤
-    Try "local" ? Try∘"{"◶⟨SubLine∘ChkLoc,c.body _node_ (𝕊 _asBlock)⟩@ ;
+    Try "local" ? Try∘"{"◶⟨SubLine∘ChkLoc,c.body _node_ MultiLine⟩@ ;
     {𝕩.NonLocal@⋄𝕩} SubLine∘Peek@
   }
+  MultiLine ← While∘⟨¬Try∘"}"∘Seps, Line, 0⟩
 
   Program ← c.body _node_ {𝕤
     Seps@
@@ -906,7 +905,7 @@ nodes ← {
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "phrase"‿visit
     Oper⇐{
       ⟨node⟩↩n ← (o.Oper 𝕩)¨⊸operator.Parse things
-      Scope↩{𝕨n.Scope𝕩} ⋄ Eval↩{𝕨n.Eval𝕩} ⋄ Disp↩{𝕨n.Disp𝕩}
+      Scope↩{𝕨n.Scope𝕩} ⋄ Eval↩{𝕨n.Eval𝕩} ⋄ Disp↩{𝕨n.Disp𝕩} # fields of n can change
       operator.nil
     }
   }
@@ -1063,7 +1062,15 @@ nodes ← {
     Eval ⇐ { program.Export program._trace_ pos¨⟜<´ d.Eval 𝕩 }
   }
   Include ⇐ {
-    𝕨 files.Include Show (⊑𝕩).Eval@
+    # Top-level if statements resolve in operator pass; expand then
+    ⟨file⟩ ← 𝕩 ⋄ pos←𝕨
+    NL←⊢ ⋄ NonLocal⇐{𝕊:NL↩{𝕩.NonLocal@⋄𝕩}}
+    ⟨node,Dump,Disp⟩⇐Defaults "include"‿{⟨𝕏file⟩} ⋄ Scope⇐Eval⇐!
+    Oper ⇐ {𝕤
+      b ← NL pos files.Include Show file.Eval@
+      ⟨node,Dump,Disp,Oper,Scope,Eval⟩ ↩ b # Always a body so fields can't change
+      b.Oper 𝕩
+    }
   }
   Body ⇐ {
     statements←𝕩
@@ -1141,7 +1148,7 @@ nodes ← {
       lf ← { label⇐@ ⋄ GotoC⇐{𝕊:!program._trace_ pos"Dynamic top-level if statement unsupported"} }
       cond.Oper operator.CondScope 𝕩
       c ← {𝕨 CondEval ⟨0‿lf, 𝕩⟩}ast._runIfCond cond
-      body ← pos⊸Include⍟("value"≡{𝕩.node})¨ c ¬⊸⊑ then‿else
+      body ← c ¬⊸⊑ then‿else
       ⟨Scope,Eval⟩ ↩ d ← Defaults "topif"‿{⟨𝕏¨body⟩}
       d.Oper 𝕩
       operator.nil
