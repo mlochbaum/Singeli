@@ -1,4 +1,4 @@
-cpu ← •args
+cpu‿libpaths ← •args
 
 tab‿lf←@+9‿10
 
@@ -1199,9 +1199,12 @@ files ← {
     path ↩ (∨`⌾⌽'/'⊸=)⊸/ 𝕩
     ast.Build •file.Chars 𝕩
   }
+  lib ← libpaths∾<⟨"","include/"⟩
   Include ⇐ {
-    f ← ('.'=⊑)◶⟨"include/",path⟩⊸•file.At 𝕩∾".singeli"
-    Err⍟(¬•file.Exists f) "File not found"‿𝕨
+    search ← (≠↑𝕩˙)⊸≡∘⊑¨⊸/ ('.'=⊑𝕩) ⊑ ⟨lib,⟨""‿path⟩⟩
+    Get ← {pre‿path𝕊𝕩: path •file.At pre ≠⊸(⊢↓˜⊣+'/'=⊑) 𝕩}⟜(𝕩∾".singeli")
+    f←@ ⋄ {f≡@? •file.Exists ft←Get𝕩? f↩ft; @}¨ search
+    Err⍟(f≡@) "File not found"‿𝕨
     log ∾↩ <f
     op←path ⋄ a←Load f ⋄ path↩op ⋄ a
   }
