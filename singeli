@@ -18,12 +18,14 @@ short‿long‿args‿dup‿desc ← <˘⍉> ⟨
 short‿long ∾˜¨⟜<¨↩ "-"‿"--"
 args ∾↩ 0
 
+Spl ← (⊢-˜+`×¬)∘=⊔⊢
+
 c ← ≠short
 op ← (short⊸⊐ ⌊ long⊸⊐) •args
 op ⌈↩ c ×¬ <`⊸= op⊏args
 opts ← ((1+c)∾˜f/op) ⊔ ((op=c)(1-˜×⟜(+`))○(∾⟜1)f←¬0»op⊏args) ⊔ •args
 "Option can't be duplicated" ! ∧´ (dup∾1) ≥ 1<≠¨opts
-os ← (1⌾(¯1⊸⊑)args) ⊣◶⟨0<≠∘⊢,⊑¨⊢⟩¨ opts
+os ← (0⌾⊑dup∾0) (∾','⊸Spl¨)⍟⊣¨ (1⌾(¯1⊸⊑)args) ⊣◶⟨0<≠∘⊢,⊑¨⊢⟩¨ opts
 help‿out‿target‿feats‿lib‿pre‿namepre‿deplog‿files ← os
 
 { help ?
