@@ -1204,7 +1204,8 @@ files ← {
     search ← (≠↑𝕩˙)⊸≡∘⊑¨⊸/ ('.'=⊑𝕩) ⊑ ⟨lib,⟨""‿path⟩⟩
     Get ← {pre‿path𝕊𝕩: path •file.At pre ≠⊸(⊢↓˜⊣+'/'=⊑) 𝕩}⟜(𝕩∾".singeli")
     f←@ ⋄ {f≡@? •file.Exists ft←Get𝕩? f↩ft; @}¨ search
-    Err⍟(f≡@) "File not found"‿𝕨
+    Report ← {" (searched "∾"and Singeli library)"∾˜∾⥊(Get¨¯1↓𝕩)∾˘<", "}
+    Err∘((1<≠)◶""‿Report∘search⊸(∾˜)⌾⊑)⍟(f≡@) "File not found"‿𝕨
     log ∾↩ <f
     op←path ⋄ a←Load f ⋄ path↩op ⋄ a
   }
