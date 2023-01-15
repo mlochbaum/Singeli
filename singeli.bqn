@@ -721,7 +721,7 @@ builtins ← {
   Slice ← {
     "slice: one or two slicing values expected"!(2⊸≤∧≤⟜3)≠𝕩
     s←¬=l←⊑𝕩
-    "slice: first parameter must be a tuple or symbol"!s◶⟨1,"symbol"≡Kind⟩𝕩
+    "slice: first parameter must be a tuple or symbol"!s◶⟨1,"symbol"≡Kind⟩l
     l Show⍟s↩ ⋄ i←l≠⊸(0⌈⊣⌊+⍟(0⊸>)¨)numbers.From¨1↓𝕩 ⋄ symbols.New⍟s (⊑i)↓(1↓i)↑´˜l
   }
   names‿values ⇐ <˘∾≍⟨
