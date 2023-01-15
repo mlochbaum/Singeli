@@ -44,7 +44,7 @@ Div ⇐ {b𝕊a:
 }
 
 Mod ⇐ {
-  b𝕊a‿0: a>0 ? Add12´ a⊸+⌾⊑⍟(<⟜-´) (a÷2) (⊢(-+a⊸|)+)⍟(<⟜|)¨ b ;
+  b𝕊a‿0: a>0 ? h←a÷2 ⋄ Add12´ a⊸+⌾⊑⍟(<⟜-´) (-⟜(a×h<⊢)a|⊢)⍟(h<|)¨b ;
   # Not correctly rounded but probably okay
   b𝕊a: a Sub b Mul (Floor a Div b)
 }
