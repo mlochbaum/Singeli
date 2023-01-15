@@ -1210,12 +1210,8 @@ files ← {
     log ∾↩ <f
     op←path ⋄ a←Load f ⋄ path↩op ⋄ a
   }
-  Build ⇐ {
-    log ↩ ⟨⟩
-    a ← Load 𝕩
-    •file.Lines⟜log⍟(@⊸≢) 𝕨
-    a
-  }
+  Build ⇐ { log↩⟨⟩ ⋄ Load 𝕩 }
+  WriteDeps ⇐ { @≢𝕩 ? 𝕩 •file.Lines log ; @ }
 }
 
 ast ← {
@@ -1224,8 +1220,9 @@ ast ← {
   baseEnv   ← builtins.values env.Fixed @
   Build ⇐ Parse∘Tokenize
   Compile ⇐ {
-    t ← 𝕨 files.Build 𝕩
+    t ← files.Build 𝕩
     t.Oper operator.NewScope operator.nilScope
+    files.WriteDeps 𝕨
     t.Scope scopes._run sc ← scopes.New baseScope
     t.Eval program._with (sc.Names@) env.New baseEnv
   }
