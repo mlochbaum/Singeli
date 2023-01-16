@@ -112,8 +112,7 @@ architecture ← {
   feats‿mat‿FeatInd ← cpu
   init ⇐ cpu.baseArch
   # Look up a list of symbols
-  FromSym ← {"Expected symbol for architecture feature"!"symbol"≡Kind𝕩⋄Show𝕩}
-  Id ← FeatInd⟜(FromSym¨)
+  Id ← {𝕨 FeatInd "Expected symbol for architecture feature"⊸symbols.From¨𝕩}
   # An architecture is a mask of supported features
   New ⇐ { 𝕨 ∨˝ (1 Id 𝕩) ⊏ mat }
   Contains ⇐ ∧´≥
@@ -555,8 +554,8 @@ types ← {kname⇐"type"
     ⟩ 𝕩
   }
   GetQual ← {
-    n←("symbol"≡Kind)◶""‿Show 𝕩
-    "Quality must be a single-letter symbol (i,u,f)"!1=≠n
+    e ← "Quality must be a single-letter symbol (i,u,f)"
+    n ← e symbols.From 𝕩 ⋄ e!1=≠n
     ⊑n
   }
   PrimType ← "Invalid primitive type specification"_getPrim ⟨GetQual,numbers.From⟩ {𝕎𝕩}¨ ⊢
@@ -595,11 +594,13 @@ constants ← {kname⇐"constant"
 }
 
 labels ← {kname⇐"label"
-  New⇐{ kind⇐kname ⋄ shows⇐"l"∾•Repr𝕩 ⋄ Matches⇐≡ }
+  New ⇐ { kind⇐kname ⋄ shows⇐"l"∾•Repr𝕩 ⋄ Matches⇐≡ }
 }
 symbols ← {kname⇐"symbol"
-  M←(kname≡Kind∘⊢)_and_(≡○Show)
-  New⇐{ kind⇐kname ⋄ shows⇐𝕩 ⋄ Matches⇐M }
+  Is ← kname ≡ Kind
+  From ⇐ {!⟜(Is𝕩˙)𝕨 ⋄ 𝕩.symstr}
+  M ← Is∘⊢_and_(≡○From)
+  New ⇐ { kind⇐kname ⋄ shows⇐symstr⇐𝕩 ⋄ Matches⇐M }
 }
 
 functions ← {kname⇐"function"
@@ -715,14 +716,13 @@ builtins ← {
   Merge ← {
     0<⌈´=¨𝕩 ? ∾𝕩 ;
     m←"merge: parameters must include at least one tuple or all be symbols"
-    (m!"symbol"≡Kind)¨ 𝕩
-    symbols.New ∾ Show¨𝕩
+    symbols.New ∾ m⊸symbols.From¨𝕩
   }
   Slice ← {
     "slice: one or two slicing values expected"!(2⊸≤∧≤⟜3)≠𝕩
     s←¬=l←⊑𝕩
-    "slice: first parameter must be a tuple or symbol"!s◶⟨1,"symbol"≡Kind⟩l
-    l Show⍟s↩ ⋄ i←l≠⊸(0⌈⊣⌊+⍟(0⊸>)¨)numbers.From¨1↓𝕩 ⋄ symbols.New⍟s (⊑i)↓(1↓i)↑´˜l
+    l "slice: first parameter must be a tuple or symbol"⊸symbols.From⍟s↩
+    i←l≠⊸(0⌈⊣⌊+⍟(0⊸>)¨)numbers.From¨1↓𝕩 ⋄ symbols.New⍟s (⊑i)↓(1↓i)↑´˜l
   }
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
@@ -736,7 +736,7 @@ builtins ← {
       ⟨"load",Load _e2⟩, ⟨"store",¯1⊸(⊑Store↓)_e3⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑⚇0‿∞ _p2⟩, ⟨"tuplen",≠_p1⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩
-      ⟨"symchars",(symbols.New∘⋈¨∘Show⊣"symchars: expected symbol"!"symbol"≡Kind)_p1⟩
+      ⟨"symchars",(symbols.New∘⋈¨"symchars: expected symbol"⊸symbols.From)_p1⟩
       ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓_v1⟩
       ⟨"apply",{"apply: second parameter must be a tuple"!1==𝕩⋄𝕎𝕩}_p2⟩
       ⟨"witharch",architecture.With⟩
@@ -1068,7 +1068,7 @@ nodes ← {
     NL←⊢ ⋄ NonLocal⇐{𝕊:NL↩{𝕩.NonLocal@⋄𝕩}}
     ⟨node,Dump,Disp⟩⇐Defaults "include"‿{⟨𝕏file⟩} ⋄ Scope⇐Eval⇐!
     Oper ⇐ {𝕤
-      b ← NL pos files.Include Show file.Eval@
+      b ← NL pos files.Include symbols.From file.Eval@
       ⟨node,Dump,Disp,Oper,Scope,Eval⟩ ↩ b # Always a body so fields can't change
       b.Oper 𝕩
     }
