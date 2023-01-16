@@ -600,7 +600,8 @@ symbols ← {kname⇐"symbol"
   Is ← kname ≡ Kind
   From ⇐ {!⟜(Is𝕩˙)𝕨 ⋄ 𝕩.symstr}
   M ← Is∘⊢_and_(≡○From)
-  New ⇐ { kind⇐kname ⋄ shows⇐symstr⇐𝕩 ⋄ Matches⇐M }
+  Enc ← "'"(∾∾⊣)⊢+128×' '⊸= # Space to non-breaking space
+  New ⇐ { kind⇐kname ⋄ symstr⇐𝕩 ⋄ Shows⇐Enc∘symstr ⋄ Matches⇐M }
 }
 
 functions ← {kname⇐"function"
@@ -617,7 +618,7 @@ functions ← {kname⇐"function"
     NextArg⇐{ atypes∾↩<𝕩 ⋄ args∾↩<a←Next 𝕩 ⋄ a }
     ⟨Push,Arr⟩←MakeStack@
     Instrs⇐Arr
-    Append⇐{ Push𝕩⋄@ ; (1⊸⊑⊣𝕊) ⟨"new",Next𝕨⟩∾symbols.New⌾⊑𝕩 }
+    Append⇐{ Push𝕩⋄@ ; (1⊸⊑⊣𝕊) ⟨"new",Next𝕨⟩∾{shows⇐𝕩}⌾⊑𝕩 }
     SetRType⇐{
       SetRType↩!∘0 ⋄ !types.Is rType↩𝕩
       type ↩ atypes types.Fun rType

@@ -1,5 +1,5 @@
 beginFn f0_fn void 1 v0_i i64
-new v1 emit i64 thing v0_i
+new v1 emit i64 'thing' v0_i
 endFn
 
-export efn (i64)->void $f0_fn
+export 'efn' (i64)->void $f0_fn

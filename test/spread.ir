@@ -1,5 +1,5 @@
 beginFn f0_fn i32 5 v0_a u64 v1_b i8 v2_c i8 v3_d i8 v4_e u64
-new v5 emit i32 go v2_c v3_d v1_b v2_c
+new v5 emit i32 'go' v2_c v3_d v1_b v2_c
 ret v5
 endFn
 

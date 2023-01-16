@@ -1,6 +1,6 @@
 beginFn f0_fn void 1 v0_x *u8
-new v1 emit u8 ^load v0_x 2
+new v1 emit u8 '^load' v0_x 2
 mut v1 !3:u8
-new v2 emit u8 ^store v0_x 2 v1
+new v2 emit u8 '^store' v0_x 2 v1
 endFn
 

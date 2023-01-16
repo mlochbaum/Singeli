@@ -2,4 +2,4 @@ beginFn f0_fn i64 1 v0_arg i64
 ret v0_arg
 endFn
 
-export efn (i64)->i64 $f0_fn
+export 'efn' (i64)->i64 $f0_fn

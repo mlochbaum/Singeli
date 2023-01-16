@@ -1,5 +1,5 @@
 beginFn f0_f i32 1 v0_x i32
-new v1 emit i32 change v0_x
+new v1 emit i32 'change' v0_x
 new v2_a val i32 v1
 new v3_b val i32 v0_x
 mut v2_a !4:i32
