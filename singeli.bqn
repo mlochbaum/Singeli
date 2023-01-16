@@ -21,8 +21,8 @@ Tokenize←{
   {⟨⊑/𝕩,"Unclosed quote"⟩!0}⍟(∨´)(s∨d)>k∨a
   ign←(𝕩∊" "∾tab)∨≠`ab∧c∨n                  # Ignored characters
   # Other stuff
-  k∨↩∨´(»⊸∧k<𝕩⊸∊)¨wc‿oc                     # Group names, numbers, and ops
-  k>↩(»𝕩='.')∧𝕩∊alph
+  da←(»𝕩='.')∧𝕩∊alph                        # Don't group ...word
+  k∨↩da<∨´(»⊸∧k<𝕩⊸∊)¨wc‿oc                  # Group names, numbers, and ops
   bt←(⌈`↕∘≠×¬)k ⋄ xd←𝕩∊dig
   k∨↩»⊸∨(»(bt⊏xd)∧𝕩='e')∧(𝕩='-')∧«xd        # Negative exponents 12e-3
   ts←n∨¬k∨ign                               # Token start mask
@@ -156,7 +156,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ! (¯1⊑tokens) Is sep
 
   Asrt ← {𝕨𝕊1:@;
-    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.const,"const",c.define,"define",c.export,"export",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.topif,"topif",c.while,"while",c.word,"word"⟩
+    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.const,"const",c.define,"define",c.export,"export",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.require,"require",c.run,"run",c.symbol,"symbol",c.topif,"topif",c.while,"while",c.word,"word"⟩
     ShowTrace⟜L´ <˘⍉>DumpStack@
     •Out ""
     F ← (⥊lf)⊸≡◶•Repr‿"end of line"
@@ -330,14 +330,15 @@ Parse ← {𝕊 tokens‿ShowTrace:
   OpDef ← c.opDef _node_ ("oper"‿Oper‿Name‿OpType‿Number _seq)
 
   Include ← c.include _node_ ("include"‿Symbol _seq)
+  Require ← c.require _node_ ("require"‿Symbol _seq)
 
   TopIf ← c.topif _node_ {𝕤
     B ← Try∘"{"◶⟨⋈Line, MultiLine⟩
     "if"‿"("‿Expr‿")"‿B‿(∾When∘⟨Try∘"else"∘Seps,B⟩)_seq 𝕩
   }
 
-  SubLine ← "def"‿"extend"‿"oper"‿"include"‿"if"⊸⊐⌾<◶⟨
-    Define, Extend, OpDef, Include, TopIf, ('''=⊑)◶DefFun‿Export
+  SubLine ← "def"‿"extend"‿"oper"‿"include"‿"require"‿"if"⊸⊐⌾<◶⟨
+    Define, Extend, OpDef, Include, Require, TopIf, ('''=⊑)◶DefFun‿Export
   ⟩
   ChkLoc ← ("localizable line"⊸⋈ Asrt (¬"if"⊸≡∨'''=⊑))⊸⊢∘Peek
   Line ← {𝕤
@@ -810,15 +811,16 @@ env ← {
 }
 
 program ← {
-  AddFunction⇐AddConstant⇐Export⇐!∘0 ⋄ trace⇐@
+  AddFunction⇐AddConstant⇐Export⇐Require⇐!∘0 ⋄ trace⇐@
   _with ⇐ {
     fns←⟨⟩ ⋄ AddFunction ↩ { f ← 𝕨 𝕏 ≠fns ⋄ fns∾⟜<↩f ⋄ f }
     cns←⟨⟩ ⋄ AddConstant ↩ { c ← 𝕨 constants.Static ⟨t←TypeOf𝕩, ≠cns⟩ ⋄ cns∾⟜<↩⟨Show c,t,𝕩⟩ ⋄ c }
     exp←⟨⟩ ⋄ Export ↩ { "Exports must be typed" ! IsTyped 𝕩 ⋄ exp ∾⟜<↩ 𝕨‿𝕩 }
+    req←⟨⟩ ⋄ Require ↩ { req ∾⟜<↩ 𝕩 }
     ⟨_trace_⟩↩s←Stack@
     𝕨 𝔽⎊s.Report 𝕩
     AddFunction↩AddConstant↩Export↩!∘0
-    ∾ ⟨DispConstants cns, ∾DispFunction¨fns, DispExport¨exp⟩
+    ∾ ⟨DispHeader¨req, DispConstants cns, ∾DispFunction¨fns, DispExport¨exp⟩
   }
   Stack ← {𝕤
     ⟨_trace_⇐_while_⟩ ⇐ ⟨Dump⇐Arr⟩ ← MakeStack@
@@ -845,6 +847,7 @@ program ← {
   }
   J ← 1↓·∾" "⊸∾¨
   Disp ← J Show¨⌾(1⊸↓)
+  DispHeader←{ "require " ∾ Show 𝕩 }
   DispConstants←{ ∾⟜(<⟨⟩)⍟(0<≠) (J"constant"<⊸∾Show¨⌾(1⊸↓))¨ 𝕩 }
   DispFunction←{ ∾⟨"beginFn "∾𝕩.Prot@⟩‿(Disp¨ 𝕩.Instrs@)‿⟨"endFn",""⟩ }
   DispExport←{ "export " ∾ J <⊸∾⟜(TypeOf⋈○Show⊢)´ 𝕩 }
@@ -1073,6 +1076,11 @@ nodes ← {
       ⟨node,Dump,Disp,Oper,Scope,Eval⟩ ↩ b # Always a body so fields can't change
       b.Oper 𝕩
     }
+  }
+  Require ⇐ {
+    ⟨file⟩ ← 𝕩
+    ⟨node,Dump,Disp⟩⇐Defaults "require"‿{⟨𝕏file⟩} ⋄ Scope⇐Oper⇐NonLocal⇐⊢
+    Eval ⇐ {𝕊: program.Require file.Eval@}
   }
   Body ⇐ {
     statements←𝕩

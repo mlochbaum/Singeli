@@ -1,8 +1,9 @@
 cpu‿prefix ← ∾⟜"_"⌾(1⊸⊑) •args
 
 types ← {
-  ub←uv←0 ⋄ init ⇐ {ub↩uv↩0}
-  Headers ⇐ {𝕊: (1‿ub/⟨"stdint.h","stdbool.h"⟩)∾cpu.Headers uv}
+  ub←uv←0 ⋄ req←⟨⟩ ⋄ init ⇐ {ub↩uv↩0⋄req↩⟨⟩}
+  Require ⇐ {𝕊: req∾↩<𝕩}
+  Headers ⇐ {𝕊: ⍷ req ∾˜ (1‿ub/⟨"stdint.h","stdbool.h"⟩)∾cpu.Headers uv}
   Type ⇐ { 𝕨𝕊bType‿w‿am‿ptrs:
     u‿f ← bType = "uf"
     (" "∾𝕨) ⊢⊘(∾˜) (ptrs/"*") ∾˜ {
@@ -31,10 +32,9 @@ Generate ← {
     depth‿infn‿do ← c ⊑ op
     ! fn ≡ infn
     fn +↩ depth
-    tail ← ⟨infn∧fn,2-fn⟩/';'‿lf
-    res ← do {𝕎𝕩}¨ <line
+    res ← ∾ do {𝕎𝕩}¨ <line
     line.Finish @
-    ∾ res∾<tail
+    res ∾ ⟨infn∧fn,(0<≠res)∧2-fn⟩/';'‿lf
   }⍟(0<≠)
   l ← ProcLine¨ lf ((⊢-˜+`×¬)∘=⊔⊢) 𝕩
   "Unclosed function" ! 0≡fn
@@ -140,6 +140,7 @@ Constant ← {
   val ← Lit 𝕩
   ∾⟨"static ",Define type‿id‿val,";"⟩
 }
+Require ← { types.Require Name 𝕩 ⋄ "" }
 ⟨New⟩ ← {
   Special ← {
     "^promote"𝕊⟨t,v⟩  : ∾"("‿(as.Type t)‿")"‿v ;
@@ -169,6 +170,7 @@ Constant ← {
 code‿op ← (⊑¨ ⋈ 1⊸↓¨) ⟨
   "export"  ‿ 0‿0‿⟨Export⟩
   "constant"‿ 0‿0‿⟨Constant⟩
+  "require" ‿ 0‿0‿⟨Require⟩
   "beginFn" ‿ 1‿0‿⟨BeginFn⟩
   "lbl"     ‿ 0‿1‿⟨Name,":"⟩
   "ret"     ‿ 0‿1‿⟨"  ","return","void"⊸≢◶⟨""," "⊸∾⟩ Lit⟩
