@@ -714,7 +714,8 @@ builtins ← {
   }
   Ty2 ← {𝕏⚇0 _p2}∘Kinds ⊣∾⟜(<·"symbol"⌾⊑⊢´)∘⊢⍟(⊑∊⟜=‿≠)"number"‿"type"⋈¨{𝕏numbers._cmp}⊸⋈
   TypeSuff ← IsTyped◶0‿{𝕩.fmtType}◶""‿{":"∾Fmt TypeOf𝕩}
-  Fmt ← 2↓·∾·", "⊸∾¨(Show∾TypeSuff)⎊("("∾")"∾˜Kind⎊"unknown")¨
+  UnEsc ← ⊢-128×(' '+128)⊸= # Non-breaking space to space
+  Fmt ← 2↓·∾·", "⊸∾¨(UnEsc∘Show∾TypeSuff)⎊("("∾")"∾˜Kind⎊"unknown")¨
   Merge ← {
     0<⌈´=¨𝕩 ? ∾𝕩 ;
     m←"merge: parameters must include at least one tuple or all be symbols"
