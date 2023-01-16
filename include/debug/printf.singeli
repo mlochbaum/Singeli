@@ -1,0 +1,86 @@
+# printf: Print a list of values at runtime, C backend
+# lprintf: Same, with trailing newline
+
+local {
+  include 'skin/c'
+  include 'skin/cext'
+  include 'util/kind'
+  include 'util/tup'
+  oper ! tupsel infix right 50
+}
+
+require 'stdio.h'
+require 'inttypes.h'
+
+def lprintf{...vs} = printf{...vs, '\n'}
+
+def printf{...vs0} = {
+  def nsym = ~each{ksym, vs0}
+  def vs = join{each{
+    {a,b}=>(if (b) tup{' ', a}; else tup{a}),
+    vs0, nsym & shiftright{0, nsym}
+  }}
+
+  def empty = tup{}
+  def lit{s} = tup{s, empty}
+  def lit1{s} = tup{lit{s}}
+  
+  def listfmt{hex, open, close, vs} = {
+    if (tuplen{vs}==0) {
+      lit{merge{open, close}}
+    } else {
+      def f = each{{v} => runfmt{hex, v}, vs}
+      def d = each{lit1, tup{open, ', ', close}}
+      merge{...each{merge, (0 != inds{f}) ! d, f}, 2 ! d}
+    }
+  }
+  
+  def runfmt{hex, x} = {
+    if (ksym{x}) {
+      lit1{x}
+    } else if (ktup{x}) {
+      if (tuplen{x}==2 and (0!x)==='x') runfmt{1, 1!x}
+      else listfmt{hex, '{', '}', x}
+    } else if (kreg{x} or kcon{x}) {
+      def T = type{x}
+      def k = typekind{T}
+      if (k === 'primitive') {
+        def q = quality{T}
+        def w = width{T}
+        def u = (w>1) & (q=='u')
+        def spec = {
+          if (q=='f') (if (w==32) '%.8g'; else '%.17g')
+          else merge{
+            (if (hex) '0x'; else ''),
+            '%',
+            (if (w==64) '"SCN'; else ''),
+            (if (hex) 'x'; else if (u) 'u'; else 'd'),
+            (if (w==64) '64"'; else '')
+          }
+        }
+        tup{tup{spec, tup{x}}}
+      } else if (k === 'vector') {
+        def E = eltype{T}
+        def l = vcount{T}
+        tmp:*E = copy{l, 0}
+        *T~~tmp <- x
+        listfmt{hex, '[', ']', each{{i} => tmp->i, iota{l}}}
+      } else {
+        lit1{merge{'(unhandled typekind:', k, ')'}}
+      }
+    } else if (knum{x}) {
+      if ((x>>0) == x) {
+        if      (x >= -(1<<63) and x < 1<<63) runfmt{hex, i64~~x}
+        else if (x >= 0        and x < 1<<64) runfmt{hex, u64~~x}
+        else runfmt{hex, f64~~x}
+      } else runfmt{hex, f64~~x}
+    } else {
+      lit1{'(unknown type)'}
+    }
+  }
+  
+  def is = flip{join{each{{v} => runfmt{0,v}, vs}}}
+  def es = each{join, is}
+  
+  emit{void, 'printf', merge{'"', 0!es, '"'}, ... 1!es}
+}
