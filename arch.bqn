@@ -45,11 +45,19 @@ arches ← MakeArch¨ ⟨
 allfeats ← ∾ archfeats ← {𝕩.feats}¨ arches
 
 ReadNative ← {𝕊:
-  c ← 1⊑ •SH "cat"‿"/proc/cpuinfo"
-  f ← ⊑ (∨˝"flags"‿"Features"(⊣≡≠⊸↑)⌜⊢)⊸/ (@+10) Spl c  # Line with flags
-  f ↩ ' ' Spl 2↓(∨`':'⊸=)⊸/ f
-  f ↩ "pni"‿"bmi1"‿"pclmulqdq"⊸⊐⊸(⊣◶⟨"sse3",¯1⊸↓,¯3⊸↓,⊢⟩¨) f
-  ∊⟜allfeats⊸/ ((-´"._")×'_'⊸=)⊸+ ((-´"Aa")×'a'⊸≤)⊸+ f
+  f ← {
+    c ← 1⊑ •SH "cat"‿"/proc/cpuinfo"
+    l ← (∨˝"flags"‿"Features"(⊣≡≠⊸↑)⌜⊢)⊸/ (@+10) Spl c  # Line with flags
+    0<≠l ? ToUpper¨ 1↑l
+  ;
+    l ← (@+10) Spl (1⊑•SH)⎊⟨⟩ "sysctl"‿"machdep.cpu" # For macs
+    0<≠l ? l
+  ;
+    ! "Couldn't find CPU features"
+  }
+  f ↩ ∾ (' ' Spl 2↓(∨`':'⊸=)⊸/)¨ f
+  f ↩ "PNI"‿"BMI1"‿"PCLMULQDQ"⊸⊐⊸(⊣◶⟨"SSE3",¯1⊸↓,¯3⊸↓,⊢⟩¨) f
+  ∊⟜allfeats⊸/ ((-´"._")×'_'⊸=)⊸+ f
 }
 
 arg ← ("NATIVE"⊸≡¨ (¬⊸/∾ReadNative)⍟((0=≠)⊸(∨´)⊣) ⊢) ToUpper •args
