@@ -403,7 +403,10 @@ operator ← {
     Lookup ⇐ nul.Get Compose lef.Get
   }
   nilScope ⇐ { tabs ⇐ 2⥊{Get⇐nil˙} } # Lookup ⇐ nil˙
-  CondScope ⇐ { 𝕊 par: Lookup ⇐ {@≢c←nodes.CondOp𝕩?c; par.Lookup 𝕩} }
+  CondScope ⇐ { 𝕊 par:
+    parent‿tabs‿Add ⇐ par
+    Lookup ⇐ {@≢c←nodes.CondOp𝕩?c; par.Lookup 𝕩}
+  }
 }
 
 
