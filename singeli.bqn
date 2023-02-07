@@ -904,7 +904,9 @@ nodes ← {
     Visit←{⟨𝕏caller,𝕏¨params⟩}
     ⟨node,Dump,Disp,Scope⟩⇐d←Defaults "run"‿visit
     Oper ⇐ {𝕤⋄ pos operator.Run ⟨⊑Visit o.Oper 𝕩, params⟩}
-    Eval ⇐ {𝕎∘DeSpread program._trace_ pos 𝕩}´ d.Eval
+    Eval ⇐ {
+      (3=•Type𝕨)◶⟨!∘"Running non-generator", 𝕎∘DeSpread⟩ program._trace_ pos 𝕩
+    }´ d.Eval
   }
   Call ⇐ { 𝕨 Run ⟨Ident"call" , <⊸∾´𝕩⟩ }
   Phrase ⇐ {
