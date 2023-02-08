@@ -132,7 +132,7 @@ Export ← {
 }
 Define ← {𝕊 ty‿id‿val:
   {'{'=⊑1↑⊑val? '*'=⊑ty? ty↓˜↩1⋄id∾↩"[]"; @}
-  ∾ (id as.Type ty)‿" = "∾val
+  ∾ ⟨id as.Type ty⟩ ∾ (('?'≠·⊑1↑⊑) / ⟨" = "⟩⊸∾) val
 }
 Constant ← {
   id   ← Rename 𝕩

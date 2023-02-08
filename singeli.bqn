@@ -589,11 +589,14 @@ registers ← {kname⇐"register"
 constants ← {kname⇐"constant"
   New ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ value⇐𝕩
-    shows⇐∾"!:"∾¨s←Show¨𝕩‿𝕨 ⋄ fmtType⇐0 ⋄ Matches⇐≡
+    shows⇐∾"!:"∾¨Show¨𝕩‿𝕨 ⋄ fmtType⇐0 ⋄ Matches⇐≡
   }
   Static ⇐ {
     kind⇐kname ⋄ type‿handle⇐𝕩
     shows⇐"$c"∾(""⊢"_"∾𝕨)∾˜•Repr handle ⋄ fmtType⇐1 ⋄ Matches⇐≡
+  }
+  Undefined ⇐ {
+    kind⇐kname ⋄ shows⇐"?:"∾Show type⇐𝕩 ⋄ fmtType⇐0 ⋄ Matches⇐≡
   }
 }
 
@@ -736,6 +739,7 @@ builtins ← {
       ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"}⊣•Out∘Fmt⟩
       ⟨"exec",blocks.Exec _e3⟩
       ⟨"match",Match _p2⟩
+      ⟨"undefined",(constants.Undefined⊣"undefined: expected type"!"type"≡Kind)_p1⟩
       ⟨"hastype",IsTyped∘⊑ _and_ ({𝕩.type}⊸Match´)_e2⟩
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
       ⟨"typekind",symbols.New types.TypeKind _p1⟩
