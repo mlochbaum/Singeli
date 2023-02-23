@@ -577,12 +577,14 @@ types ← {kname⇐"type"
 registers ← {kname⇐"register"
   Is ← kname ≡ Kind
   Transient ⇐ {
-    kind⇐kname ⋄ type⇐𝕩 ⋄ shows⇐"(temp)" ⋄ fmtType⇐1 ⋄ Matches⇐≡
+    kind⇐kname ⋄ shows⇐"(temp)" ⋄ type⇐𝕩 ⋄ fmtType⇐1 ⋄ Matches⇐≡
+    name←⟨⟩ ⋄ AddName⇐{name∾↩<𝕩}
     mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1}
-    ShowReg⇐{showReg↩𝕏@}
+    ShowReg⇐{showReg↩∾⟨𝕏@⟩∾(ref=1)/"_"⊸∾¨name}
   }
   Declare ⇐ { name 𝕊 type‿val:
     kind⇐kname ⋄ shows⇐name ⋄ type⇐ ⋄ fmtType⇐1 ⋄ Matches⇐≡
+    addName⇐@ ⋄ {𝕩.AddName name}⍟Is val
     mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1}
     SetMut⇐{𝕤⋄mut↩1}  # Changed (for blocks, and transient elimination)
     ShowReg⇐{showReg↩𝕩}∘{
