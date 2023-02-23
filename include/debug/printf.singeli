@@ -65,6 +65,8 @@ def printf{...vs0} = {
         tmp:*E = copy{l, 0}
         *T~~tmp <- x
         listfmt{hex, '[', ']', each{{i} => tmp->i, iota{l}}}
+      } else if (k === 'pointer') {
+        tup{tup{'%p', tup{x}}}
       } else {
         lit1{merge{'(unhandled typekind:', k, ')'}}
       }
