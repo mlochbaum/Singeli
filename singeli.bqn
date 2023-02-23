@@ -708,7 +708,7 @@ blocks ← {kname⇐"block"
     shows⇐"{block}" ⋄ Matches⇐≡
     Exec⇐{
       "Wrong number of pointer arguments in block exec" ! ptrs≡○≠1⊑𝕩
-      r ← body.Eval be ← ⟨≠ind,ls,𝕩⟩ env.Block e
+      r ← body.Eval be ← ⟨≠ind,ls,𝕩,ptrs⟩ env.Block e
       be.Stores @
       r
     }
@@ -816,8 +816,8 @@ env ← {
   Alias⇐Make
   New  ⇐{ (var.New∘@¨ 𝕨) Make 𝕩 }
   Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
-  Block⇐{⟨ni,Load‿Store,ind‿ptrs⟩ 𝕊 par:
-    pv ← ""⊸functions.Declare⚇0∘Load∘⋈⟜ind¨ ptrs
+  Block⇐{⟨ni,Load‿Store,ind‿ptrs,names⟩ 𝕊 par:
+    pv ← names functions.Declare⚇∞‿0⟜(Load∘⋈⟜ind)¨ ptrs
     vars‿parent ⇐ (var.Fixed¨(ni⥊<ind)∾pv) Make par
     Stores ⇐ {𝕤
       ptrs {registers.Mutated 𝕩 ? Store 𝕨‿ind‿𝕩 ;@}⚇0 pv
