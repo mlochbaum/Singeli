@@ -575,16 +575,23 @@ types ← {kname⇐"type"
 }
 
 registers ← {kname⇐"register"
-  New ⇐ {
-    kind⇐kname ⋄ type⇐𝕨 ⋄ handle⇐𝕩
-    shows⇐"v"∾•Repr𝕩 ⋄ fmtType⇐1 ⋄ Matches⇐≡ ⋄ Suffix⇐{shows∾↩"_"∾𝕩}
-    stat⇐1 ⋄ SetStat⇐{  stat↩𝕩}  # Assigned? 1 free, 2 :=, 3 def
-    mut ⇐0 ⋄ SetMut ⇐{𝕤⋄mut ↩1}  # Changed (for blocks)
+  Is ← kname ≡ Kind
+  Transient ⇐ {
+    kind⇐kname ⋄ type⇐𝕩 ⋄ shows⇐"(temp)" ⋄ fmtType⇐1 ⋄ Matches⇐≡
+    mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1}
+    ShowReg⇐{showReg↩𝕏@}
   }
-  Status ⇐ { kname≡Kind𝕩 ? 𝕩.stat ; 0 }
-  Claim ⇐ { 𝕩.SetStat 2 ⋄ 𝕩.Suffix 𝕨 ⋄ 𝕩 }
-  Save  ⇐ { 𝕩.SetStat 3 ⋄ 𝕩 }⍟(1=Status)
-  ClaimCopy ⇐ Claim⟜({functions.Copy𝕩}⍟(1≠Status))
+  Declare ⇐ { name 𝕊 type‿val:
+    kind⇐kname ⋄ shows⇐name ⋄ type⇐ ⋄ fmtType⇐1 ⋄ Matches⇐≡
+    mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1}
+    SetMut⇐{𝕤⋄mut↩1}  # Changed (for blocks, and transient elimination)
+    ShowReg⇐{showReg↩𝕩}∘{
+      Is val? ¬val.mut? (¬mut)∨1=val.ref? val.ShowReg𝕩 ;
+      ∾⟨𝕏@,"_",name⟩
+    }
+  }
+  Mutable ⇐ { Is 𝕩 ? {⟨SetMut⟩:1;0}𝕩 ; 0 }
+  Mutated ⇐ { Is 𝕩 ? 𝕩.mut ; 0 }
 }
 constants ← {kname⇐"constant"
   New ⇐ {
@@ -619,13 +626,12 @@ functions ← {kname⇐"function"
   New ← {𝕤
     kind⇐kname ⋄ shows⇐"$f"∾(•Repr id⇐𝕩)∾"_"⊸∾⍟(0<≠)𝕨 ⋄ Matches⇐≡ ⋄ type⇐@
     arch⇐architecture.NewFunction@ ⋄ SetArch⇐{arch↩𝕩}
-    handle←¯1 ⋄ label←¯1 ⋄ args←atypes←⟨⟩ ⋄ rType⇐@
-    Next←{ 𝕩 registers.New handle+↩1 }
+    label←¯1 ⋄ args←atypes←⟨⟩ ⋄ rType⇐@
     NextLabel⇐{𝕤⋄ labels.New label+↩1 }
-    NextArg⇐{ atypes∾↩<𝕩 ⋄ args∾↩<a←Next 𝕩 ⋄ a }
+    NextArg⇐{ atypes∾↩<𝕩 ⋄ args∾↩<a←𝕨 registers.Declare 𝕩‿@ ⋄ a }
     ⟨Push,Arr⟩←MakeStack@
     Instrs⇐Arr
-    Append⇐{ Push𝕩⋄@ ; (1⊸⊑⊣𝕊) ⟨"new",Next𝕨⟩∾{shows⇐𝕩}⌾⊑𝕩 }
+    Append⇐{ Push𝕩⋄@ }
     SetRType⇐{
       SetRType↩!∘0 ⋄ !types.Is rType↩𝕩
       type ↩ atypes types.Fun rType
@@ -639,7 +645,8 @@ functions ← {kname⇐"function"
     Finish⇐{"Explicit result type needed"!IsTyped 𝕩⋄SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
     Prot⇐{𝕊:
       ext ← (0<≠)◶⟨⟩‿(⋈·'+'⌾⊑·∾','⊸∾¨) architecture.ListExt arch
-      1↓∾" "⊸∾¨⟨1↓shows,Show rType⟩∾((<∘•Repr∘≠∾⥊)Show¨args≍˘atypes)∾ext
+      at ← (𝕏¨args)≍˘Show¨atypes
+      1↓∾" "⊸∾¨⟨1↓shows,Show rType⟩∾((<∘•Repr∘≠∾⥊)at)∾ext
     }
   }
   _with_ ⇐ {
@@ -651,14 +658,16 @@ functions ← {kname⇐"function"
     current↩fs
     f
   }
-  NextArg ⇐ { current.NextArg 𝕩 }
+  NextArg ⇐ { 𝕨 current.NextArg 𝕩 }
   Label ⇐ { current.NextLabel 𝕩 }
-  Append ← { 𝕨 current.Append 𝕩 }
+  Append ← { current.Append 𝕩 }
+  _appendReg ← { (1⊸⊑⊣Append) ⟨"new",𝔽𝕨⟩∾{kind⇐@⋄shows⇐𝕩}⌾⊑𝕩 }
+  AppendNew ← registers.Transient _appendReg
   Return ⇐ { current.Return 𝕩 }
   GetArch ← {𝕊: current.arch }
   SetArch ← { current.SetArch 𝕩 }
-  Emit ⇐ { (⊑𝕩) Append "emit" <⊸∾ 𝕩 }
-  Copy ⇐ { t←TypeOf𝕩 ⋄ t Append "val"‿t‿𝕩 }
+  Emit ⇐ { (⊑𝕩) AppendNew "emit" <⊸∾ 𝕩 }
+  Declare ⇐ { t←TypeOf𝕩 ⋄ 𝕨 registers.Declare⟜t‿𝕩 _appendReg "val"‿t‿𝕩 }
   _destructure ← {
     0≠•Type𝕩 ? 𝕨𝔽⚇0𝕩;
     "Single assignment target but multiple values" ! 0=•Type𝕨
@@ -666,7 +675,7 @@ functions ← {kname⇐"function"
     𝕨𝕊¨𝕩
   }
   Mut  ⇐ {
-    "Can't assign to non-register" ! 2 = registers.Status 𝕨
+    "Can't assign to non-register" ! registers.Mutable 𝕨
     Append "mut"‿𝕨‿(𝕨.type types.Cast 𝕩)
     𝕨.SetMut@
     𝕨
@@ -675,7 +684,7 @@ functions ← {kname⇐"function"
     f ← ⊑𝕩
     "Calling non-function" ! IsTyped f
     a‿t ← (TypeOf f) types.FnCast 1↓𝕩
-    t Append ⟨"call",t,f⟩ ∾ ≠⊸∾ a
+    t AppendNew ⟨"call",t,f⟩ ∾ ≠⊸∾ a
   }
   _instr ← { Append (𝕨𝔽𝕩)<⊸∾𝕨⋈𝕩 ⋄ 𝕩 }
   SetLabel ⇐ "lbl"_instr
@@ -769,7 +778,6 @@ var ← {
     v←𝕩 ⋄ Get⇐{𝕤⋄v}
     Set⇐{
       {𝕊:Set↩!∘"Can't extend a non-generator"}⍟NG𝕩
-      registers.Save 𝕩
       v↩𝕩
     }
   }
@@ -809,11 +817,10 @@ env ← {
   New  ⇐{ (var.New∘@¨ 𝕨) Make 𝕩 }
   Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
   Block⇐{⟨ni,Load‿Store,ind‿ptrs⟩ 𝕊 par:
-    Reg ← "register"≡Kind
-    pv ← registers.Claim⍟Reg⚇0∘Load∘⋈⟜ind¨ ptrs
+    pv ← ""⊸functions.Declare⚇0∘Load∘⋈⟜ind¨ ptrs
     vars‿parent ⇐ (var.Fixed¨(ni⥊<ind)∾pv) Make par
     Stores ⇐ {𝕤
-      ptrs {Reg𝕩? 𝕩.mut? Store𝕨‿ind‿𝕩 ;@}⚇0 pv
+      ptrs {registers.Mutated 𝕩 ? Store 𝕨‿ind‿𝕩 ;@}⚇0 pv
     }
   }
 }
@@ -854,10 +861,19 @@ program ← {
     }
   }
   J ← 1↓·∾" "⊸∾¨
-  Disp ← J Show¨⌾(1⊸↓)
   DispHeader←{ "require " ∾ Show 𝕩 }
   DispConstants←{ ∾⟜(<⟨⟩)⍟(0<≠) (J"constant"<⊸∾Show¨⌾(1⊸↓))¨ 𝕩 }
-  DispFunction←{ ∾⟨"beginFn "∾𝕩.Prot@⟩‿(Disp¨ 𝕩.Instrs@)‿⟨"endFn",""⟩ }
+  DispFunction←{
+    ShowReg ← {h←¯1⋄{𝕊:"v"∾•Repr h+↩1}}{𝕩.ShowReg𝕗}
+    Disp ← ("register"≡Kind)◶Show‿ShowReg¨⌾(1⊸↓)
+    Use ← {⟨U⇐Use⟩:U@;@}¨2↓⊢
+    Filter ← {"new"≡⊑𝕩 ? "val"≡2⊑𝕩 ? ≡´1‿4⊏𝕩 ? 0 ; 1}
+    ∾⟨
+      ⟨"beginFn "∾𝕩.Prot showReg⟩
+      J¨ Filter¨⊸/ (Disp¨ ⊣ Use¨) 𝕩.Instrs@
+      ⟨"endFn",""⟩
+    ⟩
+  }
   DispExport←{ "export " ∾ J <⊸∾⟜(TypeOf⋈○Show⊢)´ 𝕩 }
 }
 
@@ -1000,7 +1016,7 @@ nodes ← {
     Eval⇐{
       u←V𝕩 ⋄ t←type.Eval 𝕩
       "Argument type must be a type" ! program._trace_ pos types.Is t
-      u.Set name registers.Claim functions.NextArg t
+      u.Set name functions.NextArg t
     }
   }
   Function ⇐ {
@@ -1035,7 +1051,7 @@ nodes ← {
     Eval⇐{
       u ← GetVar 𝕩
       v ← pos type‿𝕩 _setType value.Eval 𝕩
-      u.Set name⊸registers.ClaimCopy⚇0 v
+      u.Set name⊸functions.Declare⚇0 v
     }
   ;
     𝕨 Run ⟨{functions.Mut´𝕩}˙_value"=" , 0‿3⊏𝕩⟩
