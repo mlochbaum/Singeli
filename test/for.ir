@@ -6,13 +6,11 @@ lbl l1
 new v6_d emit f64 '^load' v0_dst v5_i
 new v7_x emit f64 '^load' v1_x v5_i
 new v8_e emit f64 '^load' v4 v5_i
-new v9 emit f64 'op' v8_e v7_x
-mut v6_d v9
-new v10 emit f64 '^store' v0_dst v5_i v6_d
-new v11 emit u64 'op +' v5_i !1:u64
-mut v5_i v11
+mut v6_d emit f64 'op' v8_e v7_x
+new v9 emit f64 '^store' v0_dst v5_i v6_d
+mut v5_i emit u64 'op +' v5_i !1:u64
 lbl l0
-new v12 emit u1 'op <' v5_i v3_len
-gotoT v12 l1
+new v10 emit u1 'op <' v5_i v3_len
+gotoT v10 l1
 endFn
 

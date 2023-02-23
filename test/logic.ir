@@ -11,13 +11,12 @@ ret v4
 lbl l1
 goto l2
 lbl l3
-new v5 emit i32 'op +' v0_x !1:i32
-mut v0_x v5
+mut v0_x emit i32 'op +' v0_x !1:i32
 lbl l2
-new v6 emit u1 'op <' v0_x !10:i32
-gotoF v6 l4
-new v7 emit u1 'op !=' v0_x !5:i32
-gotoT v7 l3
+new v5 emit u1 'op <' v0_x !10:i32
+gotoF v5 l4
+new v6 emit u1 'op !=' v0_x !5:i32
+gotoT v6 l3
 lbl l4
 ret v0_x
 endFn

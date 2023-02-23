@@ -1,10 +1,8 @@
 beginFn f0_fn i64 1 v0_i i64
-new v1 emit i64 'newvar' v0_i
-mut v0_i v1
-new v2 emit i64 'test' v0_i
-gotoF v2 l0
-new v3 emit i64 'mutvar' v0_i
-mut v0_i v3
+mut v0_i emit i64 'newvar' v0_i
+new v1 emit i64 'test' v0_i
+gotoF v1 l0
+mut v0_i emit i64 'mutvar' v0_i
 lbl l0
 ret v0_i
 endFn

@@ -141,7 +141,7 @@ Constant ← {
   ∾⟨"static ",Define type‿id‿val,";"⟩
 }
 Require ← { types.Require Name 𝕩 ⋄ "" }
-⟨New⟩ ← {
+⟨New, Mut⟩ ← {
   Special ← {
     "^promote"𝕊⟨t,v⟩  : ∾"("‿(as.Type t)‿")"‿v ;
     "^load"   𝕊⟨p,i  ⟩: ∾p‿"["‿i‿"]" ;
@@ -165,6 +165,16 @@ Require ← { types.Require Name 𝕩 ⋄ "" }
     val ← (c⊑op) {𝕎𝕩} 𝕩
     {"void"≡ty?∾val; Define ty‿id‿val}
   }
+  Mut ⇐ {
+    id   ← Name 𝕩
+    kind ← Name 𝕩
+    c ← code⊸⊐⌾< kind
+    val ← {
+      c=≠code ? ⟨as.Lit kind⟩ ;
+      Name 𝕩 ⋄ (c⊑op) {𝕎𝕩} 𝕩  # Discard type
+    } 𝕩
+    ∾id‿" = "∾val
+  }
 }
 
 code‿op ← (⊑¨ ⋈ 1⊸↓¨) ⟨
@@ -178,7 +188,7 @@ code‿op ← (⊑¨ ⋈ 1⊸↓¨) ⟨
   "gotoT"   ‿ 0‿1‿⟨"  ","if (",Lit,") ","goto ",Name⟩
   "goto"    ‿ 0‿1‿⟨"  ","goto ",Name⟩
   "new"     ‿ 0‿1‿⟨"  ",New⟩
-  "mut"     ‿ 0‿1‿⟨"  ",Name," = ",Lit⟩
+  "mut"     ‿ 0‿1‿⟨"  ",Mut⟩
   "endFn"   ‿¯1‿1‿⟨"}"⟩
 ⟩
 

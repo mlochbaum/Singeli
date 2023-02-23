@@ -5,13 +5,11 @@ lbl l1
 new v5_dst emit f64 'llooaadd' v0_dst v4_i
 new v6_x emit f64 'llooaadd' v1_x v4_i
 new v7_w emit f64 'llooaadd' v2_w v4_i
-new v8 emit f64 'op' v7_w v6_x
-mut v5_dst v8
-new v9 emit f64 'ssttoorree' v0_dst v4_i v5_dst
-new v10 emit u64 'op +' v4_i !1:u64
-mut v4_i v10
+mut v5_dst emit f64 'op' v7_w v6_x
+new v8 emit f64 'ssttoorree' v0_dst v4_i v5_dst
+mut v4_i emit u64 'op +' v4_i !1:u64
 lbl l0
-new v11 emit u1 'op <' v4_i v3_len
-gotoT v11 l1
+new v9 emit u1 'op <' v4_i v3_len
+gotoT v9 l1
 endFn
 

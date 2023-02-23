@@ -594,6 +594,7 @@ registers ← {kname⇐"register"
   }
   Mutable ⇐ { Is 𝕩 ? {!}≢𝕩.setMut ; 0 }
   Mutated ⇐ { Is 𝕩 ? 𝕩.mut ; 0 }
+  MarkUse ⇐ {𝕩.Use@}⍟Is
 }
 constants ← {kname⇐"constant"
   New ⇐ {
@@ -867,12 +868,22 @@ program ← {
   DispConstants←{ ∾⟜(<⟨⟩)⍟(0<≠) (J"constant"<⊸∾Show¨⌾(1⊸↓))¨ 𝕩 }
   DispFunction←{
     ShowReg ← {h←¯1⋄{𝕊:"v"∾•Repr h+↩1}}{𝕩.ShowReg𝕗}
-    Disp ← ("register"≡Kind)◶Show‿ShowReg¨⌾(1⊸↓)
-    Use ← {𝕩.Use@}⍟("register"≡Kind)¨2↓⊢
-    Filter ← {"new"≡⊑𝕩 ? "val"≡2⊑𝕩 ? ≡´1‿4⊏𝕩 ? 0 ; 1}
+    ProcInstrs ← {
+      # Mark each register with the number of times it's used after definition
+      (registers.MarkUse¨2↓⊢)¨ 𝕩
+      # Combine new into next mut call if that's the only use
+      nm ← / ∧⟜«˝ "new"‿"mut" ≡⌜ ⊑¨𝕩
+      nm (≡◶0‿{1=𝕩.ref}¨˝1‿2⊑¨𝕩⊏˜0‿1+⌜⊢)⊸/↩
+      𝕩 ↩ (¬(≠𝕩)↑/⁼1+nm) / (1⌽𝕩) (⊣⌾(2⊸↑)¨⌾(nm⊸⊏)) 𝕩
+      # Convert to names, performing register numbering
+      𝕩 ("register"≡Kind)◶Show‿ShowReg¨⌾(1⊸↓)¨↩
+      # Registers are aliased when possible, leading to no-op new
+      # instructions removed here
+      {"new"≡⊑𝕩 ? "val"≡2⊑𝕩 ? ≡´1‿4⊏𝕩 ? 0 ; 1}¨⊸/ 𝕩
+    }
     ∾⟨
       ⟨"beginFn "∾𝕩.Prot showReg⟩
-      J¨ Filter¨⊸/ (Disp¨ ⊣ Use¨) 𝕩.Instrs@
+      J¨ ProcInstrs 𝕩.Instrs@
       ⟨"endFn",""⟩
     ⟩
   }
