@@ -588,7 +588,7 @@ registers ← {kname⇐"register"
     mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1}
     SetMut⇐{𝕤⋄mut↩1}  # Changed (for blocks, and transient elimination)
     ShowReg⇐{showReg↩𝕩}∘{
-      Is val? ¬val.mut? (¬mut)∨1=val.ref? val.ShowReg𝕩 ;
+      Is val? ¬val.mut? (¬mut)∨1=val.ref? ref+↩val.ref-1 ⋄ val.ShowReg𝕩 ;
       ∾⟨𝕏@,"_",name⟩
     }
   }
