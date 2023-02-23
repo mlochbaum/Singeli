@@ -579,8 +579,8 @@ registers ← {kname⇐"register"
   Transient ⇐ {
     kind⇐kname ⋄ shows⇐"(temp)" ⋄ type⇐𝕩 ⋄ fmtType⇐1 ⋄ Matches⇐≡
     name←⟨⟩ ⋄ AddName⇐{name∾↩<𝕩}
-    mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1}
-    ShowReg⇐{showReg↩∾⟨𝕏@⟩∾(ref=1)/"_"⊸∾¨name}
+    mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1} ⋄ SetMut⇐!
+    ShowReg⇐{showReg↩∾⟨𝕏@⟩∾"_"⊸∾¨(ref=1)/name}
   }
   Declare ⇐ { name 𝕊 type‿val:
     kind⇐kname ⋄ shows⇐name ⋄ type⇐ ⋄ fmtType⇐1 ⋄ Matches⇐≡
@@ -592,7 +592,7 @@ registers ← {kname⇐"register"
       ∾⟨𝕏@,"_",name⟩
     }
   }
-  Mutable ⇐ { Is 𝕩 ? {⟨SetMut⟩:1;0}𝕩 ; 0 }
+  Mutable ⇐ { Is 𝕩 ? {!}≢𝕩.setMut ; 0 }
   Mutated ⇐ { Is 𝕩 ? 𝕩.mut ; 0 }
 }
 constants ← {kname⇐"constant"
@@ -868,7 +868,7 @@ program ← {
   DispFunction←{
     ShowReg ← {h←¯1⋄{𝕊:"v"∾•Repr h+↩1}}{𝕩.ShowReg𝕗}
     Disp ← ("register"≡Kind)◶Show‿ShowReg¨⌾(1⊸↓)
-    Use ← {⟨U⇐Use⟩:U@;@}¨2↓⊢
+    Use ← {𝕩.Use@}⍟("register"≡Kind)¨2↓⊢
     Filter ← {"new"≡⊑𝕩 ? "val"≡2⊑𝕩 ? ≡´1‿4⊏𝕩 ? 0 ; 1}
     ∾⟨
       ⟨"beginFn "∾𝕩.Prot showReg⟩
