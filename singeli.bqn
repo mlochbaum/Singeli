@@ -580,14 +580,14 @@ registers ← {kname⇐"register"
     kind⇐kname ⋄ shows⇐"(temp)" ⋄ type⇐𝕩 ⋄ fmtType⇐1 ⋄ Matches⇐≡
     name←⟨⟩ ⋄ AddName⇐{name∾↩<𝕩}
     mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1} ⋄ SetMut⇐!
-    ShowReg⇐{showReg↩∾⟨𝕏@⟩∾"_"⊸∾¨(ref=1)/name}
+    ShowReg⇐{showReg↩shows↩∾⟨𝕏@⟩∾"_"⊸∾¨(ref=1)/name}
   }
   Declare ⇐ { name 𝕊 type‿val:
     kind⇐kname ⋄ shows⇐name ⋄ type⇐ ⋄ fmtType⇐1 ⋄ Matches⇐≡
     addName⇐@ ⋄ {𝕩.AddName name}⍟Is val
     mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1}
     SetMut⇐{𝕤⋄mut↩1}  # Changed (for blocks, and transient elimination)
-    ShowReg⇐{showReg↩𝕩}∘{
+    ShowReg⇐{showReg↩shows↩𝕩}∘{
       Is val? ¬val.mut? (¬mut)∨1=val.ref? ref+↩val.ref-1 ⋄ val.ShowReg𝕩 ;
       ∾⟨𝕏@,"_",name⟩
     }
@@ -599,7 +599,7 @@ registers ← {kname⇐"register"
 constants ← {kname⇐"constant"
   New ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ value⇐𝕩
-    shows⇐∾"!:"∾¨Show¨𝕩‿𝕨 ⋄ fmtType⇐0 ⋄ Matches⇐≡
+    Shows⇐∾"!:"∾⟜Show¨𝕩‿𝕨˙ ⋄ fmtType⇐0 ⋄ Matches⇐≡
   }
   Static ⇐ {
     kind⇐kname ⋄ type‿handle⇐𝕩
