@@ -155,6 +155,7 @@ Require ← { types.Require Name 𝕩 ⋄ "" }
         Call⟜(as.Lit¨All)
         { o←3↓𝕨 ⋄ ⟨Lit 𝕩," ",o," ",Lit 𝕩⟩ }
       ⟩ ⊢)
+    "array"‿{"{"∾"}"∾˜∾1↓⥊(<",")≍˘ as.Lit¨ All 𝕩}
   ⟩
   New ⇐ {
     id   ← Name 𝕩

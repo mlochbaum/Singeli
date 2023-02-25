@@ -522,7 +522,7 @@ types ← {kname⇐"type"
     Tup ← {
       ptr ← 0
       c ← ⟨ tTUP,⊢, tPTR,{ptr↩1⋄𝕩}, Fail⟜𝕩 ⟩_cases⍟(0≠•Type) 𝕨
-      𝕨 constants.New⍟ptr c Cast¨ 𝕩
+      𝕨 functions.Array⍟ptr c Cast¨ 𝕩
     }
     Obj ← ("number"≢{𝕩.kind})◶⟨Num,IsTyped∘⊢◶⟨Fail˜,𝔽⟩⟩
     # _tsel selects on 𝕨; swap to use 𝕩
@@ -580,14 +580,14 @@ registers ← {kname⇐"register"
     kind⇐kname ⋄ shows⇐"(temp)" ⋄ type⇐𝕩 ⋄ fmtType⇐1 ⋄ Matches⇐≡
     name←⟨⟩ ⋄ AddName⇐{name∾↩<𝕩}
     mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1} ⋄ SetMut⇐!
-    ShowReg⇐{showReg↩shows↩∾⟨𝕏@⟩∾"_"⊸∾¨(ref=1)/name}
+    ShowReg⇐{showReg↩∾⟨𝕏@⟩∾"_"⊸∾¨(ref=1)/name}
   }
   Declare ⇐ { name 𝕊 type‿val:
     kind⇐kname ⋄ shows⇐name ⋄ type⇐ ⋄ fmtType⇐1 ⋄ Matches⇐≡
     addName⇐@ ⋄ {𝕩.AddName name}⍟Is val
     mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1}
     SetMut⇐{𝕤⋄mut↩1}  # Changed (for blocks, and transient elimination)
-    ShowReg⇐{showReg↩shows↩𝕩}∘{
+    ShowReg⇐{showReg↩𝕩}∘{
       Is val? ¬val.mut? (¬mut)∨1=val.ref? ref+↩val.ref-1 ⋄ val.ShowReg𝕩 ;
       ∾⟨𝕏@,"_",name⟩
     }
@@ -599,7 +599,7 @@ registers ← {kname⇐"register"
 constants ← {kname⇐"constant"
   New ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ value⇐𝕩
-    Shows⇐∾"!:"∾⟜Show¨𝕩‿𝕨˙ ⋄ fmtType⇐0 ⋄ Matches⇐≡
+    shows⇐∾"!:"∾¨Show¨𝕩‿𝕨 ⋄ fmtType⇐0 ⋄ Matches⇐≡
   }
   Static ⇐ {
     kind⇐kname ⋄ type‿handle⇐𝕩
@@ -670,6 +670,10 @@ functions ← {kname⇐"function"
   GetArch ← {𝕊: current.arch }
   SetArch ← { current.SetArch 𝕩 }
   Emit ⇐ { (⊑𝕩) AppendNew "emit" <⊸∾ 𝕩 }
+  Array ⇐ {
+    ¬∨´("register"≡Kind)¨𝕩 ? 𝕨 constants.New 𝕩 ;
+    𝕨 AppendNew "array"‿𝕨 ∾ 𝕩
+  }
   Declare ⇐ { t←TypeOf𝕩 ⋄ 𝕨 registers.Declare⟜t‿𝕩 _appendReg "val"‿t‿𝕩 }
   _destructure ← {
     0≠•Type𝕩 ? 𝕨𝔽⚇0𝕩;

@@ -8,3 +8,11 @@ mut v0_x v2_a
 ret v3_b
 endFn
 
+beginFn f1_g *i32 0
+new v0_b val i32 !5:i32
+new v1_c val i32 v0_b
+mut v1_c !6:i32
+new v2_a array *i32 v0_b v0_b
+ret v2_a
+endFn
+

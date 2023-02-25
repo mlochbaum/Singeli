@@ -8,3 +8,13 @@ f(x:i32) = {
   x = a
   b
 }
+
+g() : __pnt{i32} = {
+  b:i32 = 5
+  c := b
+  c = 6
+  a:__pnt{i32} = tup{b,b}
+  ac := a
+# a = cast{__pnt{i32},tup{b,c}}  # Problems with C output for this
+  ac
+}
