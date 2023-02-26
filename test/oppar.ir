@@ -2,3 +2,7 @@ beginFn f0_fn f64 0
 ret !18:f64
 endFn
 
+beginFn f1_fi f64 0
+ret !18:f64
+endFn
+

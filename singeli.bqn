@@ -368,7 +368,11 @@ operator ← {
     Mis ← {𝕊: Err "Missing right operand"‿(¯1⊑val).pos }
     E 1
   }
-  Run ⇐ {𝕨𝕊⟨op,params⟩: null‿left‿bind⇐op ⋄ R⇐𝕨 nodes.Run op.R⋈params˙}
+  Run ⇐ {𝕨𝕊⟨op,params⟩:
+    Par ← 𝕨 nodes.Run ⋈⟜params
+    null‿left ⇐ {⟨T⟩⇐𝕩 ⋄ V⇐Par∘𝕩.V}⍟(@⊸≢)¨ op.null‿op.left
+    bind‿R⇐op
+  }
   Compose ← {pre𝕊in: ⟨null⟩⇐pre ⋄ left‿bind⇐in ⋄ R⇐⊢ }
   nil ⇐ { null⇐left⇐@ ⋄ bind⇐¯∞ ⋄ R⇐⊢ }
 
