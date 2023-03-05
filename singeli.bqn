@@ -466,6 +466,7 @@ types ← {kname⇐"type"
   Ptr ← { 𝕊t: "Pointer type wasn't type"!Is t ⋄ tPTR New t}
   Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´Is¨ t ⋄ tTUP New t}
   Fun ⇐ tFUN New ⋈
+  _get⇐ {IsTup 𝕩 ? Tup 𝕊¨𝕩 ; !∘(𝕗∾" type must be a type"˙)⍟(¬Is) 𝕩}
 
   _cases ← {
     Kind←{𝕩.typeKind} ⋄ Dat←{𝕩.dat}
@@ -478,6 +479,7 @@ types ← {kname⇐"type"
   Quality ← ⟨tPRIM,{symbols.New ⋈⊑𝕩}, !∘"Non-primitive type"⟩_cases
   _isQual ← {⟨tPRIM,𝔽⊑,0⟩_cases TypeOf⍟(¬Is)}
 
+  Unpack ⇐ ⟨tTUP,{Unpack¨𝕩},⊢⟩_cases
   Deref ⇐ { Is 𝕩 ? tPTR=𝕩.typeKind ? 𝕩.dat ; !"Expected pointer" }
 
   Width ← ⟨
@@ -635,7 +637,10 @@ functions ← {kname⇐"function"
     arch⇐architecture.NewFunction@ ⋄ SetArch⇐{arch↩𝕩}
     label←¯1 ⋄ args←atypes←⟨⟩ ⋄ rType⇐@
     NextLabel⇐{𝕤⋄ labels.New label+↩1 }
-    NextArg⇐{ atypes∾↩<𝕩 ⋄ args∾↩<a←𝕨 registers.Declare 𝕩‿@ ⋄ a }
+    NextArg⇐{
+      a←(𝕨 registers.Declare ⋈⟜@)⚇0 types.Unpack 𝕩
+      atypes∾↩<𝕩 ⋄ args∾↩<a ⋄ a
+    }
     ⟨Push,Arr⟩←MakeStack@
     Instrs⇐Arr
     Append⇐{ Push𝕩⋄@ }
@@ -650,9 +655,9 @@ functions ← {kname⇐"function"
     }
     Return⇐!∘"Early return from function with no explicit result type" _ret_ 1 @⊣´⊢
     Finish⇐{"Explicit result type needed"!IsTyped 𝕩⋄SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
-    Prot⇐{𝕊:
+    Prot⇐{𝕊 showReg:
       ext ← (0<≠)◶⟨⟩‿(⋈·'+'⌾⊑·∾','⊸∾¨) architecture.ListExt arch
-      at ← (𝕏¨args)≍˘Show¨atypes
+      at ← ∾ args {IsTup𝕨 ? ∾𝕨𝕊¨𝕩 ; ≍⟨ShowReg𝕨,Show𝕩⟩}⟜types.Unpack¨ atypes
       1↓∾" "⊸∾¨⟨1↓shows,Show rType⟩∾((<∘•Repr∘≠∾⥊)at)∾ext
     }
   }
@@ -695,7 +700,7 @@ functions ← {kname⇐"function"
     f ← ⊑𝕩
     "Calling non-function" ! IsTyped f
     a‿t ← (TypeOf f) types.FnCast 1↓𝕩
-    t AppendNew ⟨"call",t,f⟩ ∾ ≠⊸∾ a
+    t AppendNew ⟨"call",t,f⟩ ∾ ≠⊸∾ {IsTup𝕩 ? ∾𝕊¨𝕩 ; ⟨𝕩⟩} a
   }
   _instr ← { Append (𝕨𝔽𝕩)<⊸∾𝕨⋈𝕩 ⋄ 𝕩 }
   SetLabel ⇐ "lbl"_instr
@@ -1035,8 +1040,8 @@ nodes ← {
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "arg"‿visit
     v←@ ⋄ Scope⇐{ type.Scope 𝕩 ⋄ v ↩ pos 𝕩.Add name }
     Eval⇐{
-      u←V𝕩 ⋄ t←type.Eval 𝕩
-      "Argument type must be a type" ! program._trace_ pos types.Is t
+      u ← V 𝕩
+      t ← "Argument" types._get program._trace_ pos type.Eval 𝕩
       u.Set name functions.NextArg t
     }
   }
@@ -1054,8 +1059,7 @@ nodes ← {
   }
   _setType ← { pos type‿env _𝕣 v:
     { ≠type ?
-      t ← (⊑type).Eval 𝕩
-      "Variable type must be a type" ! types.Is t
+      t ← "Variable" types._get (⊑type).Eval 𝕩
       t types.Cast v
     ;
       "Explicit type needed for untyped initial value" ! {=𝕩?∧´𝕊¨𝕩;IsTyped𝕩} v

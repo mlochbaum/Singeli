@@ -1,0 +1,21 @@
+beginFn f0_fn u8 0
+new v0_x val u8 !4:u8
+new v1_x val i32 !1:i32
+new v2_y call u8 $f1_gen_tupu8i32 2 v0_x v1_x
+new v3_z call u8 $f2_gen_tupu8u8i32 3 v2_y v0_x v1_x
+new v4 call u8 $f3_gen_tupu8 1 v3_z
+ret v4
+endFn
+
+beginFn f1_gen_tupu8i32 u8 2 v0_a u8 v1_a i32
+ret v0_a
+endFn
+
+beginFn f2_gen_tupu8u8i32 u8 3 v0_a u8 v1_a u8 v2_a i32
+ret v0_a
+endFn
+
+beginFn f3_gen_tupu8 u8 1 v0_a u8
+ret v0_a
+endFn
+

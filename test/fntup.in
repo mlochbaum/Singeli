@@ -1,0 +1,8 @@
+gen{T}(a:T) : u8 = tupsel{0,a}
+
+fn() = {
+  x:tup{u8,i32} = tup{4, 1}
+  y := gen{tup{u8,i32}}(x)
+  z := gen{tup{u8,type{x}}}(tup{y,x})
+       gen{tup{u8}}(tup{z})
+}
