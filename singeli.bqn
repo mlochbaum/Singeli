@@ -428,7 +428,7 @@ FmtNum ← '¯'(⊢+=×'-'-⊣)•Repr
 _tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!∘"Unhandled kind"⟩)˙)∾↑)𝕗)}
 Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
 Show  ← {⟨"tup{"∾"}"∾˜1↓·∾(","∾𝕊)¨, FmtNum, !, {(𝕏˜@).name}, {𝕩.Shows@}⟩_tsel 𝕩}
-Match ← {𝕨 ⟨∧´𝕊¨, numbers.Match,≡,≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
+Match ← {𝕨 ⟨≡○≢◶⟨0,∧´𝕊¨⟩, numbers.Match,≡,≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
 IsTyped←∊⟜"register"‿"constant"‿"function"⌾< Kind
 TypeOf← {⟨types.Tup 𝕊¨, {𝕩.Type@}⟩_tsel 𝕩}
 
