@@ -156,7 +156,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ! (¯1⊑tokens) Is sep
 
   Asrt ← {𝕨𝕊1:@;
-    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.const,"const",c.define,"define",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.topif,"topif",c.while,"while",c.word,"word"⟩
+    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.define,"define",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.topif,"topif",c.while,"while",c.word,"word"⟩
     ShowTrace⟜L´ <˘⍉>DumpStack@
     •Out ""
     F ← (⥊lf)⊸≡◶•Repr‿"end of line"
@@ -301,14 +301,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
     b ← Result Try"="
     ⟨a,r,b⟩
   } _withParams
-  Const ← c.const _node_ {𝕤
-    t ← When ⟨¬Next"=", Expr⟩
-    Get "="
-    v ← Expr@
-    t‿v
-  }
   DefFun ← c.define _node_ ("fn"‿Name‿Function  _seq)
-  DefConst ← c.define _node_ (Name‿":"‿Const _seq)
+  DefConst ← Stmt
   
   ExtPar ← "{"‿"}" _argsFn_ Name
   Extender ← c.extender _node_ (ExtPar‿"="‿Body _seq)
@@ -342,7 +336,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ChkLoc ← ("localizable line"⊸⋈ Asrt (¬"if"⊸≡∨'''=⊑))⊸⊢∘Peek
   Line ← {𝕤
     Try "local" ? Try∘"{"◶⟨SubLine∘ChkLoc,c.body _node_ MultiLine⟩@ ;
-    {𝕩.NonLocal@⋄𝕩} SubLine∘Peek@
+    {⟨N⇐NonLocal⟩:N@⋄𝕩;𝕩} SubLine∘Peek@
   }
   MultiLine ← While∘⟨¬Try∘"}"∘Seps, Line, 0⟩
 
@@ -627,7 +621,7 @@ symbols ← {kname⇐"symbol"
 }
 
 functions ← {kname⇐"function"
-  current⇐{
+  current⇐nofn←{
     Append⇐NextLabel⇐Return⇐SetArch⇐!∘"No function active"
     arch ⇐ architecture.init
   }
@@ -682,7 +676,10 @@ functions ← {kname⇐"function"
     ¬∨´("register"≡Kind)¨𝕩 ? 𝕨 constants.New 𝕩 ;
     𝕨 AppendNew "array"‿𝕨 ∾ 𝕩
   }
-  Declare ⇐ { t←TypeOf𝕩 ⋄ 𝕨 registers.Declare⟜t‿𝕩 _appendReg "val"‿t‿𝕩 }
+  Declare ⇐ {
+    current≡nofn ? 𝕨 program.AddConstant 𝕩 ;
+    t←TypeOf𝕩 ⋄ 𝕨 registers.Declare⟜t‿𝕩 _appendReg "val"‿t‿𝕩
+  }
   _destructure ← {
     0≠•Type𝕩 ? 𝕨𝔽⚇0𝕩;
     "Single assignment target but multiple values" ! 0=•Type𝕨
@@ -1081,12 +1078,6 @@ nodes ← {
     }
   ;
     𝕨 Run ⟨{functions.Mut´𝕩}˙_value"=" , 0‿3⊏𝕩⟩
-  }
-  Const ⇐ {
-    ⟨type,value⟩←𝕩 ⋄ pos←𝕨
-    Visit←{⌽⟨𝕏¨type,":",𝕏value⟩}
-    ⟨node,Dump,Disp,Oper,Scope⟩⇐Defaults "assign"‿visit
-    Eval⇐{ (1⊑𝕨) program.AddConstant pos type‿𝕩 _setType value.Eval 𝕩 }
   }
   Define ⇐ {
     ⟨name,value⟩←𝕩 ⋄ pos←𝕨
