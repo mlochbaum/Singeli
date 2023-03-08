@@ -11,7 +11,7 @@ def for{vars,begin,end,block} = {
   }
 }
 
-loop(dst:*f64, x:*f64, w:*f64, len:Size) : void = {
+fn loop(dst:*f64, x:*f64, w:*f64, len:Size) : void = {
   @for (d in dst,x,e in w+1 over _ from 0 to len) {
     d=emit{f64,'op',e,x}
   }

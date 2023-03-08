@@ -1,6 +1,6 @@
-fn{x}(a:u32, b:u32) = tupsel{x,tup{a,b}}
+fn fn{x}(a:u32, b:u32) = tupsel{x,tup{a,b}}
 fns:__pnt{type{fn{0}}} = tup{fn{0},fn{1}}
 
 'fn_arr' = fns
 
-sfn(i:u1, a:u32, b:u32) = load{fns,i}(a,b)
+fn sfn(i:u1, a:u32, b:u32) = load{fns,i}(a,b)

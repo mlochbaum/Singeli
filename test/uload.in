@@ -9,7 +9,7 @@ def for{vars,begin,end,block} = {
   }
 }
 
-loop(dst:*f64, x:*f64, w:*f64, len:u64) : void = {
+fn loop(dst:*f64, x:*f64, w:*f64, len:u64) : void = {
   def load{a,b} = emit{f64, 'llooaadd', a, b}
   def store{a,b,c} = emit{f64, 'ssttoorree', a, b, c}
   @for (dst,x,w over _ from 0 to len) {

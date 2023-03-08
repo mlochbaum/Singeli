@@ -1,4 +1,4 @@
-fn(i:i64) : i64 = {
+fn fn(i:i64) : i64 = {
   i = emit{i64, 'newvar', i}
   if (emit{i64, 'test', i}) { i = emit{i64, 'mutvar', i} }
   i

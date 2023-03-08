@@ -22,7 +22,7 @@ Singeli is primarily a metaprogramming language. Its purpose is to build abstrac
 
 The primary tool for abstraction is the **generator**. Written with `{parameters}`, generators perform similar tasks as C macros, C++ templates, or generics, but offer more flexibility. They are expanded during compilation, and form a Turing-complete language. Generators use lexical scoping and allow recursive calls. Here's a generator that calls another one:
 
-    def gen{fn, arg} = fn{arg, arg + 1}
+    def gen{sub, arg} = sub{arg, arg + 1}
 
 In fact, `+` is also a generator, if it's defined. Singeli has no built-in operators but allows the user to define infix or prefix operator syntax for a generator. For example, the following line from [include/skin/cop.singeli](include/skin/cop.singeli) makes `+` a left-associative infix operator with precedence 30 (there can be one infix and one prefix definition).
 
@@ -36,9 +36,9 @@ Generators can be extended with additional definitions. Each definition override
 
 Here, `x` must be a typed value, and have type `T`, and the two `n` parameters must match. Furthermore, the conditions that follow each `&` must hold. Otherwise, previous definitions are tried and you get an error if there aren't any left. In this context `:` and `&` are syntax, not operators.
 
-The end goal here is to define functions for use by some other program. Functions are declared with a parenthesis syntax at the top level, possibly with generator-like parameters. Types use `value:type` syntax rather than `type value`.
+The end goal here is to define functions for use by some other program. Functions are declared with the `fn` keyword and a parenthesis syntax at the top level, possibly with generator-like parameters. Types use `value:type` syntax rather than `type value`.
 
-    fn{T}(a:T, len:u64) : void = {
+    fn demo{T}(a:T, len:u64) : void = {
       while (len > 0) {
         a = a + 1
         len = len - 1
@@ -77,7 +77,7 @@ A generator is essentially a compile-time function, which takes values called pa
     def min{a, b & b<a} = b
 
     # Generated function
-    triple{T}(x:T) = x + x + x
+    fn triple{T}(x:T) = x + x + x
 
 These are all effectively the same thing: there's a parameter list in `{}`, and a definition. When invoked, the body is evaluated with the parameters set to the values provided. Depending on the definition, this evaluation might end not with a static value, but with a computation to be performed at runtime (this always happens for functions). Generators are dynamically typed, and naturally have no constraints on the parameters or result. But the parameter list can include conditions that determine whether to accept a particular set of parameters. These are described in the next section; first let's go through the syntax for each case.
 
@@ -178,9 +178,9 @@ A vector type indicates that the value should be stored in a vector or SIMD regi
 
 Generators are great for compile-time computation, but all run-time computation happens in functions. Functions are declared and called with parenthesis syntax:
 
-    times{T}(a:T, b:T) = a*b  # Type-generic function
+    fn times{T}(a:T, b:T) = a*b  # Type-generic function
 
-    square{T}(x:T) : T = {
+    fn square{T}(x:T) : T = {
       times{T}(x, x)
     }
 

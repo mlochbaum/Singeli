@@ -1,4 +1,4 @@
-fn(a:u64, b:i8, c:i8, d:i8, e:u64) = emit{i32, 'go', ...tup{c,d,b,c}}
-fn2(a:u64) = {
+fn fn(a:u64, b:i8, c:i8, d:i8, e:u64) = emit{i32, 'go', ...tup{c,d,b,c}}
+fn fn2(a:u64) = {
   fn(a, ...__add{2,tup{0,1,2}}, a)
 }

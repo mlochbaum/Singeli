@@ -4,9 +4,9 @@ oper $ gen infix none 50
 def gen{a}{b,c} = __mul{a,__sub{b,c}}
 def gen{a,b}{c} = __add{a,__mul{b,c}}
 
-fn() : f64 = { 20 ${3} ${4,5} 2 }
+fn fn() : f64 = { 20 ${3} ${4,5} 2 }
 
-fi() : f64 = {
+fn fi() : f64 = {
   def o = ${4,5}
   (${3}){20, o{2}}
 }

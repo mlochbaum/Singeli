@@ -1,7 +1,7 @@
 include 'arch/c'
 include 'skin/c'
 
-fn(x:i32) : i32 = {
+fn fn(x:i32) : i32 = {
   if ((x>=4 or x==2) and not x>6) return{2*x}
   while (x<10 and x!=5) ++x
   x

@@ -1,4 +1,4 @@
-f(x:i32) = {
+fn f(x:i32) = {
   def d = emit{i32, 'change', x}
   a := d     # New handle
   b := x     # New handle
@@ -9,7 +9,7 @@ f(x:i32) = {
   b
 }
 
-g() : __pnt{i32} = {
+fn g() : __pnt{i32} = {
   b:i32 = 5
   c := b
   c = 6

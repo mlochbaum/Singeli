@@ -1,4 +1,4 @@
 def divmod{a,b} = tup{emit{u32,'div',a,b},emit{u32,'mod',a,b}}
-divplusmod(a:u32, b:u32) : u32 = {
+fn divplusmod(a:u32, b:u32) : u32 = {
   apply{bind{emit, u32, 'add'}, divmod{a,b}}
 }

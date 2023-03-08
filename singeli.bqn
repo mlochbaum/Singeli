@@ -307,8 +307,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
     v ← Expr@
     t‿v
   }
-  FunConst ← (Try∘":"◶Function‿Const)
-  DefFun ← c.define _node_ (Name‿FunConst  _seq)
+  DefFun ← c.define _node_ ("fn"‿Name‿Function  _seq)
+  DefConst ← c.define _node_ (Name‿":"‿Const _seq)
   
   ExtPar ← "{"‿"}" _argsFn_ Name
   Extender ← c.extender _node_ (ExtPar‿"="‿Body _seq)
@@ -337,8 +337,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
     "if"‿"("‿Expr‿")"‿B‿(∾When∘⟨Try∘"else"∘Seps,B⟩)_seq 𝕩
   }
 
-  SubLine ← "def"‿"extend"‿"oper"‿"include"‿"require"‿"if"⊸⊐⌾<◶⟨
-    Define, Extend, OpDef, Include, Require, TopIf, ('''=⊑)◶DefFun‿Export
+  SubLine ← "def"‿"extend"‿"oper"‿"fn"‿"include"‿"require"‿"if"⊸⊐⌾<◶⟨
+    Define, Extend, OpDef, DefFun, Include, Require, TopIf, ('''=⊑)◶DefConst‿Export
   ⟩
   ChkLoc ← ("localizable line"⊸⋈ Asrt (¬"if"⊸≡∨'''=⊑))⊸⊢∘Peek
   Line ← {𝕤
