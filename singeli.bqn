@@ -330,10 +330,10 @@ Parse ← {𝕊 tokens‿ShowTrace:
   SubLine ← "def"‿"extend"‿"oper"‿"fn"‿"include"‿"if"⊸⊐⌾<◶⟨
     Define, Extend, OpDef, DefFun, Include, TopIf, Stmt
   ⟩
-  ChkLoc ← ("localizable line"⊸⋈ Asrt (¬"if"⊸≡∨'''=⊑))⊸⊢∘Peek
+  ChkLoc ← ("localizable line"⊸⋈ Asrt "if"⊸≢)⊸⊢∘Peek
   Line ← {𝕤
     Try "local" ? Try∘"{"◶⟨SubLine∘ChkLoc,c.body _node_ MultiLine⟩@ ;
-    {⟨N⇐NonLocal⟩:N@⋄𝕩;𝕩} SubLine∘Peek@
+    {𝕩.NonLocal@⋄𝕩} SubLine∘Peek@
   }
   MultiLine ← While∘⟨¬Try∘"}"∘Seps, Line, 0⟩
 
@@ -916,12 +916,13 @@ nodes ← {
     Oper ⇐ {Visit o.Oper  𝕩 ⋄ operator.nil}
     Scope⇐ {Visit o.Scope 𝕩⋄@}
     Eval ⇐ {Visit o.Eval  𝕩}
+    NonLocal ⇐ ⊢
   }
 
   # Node types
   Ident ← {
     name⇐𝕩 ⋄ pos⇐𝕨⊣@
-    ⟨node,Dump⟩⇐Defaults "ident"‿⟨⟩
+    ⟨node,Dump,NonLocal⟩⇐Defaults "ident"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
     Oper⇐{𝕩.Lookup name}
     Eval⇐!∘0 ⋄ Scope⇐{Eval↩var.Get∘(pos 𝕩.Get name)}
@@ -929,7 +930,7 @@ nodes ← {
   _value ← {
     name←𝕩 ⋄ pos⇐𝕨⊣@
     Eval⇐(𝕨𝔽𝕩)˙
-    ⟨node,Dump,Oper,Scope⟩⇐Defaults "value"‿⟨⟩
+    ⟨node,Dump,NonLocal,Oper,Scope⟩⇐Defaults "value"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
   }
   Number ⇐ numbers.Read
@@ -937,13 +938,13 @@ nodes ← {
   Symbol ⇐ (symbols.New 1↓¯1↓⊢)_value
   Run ⇐ {
     𝕨𝕊⟨⟨infix⟩,params⟩: CondNode´ 𝕩;
-    ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨 ⋄ NonLocal⇐⊢
+    ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨
     spread ← 0=•Type¨params ⋄ params ⊑¨↩
     deSpread ← (∨´spread)⊑⊢‿{
       ∾ spread ⊣◶⟨⋈⊢,("Spread input must be tuple"!IsTup)⊸⊢⊢⟩¨𝕩
     }
     Visit←{⟨𝕏caller,𝕏¨params⟩}
-    ⟨node,Dump,Disp,Scope⟩⇐d←Defaults "run"‿visit
+    ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "run"‿visit
     Oper ⇐ {𝕤⋄ pos operator.Run ⟨⊑Visit o.Oper 𝕩, params⟩}
     Eval ⇐ {
       (3=•Type𝕨)◶⟨!∘"Running non-generator", 𝕎∘DeSpread⟩ program._trace_ pos 𝕩
@@ -954,7 +955,7 @@ nodes ← {
     things←𝕩 ⋄ pos⇐𝕨
     ToName⇐{𝕤⋄ (1=≠)◶@‿(("ident"≡{𝕩.node})◶@‿{𝕩.name}⊑) things }
     Visit←{⟨𝕏¨things⟩}
-    ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "phrase"‿visit
+    ⟨node,Dump,Disp,NonLocal,Scope,Eval⟩⇐Defaults "phrase"‿visit
     Oper⇐{
       ⟨node⟩↩n ← (o.Oper 𝕩)¨⊸operator.Parse things
       Scope↩{𝕨n.Scope𝕩} ⋄ Eval↩{𝕨n.Eval𝕩} ⋄ Disp↩{𝕨n.Disp𝕩} # fields of n can change
@@ -972,7 +973,7 @@ nodes ← {
     conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "match"_pc¨ pmatch)
     uPar‿iPar←(⍷⋈⊐)params
     Visit←{((iPar⊏uPar)∾⟜(∾""<⊸∾":"⊸∾¨)¨tname)∾⟨𝕏¨conds,𝕏result⟩}
-    ⟨node,Dump,Disp,Oper⟩⇐Defaults "lambda"‿visit
+    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "lambda"‿visit
     Scope⇐{ Visit scopes._defer o.Scope (uPar∾uTyp) scopes.New 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value and name, from Define
       next ← ({𝕩.Get@}⊑𝕨)⊣{"No matching generator definition"!0˙}
@@ -1009,7 +1010,7 @@ nodes ← {
   Extender ⇐ {
     ⟨names,result⟩←𝕩 ⋄ pos←𝕨
     Visit←{names∾⟨𝕏¨result⟩}
-    ⟨node,Dump,Disp,Oper⟩⇐Defaults "extender"‿visit
+    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "extender"‿visit
     Scope⇐{ Visit scopes._defer o.Scope names scopes.New 𝕩 }
     Eval⇐{𝕨𝕊e: {
       A ← ! program._trace_ pos
@@ -1032,7 +1033,7 @@ nodes ← {
   Arg ⇐ {
     ⟨name,type⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨name,𝕏type⟩}
-    ⟨node,Dump,Disp,Oper⟩⇐Defaults "arg"‿visit
+    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "arg"‿visit
     v←@ ⋄ Scope⇐{ type.Scope 𝕩 ⋄ v ↩ pos 𝕩.Add name }
     Eval⇐{
       u ← V 𝕩
@@ -1043,7 +1044,7 @@ nodes ← {
   Function ⇐ {
     ⟨args,type,result⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨𝕏¨args,𝕏¨type,𝕏result⟩}
-    ⟨node,Dump,Disp,Oper⟩⇐Defaults "function"‿visit
+    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "function"‿visit
     Scope⇐{ Visit scopes._defer o.Scope scopes.New 𝕩 }
     Eval⇐{
       ev←o.Eval args env.New 𝕩
@@ -1063,7 +1064,7 @@ nodes ← {
   }
   Assign ⇐ { pos 𝕊 ⟨name,1,type,value⟩: # Declaration
     Visit←{⟨name∾":",𝕏¨type,𝕏value⟩}
-    ⟨node,Dump,Disp,Oper⟩⇐Defaults "assign"‿visit
+    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "assign"‿visit
     GetVar←!∘0 ⋄ Scope⇐{
       Visit o.Scope 𝕩
       getVar ↩ pos 𝕩.Add name
@@ -1132,7 +1133,7 @@ nodes ← {
     terms ← 𝕩
     name‿_ev ← 𝕨 ⋄ Eval⇐terms _ev
     Visit←{⟨name,𝕏¨terms⟩}
-    ⟨node,Dump,Disp,Scope⟩⇐d←Defaults "cond"‿visit
+    ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "cond"‿visit
   }
   CondEval ← {
     "cond"≡𝕨.node ? 𝕨.Eval 𝕩 ;
@@ -1158,7 +1159,7 @@ nodes ← {
   If ⇐ {
     ⟨cond,then,else⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
-    ⟨node,Dump,Disp,Scope⟩⇐Defaults "if"‿visit
+    ⟨node,Dump,Disp,NonLocal,Scope⟩⇐Defaults "if"‿visit
     IfLabel←LazyLabel
     Oper ⇐ { cond.Oper operator.CondScope 𝕩 ⋄ {𝕏then⋄𝕏¨else}o.Oper 𝕩 ⋄ operator.nil }
     Eval ⇐ {
@@ -1178,9 +1179,9 @@ nodes ← {
     }
   }
   TopIf ⇐ {
-    ⟨cond,then,else⟩←𝕩 ⋄ pos←𝕨 ⋄ NonLocal⇐⊢
+    ⟨cond,then,else⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨𝕏cond,𝕏¨then,𝕏¨else⟩}
-    ⟨node,Dump,Disp⟩⇐Defaults "topif"‿visit ⋄ Scope⇐Eval⇐!
+    ⟨node,Dump,Disp,NonLocal⟩⇐Defaults "topif"‿visit ⋄ Scope⇐Eval⇐!
     Oper⇐{
       # Latest we can evaluate condition without scope circularity, so do it now
       lf ← { label⇐@ ⋄ GotoC⇐{𝕊:!program._trace_ pos"Dynamic top-level if statement unsupported"} }
@@ -1195,7 +1196,7 @@ nodes ← {
   While ⇐ {
     ⟨testFirst,cond,stmt⟩←𝕩
     Visit←{⟨𝕏cond,𝕏stmt⟩}
-    ⟨node,Dump,Disp,Scope⟩⇐Defaults "while"‿visit
+    ⟨node,Dump,Disp,NonLocal,Scope⟩⇐Defaults "while"‿visit
     Oper ⇐ { cond.Oper operator.CondScope 𝕩 ⋄ stmt.Oper 𝕩 ⋄ operator.nil }
     Eval ⇐ {
       functions.Goto¨ lc ← functions.Label¨↕testFirst
@@ -1215,7 +1216,7 @@ nodes ← {
     from↩n0⊣´from
     vardisp←1↓∾(","⊸∾¨ptrn)∾" over "⊸∾¨ind
     Visit←{⟨𝕏fn,vardisp⊣𝕏¨ptri≍˘ptrv,𝕏from,𝕏to,𝕏body⟩}
-    ⟨node,Dump,Disp,Oper⟩⇐d←Defaults "for"‿visit
+    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐d←Defaults "for"‿visit
     ls←@
     Scope ⇐ {
       (o.Scope 𝕩)¨ ∾⟨fn⟩‿ptrv‿⟨from,to⟩
