@@ -156,7 +156,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ! (¯1⊑tokens) Is sep
 
   Asrt ← {𝕨𝕊1:@;
-    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.const,"const",c.define,"define",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.require,"require",c.run,"run",c.symbol,"symbol",c.topif,"topif",c.while,"while",c.word,"word"⟩
+    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.const,"const",c.define,"define",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.topif,"topif",c.while,"while",c.word,"word"⟩
     ShowTrace⟜L´ <˘⍉>DumpStack@
     •Out ""
     F ← (⥊lf)⊸≡◶•Repr‿"end of line"
@@ -320,7 +320,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     ⟨Name, e◶Generator‿Extender⟩_seq 𝕩
   }
 
-  Export ← Callable
+  Export ← Require ← Callable
 
   OpType ← {𝕤
     pre ← (⊑≢Get) "prefix"‿"infix"
@@ -330,7 +330,6 @@ Parse ← {𝕊 tokens‿ShowTrace:
   OpDef ← c.opDef _node_ ("oper"‿Oper‿Name‿OpType‿Number _seq)
 
   Include ← c.include _node_ ("include"‿Symbol _seq)
-  Require ← c.require _node_ ("require"‿Symbol _seq)
 
   TopIf ← c.topif _node_ {𝕤
     B ← Try∘"{"◶⟨⋈Line, MultiLine⟩
@@ -775,6 +774,7 @@ builtins ← {
       ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓_v1⟩
       ⟨"apply",{"apply: second parameter must be a tuple"!1==𝕩⋄𝕎𝕩}_p2⟩
       ⟨"export",{𝕨 symbols.From⊸program.Export⚇0 𝕩}_p2⟩
+      ⟨"require",{program.Require∘symbols.From⚇0 𝕩}⟩
       ⟨"witharch",architecture.With⟩
     ⟩
     functions.builtins
@@ -878,7 +878,7 @@ program ← {
     }
   }
   J ← 1↓·∾" "⊸∾¨
-  DispHeader←{ "require " ∾ Show 𝕩 }
+  DispHeader←{ "require " ∾ "'"(∾∾⊣)𝕩 }
   DispConstants←{ ∾⟜(<⟨⟩)⍟(0<≠) (J"constant"<⊸∾Show¨⌾(1⊸↓))¨ 𝕩 }
   DispFunction←{
     ShowReg ← {h←¯1⋄{𝕊:"v"∾•Repr h+↩1}}{𝕩.ShowReg𝕗}
@@ -1121,11 +1121,6 @@ nodes ← {
       ⟨node,Dump,Disp,Oper,Scope,Eval⟩ ↩ b # Always a body so fields can't change
       b.Oper 𝕩
     }
-  }
-  Require ⇐ {
-    ⟨file⟩ ← 𝕩
-    ⟨node,Dump,Disp⟩⇐Defaults "require"‿{⟨𝕏file⟩} ⋄ Scope⇐Oper⇐NonLocal⇐⊢
-    Eval ⇐ {𝕊: program.Require file.Eval@}
   }
   Body ⇐ {
     statements←𝕩

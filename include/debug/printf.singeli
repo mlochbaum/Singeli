@@ -9,8 +9,7 @@ local {
   oper ! tupsel infix right 50
 }
 
-require 'stdio.h'
-require 'inttypes.h'
+require{'stdio.h', 'inttypes.h'}
 
 def lprintf{...vs} = printf{...vs, '\n'}
 
