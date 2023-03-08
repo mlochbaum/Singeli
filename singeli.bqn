@@ -302,7 +302,6 @@ Parse ← {𝕊 tokens‿ShowTrace:
     ⟨a,r,b⟩
   } _withParams
   DefFun ← c.define _node_ ("fn"‿Name‿Function  _seq)
-  DefConst ← Stmt
   
   ExtPar ← "{"‿"}" _argsFn_ Name
   Extender ← c.extender _node_ (ExtPar‿"="‿Body _seq)
@@ -313,8 +312,6 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Get "def" ⋄  e ← Try "extend"
     ⟨Name, e◶Generator‿Extender⟩_seq 𝕩
   }
-
-  Export ← Require ← Callable
 
   OpType ← {𝕤
     pre ← (⊑≢Get) "prefix"‿"infix"
@@ -330,8 +327,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
     "if"‿"("‿Expr‿")"‿B‿(∾When∘⟨Try∘"else"∘Seps,B⟩)_seq 𝕩
   }
 
-  SubLine ← "def"‿"extend"‿"oper"‿"fn"‿"include"‿"require"‿"if"‿"export"⊸⊐⌾<◶⟨
-    Define, Extend, OpDef, DefFun, Include, Require, TopIf, Export, DefConst
+  SubLine ← "def"‿"extend"‿"oper"‿"fn"‿"include"‿"if"⊸⊐⌾<◶⟨
+    Define, Extend, OpDef, DefFun, Include, TopIf, Stmt
   ⟩
   ChkLoc ← ("localizable line"⊸⋈ Asrt (¬"if"⊸≡∨'''=⊑))⊸⊢∘Peek
   Line ← {𝕤
