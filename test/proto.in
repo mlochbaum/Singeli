@@ -5,4 +5,4 @@ fn fn{o}(x:i32) = {
 fn x(a:i32) : i32 = {
   call{fn{1},a}
 }
-'x' = x
+export{'x', x}

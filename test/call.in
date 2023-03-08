@@ -3,4 +3,4 @@ fn mid(a:i32, b:i32) = emit{i32,'add',a,b}
 fn fn(a:i32) : i32 = {
   mid(a, a)
 }
-'fn' = fn
+export{'fn', fn}

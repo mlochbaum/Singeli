@@ -192,13 +192,13 @@ The parenthesis syntax to call a function is really just a nicer way to use the 
 
 ## Export
 
-A top-level statement beginning with a literal symbol is an export. The entire statement consists of a symbol or list of symbols, followed by `=` and an expression giving a typed value. It's exported with all the names given before `=`. In C this means a non-`static` constant with that name is defined in the output file.
+The `export` builtin exports values for use in the calling language. In C this means a non-`static` constant with that name is defined in the output file.
 
-    'some_function' = fn{i32}  # Export as some_function()
+    export{'some_function', fn{i32}}     # Export as some_function()
 
-    'fn', 'alias' = fn{i16}    # Export with two names
+    export{tup{'fn', 'alias'}, fn{i16}}  # Export with two names
 
-    'twelve' = cast{i16, 12}   # Export a typed number
+    export{'twelve', cast{i16, 12}}      # Export a typed number
 
 ## Registers
 

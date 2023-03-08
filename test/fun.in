@@ -1,2 +1,2 @@
 fn fn(arg:i64) : i64 = arg
-'efn' = fn
+export{'efn', fn}

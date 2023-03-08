@@ -156,7 +156,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ! (¯1⊑tokens) Is sep
 
   Asrt ← {𝕨𝕊1:@;
-    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.const,"const",c.define,"define",c.export,"export",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.require,"require",c.run,"run",c.symbol,"symbol",c.topif,"topif",c.while,"while",c.word,"word"⟩
+    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.const,"const",c.define,"define",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.require,"require",c.run,"run",c.symbol,"symbol",c.topif,"topif",c.while,"while",c.word,"word"⟩
     ShowTrace⟜L´ <˘⍉>DumpStack@
     •Out ""
     F ← (⥊lf)⊸≡◶•Repr‿"end of line"
@@ -320,7 +320,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     ⟨Name, e◶Generator‿Extender⟩_seq 𝕩
   }
 
-  Export ← c.export _node_ ((While∘⟨Try∘",",Symbol,1⟩)‿"="‿Callable‿sep _seq)
+  Export ← Callable
 
   OpType ← {𝕤
     pre ← (⊑≢Get) "prefix"‿"infix"
@@ -337,8 +337,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
     "if"‿"("‿Expr‿")"‿B‿(∾When∘⟨Try∘"else"∘Seps,B⟩)_seq 𝕩
   }
 
-  SubLine ← "def"‿"extend"‿"oper"‿"fn"‿"include"‿"require"‿"if"⊸⊐⌾<◶⟨
-    Define, Extend, OpDef, DefFun, Include, Require, TopIf, ('''=⊑)◶DefConst‿Export
+  SubLine ← "def"‿"extend"‿"oper"‿"fn"‿"include"‿"require"‿"if"‿"export"⊸⊐⌾<◶⟨
+    Define, Extend, OpDef, DefFun, Include, Require, TopIf, Export, DefConst
   ⟩
   ChkLoc ← ("localizable line"⊸⋈ Asrt (¬"if"⊸≡∨'''=⊑))⊸⊢∘Peek
   Line ← {𝕤
@@ -774,6 +774,7 @@ builtins ← {
       ⟨"symchars",(symbols.New∘⋈¨"symchars: expected symbol"⊸symbols.From)_p1⟩
       ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓_v1⟩
       ⟨"apply",{"apply: second parameter must be a tuple"!1==𝕩⋄𝕎𝕩}_p2⟩
+      ⟨"export",{𝕨 symbols.From⊸program.Export⚇0 𝕩}_p2⟩
       ⟨"witharch",architecture.With⟩
     ⟩
     functions.builtins
@@ -900,7 +901,7 @@ program ← {
       ⟨"endFn",""⟩
     ⟩
   }
-  DispExport←{ "export " ∾ J <⊸∾⟜(TypeOf⋈○Show⊢)´ 𝕩 }
+  DispExport←{ "export " ∾ J (<"'"⊸(∾∾⊣))⊸∾⟜(TypeOf⋈○Show⊢)´ 𝕩 }
 }
 
 nodes ← {
@@ -942,7 +943,7 @@ nodes ← {
   Symbol ⇐ (symbols.New 1↓¯1↓⊢)_value
   Run ⇐ {
     𝕨𝕊⟨⟨infix⟩,params⟩: CondNode´ 𝕩;
-    ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨
+    ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨 ⋄ NonLocal⇐⊢
     spread ← 0=•Type¨params ⋄ params ⊑¨↩
     deSpread ← (∨´spread)⊑⊢‿{
       ∾ spread ⊣◶⟨⋈⊢,("Spread input must be tuple"!IsTup)⊸⊢⊢⟩¨𝕩
@@ -1109,13 +1110,6 @@ nodes ← {
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "opdef"‿visit
     N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
     Oper⇐{pos (N𝕩).Add type‿op‿fn‿prec}
-  }
-  Export ⇐ {
-    ⟨name,value⟩ ← {Show 𝕩.Eval@}¨⌾⊑ 𝕩 ⋄ pos←𝕨
-    Visit←{⟨name,𝕏value⟩}
-    ⟨node,Dump,Disp,Oper,Scope⟩⇐d←Defaults "export"‿visit
-    NonLocal ⇐ ⊢
-    Eval ⇐ { program.Export program._trace_ pos¨⟜<´ d.Eval 𝕩 }
   }
   Include ⇐ {
     # Top-level if statements resolve in operator pass; expand then
