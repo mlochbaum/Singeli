@@ -1,4 +1,4 @@
-cpu‿libpaths ← •args
+cpu‿libpaths‿configs ← •args
 
 tab‿lf←@+9‿10
 
@@ -313,6 +313,12 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Get "def" ⋄  e ← Try "extend"
     ⟨Name, e◶Generator‿Extender⟩_seq 𝕩
   }
+  confName‿confVal ← (⊑¨⋈1⊸⊑¨)configs
+  Config ← c.define _node_ {
+    Get "config"
+    n‿r ← ⟨Name, "=", Result∘1⟩_seq 𝕩
+    n‿{ (≠confName) > i←confName⊸⊐⌾<n ? ast.Build i⊑confVal ; r }
+  }
 
   OpType ← {𝕤
     pre ← (⊑≢Get) "prefix"‿"infix"
@@ -328,8 +334,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
     "if"‿"("‿Expr‿")"‿B‿(∾When∘⟨Try∘"else"∘Seps,B⟩)_seq 𝕩
   }
 
-  SubLine ← "fn"‿"include"‿"if"⊸⊐⌾<◶⟨
-    DefFun, Include, TopIf, Stmt
+  SubLine ← "fn"‿"include"‿"if"‿"config"⊸⊐⌾<◶⟨
+    DefFun, Include, TopIf, Config, Stmt
   ⟩
   ChkLoc ← ("localizable line"⊸⋈ Asrt "if"⊸≢)⊸⊢∘Peek
   Line ← {𝕤

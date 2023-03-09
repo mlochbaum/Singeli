@@ -11,6 +11,7 @@ short‿long‿args‿dup‿desc ← <˘⍉> ⟨
   "t"‿"target"‿1‿0‿"Output type: c (default), ir"
   "a"‿"arch"  ‿1‿1‿"Architecture features: list, or none, native (default), all"
   "l"‿"lib"   ‿1‿1‿"Library paths: lib=path to try path/x for include 'lib/x'"
+  "c"‿"config"‿1‿1‿"Configuration: name=value to set config name to value"
   "p"‿"pre"   ‿1‿0‿"Preamble placed before C output"
   "n"‿"name"  ‿1‿0‿"Prefix for names in C output"
   "d"‿"deplog"‿1‿0‿"Output file for log of included dependencies"
@@ -26,7 +27,7 @@ op ⌈↩ c ×¬ <`⊸= op⊏args
 opts ← ((1+c)∾˜f/op) ⊔ ((op=c)(1-˜×⟜(+`))○(∾⟜1)f←¬0»op⊏args) ⊔ •args
 "Option can't be duplicated" ! ∧´ (dup∾1) ≥ 1<≠¨opts
 os ← (0⌾⊑dup∾0) (∾','⊸Spl¨)⍟⊣¨ (1⌾(¯1⊸⊑)args) ⊣◶⟨0<≠∘⊢,⊑¨⊢⟩¨ opts
-help‿out‿target‿feats‿lib‿pre‿namepre‿deplog‿files ← os
+help‿out‿target‿feats‿lib‿config‿pre‿namepre‿deplog‿files ← os
 
 { help ?
   opt_help ← ∾¨´ ⟨desc⟩ ∾˜ (1+·⌈´≠¨)⊸(↑¨)¨ short‿long ∾¨¨ ",:"
@@ -37,10 +38,13 @@ help‿out‿target‿feats‿lib‿pre‿namepre‿deplog‿files ← os
 Rel ← •wdpath⊸•file.At
 files Rel¨↩
 deplog ↩ @ ⊣´ Rel¨deplog
-libpaths ← (Rel⌾(1⊸⊑) ¯2 ↑ (»⊸(⊣-<)·∨`'='⊸=)⊸⊔)¨ lib
+
+SplitEq ← (»⊸(⊣-<)·∨`'='⊸=)⊸⊔
+libpaths ← (Rel⌾(1⊸⊑) ¯2 ↑ SplitEq)¨ lib
+configs ← (2 ↑ SplitEq)¨ config
 
 arch ← feats •Import "arch.bqn"
-frontend ← arch‿libpaths •Import "singeli.bqn"
+frontend ← arch‿libpaths‿configs •Import "singeli.bqn"
 backend ← {
   ⟨"ir"⟩≡target ? ⊢ ;
   pre ⊑⊸{𝕨⊸𝕏}⍟(0<≠∘⊣) arch‿("si"⊣´namepre) •Import "emit_c.bqn"
