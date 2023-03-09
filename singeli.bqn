@@ -192,8 +192,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
   AddArgs   ← {  (c.call _node_ (⊢⋈"("‿")"_args))⍟(Next"(") 𝕩}
   Expr0 ← {𝕤
     Vec ← c.run _node_ ((c.Word"__vec") ⋈ "["‿Expr‿"]"‿Expr0 _seq)
-    Par ← ⊑ "("‿Stmt‿")" _seq
-    ARes← c.body _node_ (Next∘"{"◶⟨⋈Expr, Body⟩)
+    Par ← ⊑ "("‿Expr‿")" _seq
+    ARes← c.body _node_ ("{"⊸≡◶⟨⋈ESub, Body⟩ Peek)
     Anon← c.lambda _node_ (Params‿"=>"‿ARes _seq)
     (⊑"[({'"⊐⊏)◶Vec‿Par‿Anon‿Symbol‿Word Peek@
   }
@@ -204,7 +204,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     end ← endTok∾sep∾⥊¨",:)}]"
     c.phrase _node_ (While∘⟨¬Next∘end, Call, 1⟩)
   }
-  Expr ← ⟨⟩_exprEnd
+  SimpExpr ← ⟨⟩_exprEnd
 
   LFs ← {𝕊⍟Try ⟨lf⟩}
   Div ← {LFs@ ⋄ 1∘LFs⍟⊢ Try 𝕩}
@@ -220,17 +220,21 @@ Parse ← {𝕊 tokens‿ShowTrace:
     a
   }
 
-  StSub ← {
-  "def":    Define@ ;
-  "extend": Extend@ ;
-  "oper":   OpDef@  ;
+  ESub ← {
   "if":     c.if     _node_ ("if"‿"("‿Expr‿")"‿Block‿(When∘⟨Try∘"else"∘Seps,Block⟩)_seq)@ ;
   "while":  c.while  _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Block _seq)@ ;
   "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
   "@":      For@ ;
-  𝕩:        Declare⍟(Try":") Expr@
+  "extend": Extend@ ;
+  𝕩:        Declare⍟(Try":") SimpExpr@
   }
-  Stmt ← StSub Peek
+  Expr ← ESub Peek
+
+  Stmt ← {
+  "def":    Define@ ;
+  "oper":   OpDef@ ;
+  𝕩:        ESub 𝕩
+  } Peek
 
   # 𝕩 is the expression preceding ":"
   Declare ← c.declare _node_ {
@@ -247,21 +251,21 @@ Parse ← {𝕊 tokens‿ShowTrace:
     "Empty body" Asrt 0<≠b
     b
   }
-  Block ← "{"⊸≡◶⟨StSub, c.body _node_ Body⟩ Peek
+  Block ← "{"⊸≡◶⟨Expr, c.body _node_ Body⟩ Peek
 
   For ← c.for _node_ {𝕤
     OA← "@for: multiple variables must use ""over"""⊸Asrt
     TA← "@for: ""from"" missing ""to"""⊸Asrt
     NA← "@for: loop variable must be a name"⊸Asrt
-    Expr ← "in"‿"over"‿"from"‿"to"_exprEnd # Shadow
+    Part ← "in"‿"over"‿"from"‿"to"_exprEnd
     Get "@"
     f ← Callable@
     Get "("
-    to← Expr@ ⋄ NE←{𝕤⋄ n←⋈∘{NA@≢𝕩⋄𝕩}∘c.PhraseTryName⍟𝕩 to ⋄ to↩Expr@ ⋄ n}
+    to← Part@ ⋄ NE←{𝕤⋄ n←⋈∘{NA@≢𝕩⋄𝕩}∘c.PhraseTryName⍟𝕩 to ⋄ to↩Part@ ⋄ n}
     {Try"in"? to↩⟨⊑NE 1,to⟩; @}
-    pe← While ⟨Try∘",", Try∘"in"◶⟨⋈,⋈⟜Expr⟩ Name, 0⟩
+    pe← While ⟨Try∘",", Try∘"in"◶⟨⋈,⋈⟜Part⟩ Name, 0⟩
     ps← {Try"over"?(<NE 0==to)∾𝕩; OA 0=≠𝕩⋄⟨⟩} pe # Pointers
-    fr← When ⟨Try"from", Expr⟩                   # Start index
+    fr← When ⟨Try"from", Part⟩                   # Start index
     i ← {¬Try"to"?TA 0=≠fr⋄⟨⟩; 0<=to?ps∾↩<NE 0⋄⟨⟩; NE 1}  # Index variable
     Get ")"
     b ← Block@
@@ -298,7 +302,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   }
 
   Function ← c.function _node_ {𝕤
-    Arg ← c.arg _node_ (Name‿":"‿Expr _seq)
+    Arg ← c.arg _node_ (Name‿":"‿SimpExpr _seq)
     a ← "("‿")" _argsFn_ Arg @
     r ← When ⟨Try":", ⟨"="⟩_exprEnd⟩
     b ← Result Try"="
