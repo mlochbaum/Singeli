@@ -328,8 +328,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
     "if"‿"("‿Expr‿")"‿B‿(∾When∘⟨Try∘"else"∘Seps,B⟩)_seq 𝕩
   }
 
-  SubLine ← "def"‿"extend"‿"fn"‿"include"‿"if"⊸⊐⌾<◶⟨
-    Define, Extend, DefFun, Include, TopIf, Stmt
+  SubLine ← "fn"‿"include"‿"if"⊸⊐⌾<◶⟨
+    DefFun, Include, TopIf, Stmt
   ⟩
   ChkLoc ← ("localizable line"⊸⋈ Asrt "if"⊸≢)⊸⊢∘Peek
   Line ← {𝕤
