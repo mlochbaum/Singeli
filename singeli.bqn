@@ -156,7 +156,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ! (¯1⊑tokens) Is sep
 
   Asrt ← {𝕨𝕊1:@;
-    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.assign,"assign",c.body,"body",c.call,"call",c.define,"define",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.topif,"topif",c.while,"while",c.word,"word"⟩
+    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.body,"body",c.call,"call",c.declare,"declare",c.define,"define",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.topif,"topif",c.while,"while",c.word,"word"⟩
     ShowTrace⟜L´ <˘⍉>DumpStack@
     •Out ""
     F ← (⥊lf)⊸≡◶•Repr‿"end of line"
@@ -201,7 +201,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   NoCall ← ∊⟜"and"‿"or"‿"not"⌾<∨´(oc∾"[")=⊏
   Call ← { c←¬Next noCall ⋄ AddArgs⍟c Callable𝕩 }
   _exprEnd ← {endTok _𝕣:
-    end ← endTok∾sep∾⥊¨",:=)}]"
+    end ← endTok∾sep∾⥊¨",:)}]"
     c.phrase _node_ (While∘⟨¬Next∘end, Call, 1⟩)
   }
   Expr ← ⟨⟩_exprEnd
@@ -228,15 +228,17 @@ Parse ← {𝕊 tokens‿ShowTrace:
   "while":  c.while  _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Block _seq)@ ;
   "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
   "@":      For@ ;
-  𝕩:
-    n ← Expr@
-    d ← Try ":"
-    e ← Try "="
-    t ← When ⟨d>e, {e↩Try"="⋄𝕩}∘Expr⟩
-    ToName ← (Asrt@⊸≢)⊸⊢∘c.PhraseTryName
-    c.assign _node_ {⟨ToName⍟d 𝕩,d,t,Expr@⟩}⍟e n
+  𝕩:        Declare⍟(Try":") Expr@
   }
   Stmt ← StSub Peek
+
+  # 𝕩 is the expression preceding ":"
+  Declare ← c.declare _node_ {
+    Asrt @ ≢ n ← c.PhraseTryName 𝕩
+    t ← When ⟨¬Next"=", ⟨"="⟩_exprEnd⟩
+    Get "="
+    ⟨n,t,Expr@⟩
+  }
 
   Seps ← {Try∘sep◶@‿𝕊⍟Rem𝕩}
   Body ← {𝕤
@@ -298,7 +300,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Function ← c.function _node_ {𝕤
     Arg ← c.arg _node_ (Name‿":"‿Expr _seq)
     a ← "("‿")" _argsFn_ Arg @
-    r ← When ⟨Try":", Expr⟩
+    r ← When ⟨Try":", ⟨"="⟩_exprEnd⟩
     b ← Result Try"="
     ⟨a,r,b⟩
   } _withParams
@@ -761,6 +763,7 @@ builtins ← {
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
     ⍉> ⟨
+      ⟨"__set",functions.Mut _p2⟩
       ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"}⊣•Out∘Fmt⟩
       ⟨"exec",blocks.Exec _e3⟩
       ⟨"match",Match _p2⟩
@@ -1069,9 +1072,10 @@ nodes ← {
       v
     } program._trace_ pos env
   }
-  Assign ⇐ { pos 𝕊 ⟨name,1,type,value⟩: # Declaration
+  Declare ⇐ {
+    ⟨name,type,value⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨name∾":",𝕏¨type,𝕏value⟩}
-    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "assign"‿visit
+    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "declare"‿visit
     GetVar←!∘0 ⋄ Scope⇐{
       Visit o.Scope 𝕩
       getVar ↩ pos 𝕩.Add name
@@ -1081,8 +1085,6 @@ nodes ← {
       v ← pos type‿𝕩 _setType value.Eval 𝕩
       u.Set name⊸functions.Declare⚇0 v
     }
-  ;
-    𝕨 Run ⟨{functions.Mut´𝕩}˙_value"=" , 0‿3⊏𝕩⟩
   }
   Define ⇐ {
     ⟨name,value⟩←𝕩 ⋄ pos←𝕨
@@ -1263,10 +1265,12 @@ ast ← {
   Show ⇐ {•Out ∾∾⟜lf¨ 𝕩.Disp @}
   baseScope ← builtins.names scopes.New scopes.Init@
   baseEnv   ← builtins.values env.Fixed @
+  baseOper  ← operator.NewScope operator.nilScope
+  @ baseOper.Add 'r'‿"="‿"__set"‿¯∞
   Build ⇐ Parse∘Tokenize
   Compile ⇐ {
     t ← files.Build 𝕩
-    t.Oper operator.NewScope operator.nilScope
+    t.Oper operator.NewScope baseOper
     files.WriteDeps 𝕨
     t.Scope scopes._run sc ← scopes.New baseScope
     t.Eval program._with (sc.Names@) env.New baseEnv
