@@ -223,6 +223,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   StSub ← {
   "def":    Define@ ;
   "extend": Extend@ ;
+  "oper":   OpDef@  ;
   "if":     c.if     _node_ ("if"‿"("‿Expr‿")"‿Block‿(When∘⟨Try∘"else"∘Seps,Block⟩)_seq)@ ;
   "while":  c.while  _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Block _seq)@ ;
   "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
@@ -327,8 +328,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
     "if"‿"("‿Expr‿")"‿B‿(∾When∘⟨Try∘"else"∘Seps,B⟩)_seq 𝕩
   }
 
-  SubLine ← "def"‿"extend"‿"oper"‿"fn"‿"include"‿"if"⊸⊐⌾<◶⟨
-    Define, Extend, OpDef, DefFun, Include, TopIf, Stmt
+  SubLine ← "def"‿"extend"‿"fn"‿"include"‿"if"⊸⊐⌾<◶⟨
+    Define, Extend, DefFun, Include, TopIf, Stmt
   ⟩
   ChkLoc ← ("localizable line"⊸⋈ Asrt "if"⊸≢)⊸⊢∘Peek
   Line ← {𝕤
