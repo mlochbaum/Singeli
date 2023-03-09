@@ -247,9 +247,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Seps ← {Try∘sep◶@‿𝕊⍟Rem𝕩}
   Body ← {𝕤
     Get "{"
-    b ← While ⟨¬Try∘"}"∘Seps, Stmt, 0⟩
-    "Empty body" Asrt 0<≠b
-    b
+    While ⟨¬Try∘"}"∘Seps, Stmt, 0⟩
   }
   Block ← "{"⊸≡◶⟨Expr, c.body _node_ Body⟩ Peek
 
