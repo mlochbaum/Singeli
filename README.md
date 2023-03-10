@@ -400,6 +400,18 @@ The following generators are pre-defined in any program. They're placed in a par
 | `setlabel{}`           | Short for `setlabel{makelabel{}}`
 | `goto{label}`          | Jump to the position set for a label
 
+### Architecture
+
+| Syntax               | Result
+|----------------------|--------
+| `setarch{feature…}`  | Set the current function's feature set
+| `addarch{feature…}`  | Add features to the current function's set
+| `hasarch{feature…}`  | Return 1 if all features are present and 0 otherwise
+| `listarch{}`         | Current feature set as a tuple of symbols
+| `witharch{fn,feat…}` | Return a generator like generated function `fn` but with the given feature set
+
+An architecture feature is an uppercase symbol such as `'AVX2'`. Each function is created with a set of such features, which can be set outside the function using `witharch{}` or inside using `setarch{}` and `addarch{}`.
+
 ### Values
 
 | Syntax              | Result
