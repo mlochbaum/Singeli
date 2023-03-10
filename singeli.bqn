@@ -615,6 +615,7 @@ constants ← {kname⇐"constant"
   Undefined ⇐ {
     kind⇐kname ⋄ shows⇐"?:"∾Show type⇐𝕩 ⋄ fmtType⇐0 ⋄ Matches⇐≡
   }
+  Exportable ⇐ (kname‿"function"⊸⊐⌾< Kind)◶{"?:"≢2↑𝕩.shows}‿1‿0
 }
 
 labels ← {kname⇐"label"
@@ -853,12 +854,16 @@ program ← {
   _with ⇐ {
     fns←⟨⟩ ⋄ AddFunction ↩ { f ← 𝕨 𝕏 ≠fns ⋄ fns∾⟜<↩f ⋄ f }
     cns←⟨⟩ ⋄ AddConstant ↩ { c ← 𝕨 constants.Static ⟨t←TypeOf𝕩, ≠cns⟩ ⋄ cns∾⟜<↩⟨Show c,t,𝕩⟩ ⋄ c }
-    exp←⟨⟩ ⋄ Export ↩ { "Exports must be typed" ! IsTyped 𝕩 ⋄ exp ∾⟜<↩ 𝕨‿𝕩 }
+    exp←⟨⟩ ⋄ Export ↩ { CheckExport 𝕩 ⋄ exp ∾⟜<↩ 𝕨‿𝕩 }
     req←⟨⟩ ⋄ Require ↩ { req ∾⟜<↩ 𝕩 }
     ⟨_trace_⟩↩s←Stack@
     𝕨 𝔽⎊s.Report 𝕩
     AddFunction↩AddConstant↩Export↩!∘0
     ∾ ⟨DispHeader¨req, DispConstants cns, ∾DispFunction¨fns, DispExport¨exp⟩
+  }
+  CheckExport ← {
+    "Exports must be typed" ! IsTyped 𝕩
+    "Exports must be global fixed values" ! constants.Exportable 𝕩
   }
   Stack ← {𝕤
     ⟨_trace_⇐_while_⟩ ⇐ ⟨Dump⇐Arr⟩ ← MakeStack@
