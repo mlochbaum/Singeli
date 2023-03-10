@@ -2,7 +2,7 @@
 
 Singeli is a domain-specific language for building [SIMD](https://en.wikipedia.org/wiki/SIMD) algorithms with flexible abstractions and control over every instruction emitted. It's implemented in [BQN](https://mlochbaum.github.io/BQN), with a frontend that emits IR and a backend that converts it to C. Other backends like LLVM or machine code are possible—it should be easy to support other CPU architectures but there are no plans to target GPUs.
 
-It's now proven to be pretty usable, and we're not finding many bugs any more (what we do see is mostly just broken error reporting). Debugging your compilation errors is easy since they come with parsing or stack traces, and `show{}` prints whatever you want at compile time. For runtime errors, the emitted C code is rather verbose but does embed source function and variable names you can use to get your bearings, and you can always emit `printf()` calls. The interactive [Singeli playground](https://github.com/dzaima/singeliPlayground) tool is a nice way to get parts of your code working without going through this process.
+It's now proven to be pretty usable, and we're not finding many bugs any more (what we do see is mostly just broken error reporting). Debugging your compilation errors is easy since they come with parsing or stack traces, and `show{}` prints whatever you want at compile time. At runtime, `lprintf{}` provided by `include 'debug/printf'` prints what you pass to it, and the emitted C code is rather verbose but does embed source function and variable names you can use to get your bearings. The interactive [Singeli playground](https://github.com/dzaima/singeliPlayground) tool is a nice way to get parts of your code working without the awkward compile-debug loop.
 
 To compile input.singeli:
 
@@ -12,7 +12,7 @@ $ singeli input.singeli [-o output.c]
 
 For options see `$ singeli -h`. To run `./singeli` as an executable, ensure that [CBQN](https://github.com/dzaima/CBQN) is installed as `bqn` in your executable path, or call as `/path/to/bqn singeli …`.
 
-Singeli [is used](https://github.com/dzaima/CBQN/tree/master/src/singeli/src) for CBQN's SIMD primitive implementations when built with `$ make o3n-singeli` (requires AVX2). It's also the implementation language for [SingeliSort](https://github.com/mlochbaum/SingeliSort).
+Singeli [is used](https://github.com/dzaima/CBQN/tree/master/src/singeli/src) for CBQN's SIMD primitive implementations when built with `$ make o3n-singeli` (requires AVX2 or NEON). It's also the implementation language for [SingeliSort](https://github.com/mlochbaum/SingeliSort).
 
 Early design discussion for Singeli took place at [topanswers.xyz](https://topanswers.xyz/apl?q=1623); now it's in the [BQN forum](https://mlochbaum.github.io/BQN/community/forums.html).
 
@@ -22,9 +22,9 @@ Singeli is primarily a metaprogramming language. Its purpose is to build abstrac
 
 The primary tool for abstraction is the **generator**. Written with `{parameters}`, generators perform similar tasks as C macros, C++ templates, or generics, but offer more flexibility. They are expanded during compilation, and form a Turing-complete language. Generators use lexical scoping and allow recursive calls. Here's a generator that calls another one:
 
-    def gen{sub, arg} = sub{arg, arg + 1}
+    def gen{func, arg} = func{arg, arg + 1}
 
-In fact, `+` is also a generator, if it's defined. Singeli has no built-in operators but allows the user to define infix or prefix operator syntax for a generator. For example, the following line from [include/skin/cop.singeli](include/skin/cop.singeli) makes `+` a left-associative infix operator with precedence 30 (there can be one infix and one prefix definition).
+In fact, `+` is also a generator, if it's defined. Singeli operators aren't built in; instead the user declares each as infix or prefix syntax for a generator. For example, the following line from [include/skin/cop.singeli](include/skin/cop.singeli) makes `+` a left-associative infix operator with precedence 30 (there can be one infix and one prefix definition).
 
     oper +  __add infix left  30
 
@@ -51,9 +51,9 @@ If possible, iteration should be done with for-each loops. In SIMD programming t
 
     def for{vars,begin,end,block} = {
       i:u64 = begin
-      while (i<end) {
+      while (i < end) {
         exec{i, vars,block}
-        i = i+1
+        ++i
       }
     }
 
@@ -81,7 +81,7 @@ A generator is essentially a compile-time function, which takes values called pa
 
 These are all effectively the same thing: there's a parameter list in `{}`, and a definition. When invoked, the body is evaluated with the parameters set to the values provided. Depending on the definition, this evaluation might end not with a static value, but with a computation to be performed at runtime (this always happens for functions). Generators are dynamically typed, and naturally have no constraints on the parameters or result. But the parameter list can include conditions that determine whether to accept a particular set of parameters. These are described in the next section; first let's go through the syntax for each case.
 
-An anonymous generator is written `{params} => body`. It needs to come at the beginning of a subexpression, which usually means it needs to be parenthesized. Otherwise `{params}` might be interpreted as a generator call on the previous word, for example. `body` can be either a single expression, or a block consisting of multiple expressions surrounded by `{}`.
+An anonymous generator is written `{params} => body`. If it's not the entire expression, it usually needs to be parenthesized. Otherwise `{params}` might be interpreted as a generator call on the previous word, for example. `body` can be either a single expression, or a block consisting of multiple expressions surrounded by `{}`.
 
 A named generator is a statement rather than an expression: `def name{params} = body`. `name` can be followed by multiple parameter lists, defining a nested generator. This form also allows multiple definitions. When the generator is called, these definitions are scanned, beginning with the last, for one that applies to the arguments. That is, when applying the generator, it tests the arguments against all its conditions, then runs if they match and otherwise calls the previous definition. Sometimes it's useful to extend many generators in the same way; see [extend](#extend) for this use case.
 
@@ -130,7 +130,7 @@ The simplest are discussed in this section, and others have dedicated sections b
 
 Numbers are floating-point, with enough precision to represent both double-precision floats and 64-bit integers (signed or unsigned) exactly. Specifically, they're implemented as pairs of doubles, giving about 105 bits of precision over the same exponent range as a double. A number can be written in scientific notation like `45` or `1.3e-12`, in hex like `0xf3cc0`, or in an arbitrary base with the base preceding `b`, like `2b110101` or `32b0jbm1` (digits like hex, extending past `f`). Numbers are case-insensitive and can contain underscores, which will be removed.
 
-Symbols are Unicode strings, written as a literal using single quotes: `'symbol'`. They're used with the `emit{}` generator to emit instructions, and in export statements to identify the function name that should be exposed.
+Symbols are Unicode strings, written as a literal using single quotes: `'symbol'`. They're used with the `emit{}` generator to emit instructions, and in `export{}` to identify the function name that should be exposed.
 
 Constants consist of a value and a type. They appear when a value such as a number is cast, for example by creating a variable `v:f64 = 6` or with an explicit `cast{f64, 6}`. For programming, constants work like registers (variables), so there's never any need to consider them specifically. Just cast a compile-time value if you need it to have a particular type—say, when calling a function that could take several different types.
 
@@ -140,12 +140,12 @@ Labels are for `goto{}` and related builtins described [here](#program).
 
 Operators are formed from the characters `!$%&*+-/<=>?\^|~`. Any number of these will stick together to form a single token unless separated by spaces. Additionally, non-ASCII characters can be used as operators, and don't stick to each other.
 
-The `oper` statement, which can only appear at the top level in the program, defines a new operator, and applies to all code later in the program (operators are handled with a Pratt parser, which naturally allows this). Here are the two declarations of `-` taken from [include/skin/cop.singeli](include/skin/cop.singeli).
+The `oper` statement defines a new operator, and applies to all code later in the scope (operators are handled with a Pratt parser, which naturally allows this). Here are the two declarations of `-` taken from [include/skin/cop.singeli](include/skin/cop.singeli).
 
     oper -  __neg prefix      30
     oper -  __sub infix left  30
 
-The declaration lists the operator's form (arity, and associativity for infix operators), spelling, generator, and precedence. After the declaration, applying the operator runs the associated generator.
+The declaration lists the operator's spelling, generator, form (arity, and associativity for infix operators), and precedence. After the declaration, applying the operator runs the associated generator. More precisely, the generator name is looked up in the scope where the operator is used each time: the `oper` statement only associates the operator with that name and not any particular value.
 
 An operator can have at most one infix and one prefix definition. Prefix operators have no associativity (as operators can't be used as operands, they always run from right to left), while infix operators can be declared `left`, `right`, or `none`. With `none`, an error occurs in ambiguous cases where the operator is applied multiple times. The precedence is any number, and higher numbers bind tighter.
 
@@ -213,7 +213,7 @@ The runtime value of a register can be changed with `name = value` syntax, with 
 
     x = x + 1    # Increment
 
-This does *not* change the compile time value of `x` or `y`, which is a register. Declaration and reassignment do essentially the same thing at runtime, but at compile time they're two different things. Declaration is basically a `def` statement bundled with an assignment of the initial value. Assignment is a plain function that acts on a register and a value, and can be used in generator calls. The left-hand side can be a full expression, as long as it resolves to a register at compile time—try `(if (0) a; else b) = c` for example. The built-in [file](include/skin/cmut.singeli) `skin/cmut` (part of `skin/c`) defines generators for C operators `+=`, `/=`, `>>=`, and so on, so you can write:
+This does *not* change the compile-time value of `x` or `y`, which is a register. Declaration and reassignment do essentially the same thing at runtime, but at compile time they're two different things. Declaration is basically a `def` statement bundled with an assignment of the initial value. Assignment is an operation (in fact, a built-in operator) that acts on a register and a value, and can be used in generator calls. The left-hand side can be a full expression, as long as it resolves to a register at compile time—try `(if (0) a; else b) = c` for example. The built-in [file](include/skin/cmut.singeli) `skin/cmut` (part of `skin/c`) defines generators for C operators `+=`, `/=`, `>>=`, and so on, so you can write:
 
     x += 1
     ++x
@@ -255,9 +255,9 @@ The name after `@` is just a name, and is called as a generator. The following d
 
     def for{vars,begin,end,block} = {
       i:u64 = begin
-      while (i<end) {
+      while (i < end) {
         exec{i, vars,block}
-        i = i+1
+        ++i
       }
     }
 
@@ -265,7 +265,7 @@ The name after `@` is just a name, and is called as a generator. The following d
 
 The *descriptor* is the part in parentheses, and lists the variables and range to use for the loop. It provides the `vars` (a tuple of pointers), `begin`, and `end` parameters to the `for` generator above, and it defines which names are used in the main block of the loop, which then forms the `block` parameter.
 
-Here's the pattern. Square brackets `[]` indicate an optional part, and the `…` means more pointers can appear, separated by commas.
+Here's the pattern. Square brackets `[]` indicate an optional part, and the `…` means more names-maybe-in-pointers can appear, separated by commas.
 
     [name ["in" pointer], … "over"]
       [index ["from" begin] "to"]
@@ -286,8 +286,8 @@ Other than the fixed default starting point of `0`, the interpretation of the st
 Once the descriptor and body are parsed, the following values are passed to whatever generator is named after `@`, and the result of the loop is whatever comes out. The names `vars` and so on are only for explanation, as they are nameless in Singeli compilation.
 
 - `vars`: a tuple, the values of all pointers listed before "over"
-- `begin`: the value of the expression after "from"
-- `end`: the value of the expression at the end, (after "to" if it's there)
+- `begin`: the value of the expression after "from", or number 0
+- `end`: the value of the expression at the end, after "to" if it's there
 - `block`: a special value produced from the for loop's body
 
 Most of the time the generator will evaluate the block—otherwise what's the point? This is done with the built-in generator `exec{}`, which is where the magic happens. It's called with `exec{index, ptrs, block}`, where `ptrs` is a tuple of pointers (it doesn't have match `vars` created by the for loop), `block` is a for loop block value, and `index` is an index. Then it:
@@ -302,9 +302,9 @@ Here are some examples.
     # The standard for loop, yet again
     def for{vars,begin,end,block} = {
       i:u64 = begin
-      while (i<end) {
+      while (i < end) {
         exec{i, vars,block}
-        i = i+1
+        ++i
       }
     }
 
@@ -312,7 +312,7 @@ Here are some examples.
     # Assumes begin and end are constant, to use compile-time if
     # Each exec{} compiles to code with a constant index
     def for_const{vars,begin,end,block} = {
-      if (begin<end) {
+      if (begin < end) {
         for_const{vars,begin,end-1,block}
         exec{end-1, vars,block}
       }
