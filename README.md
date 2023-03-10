@@ -390,6 +390,8 @@ The following generators are pre-defined in any program. They're placed in a par
 | `emit{type,op,args…}`  | Call instruction `op` (a symbol, to be interpreted by the backend)
 | `call{fun,args…}`      | Call a function
 | `return{result}`       | Return `result` (optional if return type is `void`) from current function
+| `export{name,value}`   | Export value for use by the calling language
+| `require{name}`        | Require something from the calling language, such as a C header
 | `exec{ind,vars,block}` | Execute `block` on pointers `vars` at index `i`
 | `load{ptr,ind}`        | Return value at `ptr+ind`
 | `store{ptr,ind,val}`   | Store `val` at `ptr+ind`
@@ -406,6 +408,8 @@ The following generators are pre-defined in any program. They're placed in a par
 | `hastype{val,type}` | Return 1 if `val` is a typed value of the given type
 | `type{val}`         | Return the type of `val`
 | `kind{val}`         | Return a symbol indicating the kind of value
+| `__set{reg,val}`    | Set value `val` for register `reg`, same as `reg = val`.
+| `undefined{type}`   | Unspecified or uninitialized value of the given type
 | `show{vals…}`       | For debugging: print the parameters, and return it if there's exactly one
 
 Possible `kind` results are `number`, `constant`, `symbol`, `tuple`, `generator`, `type`, `register`, `function`, and `block`.
@@ -444,6 +448,9 @@ Possible `typekind` results are `void`, `primitive`, `vector`, `pointer`, `funct
 | `slice{tup,start,end}` | Take slice from `start` to (optional) `end`, like Javascript
 | `apply{gen,tuple}`     | `gen{...tuple}`
 | `each{gen,tuple…}`     | Map a generator over the given tuples
+| `symchars{symbol}`     | Return the characters of a symbol, as a tuple of symbols
+
+Generators `merge{}` and `slice{}` also work if applied to symbols instead of tuples.
 
 ### Arithmetic
 
