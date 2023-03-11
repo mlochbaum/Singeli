@@ -13,14 +13,14 @@ def extend perv2{op} = {
   def op{a, b & \a & \b} = each{op, a, b}
 }
 
-local def anytup{e, ...t} = (if (\e) 1; else anytup{...t})
+local def anytup{e, ...t} = if (\e) 1 else anytup{...t}
 local def anytup{} = 0
 
 def perv{n & knum{n}} = { def extend _{op} = {
   def op{...t & match{n,tuplen{t}} & anytup{...t}} = {
-    def len{e, ...t} = (if (\e) tuplen{e}; else len{...t})
+    def len{e, ...t} = if (\e) tuplen{e} else len{...t}
     def l = len{...t}
-    def r{t} = (if (\t) t; else copy{l,t})
+    def r{t} = if (\t) t else copy{l,t}
     bind{each,op}{...each{r,t}}
   }
 }}

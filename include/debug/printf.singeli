@@ -16,7 +16,7 @@ def lprintf{...vs} = printf{...vs, '\n'}
 def printf{...vs0} = {
   def nsym = ~each{ksym, vs0}
   def vs = join{each{
-    {a,b}=>(if (b) tup{' ', a}; else tup{a}),
+    {a,b}=>if (b) tup{' ', a} else tup{a},
     vs0, nsym & shiftright{0, nsym}
   }}
 
@@ -48,13 +48,13 @@ def printf{...vs0} = {
         def w = width{T}
         def u = (w>1) & (q=='u')
         def spec = {
-          if (q=='f') (if (w==32) '%.8g'; else '%.17g')
+          if (q=='f') (if (w==32) '%.8g' else '%.17g')
           else merge{
-            (if (hex) '0x'; else ''),
+            if (hex) '0x' else '',
             '%',
-            (if (w==64) '"SCN'; else ''),
-            (if (hex) 'x'; else if (u) 'u'; else 'd'),
-            (if (w==64) '64"'; else '')
+            if (w==64) '"SCN' else '',
+            if (hex) 'x' else if (u) 'u' else 'd',
+            if (w==64) '64"' else ''
           }
         }
         tup{tup{spec, tup{x}}}
