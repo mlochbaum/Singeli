@@ -27,15 +27,15 @@ Tokenize←{
   k∨↩»⊸∨(»(bt⊏xd)∧𝕩='e')∧(𝕩='-')∧«xd        # Negative exponents 12e-3
   ts←n∨¬k∨ign                               # Token start mask
   lc←(1+/𝕩=lf){(⊢⋈¨𝕩-⊏⟜(0∾𝕨))𝕨⍋𝕩}/ts        # Line/column numbers
-  ⟨𝕩⊔˜1-˜(ign>≠`ab∧s∨d)¬⊸×+`ts, Source 𝕩‿lc⟩
+  ⟨𝕩⊔˜1-˜(ign>≠`ab∧s∨d)¬⊸×+`ts, 𝕨 Source 𝕩‿lc⟩
 }
 
 # Position handler for error reporting
-Source ← {
-  src‿lc←𝕩
+Source ← { 𝕨 𝕊 src‿lc: file←𝕨⊣""
   { pos 𝕊 disp:
     r‿c←<˘⍉>pos⊏lc
-    •Out src/˜(src=lf)(⊣<+`⊸=)e←¯1⊑r
+    •Out ∾⟨file, ":", •Repr e←¯1⊑r, ":"⟩
+    •Out src/˜(src=lf)(⊣<+`⊸=)e
     Tr ← {
       e ← (+`(𝕩≤¯1»𝕨≠⊸+¨𝕩))⊔𝕩⋈¨𝕨
       l ← "^"⌾(1⊑¯1⊑⊑) ⌽ "|"⌾(1⊸⊑)¨⊸∾` (1+≠e)↑e
@@ -323,7 +323,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Config ← c.define _node_ {
     Get "config"
     n‿r ← ⟨Name, "=", Result∘1⟩_seq 𝕩
-    n‿{ (≠confName) > i←confName⊸⊐⌾<n ? ast.Build i⊑confVal ; r }
+    n‿{ (≠confName) > i←confName⊸⊐⌾<n ? ("config "∾n) ast.Build i⊑confVal ; r }
   }
 
   OpType ← {𝕤
@@ -1254,7 +1254,7 @@ files ← {
   path←@ ⋄ log←⟨⟩
   Load ← {
     path ↩ (∨`⌾⌽'/'⊸=)⊸/ 𝕩
-    ast.Build •file.Chars 𝕩
+    𝕩 ast.Build •file.Chars 𝕩
   }
   lib ← ('/'∾˜⍟(≠⟜(¯1⊸⊑))⌾⊑¨libpaths)∾<⟨"","include/"⟩
   Include ⇐ {
