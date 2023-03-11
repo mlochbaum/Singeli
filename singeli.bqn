@@ -187,6 +187,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Oper ← ∊⟜oc _ifASCII _begin_ "operator"
   Word ← c.word _node_ (∊⟜(wc∾oc)_ifASCII _begin_ "word")
   Symbol ← c.symbol _node_ ('''⊸=_begin_"symbol")
+  IsLogic ← ∊⟜"and"‿"or"‿"not"⌾<
 
   AddParams ← {𝕊∘(c.run  _node_ (⊢⋈"{"‿"}"_args))⍟(Next"{") 𝕩}
   AddArgs   ← {  (c.call _node_ (⊢⋈"("‿")"_args))⍟(Next"(") 𝕩}
@@ -197,11 +198,15 @@ Parse ← {𝕊 tokens‿ShowTrace:
     (⊑"[({'"⊐⊏)◶Vec‿Par‿Anon‿Symbol‿Word Peek@
   }
   Callable ← AddParams∘Expr0
-  NoCall ← ∊⟜"and"‿"or"‿"not"⌾<∨´(oc∾"[")=⊏
+  NoCall ← IsLogic∨´(oc∾"[")=⊏
   Call ← { c←¬Next noCall ⋄ AddArgs⍟c Callable𝕩 }
+  StartsOp ← IsLogic ∨ ·⊑∊⟜oc _ifASCII∘⊑
   _exprEnd ← {endTok _𝕣:
-    end ← endTok∾sep∾⥊¨",:)}]"
-    c.phrase _node_ (While∘⟨¬Next∘end, Call, 1⟩)
+    End ← ∊⟜(endTok∾sep∾⥊¨",:)}]")⌾<
+    {
+      o←1 ⋄ Cont ← {p←o ⋄ p∨o↩StartsOp 𝕩}_and_(¬End) Peek
+      c.phrase _node_ (While∘⟨Cont, Call, 0⟩) 𝕩
+    }
   }
   SimpExpr ← ⟨⟩_exprEnd
 
@@ -252,15 +257,15 @@ Parse ← {𝕊 tokens‿ShowTrace:
     OA← "@for: multiple variables must use ""over"""⊸Asrt
     TA← "@for: ""from"" missing ""to"""⊸Asrt
     NA← "@for: loop variable must be a name"⊸Asrt
-    Part ← "in"‿"over"‿"from"‿"to"_exprEnd
     Get "@"
     f ← Callable@
     Get "("
-    to← Part@ ⋄ NE←{𝕤⋄ n←⋈∘{NA@≢𝕩⋄𝕩}∘c.PhraseTryName⍟𝕩 to ⋄ to↩Part@ ⋄ n}
+    to← SimpExpr@
+    NE← {𝕤⋄ n←⋈∘{NA@≢𝕩⋄𝕩}∘c.PhraseTryName⍟𝕩 to ⋄ to↩SimpExpr@ ⋄ n}
     {Try"in"? to↩⟨⊑NE 1,to⟩; @}
-    pe← While ⟨Try∘",", Try∘"in"◶⟨⋈,⋈⟜Part⟩ Name, 0⟩
-    ps← {Try"over"?(<NE 0==to)∾𝕩; OA 0=≠𝕩⋄⟨⟩} pe # Pointers
-    fr← When ⟨Try"from", Part⟩                   # Start index
+    pe← While ⟨Try∘",", Try∘"in"◶⟨⋈,⋈⟜SimpExpr⟩ Name, 0⟩
+    ps← {Try"over"?(<NE 0==to)∾𝕩; OA 0=≠𝕩⋄⟨⟩} pe          # Pointers
+    fr← When ⟨Try"from", SimpExpr⟩                        # Start index
     i ← {¬Try"to"?TA 0=≠fr⋄⟨⟩; 0<=to?ps∾↩<NE 0⋄⟨⟩; NE 1}  # Index variable
     Get ")"
     b ← Block@
