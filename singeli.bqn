@@ -193,8 +193,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Expr0 ← {𝕤
     Vec ← c.run _node_ ((c.Word"__vec") ⋈ "["‿Expr‿"]"‿Expr0 _seq)
     Par ← ⊑ "("‿Expr‿")" _seq
-    ARes← c.body _node_ ("{"⊸≡◶⟨⋈ESub, Body⟩ Peek)
-    Anon← c.lambda _node_ (Params‿"=>"‿ARes _seq)
+    Anon← c.lambda _node_ (Params‿"=>"‿Block _seq)
     (⊑"[({'"⊐⊏)◶Vec‿Par‿Anon‿Symbol‿Word Peek@
   }
   Callable ← AddParams∘Expr0
@@ -220,21 +219,19 @@ Parse ← {𝕊 tokens‿ShowTrace:
     a
   }
 
-  ESub ← {
+  _exprStmt ← { AsrtStmt _𝕣: {
   "if":     c.if     _node_ ("if"‿"("‿Expr‿")"‿Block‿(When∘⟨Try∘"else"∘Seps,Block⟩)_seq)@ ;
   "while":  c.while  _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Block _seq)@ ;
   "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
   "@":      For@ ;
   "extend": Extend@ ;
-  𝕩:        Declare⍟(Try":") SimpExpr@
-  }
+  "def":    AsrtStmt 𝕩 ⋄ Define@ ;
+  "oper":   AsrtStmt 𝕩 ⋄ OpDef@ ;
+  𝕩:        (Declare ⊣ AsrtStmt∘"Declaration")⍟(Try":") SimpExpr@
+  }}
+  ESub ← (∾⟜" must appear on its own line" Asrt 0˙) _exprStmt
   Expr ← ESub Peek
-
-  Stmt ← {
-  "def":    Define@ ;
-  "oper":   OpDef@ ;
-  𝕩:        ESub 𝕩
-  } Peek
+  Stmt ← ⊢ _exprStmt Peek
 
   # 𝕩 is the expression preceding ":"
   Declare ← c.declare _node_ {
@@ -249,7 +246,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Get "{"
     While ⟨¬Try∘"}"∘Seps, Stmt, 0⟩
   }
-  Block ← "{"⊸≡◶⟨Expr, c.body _node_ Body⟩ Peek
+  Block ← "{"⊸≡◶⟨ESub, c.body _node_ Body⟩ Peek
 
   For ← c.for _node_ {𝕤
     OA← "@for: multiple variables must use ""over"""⊸Asrt
