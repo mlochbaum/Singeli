@@ -655,11 +655,15 @@ functions ← {kname⇐"function"
       type ↩ ctypes types.Fun rType
     }
     _ret_←{
-      @≢rType? types.IsVoid rType? Append⍟𝕘 ⟨"ret",⊑types.primTypes⟩ ⋄@ ;
-      Append ⟨"ret", rType ≢⟜@◶⟨𝔽∘⊢, types.Cast⟩ 𝕩⟩
+      Void ← types.IsVoid
+      r ← rType ≢⟜@◶⟨𝔽∘⊢, Void∘⊣◶⟨types.Cast,⊑types.primTypes˙⟩⟩ 𝕩
+      𝕘◶⟨¬Void,1⟩ rType ? Append ⟨"ret", r⟩ ; @
+    }
+    Return⇐{
+      A ← !∘"Early return from function with no explicit result type"
+      A _ret_ 1 @⊣´𝕩
       {Shows⇐!∘"Can't use return result as value"⋄kind⇐"error"}
     }
-    Return⇐!∘"Early return from function with no explicit result type" _ret_ 1 @⊣´⊢
     Finish⇐{"Explicit result type needed"!IsTyped 𝕩⋄SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
     Prot⇐{𝕊 showReg:
       ext ← (0<≠)◶⟨⟩‿(⋈·'+'⌾⊑·∾','⊸∾¨) architecture.ListExt arch
