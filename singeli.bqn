@@ -302,7 +302,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   }
 
   Function ← c.function _node_ {𝕤
-    Arg ← c.arg _node_ (Name‿":"‿SimpExpr _seq)
+    Arg ← c.arg _node_ ((Try∘"...")‿Name‿":"‿SimpExpr _seq)
     a ← "("‿")" _argsFn_ Arg @
     r ← When ⟨Try":", ⟨"="⟩_exprEnd⟩
     b ← Result Try"="
@@ -483,6 +483,7 @@ types ← {kname⇐"type"
   _isQual ← {⟨tPRIM,𝔽⊑,0⟩_cases TypeOf⍟(¬Is)}
 
   Unpack ⇐ ⟨tTUP,{Unpack¨𝕩},⊢⟩_cases
+  Ungather ⇐ ⟨tTUP,⊢,!∘"Gathered argument must have a tuple type"⟩_cases
   Deref ⇐ { Is 𝕩 ? tPTR=𝕩.typeKind ? 𝕩.dat ; !"Expected pointer" }
 
   Width ← ⟨
@@ -639,18 +640,19 @@ functions ← {kname⇐"function"
   New ← {𝕤
     kind⇐kname ⋄ shows⇐"$f"∾(•Repr id⇐𝕩)∾"_"⊸∾⍟(0<≠)𝕨 ⋄ Matches⇐≡ ⋄ type⇐@
     arch⇐architecture.NewFunction@ ⋄ SetArch⇐{arch↩𝕩}
-    label←¯1 ⋄ args←atypes←⟨⟩ ⋄ rType⇐@
+    label←¯1 ⋄ args←atypes←ctypes←⟨⟩ ⋄ rType⇐@
     NextLabel⇐{𝕤⋄ labels.New label+↩1 }
-    NextArg⇐{
-      a←(𝕨 registers.Declare ⋈⟜@)⚇0 types.Unpack 𝕩
-      atypes∾↩<𝕩 ⋄ args∾↩<a ⋄ a
+    NextArg⇐{ name‿gather 𝕊 type:
+      a ← (name registers.Declare ⋈⟜@)⚇0 types.Unpack type
+      atypes∾↩<type ⋄ ctypes∾↩gather◶<‿types.Ungather type ⋄ args∾↩<a
+      a
     }
     ⟨Push,Arr⟩←MakeStack@
     Instrs⇐Arr
     Append⇐{ Push𝕩⋄@ }
     SetRType⇐{
       SetRType↩!∘0 ⋄ !types.Is rType↩𝕩
-      type ↩ atypes types.Fun rType
+      type ↩ ctypes types.Fun rType
     }
     _ret_←{
       @≢rType? types.IsVoid rType? Append⍟𝕘 ⟨"ret",⊑types.primTypes⟩ ⋄@ ;
@@ -985,7 +987,7 @@ nodes ← {
   notTypeVar ← types.primTypes≠⊸↑builtins.names
   Lambda ⇐ {
     ⟨⟨paramsPlus,conds⟩,result⟩←𝕩 ⋄ pos←𝕨
-    pvar‿params‿pmatch‿ptype ← <˘⍉>paramsPlus
+    pgather‿params‿pmatch‿ptype ← <˘⍉>paramsPlus
     tname ← (¬∘∊⟜(⟨@⟩∾notTypeVar)⊸/ PhraseTryName¨)¨ ptype
     uTyp‿iTyp←(⍷∘∾ ⋈ ⊐∘∾⊔·/≠¨)tname
     _pc ← {n←𝕨⋄f←𝕗 ⋄ {pos Run ⟨Ident f,⟨Ident n,𝕩⟩⟩}¨𝕩}
@@ -1001,7 +1003,7 @@ nodes ← {
       Count‿DeVar ← (+´¬)⊸{
         ¬∨´𝕩 ? ⟨𝕨=≠, ⊢⟩ ;
         ⟨𝕨≤≠, (0‿𝕨-˜⋈⁼/𝕩)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)⟩
-      } pvar
+      } pgather
       CT ← {∧´((∧´IsTyped¨)_and_(AllEq{𝕩.type}¨)⊏⟜𝕩)¨iTyp}
       Exec‿_cached ← { result.node≢"function"?
         Exec ⇐ result.Eval∘⊢ ⋄ _cached ⇐ {𝔽}
@@ -1050,14 +1052,14 @@ nodes ← {
     }
   }
   Arg ⇐ {
-    ⟨name,type⟩←𝕩 ⋄ pos←𝕨
+    ⟨gather,name,type⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨name,𝕏type⟩}
     ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "arg"‿visit
     v←@ ⋄ Scope⇐{ type.Scope 𝕩 ⋄ v ↩ pos 𝕩.Add name }
     Eval⇐{
       u ← V 𝕩
-      t ← "Argument" types._get program._trace_ pos type.Eval 𝕩
-      u.Set name functions.NextArg t
+      Add ← functions.NextArg⟜("Argument" types._get)
+      u.Set name‿gather Add program._trace_ pos type.Eval 𝕩
     }
   }
   Function ⇐ {

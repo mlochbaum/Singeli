@@ -101,9 +101,9 @@ Each of the values `typ`, `val`, and `cond` can be an expression, which is fully
 
 The value `typ` can also be a name, which functions something like an extra parameter: the underlying parameter must be typed and the name is set to its type (like any parameter, this value is accessible to conditions). Built-in type names such as `i16` and `f64` can't be used here, but other names will be shadowed. If you have an alias like `def size = u64`, parenthesize it to use it as a value, as in `par:(size)`.
 
-### Variable-length parameters
+### Gathered parameters
 
-Up to one parameter slot can be variable-length if marked with a leading `...`. This parameter corresponds to any number (0 or more) of inputs, and its value is the tuple of those values. For example `def tup{...t} = t` returns the tuple of all parameters, replicating the functionality of the builtin `tup`.
+Up to one parameter slot can be variable-length if marked with a leading `...`. This "gathered" parameter corresponds to any number (0 or more) of inputs, and its value is the tuple of those values. For example `def tup{...t} = t` returns the tuple of all parameters, replicating the functionality of the builtin `tup`.
 
 ### Spread syntax
 
@@ -189,6 +189,8 @@ The body of a function can be either a plain expression like `a*b` above, or can
 Function parameters like the `{T}` above are slightly different from arbitrary generator parameters: the function is only ever generated once for each unique set of parameters. Once generated, its handle is saved so that later calls return the saved function immediately (in contrast, a generator that declares a variable would make a new one each time). This avoids creating source code with lots of copies of functions, and also makes it possible for a function like `square{T}` to include recursion.
 
 The parenthesis syntax to call a function is really just a nicer way to use the `call{}` builtin generator. As in a generator, such a call supports [spread](#spread-syntax) arguments with `...`.
+
+A function argument can have a tuple type; in Singeli's compiled output it's flattened into multiple arguments. It can be made into a gathered argument with `...` syntax: inside a function `fn f(...a:tup{i8,i16}, b:i32)`, `a` is a tuple of registers, but the function is called as `f(a0, a1, b)` with `a0:i8` and `a1:i16`. Since the length of `a` is known based on its type, any number of arguments can be prefixed by `...`, unlike [gathered parameters](#gathered-parameters).
 
 ## Export
 
