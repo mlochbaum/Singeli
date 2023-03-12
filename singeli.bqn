@@ -1026,7 +1026,7 @@ nodes ← {
       }
       {
         Count 𝕩 ? a←DeVar𝕩 ⋄ ∧´AllEq¨iPar⊔a ? CT a ?
-        try ← (⊑⟨a˙⊸exec⟩) (Next 𝕩˙){numbers.GetBool∘𝕨.Eval◶𝔽‿𝕏}´ conds
+        try ← (⊑⟨𝕩˙⊸exec⟩) (Next 𝕩˙){numbers.GetBool∘𝕨.Eval◶𝔽‿𝕏}´ conds
         Try ((iPar∊⊸/a)∾{𝕩.type}¨iTyp⊑¨⊸⊏a) env.Fixed e
       ;
         Next 𝕩
