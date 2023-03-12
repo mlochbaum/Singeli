@@ -204,8 +204,9 @@ Parse ← {𝕊 tokens‿ShowTrace:
   _exprEnd ← {endTok _𝕣:
     End ← ∊⟜(endTok∾sep∾⥊¨",:)}]")⌾<
     {
-      o←1 ⋄ Cont ← {p←o ⋄ p∨o↩StartsOp 𝕩}_and_(¬End) Peek
-      c.phrase _node_ (While∘⟨Cont, Call, 0⟩) 𝕩
+      o ← StartsOp Peek 𝕩
+      Cont ← {p←o ⋄ p∨o↩StartsOp 𝕩}_and_(¬End) Peek
+      c.phrase _node_ (While∘⟨Cont, Call, 1⟩) 𝕩
     }
   }
   SimpExpr ← ⟨⟩_exprEnd
