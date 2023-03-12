@@ -588,12 +588,14 @@ types ← {kname⇐"type"
 registers ← {kname⇐"register"
   Is ← kname ≡ Kind
   Transient ⇐ {
+    owner⇐functions.current
     kind⇐kname ⋄ shows⇐"(temp)" ⋄ type⇐𝕩 ⋄ fmtType⇐1 ⋄ Matches⇐≡
     name←⟨⟩ ⋄ AddName⇐{name∾↩<𝕩}
     mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1} ⋄ SetMut⇐!
     ShowReg⇐{showReg↩∾⟨𝕏@⟩∾"_"⊸∾¨(ref=1)/name}
   }
   Declare ⇐ { name 𝕊 type‿val:
+    owner⇐functions.current
     kind⇐kname ⋄ shows⇐name ⋄ type⇐ ⋄ fmtType⇐1 ⋄ Matches⇐≡
     addName⇐@ ⋄ {𝕩.AddName name}⍟Is val
     mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1}
@@ -606,6 +608,7 @@ registers ← {kname⇐"register"
   Mutable ⇐ { Is 𝕩 ? {!}≢𝕩.setMut ; 0 }
   Mutated ⇐ { Is 𝕩 ? 𝕩.mut ; 0 }
   MarkUse ⇐ {𝕩.Use@}⍟Is
+  CheckAppend ⇐ { "Register used outside its owning function"!𝕨≡𝕩.owner }⍟(Is⊢)
 }
 constants ← {kname⇐"constant"
   New ⇐ {
@@ -650,7 +653,7 @@ functions ← {kname⇐"function"
     }
     ⟨Push,Arr⟩←MakeStack@
     Instrs⇐Arr
-    Append⇐{ Push𝕩⋄@ }
+    Append⇐{ current registers.CheckAppend¨ 1↓𝕩 ⋄ Push𝕩 ⋄ @ }
     SetRType⇐{
       SetRType↩!∘0 ⋄ !types.Is rType↩𝕩
       type ↩ ctypes types.Fun rType
