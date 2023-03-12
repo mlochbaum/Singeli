@@ -1,4 +1,4 @@
-beginFn f0_fn i32 1 v0_x i32
+beginFn f0_fun i32 1 v0_x i32
 new v1 emit u1 'op >=' v0_x !4:i32
 gotoT v1 l0
 new v2 emit u1 'op ==' v0_x !2:i32

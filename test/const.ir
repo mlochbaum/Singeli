@@ -1,6 +1,6 @@
 constant $c0_c u64 !4:u64
 
-beginFn f0_fn u64 0
+beginFn f0_fun u64 0
 ret $c0_c
 endFn
 

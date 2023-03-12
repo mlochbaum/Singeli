@@ -1,13 +1,13 @@
-static uint32_t si_f0_fn_0(uint32_t v0_a, uint32_t v1_b);
-static uint32_t si_f1_fn_1(uint32_t v0_a, uint32_t v1_b);
+static uint32_t si_f0_fun_0(uint32_t v0_a, uint32_t v1_b);
+static uint32_t si_f1_fun_1(uint32_t v0_a, uint32_t v1_b);
 
-static uint32_t (*si_c0_fns[])(uint32_t,uint32_t) = {si_f0_fn_0,si_f1_fn_1};
+static uint32_t (*si_c0_fns[])(uint32_t,uint32_t) = {si_f0_fun_0,si_f1_fun_1};
 
-static uint32_t si_f0_fn_0(uint32_t v0_a, uint32_t v1_b) {
+static uint32_t si_f0_fun_0(uint32_t v0_a, uint32_t v1_b) {
   return v0_a;
 }
 
-static uint32_t si_f1_fn_1(uint32_t v0_a, uint32_t v1_b) {
+static uint32_t si_f1_fun_1(uint32_t v0_a, uint32_t v1_b) {
   return v1_b;
 }
 

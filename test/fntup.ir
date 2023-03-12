@@ -1,4 +1,4 @@
-beginFn f0_fn u8 0
+beginFn f0_fun u8 0
 new v0_x val u8 !4:u8
 new v1_x val i32 !1:i32
 new v2_y call u8 $f1_gen_tupu8i32 2 v0_x v1_x

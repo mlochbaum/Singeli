@@ -232,6 +232,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   "@":      For@ ;
   "extend": Extend@ ;
   "def":    AsrtStmt 𝕩 ⋄ Define@ ;
+  "fn":     AsrtStmt 𝕩 ⋄ DefFun@ ;
   "oper":   AsrtStmt 𝕩 ⋄ OpDef@ ;
   𝕩:        (Declare ⊣ AsrtStmt∘"Declaration")⍟(Try":") SimpExpr@
   }}
@@ -341,9 +342,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     "if"‿"("‿Expr‿")"‿B‿(∾When∘⟨Try∘"else"∘Seps,B⟩)_seq 𝕩
   }
 
-  SubLine ← "fn"‿"include"‿"if"‿"config"⊸⊐⌾<◶⟨
-    DefFun, Include, TopIf, Config, Stmt
-  ⟩
+  SubLine ← "include"‿"if"‿"config"⊸⊐⌾<◶⟨Include, TopIf, Config, Stmt⟩
   ChkLoc ← ("localizable line"⊸⋈ Asrt "if"⊸≢)⊸⊢∘Peek
   Line ← {𝕤
     Try "local" ? Try∘"{"◶⟨SubLine∘ChkLoc,c.body _node_ MultiLine⟩@ ;

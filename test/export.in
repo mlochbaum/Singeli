@@ -1,4 +1,4 @@
-fn fn{T}(arg:T) : T = arg
-export{'e0',           fn{i8}}
-export{tup{'e1','e2'}, fn{i16}}
-export{'e3',           fn{i32}}
+fn fun{T}(arg:T) : T = arg
+export{'e0',           fun{i8}}
+export{tup{'e1','e2'}, fun{i16}}
+export{'e3',           fun{i32}}

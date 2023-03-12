@@ -1,16 +1,16 @@
-beginFn f0_fn_i8 i8 1 v0_arg i8
+beginFn f0_fun_i8 i8 1 v0_arg i8
 ret v0_arg
 endFn
 
-beginFn f1_fn_i16 i16 1 v0_arg i16
+beginFn f1_fun_i16 i16 1 v0_arg i16
 ret v0_arg
 endFn
 
-beginFn f2_fn_i32 i32 1 v0_arg i32
+beginFn f2_fun_i32 i32 1 v0_arg i32
 ret v0_arg
 endFn
 
-export 'e0' (i8)->i8 $f0_fn_i8
-export 'e1' (i16)->i16 $f1_fn_i16
-export 'e2' (i16)->i16 $f1_fn_i16
-export 'e3' (i32)->i32 $f2_fn_i32
+export 'e0' (i8)->i8 $f0_fun_i8
+export 'e1' (i16)->i16 $f1_fun_i16
+export 'e2' (i16)->i16 $f1_fun_i16
+export 'e3' (i32)->i32 $f2_fun_i32

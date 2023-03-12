@@ -1,4 +1,4 @@
-fn fn(a:u1) : u8 = {
+fn fun(a:u1) : u8 = {
   def w = setlabel{}
   def l = makelabel{}
   if (a) goto{l}

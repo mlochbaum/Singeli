@@ -9,7 +9,7 @@ def for{vars,begin,end,block} = {
   }
 }
 
-fn fn() : void = {
+fn fun() : void = {
   b:i32 = 0
   @for(i from 0 to 4) {
     b = b+2

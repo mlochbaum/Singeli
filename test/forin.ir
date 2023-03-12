@@ -1,4 +1,4 @@
-beginFn f0_fn void 1 v0_x *u8
+beginFn f0_fun void 1 v0_x *u8
 new v1_a emit u8 '^load' v0_x 2
 mut v1_a !3:u8
 new v2 emit u8 '^store' v0_x 2 v1_a

@@ -1,4 +1,4 @@
-beginFn f0_fn void 0
+beginFn f0_fun void 0
 new v0_b val i32 !0:i32
 new v1_i val u64 !0:u64
 goto l0

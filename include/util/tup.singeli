@@ -66,27 +66,27 @@ def split{n, list & ktup{n}} = {
 def flip{tup} = table{tupsel, inds{*tup}, tup}
 
 # Function table mapping over all combinations
-def table{fn, ...tups} = {
-  if (empty{tups}) fn{}
-  else if (1 == $tups) each{fn, *tups}
-  else each{{e} => table{bind{fn,e}, ...>tups}, *tups}
+def table{f, ...tups} = {
+  if (empty{tups}) f{}
+  else if (1 == $tups) each{f, *tups}
+  else each{{e} => table{bind{f,e}, ...>tups}, *tups}
 }
 
 # Left fold, with or without initial element
-def fold{fn, init, list} = {
+def fold{f, init, list} = {
   if (empty{list}) init
-  else fold{fn, fn{init, *list}, >list}
+  else fold{f, f{init, *list}, >list}
 }
-def fold{fn, list} = fold{fn, *list, >list}
+def fold{f, list} = fold{f, *list, >list}
 
 # Inclusive left scan
-def scan{fn, init, list} = scan_sub{fn, {e} => fn{init, e}, list}
-def scan{fn, list}       = scan_sub{fn, {e} => e, list}
-local def scan_sub{fn, get, list} = {
+def scan{f, init, list} = scan_sub{f, {e} => f{init, e}, list}
+def scan{f, list}       = scan_sub{f, {e} => e, list}
+local def scan_sub{f, get, list} = {
   if (empty{list}) list
   else {
     def r = get{*list}
-    merge{tup{r}, scan{fn, r, >list}}
+    merge{tup{r}, scan{f, r, >list}}
   }
 }
 

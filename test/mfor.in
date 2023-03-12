@@ -1,4 +1,4 @@
-fn fn(x:__pnt{i32}, y:__pnt{u8}) : void = {
+fn fun(x:__pnt{i32}, y:__pnt{u8}) : void = {
   def for{vars,begin,end,block} = {
     exec{0, vars,block}
   }

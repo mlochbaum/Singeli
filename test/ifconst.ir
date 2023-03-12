@@ -1,4 +1,4 @@
-beginFn f0_fn i64 1 v0_i i64
+beginFn f0_fun i64 1 v0_i i64
 mut v0_i emit i64 'op *' !2:i64 v0_i
 mut v0_i emit i64 'op -' v0_i !1:i64
 mut v0_i emit i64 'op +' v0_i !2:i64

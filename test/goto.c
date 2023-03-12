@@ -1,4 +1,4 @@
-static uint8_t si_f0_fn(bool v0_a) {
+static uint8_t si_f0_fun(bool v0_a) {
 l0:;
   if (!(v0_a)) goto l2;
   goto l1;

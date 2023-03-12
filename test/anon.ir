@@ -1,6 +1,6 @@
-beginFn f0_fn i64 1 v0_arg i64
+beginFn f0_fun i64 1 v0_arg i64
 new v1 emit i64 'anon' v0_arg v0_arg
 ret v1
 endFn
 
-export 'efn' (i64)->i64 $f0_fn
+export 'efn' (i64)->i64 $f0_fun

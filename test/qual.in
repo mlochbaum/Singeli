@@ -2,6 +2,6 @@ def g{x & isfloat {x}} = 0
 def g{x & isint   {x}} = 1
 def g{x & issigned{x}} = 2
 
-fn fn(a:i64, b:u1, c:f32) : u8 = {
+fn fun(a:i64, b:u1, c:f32) : u8 = {
   emit{u8, 'out', g{a}, g{b}, g{c}}
 }

@@ -1,27 +1,27 @@
 local {
-  local def extend promote{fn} = {
-    def fn{a:T,b & match{'number',kind{b}}} = fn{a , cast{T,b}}
-    def fn{a,b:T & match{'number',kind{a}}} = fn{cast{T,a} , b}
+  local def extend promote{arith} = {
+    def arith{a:T,b & match{'number',kind{b}}} = arith{a , cast{T,b}}
+    def arith{a,b:T & match{'number',kind{a}}} = arith{cast{T,a} , b}
   }
-  def arith{op} = { def extend _{fn} = {
-    def fn{a:T,b:T & match{'primitive',typekind{T}}} = emit{T, op, a, b}
-    extend promote{fn}
+  def arith{op} = { def extend _{arith} = {
+    def arith{a:T,b:T & match{'primitive',typekind{T}}} = emit{T, op, a, b}
+    extend promote{arith}
   }}
-  def arith1{op} = { def extend _{fn} = {
-    def fn{a:T & match{'primitive',typekind{T}}} = emit{T, op, a}
-    fn
+  def arith1{op} = { def extend _{arith} = {
+    def arith{a:T & match{'primitive',typekind{T}}} = emit{T, op, a}
+    arith
   }}
-  def sh{op} = { def extend _{fn} = {
-    def fn{a:T,b:I & isint{T} & isint{I}} = emit{T, op, a, b}
-    extend promote{fn}
+  def sh{op} = { def extend _{arith} = {
+    def arith{a:T,b:I & isint{T} & isint{I}} = emit{T, op, a, b}
+    extend promote{arith}
   }}
   def pk{T} = {
     def k=typekind{T}
     if (match{'primitive',k} or match{'pointer',k}) 1; else 0
   }
-  def compare{op} = { def extend _{fn} = {
-    def fn{a:T,b:T & pk{T}} = emit{u1, op, a, b}
-    extend promote{fn}
+  def compare{op} = { def extend _{arith} = {
+    def arith{a:T,b:T & pk{T}} = emit{u1, op, a, b}
+    extend promote{arith}
   }}
   def logic = arith
   def logic1 = arith1

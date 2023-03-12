@@ -1,8 +1,8 @@
-fn fn{o}(x:i32) = {
+fn fun{o}(x:i32) = {
   emit{i32, 'oper', x,o}
 }
 
 fn x(a:i32) : i32 = {
-  call{fn{1},a}
+  call{fun{1},a}
 }
 export{'x', x}

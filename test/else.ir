@@ -1,4 +1,4 @@
-beginFn f0_fn i64 1 v0_i i64
+beginFn f0_fun i64 1 v0_i i64
 new v1 emit i64 'test' v0_i
 gotoF v1 l0
 ret !1:i64
@@ -9,4 +9,4 @@ lbl l1
 ret !3:i64
 endFn
 
-export 'efn' (i64)->i64 $f0_fn
+export 'efn' (i64)->i64 $f0_fun

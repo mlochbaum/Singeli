@@ -1,7 +1,7 @@
 include 'skin/c'
 include 'arch/c'
 
-fn fn(i:i64) : i64 = {
+fn fun(i:i64) : i64 = {
   if (1) { i = 2 * i }
   if (0) { i = 3 * i }
   if (1) { i = i - 1 }

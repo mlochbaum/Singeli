@@ -1,2 +1,2 @@
-fn fn(arg:i64) : i64 = ({x}=>emit{i64,'anon',x,x}){arg}
-export{'efn', fn}
+fn fun(arg:i64) : i64 = ({x}=>emit{i64,'anon',x,x}){arg}
+export{'efn', fun}
