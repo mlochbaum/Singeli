@@ -192,7 +192,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   AddParams ← {𝕊∘(c.run  _node_ (⊢⋈"{"‿"}"_args))⍟(Next"{") 𝕩}
   AddArgs   ← {  (c.call _node_ (⊢⋈"("‿")"_args))⍟(Next"(") 𝕩}
   Expr0 ← {𝕤
-    Vec ← c.run _node_ ((c.Word"__vec") ⋈ "["‿Expr‿"]"‿Expr0 _seq)
+    Vec ← c.run _node_ (c.word∘"__vec" ⋈ "["‿Expr‿"]"‿Expr0 _seq)
     Par ← ⊑ "("‿Expr‿")" _seq
     (⊑"[('"⊐⊏)◶Vec‿Par‿Symbol‿Word Peek@
   }
