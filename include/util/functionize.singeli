@@ -1,0 +1,7 @@
+# If gen is a generator that applies to typed parameters,
+# functionize{gen} is equivalent to gen but works through a function call
+# So multiple calls to functionize{gen} on the same types share code
+# instead of inlining and duplicating it.
+
+fn asfunc{gen, ...type}(a:type) = gen{...a}
+def functionize{gen}{...args} = asfunc{gen, ...each{type, args}}(args)
