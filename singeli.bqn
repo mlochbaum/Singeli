@@ -194,8 +194,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Expr0 ← {𝕤
     Vec ← c.run _node_ ((c.Word"__vec") ⋈ "["‿Expr‿"]"‿Expr0 _seq)
     Par ← ⊑ "("‿Expr‿")" _seq
-    Anon← c.lambda _node_ (Params‿"=>"‿Block _seq)
-    (⊑"[({'"⊐⊏)◶Vec‿Par‿Anon‿Symbol‿Word Peek@
+    (⊑"[('"⊐⊏)◶Vec‿Par‿Symbol‿Word Peek@
   }
   Callable ← AddParams∘Expr0
   NoCall ← IsLogic∨´(oc∾"[")=⊏
@@ -231,6 +230,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
   "@":      For@ ;
   "extend": Extend@ ;
+  "{":      c.lambda _node_ (Params‿"=>"‿Block _seq)@ ;
   "def":    AsrtStmt 𝕩 ⋄ Define@ ;
   "fn":     AsrtStmt 𝕩 ⋄ DefFun@ ;
   "oper":   AsrtStmt 𝕩 ⋄ OpDef@ ;
