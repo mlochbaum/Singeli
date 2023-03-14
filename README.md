@@ -10,7 +10,7 @@ To compile input.singeli:
 $ singeli input.singeli [-o output.c]
 ```
 
-For options see `$ singeli -h`. To run `./singeli` as an executable, ensure that [CBQN](https://github.com/dzaima/CBQN) is installed as `bqn` in your executable path, or call as `/path/to/bqn singeli …`.
+For options see `$ singeli -h` or [this section](#command-line-options). To run `./singeli` as an executable, ensure that [CBQN](https://github.com/dzaima/CBQN) is installed as `bqn` in your executable path, or call as `/path/to/bqn singeli …`.
 
 Singeli [is used](https://github.com/dzaima/CBQN/tree/master/src/singeli/src) for CBQN's SIMD primitive implementations when built with `$ make o3n-singeli` (requires AVX2 or NEON). It's also the implementation language for [SingeliSort](https://github.com/mlochbaum/SingeliSort).
 
@@ -340,7 +340,7 @@ Here are some examples.
 
 ## Including files
 
-The `include` statement can be used at the top level of a program. It evaluates the specified file as though it were part of the current one. The filename is a symbol, which loads from a relative path if it starts with `.` and from Singeli's built-in scripts (kept in the [include/](include/) source folder) otherwise.
+The `include` statement can be used at the top level of a program. It evaluates the specified file as though it were part of the current one. The filename is a symbol, which loads from a relative path if it starts with `.` and from Singeli's built-in scripts (kept in the [include/](include/) source folder) otherwise. The [option](#command-line-options) `-l` can be used to specify additional paths as well.
 
     include 'arch/c'    # Built-in library
     include './things'  # Relative path
@@ -483,3 +483,25 @@ Arithmetic functions are named with a double underscore, as they're meant to be 
 | `x==y`  | `x!=y`  | `x<y`   | `x>y`   | `x<=y`  | `x>=y`  |
 
 Built-in arithmetic is pervasive over tuples, meaning that if one or both arguments are tuples it will map over them, recursively until reaching non-tuples.
+
+## Command-line options
+
+The arguments to the `singeli` command are input files and options in any order. Options all have a short form with one `-` and a long form with two. All except `-h` are followed by an additional argument.
+
+`-h`, `--help`: Print short descriptions for all compilation options.
+
+`-o`, `--out`: File path for compiled output; otherwise print directly to stdout.
+
+`-t`, `--target`: Output type: `c` for C code, and `ir` for Singeli IR. The IR format may not be stable, and this option is currently just used for development.
+
+`-a`, `--arch`: List of architecture features in the target system.
+
+`-l`, `--lib`: Library paths to search in `include` statements. So `-l path` means `include 'x'` will check for `lib/x.singeli`, and `-l lib=path` means `include 'lib/x'` will check for `path/x.singeli`. All paths implied by `-l` are searched in order, followed by Singeli's built-in includes.
+
+`-c`, `--config`: Specify the value of a `config` variable. For example, `config var=4` normally acts as `def var=4`, but with `-c var='conf'` is will act as `def var='conf'` instead.
+
+`-p`, `--pre`: A preamble to be placed before the emitted C output.
+
+`-n`, `--name`: Prefix to use for C functions and global variables, instead of `si_` (short for Singeli). If multiple files built with Singeli are to be included in the same project, this helps to avoid name conflicts.
+
+`-d`, `--deplog`: A file path. A list of dependencies—files read while compiling—will be placed in this file. This way an incremental compiler framework can check these files to see if this compilation needs to be re-run.
