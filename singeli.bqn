@@ -1014,30 +1014,35 @@ nodes ← {
     uPar‿iPar←(⍷⋈⊐)params
     Visit ⇐ {⟨(iPar⊏uPar)∾⟜(∾""<⊸∾":"⊸∾¨)¨tname,𝕏¨conds⟩}
     Scope ⇐ {(uPar∾uTyp) scopes.New 𝕩}
+    AllEq ← ∧´⊏Match¨1⊸↓
+    Count‿DeVar ← (+´¬)⊸{
+      ¬∨´𝕩 ? ⟨𝕨=≠, ⊢⟩ ;
+      ⟨𝕨≤≠, (0‿𝕨-˜⋈⁼/𝕩)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)⟩
+    } pgather
+    CheckStatic ← {
+      ¬∧´AllEq¨iPar⊔𝕩 ? <"values given the same name don't match" ;
+      ¬∧´((∧´IsTyped¨)_and_(AllEq{𝕩.type}¨)⊏⟜𝕩)¨iTyp ? <"specified types don't match" ;
+      𝕩
+    }
+    Proc ← Count◶⟨<∘"lengths don't match",CheckStatic∘DeVar⟩
+    ToVals ← {(iPar∊⊸/𝕩)∾{𝕩.type}¨iTyp⊑¨⊸⊏𝕩}
     GetTry ⇐ {𝕊 e:
-      AllEq ← ∧´⊏Match¨1⊸↓
-      Count‿DeVar ← (+´¬)⊸{
-        ¬∨´𝕩 ? ⟨𝕨=≠, ⊢⟩ ;
-        ⟨𝕨≤≠, (0‿𝕨-˜⋈⁼/𝕩)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)⟩
-      } pgather
-      CT ← {∧´((∧´IsTyped¨)_and_(AllEq{𝕩.type}¨)⊏⟜𝕩)¨iTyp}
       Try ⇐ {
-        Count 𝕩 ? a←DeVar𝕩 ⋄ ∧´AllEq¨iPar⊔a ? CT a ?
+        0==𝕩 ? @ ; # Error from static checking
         t ← {⊢} {numbers.GetBool∘𝕨.Eval◶@‿𝕏}´ conds
-        T ((iPar∊⊸/a)∾{𝕩.type}¨iTyp⊑¨⊸⊏a) env.Fixed e
-      ;
-        @
-      }
+        T (ToVals 𝕩) env.Fixed e
+      }∘Proc
     }
     ToDef ⇐ {𝕊:
-      "Conditions in declaration target unsupported" ! ⟨⟩ ≡ conds
-      "Gathered declaration target unsupported" ! ¬∨´pgather
-      ns ← pos NewId¨ params
-      Visit←{⟨𝕩¨ns⟩}
+      ns ← pos⊸NewId¨ uPar∾uTyp
+      Visit←{⟨𝕏¨ns,𝕏¨conds⟩}
       ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "params"‿visit
       Eval⇐{ val 𝕊 e:
-        "Destructuring non-tuple" ! IsTup val
-        ns {𝕩 𝕨.Eval e}¨ val
+        A ← ! program._trace_ pos
+        "Destructuring non-tuple" A IsTup val
+        A∘("Destructuring: "∾⊑)⍟(0==) p←Proc val
+        ns {𝕩 𝕨.Eval e}¨ ToVals p
+        {"Destructuring condition failed" A numbers.GetBool 𝕩.Eval e}¨ conds
       }
     }
   }
