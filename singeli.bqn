@@ -230,11 +230,12 @@ Parse ← {𝕊 tokens‿ShowTrace:
   "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
   "@":      For@ ;
   "extend": Extend@ ;
-  "{":      c.lambda _node_ (Params‿"=>"‿Block _seq)@ ;
   "def":    AsrtStmt 𝕩 ⋄ Define@ ;
   "fn":     AsrtStmt 𝕩 ⋄ DefFun@ ;
   "oper":   AsrtStmt 𝕩 ⋄ OpDef@ ;
-  𝕩:        (Declare ⊣ AsrtStmt∘"Declaration")⍟(Try":") SimpExpr@
+  "{":      p←Params@ ⋄ t←Get "=>"‿":"
+            (t≡":")◶⟨c.lambda _node_ (⋈⟜Block), AsrtStmt _decl_ ParamToId⟩ p ;
+  𝕩:        AsrtStmt _decl_ ToId⍟(Try":") SimpExpr@
   }}
   ESub ← (∾⟜" must appear on its own line" Asrt 0˙) _exprStmt
   Expr ← ESub Peek
@@ -242,10 +243,18 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   # 𝕩 is the expression preceding ":"
   Declare ← c.declare _node_ {
-    Asrt @ ≢ n ← c.PhraseTryName 𝕩
+    n ← 𝕩
     t ← When ⟨¬Next"=", ⟨"="⟩_exprEnd⟩
     Get "="
     ⟨n,t,Expr@⟩
+  }
+  _decl_ ← { 𝔽"Declaration" ⋄ Declare 𝔾 𝕩 }
+  ToId ← c.newid _node_ ((Asrt @⊸≢)⊸⊢ c.PhraseTryName)
+  ParamToId ← c.idlist _node_ {
+    𝕊a‿co: # from Params
+    "Conditions in declaration target unsupported" Asrt ⟨⟩ ≡ co
+    "Conditions in declaration target unsupported" Asrt ∧´ (0‿⟨⟩‿⟨⟩≡0‿2‿3⊏⊢)¨ a
+    c.newid _node_ ⊢¨ 1⊑¨a
   }
 
   Seps ← {Try∘sep◶@‿𝕊⍟Rem𝕩}
@@ -1081,6 +1090,25 @@ nodes ← {
       Ev result
     } functions._with_ pos
   }
+  NewId ⇐ {
+    name←𝕩 ⋄ pos←𝕨
+    Visit←name˙
+    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "declare"‿visit
+    GetVar←!∘0 ⋄ Scope⇐{ getVar ↩ pos 𝕩.Add name }
+    Eval⇐{ val 𝕊 e:
+      u ← GetVar e
+      u.Set name⊸functions.Declare⚇0 val
+    }
+  }
+  IdList ⇐ {
+    ns←𝕩 ⋄ pos←𝕨
+    Visit←{⟨𝕩¨ns⟩}
+    ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "declare"‿visit
+    Eval⇐{ val 𝕊 e:
+      "Destructuring non-tuple" ! IsTup val
+      ns {𝕩 𝕨.Eval e}¨ val
+    }
+  }
   _setType ← { pos type‿env _𝕣 v:
     { ≠type ?
       t ← "Variable" types._get (⊑type).Eval 𝕩
@@ -1092,16 +1120,10 @@ nodes ← {
   }
   Declare ⇐ {
     ⟨name,type,value⟩←𝕩 ⋄ pos←𝕨
-    Visit←{⟨name∾":",𝕏¨type,𝕏value⟩}
-    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "declare"‿visit
-    GetVar←!∘0 ⋄ Scope⇐{
-      Visit o.Scope 𝕩
-      getVar ↩ pos 𝕩.Add name
-    }
+    Visit←{¯1⌽⟨":",𝕏¨type,𝕏value,𝕏name⟩}
+    ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "declare"‿visit
     Eval⇐{
-      u ← GetVar 𝕩
-      v ← pos type‿𝕩 _setType value.Eval 𝕩
-      u.Set name⊸functions.Declare⚇0 v
+      𝕩 name.Eval˜ pos type‿𝕩 _setType value.Eval 𝕩
     }
   }
   Define ⇐ {
