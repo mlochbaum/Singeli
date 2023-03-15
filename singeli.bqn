@@ -250,12 +250,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   }
   _decl_ ← { 𝔽"Declaration" ⋄ Declare 𝔾 𝕩 }
   ToId ← {𝕩.IsDef@⋄𝕩} c.PhraseTryIdent
-  ParamToId ← c.idlist _node_ {
-    𝕊a‿co: # from Params
-    "Conditions in declaration target unsupported" Asrt ⟨⟩ ≡ co
-    "Conditions in declaration target unsupported" Asrt ∧´ (0‿⟨⟩‿⟨⟩≡0‿2‿3⊏⊢)¨ a
-    c.newid _node_ ⊢¨ 1⊑¨a
-  }
+  ParamToId ← {𝕩.ToDef@}
 
   Seps ← {Try∘sep◶@‿𝕊⍟Rem𝕩}
   Body ← {𝕤
@@ -290,7 +285,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Expr‿sep _seq "Missing = before body?"Asrt⊢
   ⟩)
 
-  Params ← {𝕤
+  Params ← c.params _node_ {𝕤
     Get "{"
     Try "}" ? (0⥊<↕4)‿⟨⟩ ;
     ExprA ← ⟨"&"⟩_exprEnd
@@ -1009,26 +1004,52 @@ nodes ← {
   PhraseTryIdent ⇐ {"phrase"≡𝕩.node}◶@‿{𝕩.ToIdent@}
   PhraseTryName ⇐ {𝕩.name}⍟(@⊸≢)PhraseTryIdent
   notTypeVar ← types.primTypes≠⊸↑builtins.names
-  Lambda ⇐ {
-    ⟨⟨paramsPlus,conds⟩,result⟩←𝕩 ⋄ pos←𝕨
+  Params ⇐ {
+    ⟨paramsPlus,conds⟩ ← 𝕩 ⋄ pos←𝕨
     pgather‿params‿pmatch‿ptype ← <˘⍉>paramsPlus
     tname ← (¬∘∊⟜(⟨@⟩∾notTypeVar)⊸/ PhraseTryName¨)¨ ptype
     uTyp‿iTyp←(⍷∘∾ ⋈ ⊐∘∾⊔·/≠¨)tname
     _pc ← {n←𝕨⋄f←𝕗 ⋄ {pos Run ⟨Ident f,⟨Ident n,𝕩⟩⟩}¨𝕩}
     conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "match"_pc¨ pmatch)
     uPar‿iPar←(⍷⋈⊐)params
-    Visit←{((iPar⊏uPar)∾⟜(∾""<⊸∾":"⊸∾¨)¨tname)∾⟨𝕏¨conds,𝕏result⟩}
-    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "lambda"‿visit
-    Scope⇐{ Visit scopes._defer o.Scope (uPar∾uTyp) scopes.New 𝕩 }
-    Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value and name, from Define
-      next ← ({𝕩.Get@}⊑𝕨)⊣{"No matching generator definition"!0˙}
-      name ← (1⊑𝕨)⊣""
+    Visit ⇐ {⟨(iPar⊏uPar)∾⟜(∾""<⊸∾":"⊸∾¨)¨tname,𝕏¨conds⟩}
+    Scope ⇐ {(uPar∾uTyp) scopes.New 𝕩}
+    GetTry ⇐ {𝕊 e:
       AllEq ← ∧´⊏Match¨1⊸↓
       Count‿DeVar ← (+´¬)⊸{
         ¬∨´𝕩 ? ⟨𝕨=≠, ⊢⟩ ;
         ⟨𝕨≤≠, (0‿𝕨-˜⋈⁼/𝕩)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)⟩
       } pgather
       CT ← {∧´((∧´IsTyped¨)_and_(AllEq{𝕩.type}¨)⊏⟜𝕩)¨iTyp}
+      Try ⇐ {
+        Count 𝕩 ? a←DeVar𝕩 ⋄ ∧´AllEq¨iPar⊔a ? CT a ?
+        t ← {⊢} {numbers.GetBool∘𝕨.Eval◶@‿𝕏}´ conds
+        T ((iPar∊⊸/a)∾{𝕩.type}¨iTyp⊑¨⊸⊏a) env.Fixed e
+      ;
+        @
+      }
+    }
+    ToDef ⇐ {𝕊:
+      "Conditions in declaration target unsupported" ! ⟨⟩ ≡ conds
+      "Gathered declaration target unsupported" ! ¬∨´pgather
+      ns ← pos NewId¨ params
+      Visit←{⟨𝕩¨ns⟩}
+      ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "params"‿visit
+      Eval⇐{ val 𝕊 e:
+        "Destructuring non-tuple" ! IsTup val
+        ns {𝕩 𝕨.Eval e}¨ val
+      }
+    }
+  }
+  Lambda ⇐ {
+    ⟨par,result⟩←𝕩 ⋄ pos←𝕨
+    Visit←{(par.Visit 𝕩)∾⟨𝕏result⟩}
+    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "lambda"‿visit
+    Scope⇐{ Visit scopes._defer o.Scope par.Scope 𝕩 }
+    Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value and name, from Define
+      next ← ({𝕩.Get@}⊑𝕨)⊣{"No matching generator definition"!0˙}
+      name ← (1⊑𝕨)⊣""
+      ⟨Try⟩←par.GetTry e
       Exec‿_cached ← { result.node≢"function"?
         Exec ⇐ result.Eval∘⊢ ⋄ _cached ⇐ {𝔽}
       ;
@@ -1044,11 +1065,7 @@ nodes ← {
         }
       }
       {
-        Count 𝕩 ? a←DeVar𝕩 ⋄ ∧´AllEq¨iPar⊔a ? CT a ?
-        try ← (⊑⟨𝕩˙⊸exec⟩) (Next 𝕩˙){numbers.GetBool∘𝕨.Eval◶𝔽‿𝕏}´ conds
-        Try ((iPar∊⊸/a)∾{𝕩.type}¨iTyp⊑¨⊸⊏a) env.Fixed e
-      ;
-        Next 𝕩
+        𝕩 @⊸≢◶⟨Next⊣, Exec⟩ Try 𝕩
       }_cached⊘{𝕊: {name⇐𝕩} "(generator)"⍟(0=≠) name}
     }
   }
@@ -1097,15 +1114,6 @@ nodes ← {
       𝕨.SetRType∘Ev¨ type
       Ev result
     } functions._with_ pos
-  }
-  IdList ⇐ {
-    ns←𝕩 ⋄ pos←𝕨
-    Visit←{⟨𝕩¨ns⟩}
-    ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "declare"‿visit
-    Eval⇐{ val 𝕊 e:
-      "Destructuring non-tuple" ! IsTup val
-      ns {𝕩 𝕨.Eval e}¨ val
-    }
   }
   _setType ← { pos type‿env _𝕣 v:
     { ≠type ?
