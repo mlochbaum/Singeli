@@ -249,7 +249,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     ⟨n,t,Expr@⟩
   }
   _decl_ ← { 𝔽"Declaration" ⋄ Declare 𝔾 𝕩 }
-  ToId ← c.newid _node_ ((Asrt @⊸≢)⊸⊢ c.PhraseTryName)
+  ToId ← {𝕩.IsDef@⋄𝕩} c.PhraseTryIdent
   ParamToId ← c.idlist _node_ {
     𝕊a‿co: # from Params
     "Conditions in declaration target unsupported" Asrt ⟨⟩ ≡ co
@@ -959,11 +959,18 @@ nodes ← {
   # Node types
   Ident ← {
     name⇐𝕩 ⋄ pos⇐𝕨⊣@
-    ⟨node,Dump,NonLocal⟩⇐Defaults "ident"‿⟨⟩
+    ⟨node,Dump,NonLocal⟩⇐d←Defaults "ident"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
     Oper⇐{𝕩.Lookup name}
     Eval⇐!∘0 ⋄ Scope⇐{Eval↩var.Get∘(pos 𝕩.Get name)}
+    # Modify so it defines the variable instead of getting the value
+    IsDef⇐{𝕊:
+      ⟨Oper⟩↩d
+      V←!∘0 ⋄ Scope↩{v ↩ pos 𝕩.Add name}
+      Eval↩{val 𝕊 𝕩: u←V𝕩 ⋄ u.Set name⊸functions.Declare⚇0 val}
+    }
   }
+  NewId ⇐ {𝕩.IsDef@⋄𝕩}∘Ident
   _value ← {
     name←𝕩 ⋄ pos⇐𝕨⊣@
     Eval⇐(𝕨𝔽𝕩)˙
@@ -990,7 +997,7 @@ nodes ← {
   Call ⇐ { 𝕨 Run ⟨Ident"call" , <⊸∾´𝕩⟩ }
   Phrase ⇐ {
     things←𝕩 ⋄ pos⇐𝕨
-    ToName⇐{𝕤⋄ (1=≠)◶@‿(("ident"≡{𝕩.node})◶@‿{𝕩.name}⊑) things }
+    ToIdent⇐{𝕤⋄ (1=≠)◶⟨@,@⍟("ident"≢{𝕩.node})⊑⟩ things }
     Visit←{⟨𝕏¨things⟩}
     ⟨node,Dump,Disp,NonLocal,Scope,Eval⟩⇐Defaults "phrase"‿visit
     Oper⇐{
@@ -999,7 +1006,8 @@ nodes ← {
       operator.nil
     }
   }
-  PhraseTryName ⇐ {"phrase"≡𝕩.node}◶@‿{𝕩.ToName@}
+  PhraseTryIdent ⇐ {"phrase"≡𝕩.node}◶@‿{𝕩.ToIdent@}
+  PhraseTryName ⇐ {𝕩.name}⍟(@⊸≢)PhraseTryIdent
   notTypeVar ← types.primTypes≠⊸↑builtins.names
   Lambda ⇐ {
     ⟨⟨paramsPlus,conds⟩,result⟩←𝕩 ⋄ pos←𝕨
@@ -1089,16 +1097,6 @@ nodes ← {
       𝕨.SetRType∘Ev¨ type
       Ev result
     } functions._with_ pos
-  }
-  NewId ⇐ {
-    name←𝕩 ⋄ pos←𝕨
-    Visit←name˙
-    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "declare"‿visit
-    GetVar←!∘0 ⋄ Scope⇐{ getVar ↩ pos 𝕩.Add name }
-    Eval⇐{ val 𝕊 e:
-      u ← GetVar e
-      u.Set name⊸functions.Declare⚇0 val
-    }
   }
   IdList ⇐ {
     ns←𝕩 ⋄ pos←𝕨
