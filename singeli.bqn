@@ -156,7 +156,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ! (¯1⊑tokens) Is sep
 
   Asrt ← {𝕨𝕊1:@;
-    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.body,"body",c.call,"call",c.declare,"declare",c.define,"define",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.topif,"topif",c.while,"while",c.word,"word"⟩
+    l←{𝕨⊸⊐⊏𝕩˙}˝⍉∘‿2⥊⟨c.arg,"arg",c.body,"body",c.call,"call",c.declare,"declare",c.define,"define",c.extend,"extend",c.extender,"extender",c.for,"for",c.function,"function",c.if,"if",c.include,"include",c.lambda,"lambda",c.number,"number",c.opdef,"opdef",c.params,"params",c.phrase,"phrase",c.run,"run",c.symbol,"symbol",c.topif,"topif",c.while,"while",c.word,"word"⟩
     ShowTrace⟜L´ <˘⍉>DumpStack@
     •Out ""
     F ← (⥊lf)⊸≡◶•Repr‿"end of line"
@@ -234,7 +234,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   "fn":     AsrtStmt 𝕩 ⋄ DefFun@ ;
   "oper":   AsrtStmt 𝕩 ⋄ OpDef@ ;
   "{":      p←Params@ ⋄ t←Get "=>"‿":"
-            (t≡":")◶⟨c.lambda _node_ (⋈⟜Block), AsrtStmt _decl_ ParamToId⟩ p ;
+            (t≡":")◶⟨c.lambda _node_ (⋈⟜Block), AsrtStmt _decl_ ⊢⟩ p ;
   𝕩:        AsrtStmt _decl_ ToId⍟(Try":") SimpExpr@
   }}
   ESub ← (∾⟜" must appear on its own line" Asrt 0˙) _exprStmt
@@ -250,7 +250,6 @@ Parse ← {𝕊 tokens‿ShowTrace:
   }
   _decl_ ← { 𝔽"Declaration" ⋄ Declare 𝔾 𝕩 }
   ToId ← {𝕩.IsDef@⋄𝕩} c.PhraseTryIdent
-  ParamToId ← {𝕩.ToDef@}
 
   Seps ← {Try∘sep◶@‿𝕊⍟Rem𝕩}
   Body ← {𝕤
@@ -1012,8 +1011,11 @@ nodes ← {
     _pc ← {n←𝕨⋄f←𝕗 ⋄ {pos Run ⟨Ident f,⟨Ident n,𝕩⟩⟩}¨𝕩}
     conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "match"_pc¨ pmatch)
     uPar‿iPar←(⍷⋈⊐)params
-    Visit ⇐ {⟨(iPar⊏uPar)∾⟜(∾""<⊸∾":"⊸∾¨)¨tname,𝕏¨conds⟩}
-    Scope ⇐ {(uPar∾uTyp) scopes.New 𝕩}
+    ns ← pos⊸NewId¨ uPar∾uTyp
+    Visit←{⟨𝕏¨ns,𝕏¨conds⟩}
+    ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "params"‿visit
+    VisitLambda ⇐ {⟨(iPar⊏uPar)∾⟜(∾""<⊸∾":"⊸∾¨)¨tname,𝕏¨conds⟩}
+    ScopeLambda ⇐ {(uPar∾uTyp) scopes.New 𝕩}
     AllEq ← ∧´⊏Match¨1⊸↓
     Count‿DeVar ← (+´¬)⊸{
       ¬∨´𝕩 ? ⟨𝕨=≠, ⊢⟩ ;
@@ -1033,24 +1035,19 @@ nodes ← {
         T (ToVals 𝕩) env.Fixed e
       }∘Proc
     }
-    ToDef ⇐ {𝕊:
-      ns ← pos⊸NewId¨ uPar∾uTyp
-      Visit←{⟨𝕏¨ns,𝕏¨conds⟩}
-      ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "params"‿visit
-      Eval⇐{ val 𝕊 e:
-        A ← ! program._trace_ pos
-        "Destructuring non-tuple" A IsTup val
-        A∘("Destructuring: "∾⊑)⍟(0==) p←Proc val
-        ns {𝕩 𝕨.Eval e}¨ ToVals p
-        {"Destructuring condition failed" A numbers.GetBool 𝕩.Eval e}¨ conds
-      }
+    Eval⇐{ val 𝕊 e:
+      A ← ! program._trace_ pos
+      "Destructuring non-tuple" A IsTup val
+      A∘("Destructuring: "∾⊑)⍟(0==) p←Proc val
+      ns {𝕩 𝕨.Eval e}¨ ToVals p
+      {"Destructuring condition failed" A numbers.GetBool 𝕩.Eval e}¨ conds
     }
   }
   Lambda ⇐ {
     ⟨par,result⟩←𝕩 ⋄ pos←𝕨
-    Visit←{(par.Visit 𝕩)∾⟨𝕏result⟩}
+    Visit←{(par.VisitLambda 𝕩)∾⟨𝕏result⟩}
     ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "lambda"‿visit
-    Scope⇐{ Visit scopes._defer o.Scope par.Scope 𝕩 }
+    Scope⇐{ Visit scopes._defer o.Scope par.ScopeLambda 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value and name, from Define
       next ← ({𝕩.Get@}⊑𝕨)⊣{"No matching generator definition"!0˙}
       name ← (1⊑𝕨)⊣""
