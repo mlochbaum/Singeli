@@ -305,6 +305,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
   _withParams ← {𝕤
     (Next"{")◶⟨𝔽, c.lambda _node_ (Params‿𝕊 _seq)⟩@
   }
+  IdTarget ← {𝕩.IsDef@⋄𝕩} c.word _node_ Name
+  Target ← Next∘"{"◶⟨IdTarget, Params⟩
 
   Function ← c.function _node_ {𝕤
     Arg ← c.arg _node_ ((Try∘"...")‿Name‿":"‿SimpExpr _seq)
@@ -313,7 +315,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     b ← Result Try"="
     ⟨a,r,b⟩
   } _withParams
-  DefFun ← c.define _node_ ("fn"‿Name‿Function  _seq)
+  DefFun ← c.define _node_ ("fn"‿IdTarget‿Function  _seq)
   
   ExtPar ← "{"‿"}" _argsFn_ Name
   Extender ← c.extender _node_ (ExtPar‿"="‿Body _seq)
@@ -321,8 +323,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   Generator ← {𝕤⋄ Get"=" ⋄ Result 1} _withParams
   Define ← c.define _node_ {
-    Get "def" ⋄  e ← Try "extend"
-    ⟨Name, e◶Generator‿Extender⟩_seq 𝕩
+    Get "def" ⋄ e ← Try "extend"
+    ⟨Target, e◶Generator‿Extender⟩_seq 𝕩
   }
   confName‿confVal ← (⊑¨⋈1⊸⊑¨)configs
   Config ← c.define _node_ {
@@ -958,10 +960,17 @@ nodes ← {
     Oper⇐{𝕩.Lookup name}
     Eval⇐!∘0 ⋄ Scope⇐{Eval↩var.Get∘(pos 𝕩.Get name)}
     # Modify so it defines the variable instead of getting the value
-    IsDef⇐{𝕊:
+    v0←@⋄V←!∘0 ⋄ IsDef⇐{𝕊:
       ⟨Oper⟩↩d
-      V←!∘0 ⋄ Scope↩{v ↩ pos 𝕩.Add name}
-      Eval↩{val 𝕊 𝕩: u←V𝕩 ⋄ u.Set name⊸functions.Declare⚇0 val}
+      Scope↩{
+        1𝕊𝕩: v0‿v ↩ pos 𝕩.AddLam name ;
+        v ↩ pos 𝕩.Add name
+      }
+      Eval↩{val‿decl 𝕊 𝕩: u←V𝕩 ⋄ u.Set name⊸functions.Declare⚇0⍟decl val}
+    }
+    # If f≡1, set value in Eval for function recursion
+    DefEval ⇐ { f‿ValEval 𝕊 e:
+      u←V e ⋄ u.Set program._trace_ pos⍟(¬f) ValEval ⟨f◶⟨V0,u˙⟩ e, name⟩
     }
   }
   NewId ⇐ {𝕩.IsDef@⋄𝕩}∘Ident
@@ -1035,13 +1044,14 @@ nodes ← {
         T (ToVals 𝕩) env.Fixed e
       }∘Proc
     }
-    Eval⇐{ val 𝕊 e:
+    Eval⇐{ val‿decl 𝕊 e:
       A ← ! program._trace_ pos
       "Destructuring non-tuple" A IsTup val
       A∘("Destructuring: "∾⊑)⍟(0==) p←Proc val
-      ns {𝕩 𝕨.Eval e}¨ ToVals p
+      ns {𝕩‿decl 𝕨.Eval e}¨ ToVals p
       {"Destructuring condition failed" A numbers.GetBool 𝕩.Eval e}¨ conds
     }
+    DefEval ⇐ { f‿ValEval 𝕊 e: ⟨ValEval @,0⟩ Eval e }
   }
   Lambda ⇐ {
     ⟨par,result⟩←𝕩 ⋄ pos←𝕨
@@ -1131,23 +1141,20 @@ nodes ← {
     Visit←{¯1⌽⟨":",𝕏¨type,𝕏value,𝕏name⟩}
     ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "declare"‿visit
     Eval⇐{
-      𝕩 name.Eval˜ pos type‿𝕩 _setType value.Eval 𝕩
+      𝕩 ⋈⟜1⊸name.Eval˜ pos type‿𝕩 _setType value.Eval 𝕩
     }
   }
   Define ⇐ {
     ⟨name,value⟩←𝕩 ⋄ pos←𝕨
-    Visit←{⟨name,𝕏value⟩}
+    Visit←{⟨𝕏name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
     N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
-    v0←v←@ ⋄ Scope ⇐ {
+    Scope ⇐ {
       value.Scope 𝕩
-      s ← N 𝕩
-      v0‿v ↩ pos ("lambda"≡value.node)◶⟨ @⋈s.Add , s.AddLam ⟩ name
+      ("lambda"≡value.node) name.Scope N 𝕩
     }
     Eval⇐{
-      f←"function"≡value.node  # Set value in Eval for function recursion
-      e ← N 𝕩
-      u←V e ⋄ u.Set program._trace_ pos⍟(¬f) (name⋈˜f◶⟨V0,u˙⟩e) value.Eval 𝕩
+      ⟨"function"≡value.node, value.Eval⟜𝕩⟩ name.DefEval N 𝕩
     }
   }
   OpDef ⇐ {
