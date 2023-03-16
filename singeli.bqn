@@ -1139,10 +1139,10 @@ nodes ← {
   Declare ⇐ {
     ⟨name,type,value⟩←𝕩 ⋄ pos←𝕨
     Visit←{¯1⌽⟨":",𝕏¨type,𝕏value,𝕏name⟩}
-    ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "declare"‿visit
-    Eval⇐{
-      𝕩 ⋈⟜1⊸name.Eval˜ pos type‿𝕩 _setType value.Eval 𝕩
-    }
+    ⟨node,Dump,Disp,Oper⟩⇐Defaults "declare"‿visit
+    N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
+    Scope⇐{ {𝕏¨type ⋄ 𝕏value} o.Scope 𝕩 ⋄ name.Scope N 𝕩 }
+    Eval⇐{ v←pos type‿𝕩 _setType value.Eval 𝕩 ⋄ v‿1 name.Eval N 𝕩 }
   }
   Define ⇐ {
     ⟨name,value⟩←𝕩 ⋄ pos←𝕨
