@@ -812,13 +812,14 @@ builtins ← {
 }
 
 var ← {
-  Get⇐{𝕩.Get@}
+  Get⇐{𝕩.Get 𝕨}
   Fixed⇐{ kind⇐"var" ⋄ Get⇐𝕩˙ }
-  New⇐{NG←"generator"≢Kind ⋄ kind⇐"var"
-    v←𝕩 ⋄ Get⇐{𝕤⋄v}
+  New⇐{𝕊: NG←"generator"≢Kind ⋄ kind⇐"var"
+    Get⇐{! program._trace_ 𝕩 "Variable definition not yet reached"}
     Set⇐{
-      {𝕊:Set↩!∘"Can't extend a non-generator"}⍟NG𝕩
-      v↩𝕩
+      {𝕊:Set↩!∘"Can't extend a non-generator"}⍟NG 𝕩
+      Get ↩ 𝕩˙
+      𝕩
     }
   }
 }
@@ -854,7 +855,7 @@ env ← {
   Parent⇐{𝕩.parent}
   Make ←{ vars⇐𝕨 ⋄ parent⇐𝕩 }
   Alias⇐Make
-  New  ⇐{ (var.New∘@¨ 𝕨) Make 𝕩 }
+  New  ⇐{ (var.New¨   𝕨) Make 𝕩 }
   Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
   Block⇐{⟨ni,Load‿Store,ind‿ptrs,names⟩ 𝕊 par:
     pv ← names functions.Declare⚇∞‿0⟜(Load∘⋈⟜ind)¨ ptrs
@@ -958,7 +959,7 @@ nodes ← {
     ⟨node,Dump,NonLocal⟩⇐d←Defaults "ident"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
     Oper⇐{𝕩.Lookup name}
-    Eval⇐!∘0 ⋄ Scope⇐{Eval↩var.Get∘(pos 𝕩.Get name)}
+    Eval⇐!∘0 ⋄ Scope⇐{Eval↩pos var.Get (pos 𝕩.Get name){𝔽}}
     # Modify so it defines the variable instead of getting the value
     v0←@⋄V←!∘0 ⋄ IsDef⇐{𝕊:
       ⟨Oper⟩↩d
@@ -1290,7 +1291,7 @@ nodes ← {
     Eval ⇐ {
       e←o.Eval 𝕩
       For←(E fn) program._trace_ pos
-      lsv←var.Get∘{𝕎𝕩}⟜𝕩¨ ls
+      lsv←(pos var.Get {𝕎𝕩}⟜𝕩)¨ ls
       For ⟨E¨ptrv, E from, E to, blocks.New ind‿ptrn‿body‿lsv‿𝕩⟩
     }
   }
