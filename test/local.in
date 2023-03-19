@@ -1,0 +1,18 @@
+c:u8 = 2
+def g{a} = 'outer'
+local {
+  local c:u8 = 3
+  def g{a & match{a,'ext'}} = 'inner'
+  local def g{a & match{a,'test'}} = 'fail!'
+  fn fi(x:u8) = {
+    emit{u1, g{'default'}, x}
+    emit{u1, g{'ext'}, c}
+  }
+  local fn fi(x:u8) : u8 = 0
+  local export{'locfi', fi}
+}
+fn fo(y:u8) = {
+  emit{u1, g{'ext'}, y}
+  emit{u1, g{'test'}, y}
+  fi(c)
+}

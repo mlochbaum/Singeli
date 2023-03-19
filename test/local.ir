@@ -1,0 +1,21 @@
+constant $c0_c u8 !2:u8
+constant $c1_c u8 !3:u8
+
+beginFn f0_fi u1 1 v0_x u8
+new v1 emit u1 'outer' v0_x
+new v2 emit u1 'inner' $c1_c
+ret v2
+endFn
+
+beginFn f1_fi u8 1 v0_x u8
+ret !0:u8
+endFn
+
+beginFn f2_fo u1 1 v0_y u8
+new v1 emit u1 'inner' v0_y
+new v2 emit u1 'outer' v0_y
+new v3 call u1 $f0_fi 1 $c0_c
+ret v3
+endFn
+
+export 'locfi' (u8)->u8 $f1_fi
