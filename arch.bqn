@@ -60,7 +60,8 @@ ReadNative ← {𝕊:
   ∊⟜allfeats⊸/ ((-´"._")×'_'⊸=)⊸+ f
 }
 
-arg ← ("NATIVE"⊸≡¨ (¬⊸/∾ReadNative)⍟((0=≠)⊸(∨´)⊣) ⊢) ToUpper •args
+MaybeNat ← "NATIVE"⊸≡¨ (¬⊸/∾ReadNative)⍟((0=≠)⊸(∨´)⊣) ⊢
+arg ← ⟨"NONE"⟩⊸≢◶⟨⟩‿MaybeNat ToUpper •args
 all ← "ALL"⊸≡¨ arg
 !∘(∾"Unknown features:"<⊸∾' '∾¨/⟜arg)⍟(∨´) ¬all∨arg∊allfeats
 "Incompatible features" ! ∨´ supp ← (all¬⊸/arg)⊸(∧´∊)¨ archfeats
