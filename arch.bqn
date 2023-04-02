@@ -28,7 +28,7 @@ arches ← MakeArch¨ ⟨
     header ⇐ "immintrin.h"
     VecType ⇐ { 𝕊 w‿v‿u‿f:
       "Unsupported vector type" ! ∊⟜(2⋆6+↕4)⌾<l←w×v  # 64…512
-      ⟨5-˜2⋆⁼l, ∾⟨"__m", •Repr l, {¬f?"i";(64=w)/"d"}⟩⟩
+      ⟨5-˜2⋆⁼l, ∾⟨"__m", •Repr l, {l=64?"";¬f?"i";(64=w)/"d"}⟩⟩
     }
   }
   {
