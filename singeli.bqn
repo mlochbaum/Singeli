@@ -1167,11 +1167,12 @@ nodes ← {
   }
   Include ⇐ {
     # Top-level if statements resolve in operator pass; expand then
-    ⟨file⟩ ← 𝕩 ⋄ pos←𝕨
+    ⟨filename⟩ ← 𝕩 ⋄ pos←𝕨
+    file ← pos files.Resolve symbols.From filename.Eval@
     NL←⊢ ⋄ NonLocal⇐{𝕊:NL↩{𝕩.NonLocal@⋄𝕩}}
-    ⟨node,Dump,Disp⟩⇐Defaults "include"‿{⟨𝕏file⟩} ⋄ Scope⇐Eval⇐!
+    ⟨node,Dump,Disp⟩⇐Defaults "include"‿{⟨file⟩} ⋄ Scope⇐Eval⇐!
     Oper ⇐ {𝕤
-      b ← NL pos files.Include symbols.From file.Eval@
+      b ← NL files.Include file
       ⟨node,Dump,Disp,Oper,Scope,Eval⟩ ↩ b # Always a body so fields can't change
       b.Oper 𝕩
     }
@@ -1304,15 +1305,15 @@ files ← {
     𝕩 ast.Build •file.Chars 𝕩
   }
   lib ← ('/'∾˜⍟(≠⟜(¯1⊸⊑))⍟(0<≠∘⊢)⌾⊑¨libpaths)∾<⟨"","include/"⟩
-  Include ⇐ {
+  Resolve ⇐ {
     search ← (≠↑𝕩˙)⊸≡∘⊑¨⊸/ ('.'=⊑𝕩) ⊑ ⟨lib,⟨""‿path⟩⟩
     Get ← {pre‿path𝕊𝕩: path •file.At pre ≠⊸(⊢↓˜⊣+'/'=⊑) 𝕩}⟜(𝕩∾".singeli")
     f←@ ⋄ {f≡@? •file.Exists ft←Get𝕩? f↩ft; @}¨ search
     Report ← {" (searched "∾"and Singeli library)"∾˜∾⥊(Get¨¯1↓𝕩)∾˘<", "}
     Err∘((1<≠)◶""‿Report∘search⊸(∾˜)⌾⊑)⍟(f≡@) "File not found"‿𝕨
-    log ∾↩ <f
-    op←path ⋄ a←Load f ⋄ path↩op ⋄ a
+    f
   }
+  Include ⇐ { log∾↩<𝕩 ⋄ p←path ⋄ a←Load 𝕩 ⋄ path↩p ⋄ a }
   Build ⇐ { log↩⟨⟩ ⋄ Load 𝕩 }
   WriteDeps ⇐ { @≢𝕩 ? 𝕩 •file.Lines log ; @ }
 }
