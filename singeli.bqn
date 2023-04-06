@@ -329,8 +329,9 @@ Parse ← {𝕊 tokens‿ShowTrace:
   confName‿confVal ← (⊑¨⋈1⊸⊑¨)configs
   Config ← c.define _node_ {
     Get "config"
-    n‿r ← ⟨Target, "=", Result∘1⟩_seq 𝕩
-    n‿{ (≠confName) > i←confName⊸⊐⌾<n ? ("config "∾n) ast.Build i⊑confVal ; r }
+    n‿r ← ⟨Name, "=", Result∘1⟩_seq 𝕩
+    val ← { (≠confName) > i←confName⊸⊐⌾<n ? ("config "∾n) ast.Build i⊑confVal ; r }
+    ({𝕩.IsDef@⋄𝕩} c.Word n)‿val
   }
 
   OpType ← {𝕤
