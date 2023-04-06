@@ -5,6 +5,10 @@ l0:;
 l2:;
   return ((uint8_t)5ull);
   goto l0;
+  if (!(v0_a)) goto l3;
+  goto l_sym;
+l3:;
+l_sym:;
 l1:;
   return ((uint8_t)6ull);
 }

@@ -4,6 +4,8 @@ fn fun(a:u1) : u8 = {
   if (a) goto{l}
   return{5}
   goto{w}
+  if (a) goto{'sym'}
+  setlabel{'sym'}
   setlabel{l}
   6
 }

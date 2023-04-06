@@ -649,8 +649,12 @@ functions ← {kname⇐"function"
   New ← {𝕤
     kind⇐kname ⋄ shows⇐"$f"∾(•Repr id⇐𝕩)∾"_"⊸∾⍟(0<≠)𝕨 ⋄ Matches⇐≡ ⋄ type⇐@
     arch⇐architecture.NewFunction@ ⋄ SetArch⇐{arch↩𝕩}
-    label←¯1 ⋄ args←atypes←ctypes←⟨⟩ ⋄ rType⇐@
+    label←¯1 ⋄ slabel←⟨⟩ ⋄ args←atypes←ctypes←⟨⟩ ⋄ rType⇐@
     NextLabel⇐{𝕤⋄ labels.New label+↩1 }
+    UseSymLabel⇐{
+      ∊⟜slabel⌾<𝕩 ? !∾"Label "‿𝕩‿" used in this function already" ;
+      slabel∾↩<𝕩 ⋄ 𝕩
+    }
     NextArg⇐{ name‿gather 𝕊 type:
       a ← (name registers.Declare ⋈⟜@)⚇0 types.Unpack type
       atypes∾↩<type ⋄ ctypes∾↩gather◶<‿types.Ungather type ⋄ args∾↩<a
@@ -691,6 +695,7 @@ functions ← {kname⇐"function"
   }
   NextArg ⇐ { 𝕨 current.NextArg 𝕩 }
   Label ⇐ { current.NextLabel 𝕩 }
+  UseSymLabel ⇐ { current.UseSymLabel 𝕩 }
   Append ← { current.Append 𝕩 }
   _appendReg ← { (1⊸⊑⊣Append) ⟨"new",𝔽𝕨⟩∾{kind⇐@⋄shows⇐𝕩}⌾⊑𝕩 }
   AppendNew ← registers.Transient _appendReg
@@ -728,10 +733,14 @@ functions ← {kname⇐"function"
   SetLabel ⇐ "lbl"_instr
   Goto     ⇐ "goto"⊘"gotoT"_instr
   GotoF    ⇐ "gotoF"_instr
+  ReadLabel ← {
+    l ← "Label or symbol expected" symbols.From 𝕩
+    symbols.New "l_" ∾ UseSymLabel⍟𝕨 l
+  }⍟("label"≢Kind∘⊢)
   builtins ⇐ ⍉> ⟨
     ⟨"call",Call _v1⟩, ⟨"emit",Emit _v1⟩, ⟨"return",Return⟩
-    ⟨"makelabel",Label⟩, ⟨"goto",Goto _p1⟩
-    ⟨"setlabel",SetLabel _p1 ⋈∘Label⍟(0=≠)⟩
+    ⟨"makelabel",Label⟩, ⟨"goto",(Goto 0⊸ReadLabel) _p1⟩
+    ⟨"setlabel",(SetLabel 1⊸ReadLabel) _p1 ⋈∘Label⍟(0=≠)⟩
   ⟩ ∾ { New‿Union‿Has‿List ← architecture ⋄ S←SetArch ⋄ G←GetArch ⋄ ⟨
     ⟨"setarch",S New⟩
     ⟨"addarch",S G Union New⟩
