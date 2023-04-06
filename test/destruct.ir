@@ -1,6 +1,6 @@
 beginFn f0_f u32 3 v0_x u1 v1_y u8 v2_z u16
 new v3_b val u1 !1:u1
-new v4 emit u32 'all' v0_x v1_y v3_b
+new v4 emit u32 'all' v0_x v1_y v3_b 6
 ret v4
 endFn
 
