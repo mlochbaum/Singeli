@@ -142,6 +142,7 @@ MakeStream ← {
   Rem  ⇐ {𝕤⋄i<len}
   Peek ⇐ {𝕤⋄i⊑src}
   Next ⇐ Inc ⊢ Peek
+  Dec  ⇐ {𝕤⋄i-↩1}
 }
 
 Parse ← {𝕊 tokens‿ShowTrace:
@@ -164,13 +165,13 @@ Parse ← {𝕊 tokens‿ShowTrace:
     •Exit 1
   }
   MakeTokStream ← {
-    ⟨Inc⇐Next⟩←Pos‿Rem‿Peek⇐MakeStream 𝕩
+    ⟨Inc⇐Next⟩←⟨Pos,Rem,Peek,Back⇐Dec⟩⇐MakeStream 𝕩
     Peek ↩ Peek ⊣ "File ended unexpectedly" Asrt Rem
     Next ⇐ Peek⊸Is
     Get  ⇐ Inc ⊢ {𝕩 (⊢ ⊣ (𝕨•Repr⊘⊣⊢)⊸⋈ Asrt Is˜) Peek@}
     Try  ⇐ 1∘Inc⍟⊢∘Next
   }
-  ⟨Next,Get,Peek,Try,Rem,Pos⟩ ← MakeTokStream tokens
+  ⟨Next,Get,Peek,Try,Rem,Pos,Back⟩ ← MakeTokStream tokens
 
   # Node creation and error tracking
   c ← nodes
@@ -225,9 +226,9 @@ Parse ← {𝕊 tokens‿ShowTrace:
   }
 
   _exprStmt ← { AsrtStmt _𝕣: {
-  "if":     c.if     _node_ ("if"‿"("‿Expr‿")"‿Block‿(When∘⟨Try∘"else"∘Seps,Block⟩)_seq)@ ;
+  "if":     c.if     _node_ ("if"‿"("‿Expr‿")"‿Block‿(When∘⟨TrySeps∘"else",Block⟩)_seq)@ ;
   "while":  c.while  _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Block _seq)@ ;
-  "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")"‿sep _seq)@ ;
+  "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")" _seq)@ ;
   "@":      For@ ;
   "extend": Extend@ ;
   "def":    AsrtStmt 𝕩 ⋄ Define@ ;
@@ -251,11 +252,16 @@ Parse ← {𝕊 tokens‿ShowTrace:
   _decl_ ← { 𝔽"Declaration" ⋄ Declare 𝔾 𝕩 }
   ToId ← {𝕩.IsDef@⋄𝕩} c.PhraseTryIdent
 
-  Seps ← {Try∘sep◶@‿𝕊⍟Rem𝕩}
-  Body ← {𝕤
-    Get "{"
-    While ⟨¬Try∘"}"∘Seps, Stmt, 0⟩
+  Seps ← {Try∘sep◶⟨0,1∘𝕊⟩⍟Rem𝕩}
+  TrySeps ← {s←Seps@ ⋄ Back⊸⊢⍟(s>⊢) Try 𝕩}
+
+  _lines_ ← { Line _𝕣_ Cont 𝕩:
+    Seps @
+    s ← 1 ⋄ SepLine ← {¬s?Get sep; l←Line𝕩 ⋄ s↩Seps@ ⋄ l}
+    While ⟨Cont, SepLine, 0⟩
   }
+  _blockLines ← { 𝔽 _lines_ (¬Try∘"}") }
+  Body ← { Get "{" ⋄ Stmt _blockLines 𝕩 }
   Block ← "{"⊸≡◶⟨ESub, c.body _node_ Body⟩ Peek
 
   For ← c.for _node_ {𝕤
@@ -281,7 +287,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Result ← c.body _node_ (("{"‿"@"⊸⊐⌾<Peek)◶⟨
     Body
     ⋈For
-    Expr‿sep _seq "Missing = before body?"Asrt⊢
+    ⋈∘Expr "Missing = before body?"Asrt⊢
   ⟩)
 
   Params ← c.params _node_ {𝕤
@@ -345,7 +351,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   TopIf ← c.topif _node_ {𝕤
     B ← Try∘"{"◶⟨⋈Line, MultiLine⟩
-    "if"‿"("‿Expr‿")"‿B‿(∾When∘⟨Try∘"else"∘Seps,B⟩)_seq 𝕩
+    "if"‿"("‿Expr‿")"‿B‿(∾When∘⟨TrySeps∘"else",B⟩)_seq 𝕩
   }
 
   SubLine ← "include"‿"if"‿"config"⊸⊐⌾<◶⟨Include, TopIf, Config, Stmt⟩
@@ -354,12 +360,9 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Try "local" ? Try∘"{"◶⟨SubLine∘ChkLoc,c.body _node_ MultiLine⟩@ ;
     {𝕩.NonLocal@⋄𝕩} SubLine∘Peek@
   }
-  MultiLine ← While∘⟨¬Try∘"}"∘Seps, Line, 0⟩
+  MultiLine ← Line _blockLines
 
-  Program ← c.body _node_ {𝕤
-    Seps@
-    While ⟨Rem, Seps⊢Line, 0⟩
-  }
+  Program ← c.body _node_ (Line _lines_ Rem)
 
   Program @
 }
