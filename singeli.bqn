@@ -1194,8 +1194,9 @@ nodes ← {
     N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
     Oper⇐{ d.Oper operator.NewScope N 𝕩 }
     sc←@ ⋄ Scope⇐{ d.Scope sc ↩ scopes.New N 𝕩 }
-    Eval⇐{ ¯1⊑⊑d.Eval (sc.Names@) env.New N 𝕩 }
+    Eval⇐{ (0<≠)◶⟨emptyBody,⊢´⟩ ⊑ d.Eval (sc.Names@) env.New N 𝕩 }
   }
+  emptyBody ← {Shows⇐!∘"Empty body has no result"⋄kind⇐"error"}
 
   LazyLabel ← {𝕤
     label ⇐ 𝕩
