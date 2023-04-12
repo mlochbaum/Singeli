@@ -186,7 +186,6 @@ Parse ← {𝕊 tokens‿ShowTrace:
   _ifASCII ← {(@+128)⊸≤◶𝔽‿1}
   Name ← ∊⟜alph _begin_ "name"
   Oper ← ∊⟜oc _ifASCII _begin_ "operator"
-  Word ← c.word _node_ (∊⟜(wc∾oc)_ifASCII _begin_ "word")
   Symbol ← c.symbol _node_ ('''⊸=_begin_"symbol")
   IsLogic ← ∊⟜"and"‿"or"‿"not"⌾<
 
@@ -214,9 +213,10 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Expr ← (∾⟜" must appear on its own line" Asrt 0˙) _exprStmt
   Stmt ← ⊢ _exprStmt
 
-  Expr0 ← {𝕊: (⊑"[('"⊐⊏)◶Vec‿Par‿Symbol‿Word Peek@ }
+  Expr0 ← {𝕊: (⊑"[('"⊐⊏)◶Vec‿Par‿Symbol‿EWord Peek@ }
   Vec ← c.run _node_ (c.word∘"__vec" ⋈ "["‿Expr‿"]"‿Expr0 _seq)
   Par ← ⊑ "("‿Expr‿")" _seq
+  EWord ← (⊑⊏∊dig˙)◶c.word‿c.number ∊⟜(wc∾oc)_ifASCII _begin_ "expression"
 
   _spreadable ← {<∘⊢⍟⊣⟜𝔽∘Try∘"..."}
   _args ← {𝕗 _argsFn_ (Expr _spreadable)}
@@ -253,7 +253,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     ⟨n,t,Expr@⟩
   }
   _decl_ ← { 𝔽"Declaration" ⋄ Declare 𝔾 𝕩 }
-  ToId ← {𝕩.IsDef@⋄𝕩} c.PhraseTryIdent
+  ToId ← {𝕩.IsDef@⋄𝕩} c.PhraseTryWord
 
   _lines_ ← { Line _𝕣_ Cont 𝕩:
     Seps @
@@ -310,7 +310,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   _withParams ← {𝕤
     Next∘"{"◶⟨𝔽, c.lambda _node_ (Params‿𝕊 _seq)⟩@
   }
-  IdTarget ← {𝕩.IsDef@⋄𝕩} c.word _node_ Name
+  IdTarget ← c.newId _node_ Name
   Target ← Next∘"{"◶⟨IdTarget, Params⟩
 
   Function ← c.function _node_ {𝕤
@@ -962,9 +962,9 @@ nodes ← {
   }
 
   # Node types
-  Ident ← {
+  Word ⇐ {
     name⇐𝕩 ⋄ pos⇐𝕨⊣@
-    ⟨node,Dump,NonLocal⟩⇐d←Defaults "ident"‿⟨⟩
+    ⟨node,Dump,NonLocal⟩⇐d←Defaults "word"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
     Oper⇐{𝕩.Lookup name}
     Eval⇐!∘0 ⋄ Scope⇐{Eval↩pos var.Get (pos 𝕩.Get name){𝔽}}
@@ -982,15 +982,14 @@ nodes ← {
       u←V e ⋄ u.Set program._trace_ pos⍟(¬f) ValEval ⟨f◶⟨V0,u˙⟩ e, name⟩
     }
   }
-  NewId ⇐ {𝕩.IsDef@⋄𝕩}∘Ident
+  NewId ⇐ {𝕩.IsDef@⋄𝕩}∘Word
   _value ← {
     name←𝕩 ⋄ pos⇐𝕨⊣@
     Eval⇐(𝕨𝔽𝕩)˙
     ⟨node,Dump,NonLocal,Oper,Scope⟩⇐Defaults "value"‿⟨⟩
     Disp⇐{𝕤⋄⟨name⟩}
   }
-  Number ⇐ numbers.Read
-  Word ⇐ (⊑⊏∘⊢∊dig˙)◶⟨Ident, Number _value⟩
+  Number ⇐ numbers.Read _value
   Symbol ⇐ (symbols.New 1↓¯1↓⊢)_value
   Run ⇐ {
     𝕨𝕊⟨⟨infix⟩,params⟩: CondNode´ 𝕩;
@@ -1006,10 +1005,10 @@ nodes ← {
       (3=•Type𝕨)◶⟨!∘"Running non-generator", 𝕎∘DeSpread⟩ program._trace_ pos 𝕩
     }´ d.Eval
   }
-  Call ⇐ { 𝕨 Run ⟨Ident"call" , <⊸∾´𝕩⟩ }
+  Call ⇐ { 𝕨 Run ⟨Word"call" , <⊸∾´𝕩⟩ }
   Phrase ⇐ {
     things←𝕩 ⋄ pos⇐𝕨
-    ToIdent⇐{𝕤⋄ (1=≠)◶⟨@,@⍟("ident"≢{𝕩.node})⊑⟩ things }
+    ToWord⇐{𝕤⋄ (1=≠)◶⟨@,@⍟("word"≢{𝕩.node})⊑⟩ things }
     Visit←{⟨𝕏¨things⟩}
     ⟨node,Dump,Disp,NonLocal,Scope,Eval⟩⇐Defaults "phrase"‿visit
     Oper⇐{
@@ -1018,15 +1017,15 @@ nodes ← {
       operator.nil
     }
   }
-  PhraseTryIdent ⇐ {"phrase"≡𝕩.node}◶@‿{𝕩.ToIdent@}
-  PhraseTryName ⇐ {𝕩.name}⍟(@⊸≢)PhraseTryIdent
+  PhraseTryWord ⇐ {"phrase"≡𝕩.node}◶@‿{𝕩.ToWord@}
+  PhraseTryName ⇐ {𝕩.name}⍟(@⊸≢)PhraseTryWord
   notTypeVar ← types.primTypes≠⊸↑builtins.names
   Params ⇐ {
     ⟨paramsPlus,conds⟩ ← 𝕩 ⋄ pos←𝕨
     pgather‿params‿pmatch‿ptype ← <˘⍉>paramsPlus
     tname ← (¬∘∊⟜(⟨@⟩∾notTypeVar)⊸/ PhraseTryName¨)¨ ptype
     uTyp‿iTyp←(⍷∘∾ ⋈ ⊐∘∾⊔·/≠¨)tname
-    _pc ← {n←𝕨⋄f←𝕗 ⋄ {pos Run ⟨Ident f,⟨Ident n,𝕩⟩⟩}¨𝕩}
+    _pc ← {n←𝕨⋄f←𝕗 ⋄ {pos Run ⟨Word f,⟨Word n,𝕩⟩⟩}¨𝕩}
     conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "match"_pc¨ pmatch)
     uPar‿iPar←(⍷⋈⊐)params
     ns ← pos⊸NewId¨ uPar∾uTyp
@@ -1168,6 +1167,7 @@ nodes ← {
   }
   OpDef ⇐ {
     ⟨op,fn,type,prec⟩←𝕩 ⋄ pos←𝕨
+    prec ↩ prec.Eval@
     Visit←{𝕤⋄⟨type,op,fn,•Repr prec⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "opdef"‿visit
     N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
@@ -1283,10 +1283,10 @@ nodes ← {
     }
   }
 
-  n0 ← Word "0"
+  n0 ← Number "0"
   For ⇐ {
     ⟨fn,ptrs,ind,from,to,body⟩←𝕩 ⋄ pos←𝕨
-    ptri←pos⊸Ident¨ptrn←⊑¨ptrs
+    ptri←pos⊸Word¨ptrn←⊑¨ptrs
     ptrv←ptrs(1⊑∾⟜<)¨ptri
     from↩n0⊣´from
     vardisp←1↓∾(","⊸∾¨ptrn)∾" over "⊸∾¨ind
