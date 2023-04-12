@@ -146,15 +146,8 @@ MakeStream ← {
 }
 
 Parse ← {𝕊 tokens‿ShowTrace:
-  # Three kinds of token tests, distinguished by depth.
-  Is ← ≡∘⊢◶⟨
-    {𝕏𝕨}   # 0 Function to apply
-    ≡      # 1 Token
-    ⊑<⊸∊   # 2 List of tokens
-  ⟩
   sep ← ⟨";", ⥊lf⟩
-
-  ! (¯1⊑tokens) Is sep
+  ! ⊑ (¯1⊏tokens) ∊ sep
 
   Asrt ← {𝕨𝕊1:@;
     l←{(c •ns.Get¨ 𝕩)⊸⊐ ⊏ 𝕩˙} •ns.Keys c
@@ -165,13 +158,28 @@ Parse ← {𝕊 tokens‿ShowTrace:
     •Exit 1
   }
   MakeTokStream ← {
-    ⟨Inc⇐Next⟩←⟨Pos,Rem,Peek,Back⇐Dec⟩⇐MakeStream 𝕩
-    Peek ↩ Peek ⊣ "File ended unexpectedly" Asrt Rem
-    Next ⇐ Peek⊸Is
-    Get  ⇐ Inc ⊢ {𝕩 (⊢ ⊣ (𝕨•Repr⊘⊣⊢)⊸⋈ Asrt Is˜) Peek@}
-    Try  ⇐ 1∘Inc⍟⊢∘Next
+    i←⊐𝕩 ⋄ u←𝕩/˜i>¯1»⌈`i
+    ⟨Inc⇐Next,PeekRaw⇐Peek⟩←⟨Pos,Rem,Back⇐Dec⟩⇐MakeStream i
+    PeekRaw ↩ PeekRaw ⊣ "File ended unexpectedly" Asrt Rem
+    Peek ← ⊑⟜u∘PeekRaw
+    Try  ⇐ 1∘Inc⍟⊢ Peek⊸≡
+    Get  ⇐ Inc (•Repr⊸⋈ Asrt 0˙)⍟≢⟜Peek
+    # Faster tests on raw tokens
+    _test ⇐ {(𝔽¨u)⊑˜PeekRaw}
+    first←⊑¨u
+    _begin_ ⇐ {t←𝔽 first ⋄ Inc ⊢ (⊑⟜u (⊣ ⊣ 𝕘⊸⋈⊸Asrt) ⊑⟜t)∘PeekRaw}
+    GetS ← ⊢ {Inc (((•Repr𝕨)⋈⊑⟜u) Asrt 0˙)⍟(𝕩⊸≢)∘PeekRaw}¨ u⊸⊐
+    _seq ⇐ {a←0=•Type¨𝕗 ⋄ (¬a)/{𝕏@}¨∘(GetS⌾(a⊸/)𝕗) }
+    _opt_ ⇐ {@_𝕣_𝕘:
+      t‿c ← (1⌾(¯1⊸⊑)2|↕∘≠)⊸⊔ 𝕘
+      exp ← "one of "∾∾⟜", "⊸∾´•Repr¨t
+      (⊑(u⊐t)⊐PeekRaw)◶(c∾⟨(exp⋈Peek) Asrt 0˙⟩)
+    }
+    _optGet_ ⇐ {@_opt_({𝕏⊣Inc}¨⌾((2|↕∘≠𝕘)⊸/)𝕘)}
+    _any ⇐ {⊑(u⊐𝕗)∊˜PeekRaw}
+    _anyTry ⇐ {1∘Inc⍟⊢∘(𝕗_any)}
   }
-  ⟨Next,Get,Peek,Try,Rem,Pos,Back⟩ ← MakeTokStream tokens
+  ⟨Get,Try,Rem,Pos,Back,_test,_begin_,_seq,_opt_,_optGet_,_anyTry,_any⟩ ← MakeTokStream tokens
 
   # Node creation and error tracking
   c ← nodes
@@ -180,10 +188,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   When  ← {Test‿Cont:       ( ⥊∘< Cont)⍟Test   ⟨⟩  }
   While ← {Test‿Cont‿init: {(𝕊∾⟜<⟜Cont)⍟Test𝕩} Cont¨↕init}
-  _seq ← {(0=•Type¨)⊸(¬∘⊣/⊣◶{𝕏@}‿(Get⊢)¨) 𝔽}
 
-  _begin_ ← {𝕘 Get (⊑∘𝔽⊑)˙}
-  _ifASCII ← {(@+128)⊸≤◶𝔽‿1}
+  _ifASCII ← {(@+128)⊸≤∨𝔽}
   Name ← ∊⟜alph _begin_ "name"
   Oper ← ∊⟜oc _ifASCII _begin_ "operator"
   Symbol ← c.symbol _node_ ('''⊸=_begin_"symbol")
@@ -191,32 +197,31 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   LFs ← {𝕊⍟Try ⟨lf⟩}
   Div ← {LFs@ ⋄ 1∘LFs⍟⊢ Try 𝕩}  # Divider, allowing surrounding newlines
-  Seps ← {Rem@ ? Try sep ? 𝕊𝕩⋄1 ; 0}
+  TrySep ← sep _anyTry
+  Seps ← {Rem@ ? TrySep@ ? 𝕊𝕩⋄1 ; 0}
 
-  _if ← {
-    TrySeps ← {s←Seps@ ⋄ Back⊸⊢⍟(s>⊢) Try 𝕩}
-    "if"‿"("‿Expr‿")"‿𝔽‿(When∘⟨TrySeps∘"else",𝔽⟩)_seq
-  }
-  _exprStmt ← { AsrtStmt _𝕣: {
-  "if":     c.if     _node_ (Block _if)@ ;
-  "while":  c.while  _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Block _seq)@ ;
-  "do":     c.while  _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")" _seq)@ ;
-  "@":      For@ ;
-  "extend": Extend@ ;
-  "def":    AsrtStmt 𝕩 ⋄ Define@ ;
-  "fn":     AsrtStmt 𝕩 ⋄ DefFun@ ;
-  "oper":   AsrtStmt 𝕩 ⋄ OpDef@ ;
-  "{":      p←Params@ ⋄ t←Get "=>"‿":"
-            (t≡":")◶⟨c.lambda _node_ (⋈⟜Block), AsrtStmt _decl_ ⊢⟩ p ;
-  𝕩:        AsrtStmt _decl_ ToId⍟(Try":") SimpExpr@
-  }∘Peek}
+  _decl_ ← { 𝔽"Declaration" ⋄ Declare 𝔾 𝕩 }
+  _exprStmt ← {AsrtStmt _𝕣: @_opt_⟨
+  "if",     { StIf 𝕩 }
+  "while",  { StWhile 𝕩 }
+  "do",     { DoWhile 𝕩 }
+  "@",      { For 𝕩 }
+  "extend", { Extend 𝕩 }
+  "def",    { Define 𝕩 } ⊣ AsrtStmt
+  "fn",     { DefFun 𝕩 } ⊣ AsrtStmt
+  "oper",   { OpDef 𝕩 }  ⊣ AsrtStmt
+  "{",      @_optGet_⟨"=>", c.lambda _node_ (⋈⟜{Block𝕩})
+                      ":",  AsrtStmt _decl_ ⊢           ⟩ {Params𝕩}
+            { AsrtStmt _decl_ ToId⍟(Try":") SimpExpr 𝕩 }
+  ⟩}
   Expr ← (∾⟜" must appear on its own line" Asrt 0˙) _exprStmt
   Stmt ← ⊢ _exprStmt
 
-  Expr0 ← {𝕊: (⊑"[('"⊐⊏)◶Vec‿Par‿Symbol‿EWord Peek@ }
-  Vec ← c.run _node_ (c.word∘"__vec" ⋈ "["‿Expr‿"]"‿Expr0 _seq)
+  Vec ← c.run _node_ (c.word∘"__vec" ⋈ "["‿Expr‿"]"‿{Expr0𝕩} _seq)
   Par ← ⊑ "("‿Expr‿")" _seq
-  EWord ← (⊑⊏∊dig˙)◶c.word‿c.number ∊⟜(wc∾oc)_ifASCII _begin_ "expression"
+  EW ← ('''≠⊑)◶⟨c.symbol,(⊑⊏∊dig˙)◶c.word‿c.number⟩
+  EWord ← EW ∊⟜('''∾wc∾oc)_ifASCII _begin_ "expression"
+  Expr0 ← @_opt_⟨"[",Vec, "(",Par, EWord⟩
 
   _spreadable ← {<∘⊢⍟⊣⟜𝔽∘Try∘"..."}
   _args ← {𝕗 _argsFn_ (Expr _spreadable)}
@@ -228,18 +233,18 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Get 1⊑𝕗
     a
   }
-  AddParams ← {𝕊∘(c.run  _node_ (⊢⋈"{"‿"}"_args))⍟(Next"{") 𝕩}
-  AddArgs   ← {  (c.call _node_ (⊢⋈"("‿")"_args))⍟(Next"(") 𝕩}
+  AddParams ← @_opt_⟨"{", {AddParams∘(c.run  _node_ (⊢⋈"{"‿"}"_args)) 𝕩}, ⊢⟩
+  AddArgs   ← @_opt_⟨"(", {          (c.call _node_ (⊢⋈"("‿")"_args)) 𝕩}, ⊢⟩
   Callable ← AddParams∘Expr0
-  NoCall ← IsLogic∨´(oc∾"[")=⊏
-  Call ← { c←¬Next noCall ⋄ AddArgs⍟c Callable𝕩 }
+  CanCall ← (¬IsLogic∨´(oc∾"[")=⊏) _test
+  StartsOp ← (IsLogic ∨ ·⊑∊⟜oc _ifASCII∘⊑) _test
+  Call ← { c←CanCall @ ⋄ AddArgs⍟c Callable𝕩 }
 
-  StartsOp ← IsLogic ∨ ·⊑∊⟜oc _ifASCII∘⊑
   ExprFromEnd ← {𝕊 endTok:
-    End ← ∊⟜(endTok∾sep∾⥊¨",:)}]")⌾<
+    End ← (endTok∾sep∾⥊¨",:)}]")_any
     {
-      o ← StartsOp Peek 𝕩
-      Cont ← {p←o ⋄ p∨o↩StartsOp 𝕩}_and_(¬End) Peek
+      o ← StartsOp 𝕩
+      Cont ← {p←o ⋄ p∨o↩StartsOp 𝕩}_and_(¬End)
       c.phrase _node_ (While∘⟨Cont, Call, 1⟩) 𝕩
     }
   }
@@ -248,21 +253,27 @@ Parse ← {𝕊 tokens‿ShowTrace:
   # 𝕩 is the expression preceding ":"
   Declare ← c.declare _node_ {
     n ← 𝕩
-    t ← When ⟨¬Next"=", TypeExpr⟩
-    Get "="
+    t ← When ⟨¬Try"=", Get∘"=" ⊢ TypeExpr⟩
     ⟨n,t,Expr@⟩
   }
-  _decl_ ← { 𝔽"Declaration" ⋄ Declare 𝔾 𝕩 }
   ToId ← {𝕩.IsDef@⋄𝕩} c.PhraseTryWord
 
   _lines_ ← { Line _𝕣_ Cont 𝕩:
-    Seps @
-    s ← 1 ⋄ SepLine ← {¬s?Get sep; l←Line𝕩 ⋄ s↩Seps@ ⋄ l}
+    Seps @ ⋄ s ← 1
+    SepLine ← {"Expected separator" Asrt s ⋄ l←Line𝕩 ⋄ s↩Seps@ ⋄ l}
     While ⟨Cont, SepLine, 0⟩
   }
-  _blockLines ← { 𝔽 _lines_ (¬Try∘"}") }
-  Body ← ⊑ ⟨"{", Stmt _blockLines⟩_seq
-  Block ← Next∘"{"◶⟨Expr, c.body _node_ Body⟩
+  _blockLines ← { ⊑ ⟨"{", 𝔽 _lines_ (¬Try∘"}")⟩_seq }
+  Body ← Stmt _blockLines
+  Block ← @_opt_⟨"{",c.body _node_ Body, Expr⟩
+
+  _if ← {
+    TrySeps ← {s←Seps@ ⋄ Back⊸⊢⍟(s>⊢) Try 𝕩}
+    "if"‿"("‿Expr‿")"‿𝔽‿(When∘⟨TrySeps∘"else",𝔽⟩)_seq
+  }
+  StIf ← c.if _node_ (Block _if) 
+  StWhile ← c.while _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Block _seq)
+  DoWhile ← c.while _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")" _seq)
 
   For ← c.for _node_ {𝕤
     OA← "@for: multiple variables must use ""over"""⊸Asrt
@@ -284,10 +295,10 @@ Parse ← {𝕊 tokens‿ShowTrace:
   }
 
   # 𝕩 indicates if preceding token was =
-  Result ← c.body _node_ (("{"‿"@"⊸⊐⌾<Peek)◶⟨
-    Body
-    ⋈For
-    ⋈∘Expr "Missing = before body?"Asrt⊢
+  Result ← c.body _node_ (@_opt_⟨
+    "{", Body
+    "@", ⋈For
+         ⋈∘Expr "Missing = before body?"Asrt⊢
   ⟩)
 
   Params ← c.params _node_ {𝕤
@@ -307,14 +318,14 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Get "}"
     a‿c
   }
-  _withParams ← {𝕤
-    Next∘"{"◶⟨𝔽, c.lambda _node_ (Params‿𝕊 _seq)⟩@
+  _withParams ← {
+    Rec ← @_opt_⟨"{",c.lambda _node_ (Params‿{Rec𝕩} _seq), 𝔽⟩
   }
   IdTarget ← c.newId _node_ Name
-  Target ← Next∘"{"◶⟨IdTarget, Params⟩
+  Target ← @_opt_⟨"{",Params, IdTarget⟩
 
+  Arg ← c.arg _node_ ((Try∘"...")‿Name‿":"‿SimpExpr _seq)
   Function ← c.function _node_ {𝕤
-    Arg ← c.arg _node_ ((Try∘"...")‿Name‿":"‿SimpExpr _seq)
     a ← "("‿")" _argsFn_ Arg @
     r ← When ⟨Try":", TypeExpr⟩
     b ← Result Try"="
@@ -339,23 +350,23 @@ Parse ← {𝕊 tokens‿ShowTrace:
     t‿{ (≠confName) > i←confName⊸⊐⌾<n ? ("config "∾n) ast.Build i⊑confVal ; r }
   }
 
-  OpType ← {𝕤
-    pre ← (⊑≢Get) "prefix"‿"infix"
-    pre◶⟨'p', Next◶⟨'n', ⊑∘Get∘1⟩⟩ "none"‿"left"‿"right"
-  }
+  OpType ← @_optGet_⟨
+    "prefix", 'p'
+    "infix",  @_optGet_(⟨'n'⟩∾˜∾⋈⟜⊑¨"none"‿"left"‿"right")
+  ⟩
   Number ← c.number _node_ (∊⟜dig _begin_ "number")
   OpDef ← c.opDef _node_ ("oper"‿Oper‿Name‿OpType‿Number _seq)
 
   Include ← c.include _node_ ("include"‿Symbol _seq)
 
-  ChkLoc ← ("localizable line"⊸⋈ Asrt "if"⊸≢)⊸⊢∘Peek
-  Line ← {𝕤
-    Try "local" ? Try∘"{"◶⟨SubLine∘ChkLoc,c.body _node_ MultiLine⟩@ ;
-    {𝕩.NonLocal@⋄𝕩} SubLine∘Peek@
-  }
-  MultiLine ← Line _blockLines
-  TopIf ← c.topif _node_ (∾⌾(¯1⊸⊑) Try∘"{"◶⟨⋈Line, MultiLine⟩ _if)
-  SubLine ← "include"‿"if"‿"config"⊸⊐⌾<◶⟨Include, TopIf, Config, Stmt⟩
+  MultiLine ← {Line𝕩} _blockLines
+  TopIf ← c.topif _node_ (∾⌾(¯1⊸⊑) @_opt_⟨"{",MultiLine, ⋈{Line𝕩}⟩ _if)
+  SubLine ← @_opt_⟨"include",Include, "if",TopIf, "config",Config, Stmt⟩
+  LocLine ← @_opt_⟨"if","localizable line"⊸⋈ Asrt 0˙, SubLine⟩
+  Line ← @_optGet_⟨
+    "local", @_opt_⟨"{",c.body _node_ MultiLine, LocLine⟩
+             {𝕩.NonLocal@⋄𝕩}∘SubLine
+  ⟩
 
   Program ← c.body _node_ (Line _lines_ Rem)
 
