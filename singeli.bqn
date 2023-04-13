@@ -1045,16 +1045,17 @@ nodes ← {
     VisitLambda ⇐ {⟨(iPar⊏uPar)∾⟜(∾""<⊸∾":"⊸∾¨)¨tname,𝕏¨conds⟩}
     ScopeLambda ⇐ {(uPar∾uTyp) scopes.New 𝕩}
     AllEq ← ∧´⊏Match¨1⊸↓
-    Count‿DeVar ← (+´¬)⊸{
-      ¬∨´𝕩 ? ⟨𝕨=≠, ⊢⟩ ;
-      ⟨𝕨≤≠, (0‿𝕨-˜⋈⁼/𝕩)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)⟩
-    } pgather
-    CheckStatic ← {
-      ¬∧´AllEq¨iPar⊔𝕩 ? <"values given the same name don't match" ;
-      ¬∧´((∧´IsTyped¨)_and_(AllEq{𝕩.type}¨)⊏⟜𝕩)¨iTyp ? <"specified types don't match" ;
-      𝕩
-    }
-    Proc ← Count◶⟨<∘"lengths don't match",CheckStatic∘DeVar⟩
+    proc ← {⊢} {e‿F‿N𝕊𝕩:e‿F𝕊⊑⟨𝕏N⟩; e‿1𝕊𝕩:𝕏; e‿F𝕊𝕩:f◶⟨<e,𝕏⟩}´ ⟨
+      ⟨"lengths don't match"⟩∾(+´¬)⊸{
+        ¬∨´𝕩 ? ⟨𝕨=≠⟩ ;
+        ⟨𝕨≤≠, (0‿𝕨-˜⋈⁼/𝕩)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)⟩
+      } pgather
+      ⟨"values given the same name don't match",
+       {∧´∊𝕩?1 ; {𝕎∧𝕏}´{AllEq𝕩⊸⊏}¨(1<≠¨)⊸/⊔𝕩}iPar⟩
+      ⟨"specified types don't match",
+       {0=≠𝕩?1 ; {𝕎∧𝕏}´{1=≠𝕩 ? IsTyped(⊑𝕩)⊸⊑
+                       ;(∧´IsTyped¨)_and_(AllEq{𝕩.type}¨)𝕩⊸⊏}¨𝕩}iTyp⟩
+    ⟩
     ToVals ← {(iPar∊⊸/𝕩)∾{𝕩.type}¨iTyp⊑¨⊸⊏𝕩}
     GetTry ⇐ {𝕊 e:
       Try ⇐ {
