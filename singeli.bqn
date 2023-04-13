@@ -1024,7 +1024,7 @@ nodes ← {
     ⟨node,Dump,Disp,NonLocal,Scope,Eval⟩⇐Defaults "phrase"‿visit
     Oper⇐{
       ⟨node⟩↩n ← (o.Oper 𝕩)¨⊸operator.Parse things
-      Scope↩{𝕨n.Scope𝕩} ⋄ Eval↩{𝕨n.Eval𝕩} ⋄ Disp↩{𝕨n.Disp𝕩} # fields of n can change
+      Scope↩{𝕨n.Scope𝕩} ⋄ Eval↩{𝕨(Eval↩n.Eval)𝕩} ⋄ Disp↩{𝕨n.Disp𝕩} # fields of n can change
       operator.nil
     }
   }
