@@ -219,8 +219,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   Vec ← c.run _node_ (c.word∘"__vec" ⋈ "["‿Expr‿"]"‿{Expr0𝕩} _seq)
   Par ← ⊑ "("‿Expr‿")" _seq
-  EW ← ('''≠⊑)◶⟨c.symbol,(⊑⊏∊dig˙)◶c.word‿c.number⟩
-  EWord ← EW ∊⟜('''∾wc∾oc)_ifASCII _begin_ "expression"
+  EWord ← c.token _node_ (∊⟜('''∾wc∾oc)_ifASCII _begin_ "expression")
   Expr0 ← @_opt_⟨"[",Vec, "(",Par, EWord⟩
 
   _spreadable ← {<∘⊢⍟⊣⟜𝔽∘Try∘"..."}
@@ -1002,6 +1001,7 @@ nodes ← {
   }
   Number ⇐ numbers.Read _value
   Symbol ⇐ (symbols.New 1↓¯1↓⊢)_value
+  Token ⇐ ('''≠⊑∘⊢)◶⟨Symbol,(⊑⊏∘⊢∊dig˙)◶Word‿Number⟩
   Run ⇐ {
     𝕨𝕊⟨⟨infix⟩,params⟩: CondNode´ 𝕩;
     ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨
