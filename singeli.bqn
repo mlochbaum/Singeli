@@ -267,7 +267,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Block ← @_opt_⟨"{",c.body _node_ Body, Expr⟩
 
   _if ← {
-    TrySeps ← {s←Seps@ ⋄ Back⊸⊢⍟(s>⊢) Try 𝕩}
+    TrySeps ← {s←Seps@ ⋄ Back⊸⊢⍟(s>⊢) Rem◶0‿Try 𝕩}
     "if"‿"("‿Expr‿")"‿𝔽‿(When∘⟨TrySeps∘"else",𝔽⟩)_seq
   }
   StIf ← c.if _node_ (Block _if) 
