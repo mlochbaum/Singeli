@@ -773,8 +773,9 @@ blocks ← {kname⇐"block"
     block.Exec ind‿vars
   }
 }
-Load ← {  𝕊 ptr‿i: functions.Emit ⟨types.Deref TypeOf ptr, symbols.New "^load", ptr, i⟩ }
-Store← {v 𝕊 ptr‿i: functions.Emit ⟨types.Deref TypeOf ptr, symbols.New "^store", ptr, i, v⟩ }
+AccessPtr ← { (⊢⊣ "Can't access void pointer" ! ·¬types.IsVoid) types.Deref TypeOf 𝕩 }
+Load ← {  𝕊 ptr‿i: functions.Emit ⟨AccessPtr ptr, symbols.New "^load", ptr, i⟩ }
+Store← {v 𝕊 ptr‿i: functions.Emit ⟨AccessPtr ptr, symbols.New "^store", ptr, i, v⟩ }
 
 
 builtins ← {
