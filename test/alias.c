@@ -12,7 +12,7 @@ static int32_t* si_f1_g() {
   int32_t v0_b = ((int32_t)5ll);
   int32_t v1_c = v0_b;
   v1_c = ((int32_t)6ll);
-  int32_t v2_a[] = {v0_b,v0_b};
+  int32_t v2_a_[] = {v0_b,v0_b}; int32_t* v2_a = v2_a_;
   return v2_a;
 }
 

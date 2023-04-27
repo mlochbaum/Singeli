@@ -133,15 +133,21 @@ Export ← {
   val ← Lit 𝕩
   ∾⟨ret," = ",val,";"⟩
 }
-Define ← {𝕊 ty‿id‿val:
-  {'{'=⊑1↑⊑val? '*'=⊑ty? ty↓˜↩1⋄id∾↩"[]"; @}
-  ∾ ⟨id as.Type ty⟩ ∾ (('?'≠·⊑1↑⊑) / ⟨" = "⟩⊸∾) val
+Define ← {st 𝕊 ty‿id‿val:
+  arr ← {'{'=⊑1↑⊑val? '*'=⊑ty? # Define array, then pointer cover
+    v←val ⋄ val↩i←id∾"_" ⋄ id∾⍟st˜↩"const "
+    ⟨st Define ⟨1↓ty,i∾"[]",v⟩, "; "⟩
+  ; ⟨⟩}
+  ∾∾⟨
+    arr, st/⟨"static "⟩
+    ⟨id as.Type ty⟩, (('?'≠·⊑1↑⊑) / ⟨" = "⟩⊸∾) val
+  ⟩
 }
 Constant ← {
   id   ← Rename 𝕩
   type ← Name 𝕩 # Define turns to type
   val ← Lit 𝕩
-  ∾⟨"static ",Define type‿id‿val,";"⟩
+  (1 Define type‿id‿val)∾";"
 }
 Require ← { types.Require Name 𝕩 ⋄ "" }
 ⟨New, Mut⟩ ← {
@@ -167,7 +173,7 @@ Require ← { types.Require Name 𝕩 ⋄ "" }
     c ← code⊸⊐⌾< kind
     (∾"Unknown new: `"‿kind‿"`") ! c<≠code
     val ← (c⊑op) {𝕎𝕩} 𝕩
-    {"void"≡ty?∾val; Define ty‿id‿val}
+    {"void"≡ty?∾val; 0 Define ty‿id‿val}
   }
   Mut ⇐ {
     id   ← Name 𝕩
