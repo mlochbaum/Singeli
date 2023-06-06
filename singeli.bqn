@@ -602,20 +602,21 @@ types ← {kname⇐"type"
 registers ← {kname⇐"register"
   Is ← kname ≡ Kind
   Transient ⇐ {
-    owner⇐functions.current
+    owner⇐functions.current ⋄ labc⇐owner.labc
     kind⇐kname ⋄ shows⇐"(temp)" ⋄ type⇐𝕩 ⋄ fmtType⇐1 ⋄ Matches⇐≡
     name←⟨⟩ ⋄ AddName⇐{name∾↩<𝕩}
     mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1} ⋄ SetMut⇐!
     ShowReg⇐{showReg↩∾⟨𝕏@⟩∾"_"⊸∾¨(ref=1)/name}
   }
   Declare ⇐ { name 𝕊 type‿val:
-    owner⇐functions.current
+    owner⇐functions.current ⋄ labc⇐owner.labc
     kind⇐kname ⋄ shows⇐name ⋄ type⇐ ⋄ fmtType⇐1 ⋄ Matches⇐≡
     addName⇐@ ⋄ {𝕩.AddName name}⍟Is val
     mut⇐0 ⋄ ref⇐0 ⋄ Use⇐{𝕤⋄ref+↩1}
     SetMut⇐{𝕤⋄mut↩1}  # Changed (for blocks, and transient elimination)
     ShowReg⇐{showReg↩𝕩}∘{
-      Is val? ¬val.mut? (¬mut)∨1=val.ref? ref+↩val.ref-1 ⋄ val.ShowReg𝕩 ;
+      Is val? ¬val.mut? (¬mut)∨1=val.ref? labc=val.labc?
+        ref+↩val.ref-1 ⋄ val.ShowReg𝕩 ;
       ∾⟨𝕏@,"_",name⟩
     }
   }
@@ -659,6 +660,7 @@ functions ← {kname⇐"function"
     kind⇐kname ⋄ shows⇐"$f"∾(•Repr id⇐𝕩)∾"_"⊸∾⍟(0<≠)𝕨 ⋄ Matches⇐≡ ⋄ type⇐@
     arch⇐architecture.NewFunction@ ⋄ SetArch⇐{arch↩𝕩}
     label←¯1 ⋄ slabel←⟨⟩ ⋄ args←atypes←ctypes←⟨⟩ ⋄ rType⇐@
+    labc⇐0 ⋄ IncLab⇐{𝕊:labc+↩1}  # Labels set: don't alias through label
     NextLabel⇐{𝕤⋄ labels.New label+↩1 }
     UseSymLabel⇐{
       ∊⟜slabel⌾<𝕩 ? !∾"Label "‿𝕩‿" used in this function already" ;
@@ -739,7 +741,7 @@ functions ← {kname⇐"function"
     t AppendNew ⟨"call",t,f⟩ ∾ ≠⊸∾ {IsTup𝕩 ? ∾𝕊¨𝕩 ; ⟨𝕩⟩} a
   }
   _instr ← { Append (𝕨𝔽𝕩)<⊸∾𝕨⋈𝕩 ⋄ 𝕩 }
-  SetLabel ⇐ "lbl"_instr
+  SetLabel ⇐ "lbl"_instr ⊣ { current.IncLab 𝕩 }
   Goto     ⇐ "goto"⊘"gotoT"_instr
   GotoF    ⇐ "gotoF"_instr
   ReadLabel ← {
