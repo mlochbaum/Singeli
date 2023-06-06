@@ -934,7 +934,7 @@ program ← {
     ShowReg ← {h←¯1⋄{𝕊:"v"∾•Repr h+↩1}}{𝕩.ShowReg𝕗}
     ProcInstrs ← {
       # Mark each register with the number of times it's used after definition
-      (registers.MarkUse¨2↓⊢)¨ 𝕩
+      (registers.MarkUse¨(1+⊏∊"new"‿"mut"˙)↓⊢)¨ 𝕩
       # Combine new into next mut call if that's the only use
       nm ← / ∧⟜«˝ "new"‿"mut" ≡⌜ ⊑¨𝕩
       nm (≡◶0‿{1=𝕩.ref}¨˝1‿2⊑¨𝕩⊏˜0‿1+⌜⊢)⊸/↩
