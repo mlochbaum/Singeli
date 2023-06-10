@@ -1,0 +1,11 @@
+beginFn f0_test u1 3 v0_a u64 v1_a u64 v2_a u64
+new v3_r val u64 v1_a
+mut v3_r !1:u64
+mut v1_a v3_r
+new v4_r val u64 v2_a
+mut v4_r !3:u64
+mut v2_a v4_r
+new v5 emit u1 'res' v0_a v1_a v2_a
+ret v5
+endFn
+

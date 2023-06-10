@@ -1,0 +1,16 @@
+include 'skin/c'
+
+def fortup{vars,begin,end,block} = {
+  def f{i,l} = if (i<l) {
+    exec{i, vars, block}
+    f{i+1, l}
+  }
+  f{begin,end}
+}
+
+def load{p,i} = tupsel{i,p}
+def store{p,i,v} = { tupsel{i,p} = v }
+fn test(a:tup{u64,u64,u64}) = {
+  @fortup (r in a, k in tup{8,1,3} over _ from 1 to 3) r = k
+  emit{u1, 'res', ...a}
+}

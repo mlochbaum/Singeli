@@ -884,7 +884,7 @@ env ← {
     pv ← names functions.Declare⍟(Reg⊢)⚇∞‿0⟜(Load∘⋈⟜ind)¨ ptrs
     vars‿parent ⇐ (var.Fixed¨(ni⥊<ind)∾pv) Make par
     Stores ⇐ {𝕤
-      ptrs {registers.Mutated 𝕩 ? Store 𝕨‿ind‿𝕩 ;@}⚇0 pv
+      ptrs {IsTup 𝕩 ? 𝕨𝕊¨𝕩 ; registers.Mutated 𝕩 ? Store 𝕨‿ind‿𝕩 ;@}¨ pv
     }
   }
 }
