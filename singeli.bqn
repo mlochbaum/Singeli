@@ -880,7 +880,8 @@ env ← {
   New  ⇐{ (var.New¨   𝕨) Make 𝕩 }
   Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
   Block⇐{⟨ni,Load‿Store,ind‿ptrs,names⟩ 𝕊 par:
-    pv ← names functions.Declare⚇∞‿0⟜(Load∘⋈⟜ind)¨ ptrs
+    Reg ← "register"≡Kind
+    pv ← names functions.Declare⍟(Reg⊢)⚇∞‿0⟜(Load∘⋈⟜ind)¨ ptrs
     vars‿parent ⇐ (var.Fixed¨(ni⥊<ind)∾pv) Make par
     Stores ⇐ {𝕤
       ptrs {registers.Mutated 𝕩 ? Store 𝕨‿ind‿𝕩 ;@}⚇0 pv
