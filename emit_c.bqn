@@ -1,4 +1,4 @@
-cpu‿prefix ← ∾⟜"_"⌾(1⊸⊑) •args
+cpp‿cpu‿prefix ← ∾⟜"_"⌾(2⊸⊑) •args
 
 types ← {
   ub←uv←0 ⋄ req←⟨⟩ ⋄ init ⇐ {ub↩uv↩0⋄req↩⟨⟩}
@@ -61,12 +61,12 @@ StartLine ← { 𝕊 str:
 }
 
 Nat ← 10⊸×⊸+˜´∘⌽ -⟜'0'
+Nest ← +`·-˝=⌜
 as ← {
   Sym ⇐ (⊢-128×(' '+128)⊸=) 1↓¯1↓⊢
   Name ⇐ Sym⍟('''=⊑)
   Rename ⇐ prefix∾1⊸↓⍟('$'=⊑)
   I32 ⇐ ('-'=⊑)⊸(⊣-∘⊢⍟⊣Nat∘↓)
-  Nest ← +`·-˝=⌜
   Lit ⇐ (⊑"'$!"⊐⊏)◶Sym‿({decl.Call𝕩⋄𝕩}⍟('f'=⊑∘⊣)⟜Rename 1⊸↓)‿{
     Bl ← 0<"{}"⊸Nest ⋄ br ← Bl𝕩
     v‿t ← (1-˜+`×¬)∘(1⌾⊑br<':'⊸=)⊸⊔ 𝕩
@@ -137,11 +137,22 @@ Export ← {
 Define ← {st 𝕊 ty‿id‿val:
   arr ← {'{'=⊑1↑⊑val? '*'=⊑ty? # Define array, then pointer cover
     v←val ⋄ val↩i←id∾"_" ⋄ id∾⍟st˜↩"const "
-    ⟨st Define ⟨1↓ty,i∾"[]",v⟩, "; "⟩
+    {cpp>st? DefCppArr ⟨ty,i,∾v⟩ ; ⟨st Define ⟨1↓ty,i∾"[]",v⟩, "; "⟩}
   ; ⟨⟩}
+  eq ← {cpp>st? ⟨"; ",id," = "⟩ ; ⟨" = "⟩}
   ∾∾⟨
-    arr, st/⟨"static "⟩
-    ⟨id as.Type ty⟩, (('?'≠·⊑1↑⊑) / ⟨" = "⟩⊸∾) val
+    arr, (1=st)/⟨"static "⟩
+    ⟨id as.Type ty⟩, (('?'≠·⊑1↑⊑) / eq⊸∾) val
+  ⟩
+}
+# For C++, initialize array by creating a second in a temp scope and copying
+DefCppArr ← {𝕊 ty‿i‿v:
+  it←i∾"t"
+  n←•Repr("{}"≢v)+´(','⊸=∧1="{}"⊸Nest)v
+  ∾⟨
+    0 Define ⟨1↓ty,∾i‿"["‿n‿"]",⟨"?"⟩⟩, "; { "
+    2 Define ⟨1↓ty,it∾"[]",v⟩, "; "
+    "for (unsigned i=0; i<",n,"; i++) ",i,"[i] = ",it,"[i]; } "
   ⟩
 }
 Constant ← {

@@ -492,13 +492,13 @@ The arguments to the `singeli` command are input files and options in any order.
 
 `-o`, `--out`: File path for compiled output; otherwise print directly to stdout.
 
-`-t`, `--target`: Output type: `c` for C code, and `ir` for Singeli IR. The IR format may not be stable, and this option is currently just used for development.
+`-t`, `--target`: Output type: `c` for C code, `cpp` for C++ (avoiding "crosses initialization" errors) and `ir` for Singeli IR. The IR format may not be stable, and that setting is currently just used for development.
 
 `-a`, `--arch`: List of architecture features in the target system.
 
 `-l`, `--lib`: Library paths to search in `include` statements. So `-l path` means `include 'x'` will check for `lib/x.singeli`, and `-l lib=path` means `include 'lib/x'` will check for `path/x.singeli`. All paths implied by `-l` are searched in order, followed by Singeli's built-in includes.
 
-`-c`, `--config`: Specify the value of a `config` variable. For example, `config var=4` normally acts as `def var=4`, but with `-c var='conf'` is will act as `def var='conf'` instead.
+`-c`, `--config`: Specify the value of a `config` variable. For example, `config var=4` normally acts as `def var=4`, but with `-c var='conf'` it will act as `def var='conf'` instead.
 
 `-p`, `--pre`: A preamble to be placed before the emitted C output.
 

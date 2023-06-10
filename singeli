@@ -8,7 +8,7 @@ short‿long‿args‿dup‿desc ← <˘⍉> ⟨
   "h"‿"help"  ‿0‿1‿"Print this message and exit"
   "o"‿"out"   ‿1‿0‿"Output file (print to stdout by default)"
 # "i"‿"stdin" ‿0‿0‿"Use stdin as input, after any argument files"
-  "t"‿"target"‿1‿0‿"Output type: c (default), ir"
+  "t"‿"target"‿1‿0‿"Output type: c (default), cpp, ir"
   "a"‿"arch"  ‿1‿1‿"Architecture features: list, or none, native (default), all"
   "l"‿"lib"   ‿1‿1‿"Library paths: lib=path to try path/x for include 'lib/x'"
   "c"‿"config"‿1‿1‿"Configuration: name=value to set config name to value"
@@ -47,7 +47,8 @@ arch ← feats •Import "arch.bqn"
 frontend ← arch‿libpaths‿configs •Import "singeli.bqn"
 backend ← {
   ⟨"ir"⟩≡target ? ⊢ ;
-  pre ⊑⊸{𝕨⊸𝕏}⍟(0<≠∘⊣) arch‿("si"⊣´namepre) •Import "emit_c.bqn"
+  par ← ⟨⟨"cpp"⟩≡target,arch,"si"⊣´namepre⟩
+  pre ⊑⊸{𝕨⊸𝕏}⍟(0<≠∘⊣) par •Import "emit_c.bqn"
 }
 output ← {
   ≠out ? (Rel⊑out) •file.Chars ⊢ ;
