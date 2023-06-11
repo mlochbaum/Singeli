@@ -281,15 +281,15 @@ Parse ← {𝕊 tokens‿ShowTrace:
     NA← "@for: loop variable must be a name"⊸Asrt
     Get "@"
     f ← Callable@
-    Get "("
+    Get "(" ⋄ LFs@
     to← SimpExpr@
     NE← {𝕤⋄ n←⋈∘{NA@≢𝕩⋄𝕩}∘c.PhraseTryName⍟𝕩 to ⋄ to↩SimpExpr@ ⋄ n}
-    {Try"in"? to↩⟨⊑NE 1,to⟩; @}
-    pe← While ⟨Try∘",", Try∘"in"◶⟨⋈,⋈⟜SimpExpr⟩ Name, 0⟩
-    ps← {Try"over"?(<NE 0==to)∾𝕩; OA 0=≠𝕩⋄⟨⟩} pe          # Pointers
-    fr← When ⟨Try"from", SimpExpr⟩                        # Start index
-    i ← {¬Try"to"?TA 0=≠fr⋄⟨⟩; 0<=to?ps∾↩<NE 0⋄⟨⟩; NE 1}  # Index variable
-    Get ")"
+    {Div"in"? to↩⟨⊑NE 1,to⟩; @}
+    pe← While ⟨Div∘",", Div∘"in"◶⟨⋈,⋈⟜SimpExpr⟩ Name, 0⟩
+    ps← {Div"over"?(<NE 0==to)∾𝕩; OA 0=≠𝕩⋄⟨⟩} pe          # Pointers
+    fr← When ⟨Div"from", SimpExpr⟩                        # Start index
+    i ← {¬Div"to"?TA 0=≠fr⋄⟨⟩; 0<=to?ps∾↩<NE 0⋄⟨⟩; NE 1}  # Index variable
+    LFs@ ⋄ Get ")"
     b ← Block@
     ⟨f,ps,i,fr,to,b⟩
   }
