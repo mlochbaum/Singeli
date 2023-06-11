@@ -227,8 +227,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
   _args ← {𝕗 _argsFn_ (Expr _spreadable)}
   _argsFn_ ← {𝕤
     Get ⊑𝕗
-    Try 1⊑𝕗 ? ⟨⟩ ;
     LFs@
+    Try 1⊑𝕗 ? ⟨⟩ ;
     a ← While ⟨Div∘",", 𝔾, 1⟩
     Get 1⊑𝕗
     a
@@ -303,6 +303,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   Params ← c.params _node_ {𝕤
     Get "{"
+    LFs@
     Try "}" ? (0⥊<↕4)‿⟨⟩ ;
     Param ← {𝕤
       v ← Try "..."
@@ -312,7 +313,6 @@ Parse ← {𝕊 tokens‿ShowTrace:
       v‿n‿e‿t
     }
     vm ← "At most one variable-length parameter allowed"
-    LFs@
     a ← While ⟨Div∘",", Param, 1⟩ ⋄ vm Asrt 1≥+´⊑¨a
     c ← While ⟨Div∘"&", CondExpr, 0⟩
     Get "}"
