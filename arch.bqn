@@ -51,7 +51,13 @@ ReadNative ← {𝕊:
     0<≠l ? ToUpper¨ 1↑l
   ;
     l ← (@+10) Spl (1⊑•SH)⎊⟨⟩ "sysctl"‿"machdep.cpu" # For macs
-    0<≠l ? l
+    0<≠l ? {
+      ∨´(∨´"feature"⊸⍷)¨l ? l
+    ;
+      l ← (@+10) Spl 1⊑ •SH "sysctl"‿"hw.optional" # ARM
+      a ← "hw.optional.arm.FEAT"
+      ⋈ToUpper ":"∾ ∾ {' '⌾⊑(≠a)↓(∧`':'⊸≠)⊸/𝕩}¨ a⊸(⊣≡≠⊸↑)¨⊸/ l
+    }
   ;
     ! "Couldn't find CPU features"
   }
