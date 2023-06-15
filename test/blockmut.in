@@ -4,7 +4,7 @@ include 'arch/c'
 def for{vars,begin,end,block} = {
   i:u64 = begin
   while (i < end) {
-    exec{i, vars, block}
+    block{i, vars}
     i = i+1
   }
 }

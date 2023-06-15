@@ -762,18 +762,17 @@ functions ← {kname⇐"function"
 
 blocks ← {kname⇐"block"
   New ⇐ {𝕊 ind‿ptrs‿body‿ls‿e:
-    kind⇐kname
-    shows⇐"{block}" ⋄ Matches⇐≡
-    Exec⇐{
+    {
       "Wrong number of pointer arguments in block exec" ! ptrs≡○≠1⊑𝕩
       r ← body.Eval be ← ⟨≠ind,ls,𝕩,ptrs⟩ env.Block e
       be.Stores @
       r
-    }
+    }_e2
   }
   Exec ⇐ {𝕊 ind‿vars‿block:
-    "Executing non-block" ! "block"≡Kind block
-    block.Exec ind‿vars
+    "Executing non-block" ! "generator"≡Kind block
+    •Out "exec{i, vars, block} is deprecated; switch to block{i, vars}"
+    Block ind‿vars
   }
 }
 AccessPtr ← { (⊢⊣ "Can't access void pointer" ! ·¬types.IsVoid) types.Deref TypeOf 𝕩 }
@@ -806,7 +805,7 @@ builtins ← {
     ⍉> ⟨
       ⟨"__set",functions.Mut _p2⟩
       ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"}⊣•Out∘Fmt⟩
-      ⟨"exec",blocks.Exec _e3⟩
+      ⟨"exec",blocks.Exec _e3⟩ # Deprecated; will be removed
       ⟨"match",Match _p2⟩
       ⟨"undefined",(constants.Undefined⊣"undefined: expected type"!"type"≡Kind)_p1⟩
       ⟨"hastype",IsTyped∘⊑ _and_ ({𝕩.type}⊸Match´)_e2⟩

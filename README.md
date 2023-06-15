@@ -49,10 +49,10 @@ Here you can see that code to be executed at runtime is written in an imperative
 
 If possible, iteration should be done with for-each loops. In SIMD programming these loops are very important and come in many varieties, taking vectorization and unrolling into account. So Singeli doesn't provide a single for loop structure, but rather a general mechanism for defining loops. Here's what a definition looks like:
 
-    def for{vars,begin,end,block} = {
+    def for{vars,begin,end,iter} = {
       i:u64 = begin
       while (i < end) {
-        exec{i, vars,block}
+        iter{i, vars}
         ++i
       }
     }
@@ -63,7 +63,7 @@ While this loop *is* an ordinary generator (allowing other loops to call it), sp
       src = 1 + dst
     }
 
-Outside the loop, these variables are pointers, and inside it, they are individual values. It's `exec` in the loop's definition that performs this conversion, using the given index `i` to index into each pointer in `vars`. Each variable tracks whether its value was set inside the loop and writes to memory if this is the case.
+Outside the loop, these variables are pointers, and inside it, they are individual values. It's the `iter` generator that performs this conversion, using the given index `i` to index into each pointer in `vars`. Each variable tracks whether its value was set inside the loop and writes to memory if this is the case.
 
 ## Generators
 
@@ -124,7 +124,6 @@ A generator is one kind of value—that is, something that's first-class at comp
 | register  | A typed value, unknown until runtime
 | function  | Takes and returns typed values at runtime
 | label     | Target for `goto{}`
-| block     | Used for `@for` loops
 
 The simplest are discussed in this section, and others have dedicated sections below.
 
@@ -253,19 +252,19 @@ A for "loop" looks a lot like the for-each loops that are becoming common in hig
     # Use "in" to give the element a different name from the pointer
     @other_for (x in src over n) x = 2*x
 
-The name after `@` is just a name, and is called as a generator. The following definition of `for` gives a typical C-like loop. It's passed a block and evaluates it with `exec`; the details are discussed below.
+The name after `@` is just a name, and is called as a generator. The following definition of `for` gives a typical C-like loop. It's passed a generator `iter` that evaluates the block; the details are discussed below.
 
-    def for{vars,begin,end,block} = {
+    def for{vars,begin,end,iter} = {
       i:u64 = begin
       while (i < end) {
-        exec{i, vars,block}
+        iter{i, vars}
         ++i
       }
     }
 
 #### Descriptor
 
-The *descriptor* is the part in parentheses, and lists the variables and range to use for the loop. It provides the `vars` (a tuple of pointers), `begin`, and `end` parameters to the `for` generator above, and it defines which names are used in the main block of the loop, which then forms the `block` parameter.
+The *descriptor* is the part in parentheses, and lists the variables and range to use for the loop. It provides the `vars` (a tuple of pointers), `begin`, and `end` parameters to the `for` generator above, and it defines which names are used in the main block of the loop, which then forms the `iter` parameter.
 
 Here's the pattern. Square brackets `[]` indicate an optional part, and the `…` means more names-maybe-in-pointers can appear, separated by commas.
 
@@ -290,9 +289,9 @@ Once the descriptor and body are parsed, the following values are passed to what
 - `vars`: a tuple, the values of all pointers listed before "over"
 - `begin`: the value of the expression after "from", or number 0
 - `end`: the value of the expression at the end, after "to" if it's there
-- `block`: a special value produced from the for loop's body
+- `iter`: a generator that runs the for loop's body
 
-Most of the time the generator will evaluate the block—otherwise what's the point? This is done with the built-in generator `exec{}`, which is where the magic happens. It's called with `exec{index, ptrs, block}`, where `ptrs` is a tuple of pointers (it doesn't have match `vars` created by the for loop), `block` is a for loop block value, and `index` is an index. Then it:
+Most of the time the generator will evaluate the block—otherwise what's the point? This is done with `iter{index, ptrs}`, where `ptrs` is a tuple of pointers (it doesn't have match `vars` created by the for loop), and `index` is an index. This generator:
 
 - loads a value from each pointer with `load{p, index}`,
 - evaluates the block using these loaded values and `index`,
@@ -302,26 +301,26 @@ Most of the time the generator will evaluate the block—otherwise what's the po
 Here are some examples.
 
     # The standard for loop, yet again
-    def for{vars,begin,end,block} = {
+    def for{vars,begin,end,iter} = {
       i:u64 = begin
       while (i < end) {
-        exec{i, vars,block}
+        iter{i, vars}
         ++i
       }
     }
 
     # Loop expanded at compile time, implemented with recursion
     # Assumes begin and end are constant, to use compile-time if
-    # Each exec{} compiles to code with a constant index
-    def for_const{vars,begin,end,block} = {
+    # Each iter{} call compiles to code with a constant index
+    def for_const{vars,begin,end,iter} = {
       if (begin < end) {
-        for_const{vars,begin,end-1,block}
-        exec{end-1, vars,block}
+        for_const{vars,begin,end-1,iter}
+        iter{end-1, vars}
       }
     }
 
     # Loop over vectors of length vlen
-    def for_vec{vlen}{vars,begin,end,block} = {
+    def for_vec{vlen}{vars,begin,end,iter} = {
       # Cast each pointer to a vector
       def vptr{ptr:P} = reinterpret{*[vlen]eltype{P}, ptr}
       def vvars = each{vptr, vars}
@@ -331,12 +330,12 @@ Here are some examples.
       def ve = end/vlen               # Round down
 
       # Do the loops
-      for{ vars, begin,   vlen*vb, block}
-      for{vvars, vb,      ve,      block}
-      for{ vars, vlen*ve, end,     block}
+      for{ vars, begin,   vlen*vb, iter}
+      for{vvars, vb,      ve,      iter}
+      for{ vars, vlen*ve, end,     iter}
     }
 
-`for_vec` showcases the flexibility of this approach. Since `for` is a normal generator, it can be called to avoid rewriting the same `while`-based logic everywhere. And since any pointer can be passed to `exec`, modified pointers `vvars` with a different type are fair game. This means `block` will need to handle two different variable types, `T` and `[vlen]T`—fortunately Singeli is designed to support exactly this kind of polymorphism. And it's a requirement you control since you can decide what kind of for loop to use. Finally, `for_vec` takes another parameter *before* being called as a loop. It's invoked with, say, `@for_vec{8} (…)`.
+`for_vec` showcases the flexibility of this approach. Since `for` is a normal generator, it can be called to avoid rewriting the same `while`-based logic everywhere. And since any pointer can be passed to `iter`, modified pointers `vvars` with a different type are fair game. This means `iter` will need to handle two different variable types, `T` and `[vlen]T`—fortunately Singeli is designed to support exactly this kind of polymorphism. And it's a requirement you control since you can decide what kind of for loop to use. Finally, `for_vec` takes another parameter *before* being called as a loop. It's invoked with, say, `@for_vec{8} (…)`.
 
 ## Including files
 
@@ -394,7 +393,6 @@ The following generators are pre-defined in any program. They're placed in a par
 | `return{result}`       | Return `result` (optional if return type is `void`) from current function
 | `export{name,value}`   | Export value for use by the calling language
 | `require{name}`        | Require something from the calling language, such as a C header
-| `exec{ind,vars,block}` | Execute `block` on pointers `vars` at index `i`
 | `load{ptr,ind}`        | Return value at `ptr+ind`
 | `store{ptr,ind,val}`   | Store `val` at `ptr+ind`
 | `makelabel{}`          | Create a label value
@@ -426,7 +424,7 @@ An architecture feature is an uppercase symbol such as `'AVX2'`. Each function i
 | `undefined{type}`   | Unspecified or uninitialized value of the given type
 | `show{vals…}`       | For debugging: print the parameters, and return it if there's exactly one
 
-Possible `kind` results are `number`, `constant`, `symbol`, `tuple`, `generator`, `type`, `register`, `function`, and `block`.
+Possible `kind` results are `number`, `constant`, `symbol`, `tuple`, `generator`, `type`, `register`, and `function`.
 
 ### Types
 

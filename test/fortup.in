@@ -2,7 +2,7 @@ include 'skin/c'
 
 def fortup{vars,begin,end,block} = {
   def f{i,l} = if (i<l) {
-    exec{i, vars, block}
+    block{i, vars}
     f{i+1, l}
   }
   f{begin,end}

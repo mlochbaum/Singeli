@@ -15,9 +15,9 @@ local {
 def empty{tup} = 0 == $tup
 
 # Constant-time evaluation returning a list
-def collect{vars,begin,end,block & begin<=end} = {
+def collect{vars,begin,end,exec & begin<=end} = {
   def c{i,l} = {
-    def r = exec{i, vars, block}
+    def r = exec{i, vars}
     merge{tup{r}, c{i+1, l}}
   }
   def c{l,l} = tup{}

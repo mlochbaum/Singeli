@@ -6,7 +6,7 @@ def Size = u64
 def for{vars,begin,end,block} = {
   i:Size = begin
   while (i<end) {
-    exec{i, vars,block}
+    block{i, vars}
     i = i+1
   }
 }

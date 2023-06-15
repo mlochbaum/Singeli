@@ -1,6 +1,6 @@
 fn fun(x:__pnt{i32}, y:__pnt{u8}) : void = {
   def for{vars,begin,end,block} = {
-    exec{0, vars,block}
+    block{0, vars}
   }
   def istup{t} = match{'tuple', kind{t}}
   def load{p, i & istup{p}} = each{{p}=>load{p,i}, p}
