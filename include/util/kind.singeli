@@ -9,4 +9,3 @@ def kcon = is{'constant'}
 def kreg = is{'register'}
 def kfun = is{'function'}
 def klab = is{'label'}
-def kblo = is{'block'}

@@ -760,10 +760,10 @@ functions ← {kname⇐"function"
   ⟩}
 }
 
-blocks ← {kname⇐"block"
+blocks ← {
   New ⇐ {𝕊 ind‿ptrs‿body‿ls‿e:
     {
-      "Wrong number of pointer arguments in block exec" ! ptrs≡○≠1⊑𝕩
+      "Wrong number of pointer arguments to @for body" ! ptrs≡○≠1⊑𝕩
       r ← body.Eval be ← ⟨≠ind,ls,𝕩,ptrs⟩ env.Block e
       be.Stores @
       r
