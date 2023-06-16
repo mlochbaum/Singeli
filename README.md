@@ -12,7 +12,7 @@ $ singeli input.singeli [-o output.c]
 
 For options see `$ singeli -h` or [this section](#command-line-options). To run `./singeli` as an executable, ensure that [CBQN](https://github.com/dzaima/CBQN) is installed as `bqn` in your executable path, or call as `/path/to/bqn singeli …`.
 
-Singeli [is used](https://github.com/dzaima/CBQN/tree/master/src/singeli/src) for CBQN's SIMD primitive implementations when built with `$ make o3n-singeli` (requires AVX2 or NEON). It's also the implementation language for [SingeliSort](https://github.com/mlochbaum/SingeliSort).
+Singeli [is used](https://github.com/dzaima/CBQN/tree/master/src/singeli/src) for many CBQN primitive implementations, particularly for AVX2 support (compile with `o3n`). It's also the implementation language for [SingeliSort](https://github.com/mlochbaum/SingeliSort).
 
 Early design discussion for Singeli took place at [topanswers.xyz](https://topanswers.xyz/apl?q=1623); now it's in the [BQN forum](https://mlochbaum.github.io/BQN/community/forums.html).
 
