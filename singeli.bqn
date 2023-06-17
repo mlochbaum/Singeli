@@ -64,8 +64,8 @@ numbers ← {kname⇐"number"
   GetBool ⇐ {"Boolean expected"!⊑𝕩∊0‿1⋄𝕩}∘From
   Match ⇐ ∧○Is◶⟨0,≡○Promote⟩
 
-  _be ← {𝕗⊸×⊸+˜´⌽∘⊢}
-  Nat ← (10 _be ⊣ "Ill-formed number"!·∧´0⊸≤∧≤⟜9) -⟜'0'
+  _cn ← {𝔽 ⊣ "Ill-formed number"!·∧´'0'⊸≤∧≤⟜'9'}
+  Nat ← •ParseFloat _cn
   LC ← +⟜(32×1="A["⊸⍋) '_'⊸≠⊸/  # Lowercase, underscores removed
   da ← dig∾'a'+↕26
   Read ⇐ {
@@ -73,12 +73,14 @@ numbers ← {kname⇐"number"
       b ← ('b'=s⊑𝕩)◶⟨16⊣·!"0"⊸≡,Nat⟩ s↑𝕩
       "Invalid base" ! b≤≠da
       d ← (b↑da) (≠∘⊣(⊢⊣"Invalid digits"!∧´∘>)⊐) (1+s)↓𝕩
-      E←b _be ⋄ EE←{h‿l←f.To∘E¨𝕨-⊸(↓⋈↑)𝕩⋄Wrap l f.Add (f.To b⋆𝕨)f.Mul h}
+      E ← b⊸×⊸+˜´⌽∘⊢
+      EE ← {h‿l←f.To∘E¨𝕨-⊸(↓⋈↑)𝕩⋄Wrap l f.Add (f.To b⋆𝕨)f.Mul h}
       (⌊53÷2⋆⁼b) <⟜≠◶E‿EE d
     ;
       _n ← {('-'=⊑)◶⟨𝔽, -∘𝔽 1⊸↓⟩}
-      Pos ← ⊐⟜"."⊸(Nat∘↑ + ·(0<≠)◶⟨0,Nat÷10⋆≠⟩+⟜1⊸↓)
-      ⊐⟜"e"⊸(Pos _n∘↑ × <⟜≠◶⟨1,10⋆·Nat _n+⟜1⊸↓⟩) 𝕩
+      pe ← ⊑𝕩⊐'e' ⋄ e ← pe <⟜≠◶⟨0,Nat _n+⟜1⊸↓⟩ 𝕩
+      m ← pe↑𝕩 ⋄ m /˜↩ ¬dm←m='.'
+      (0≠⊢´)◶⟨⊑,Wrap⟩ (e - (≠m)-⊑dm⊐1)⊸f.ParseDec _cn _n m
   }⟜LC⎊{Err⟨•CurrentError@,𝕨⟩}
 
   InRange ← {1=⊑0⍋˜-˜´⟜(⌽𝕨)¨𝕩}

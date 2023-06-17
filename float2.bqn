@@ -49,6 +49,21 @@ Mod ⇐ {
   b𝕊a: a Sub b Mul (Floor a Div b)
 }
 
+# Decimal parsing
+# For one double, max digits is 15 and max power of 10 is 1e22
+Exp10 ← { 22≥𝕩? To 10⋆𝕩; (⊣´Mul⊢´)𝕊¨⍷⌊2÷˜𝕩+↕2 } # Could save results
+N1 ← •ParseFloat
+Nat ← ≠⊸{
+  15≥𝕨 ? To N1 𝕩 ;
+  20≥𝕨 ? ¯15 ((1e15×N1∘↓) Add12 N1∘↑) 𝕩 ;  # Exact
+  35≥𝕨 ? ¯20 ((1e20 Mul12 •ParseFloat∘↓) Add Nat∘↑) 𝕩 ; # Sum of exacts so it's correctly rounded
+  (Exp10 𝕨-35) Mul Nat 35↑𝕩  # Imprecise
+}
+ParseDec ⇐ { # 𝕨 is base-10 exponent; 𝕩 is digit string
+  0≤𝕨 ? 𝕨 Exp10⊸Mul⍟(0<⊣) Nat 𝕩 ;
+  (𝕨↓𝕩) Nat⊸Add⍟(0<≠∘⊣) (Exp10-𝕨) Div˜ Nat 𝕨↑𝕩
+}
+
 _repr ⇐ { len‿b _𝕣:
   ! ⌊⊸= 2⋆⁼b # Need division by b to be exact
   {c←0 ⋄ {𝕩+↩c⋄c↩⌊𝕩÷b⋄b|𝕩}¨𝕩} ·+´ b|⌊∘÷⟜b⍟(↕len)¨
