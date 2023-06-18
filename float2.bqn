@@ -44,10 +44,9 @@ Mul ⇐ {a𝕊b:
 
 Div ⇐ {b𝕊a:
   yn ← (⊑b) × xn ← ÷⊑a
-  {∞>|yn?
+  {¬∞>|yn? yn‿0 ;
   diff ← ⊑ b Sub a Mul yn‿0
-  yn‿0 Add xn Mul12 diff
-  ;yn‿0}
+  yn‿0 Add xn Mul12 diff }
 }
 
 Mod ⇐ {
