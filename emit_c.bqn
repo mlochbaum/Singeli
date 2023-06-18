@@ -39,7 +39,7 @@ Generate ← {
   l ← ProcLine¨ lf ((⊢-˜+`×¬)∘=⊔⊢) 𝕩
   "Unclosed function" ! 0≡fn
   prelude ← lf Join ("#include<"∾∾⟜">")¨ types.Headers@
-  ∾ ⟨∾⟜(2⥊lf)⍟(0<≠)𝕨⊣prelude⟩∾(decl.Emit@)∾l
+  ∾ (𝕨⊣prelude) ((⊣⋈(⊣×1+⊢)○(0<≠)⥊lf˙)∾⊢) (decl.Emit@)∾l
 }
 
 StartLine ← { 𝕊 str:

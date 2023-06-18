@@ -52,7 +52,7 @@ backend ← {
 }
 output ← {
   ≠out ? (Rel⊑out) •file.Chars ⊢ ;
-  •Out ¯1⊸↓
+  •Out⍟(0<≠) ¯1⊸↓
 }
 
 Output Backend ∾ deplog⊸Frontend¨ files
