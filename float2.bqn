@@ -6,13 +6,15 @@ From ⇐ +´
 
 Add12 ← {a𝕊b:
   s ← a + b
+  {¬∞>|s ? s‿0 ;
   av← s - bv← s - a
-  ⟨s, +´a‿b-av‿bv⟩
+  ⟨s, +´a‿b-av‿bv⟩ }
 }
 Add ⇐ {a𝕊b:
   r ← a +○⊑ b
+  {¬∞>|r ? r‿0 ;
   s ← (-r) +´ ¯1⌽⌽⍟(a<○(|⊑)b) b⌽⊸∾a
-  r Add12 s
+  r Add12 s }
 }
 
 Neg ⇐ -
@@ -22,25 +24,30 @@ Sub ⇐ Add⟜Neg
 
 Cmp ⇐ × · (0=⊑)⊸⊑ Sub
 
-p ← 53  # Double-precision float
-Split ← (1+2⋆⌈p÷2){sp _𝕣 a:
-  c ← sp × a
-  al← a - ah← c - c - a
-  ⟨al, ah⟩ # Backwards for convenient reduction
+Split ← 53‿1024{p‿e _𝕣:  # Double-precision float
+  sp← 1+2⋆se←⌈p÷2
+  m ← 2⋆e-1+se ⋄ f ← 2⋆-p  # Adjustments to avoid hitting ∞
+  {¬m>|𝕩? 𝕊⌾(f⊸×) 𝕩; 𝕊a:
+    c ← sp × a
+    al← a - ah← c - c - a
+    ⟨al, ah⟩ # Backwards for convenient reduction
+  }
 }
 Mul12 ← {a𝕊b:
   h ← a × b
-  ⟨h, (-h) +´ ⥊ b ×⌜○Split a⟩
+  {∞>|h? ⟨h, (-h) +´ ⥊ b ×⌜○Split a⟩ ; h‿0}
 }
 Mul ⇐ {a𝕊b:
   ph‿pl ← a Mul12○⊑ b
-  ph Add12 pl + +´ a × ⌽b
+  {∞>|⊑ph? ph Add12 pl + +´ a × ⌽b ; ph‿0}
 }
 
 Div ⇐ {b𝕊a:
   yn ← (⊑b) × xn ← ÷⊑a
+  {∞>|yn?
   diff ← ⊑ b Sub a Mul yn‿0
   yn‿0 Add xn Mul12 diff
+  ;yn‿0}
 }
 
 Mod ⇐ {
@@ -51,7 +58,7 @@ Mod ⇐ {
 
 # Decimal parsing
 # For one double, max digits is 15 and max power of 10 is 1e22
-Exp10 ← { 22≥𝕩? To 10⋆𝕩; (⊣´Mul⊢´)𝕊¨⍷⌊2÷˜𝕩+↕2 } # Could save results
+Exp10 ← { 22≥𝕩? To 10⋆𝕩; 308<𝕩? To ∞; (⊣´Mul⊢´)𝕊¨⍷⌊2÷˜𝕩+↕2 } # Could save results
 N1 ← •ParseFloat
 Nat ← ≠⊸{
   15≥𝕨 ? To N1 𝕩 ;
