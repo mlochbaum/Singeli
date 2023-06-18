@@ -443,7 +443,7 @@ IsNum ← 1=•Type
 IsInt ← IsNum _and_ (⌊⊸=)
 IsNat ← IsInt _and_ (0⊸≤)
 IsTup ← 0=•Type
-FmtNum ← '¯'(⊢+=×'-'-⊣)•Repr
+FmtNum ← ('¯'(⊢+=×'-'-⊣)•Repr){(∞>|)◶⟨"/0"∾˜·𝔽0(<->)⊢,𝔽⟩}
 
 _tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!∘"Unhandled kind"⟩)˙)∾↑)𝕗)}
 Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel

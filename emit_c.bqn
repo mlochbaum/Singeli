@@ -1,9 +1,9 @@
 cpp‿cpu‿prefix ← ∾⟜"_"⌾(2⊸⊑) •args
 
 types ← {
-  ub←uv←0 ⋄ req←⟨⟩ ⋄ init ⇐ {ub↩uv↩0⋄req↩⟨⟩}
+  ub←uv←um←0 ⋄ req←⟨⟩ ⋄ init ⇐ {ub↩uv↩um↩0⋄req↩⟨⟩}
   Require ⇐ {𝕊: req∾↩<𝕩}
-  Headers ⇐ {𝕊: ⍷ req ∾˜ (1‿ub/⟨"stdint.h","stdbool.h"⟩)∾cpu.Headers uv}
+  Headers ⇐ {𝕊: ⍷ req ∾˜ (1‿ub‿um/⟨"stdint.h","stdbool.h","math.h"⟩)∾cpu.Headers uv}
   Type ⇐ { 𝕨𝕊bType‿w‿am‿ptrs:
     u‿f ← bType = "uf"
     (" "∾𝕨) ⊢⊘(∾˜) (ptrs/"*") ∾˜ {
@@ -18,6 +18,7 @@ types ← {
     𝕨𝕊⟨"fn",res‿args,ptrs⟩:
     ∾⟨res, " (*",ptrs/"*",𝕨⊢⊘∾")(", ","Join args, ")"⟩
   }
+  SpecialFloat ⇐ {um↩1 ⋄ n←'-'=⊑𝕩 ⋄ (n↑𝕩)∾"NAN"‿"INFINITY"⊑˜"0/0"‿"1/0"⊸⊐⌾<n↓𝕩}
 }
 
 lf ← @+10
@@ -72,7 +73,8 @@ as ← {
     v‿t ← (1-˜+`×¬)∘(1⌾⊑br<':'⊸=)⊸⊔ 𝕩
     {¬∨´br?
       v ∾↩ {
-        'f': h←⊑'x'∊v ⋄ {𝕩∾(h/"p0")∾"f"}⍟("f32"≡t) "."/˜¬h∨´"e."∊v ;
+        'f': h←⊑'x'∊v ⋄ v types.SpecialFloat⍟(e←⊑'/'∊v)↩
+             {𝕩∾(h/"p0")∾"f"}⍟("f32"≡t) "."/˜¬e∨h∨´"e."∊v ;
         (('u'=𝕩)/"u")∾"ll"
       }⊑t
       m ← "-0x8000000000000000"≡v # For floats: negate after cast
