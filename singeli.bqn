@@ -822,6 +822,8 @@ builtins ← {
       ⟨"export",{𝕨 symbols.From⊸program.Export⚇0 𝕩}_p2⟩
       ⟨"require",{program.Require∘symbols.From⚇0 𝕩}⟩
       ⟨"witharch",architecture.With⟩
+      ⟨"withenv",{e←program.env⋄e.Push 2↑𝕩⋄⟨⟩{𝕎𝕩}˜2⊑𝕩⋄e.Pop@}_e3⟩
+      ⟨"getenv",{program.env.Get 𝕩}_p1⟩
     ⟩
     functions.builtins
     numbers.builtins
@@ -891,15 +893,16 @@ env ← {
 }
 
 program ← {
-  AddFunction⇐AddConstant⇐Export⇐Require⇐!∘0 ⋄ trace⇐@
+  AddFunction⇐AddConstant⇐Export⇐Require⇐!∘0 ⋄ env⇐trace⇐@
   _with ⇐ {
     fns←⟨⟩ ⋄ AddFunction ↩ { f ← 𝕨 𝕏 ≠fns ⋄ fns∾⟜<↩f ⋄ f }
     cns←⟨⟩ ⋄ AddConstant ↩ { c ← 𝕨 constants.Static ⟨t←TypeOf𝕩, ≠cns⟩ ⋄ cns∾⟜<↩⟨Show c,t,𝕩⟩ ⋄ c }
     exp←⟨⟩ ⋄ Export ↩ { CheckExport 𝕩 ⋄ exp ∾⟜<↩ 𝕨‿𝕩 }
     req←⟨⟩ ⋄ Require ↩ { req ∾⟜<↩ 𝕩 }
+    env ↩ DynamicEnv@
     ⟨_trace_⟩↩s←Stack@
     𝕨 𝔽⎊s.Report 𝕩
-    AddFunction↩AddConstant↩Export↩!∘0
+    AddFunction↩AddConstant↩Export↩Require↩!∘0 ⋄ env↩trace↩@
     ∾ ⟨DispHeader¨req, DispConstants cns, ∾DispFunction¨fns, DispExport¨exp⟩
   }
   CheckExport ← {
@@ -928,6 +931,17 @@ program ← {
       {𝕏@}¨ ⌽ df /˜ 1≠`e≠○(l↑/⁼)f     # Remove extra iterations
       •Exit 1
     }
+  }
+  DynamicEnv ← {𝕤
+    stack ← @
+    Sym ← "Environment label must be a symbol"⊸symbols.From
+    Push⇐ {   stack ↩ 𝕩‿stack} Sym⌾⊑
+    Pop ⇐ {𝕊: stack ↩ 1⊑stack}
+    Get ⇐ {
+      𝕊𝕩:stack𝕊𝕩 ;
+      @≡𝕨? !∾"Environment value "‿𝕩‿" hasn't been set" ;
+      𝕩≡⊑v←⊑𝕨? 1⊑v ; (1⊑𝕨)𝕊𝕩
+    } Sym
   }
   J ← 1↓·∾" "⊸∾¨
   DispHeader←{ "require " ∾ "'"(∾∾⊣)𝕩 }
