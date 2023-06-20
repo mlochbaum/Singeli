@@ -212,6 +212,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   "extend", { Extend 𝕩 }
   "def",    { Define 𝕩 } ⊣ AsrtStmt
   "fn",     { DefFun 𝕩 } ⊣ AsrtStmt
+  "main",   { DefMain𝕩 } ⊣ AsrtStmt
   "oper",   { OpDef 𝕩 }  ⊣ AsrtStmt
   "{",      @_optGet_⟨"=>", c.lambda _node_ (⋈⟜{Block𝕩})
                       ":",  AsrtStmt _decl_ ⊢           ⟩ {Params𝕩}
@@ -334,6 +335,15 @@ Parse ← {𝕊 tokens‿ShowTrace:
     ⟨a,r,b⟩
   } _withParams
   DefFun ← c.define _node_ ("fn"‿IdTarget‿Function  _seq)
+  DefMain ← c.main _node_ {𝕤
+    Get "main"
+    a ← @_opt_⟨"(","("‿")" _argsFn_ Name, ⟨⟩⟩ @
+    "Main function can have at most two arguments" Asrt 2≥≠a
+    RT ← "Main result must be void or i32" Asrt ∊⟜"void"‿"i32"⌾<
+    r ← When ⟨Try":", RT⊸⊢ Name⟩
+    b ← Result Try"="
+    ⟨a,r,b⟩
+  }
   
   ExtPar ← "{"‿"}" _argsFn_ Name
   Extender ← c.extender _node_ (ExtPar‿"="‿Body _seq)
@@ -659,7 +669,8 @@ functions ← {kname⇐"function"
     arch ⇐ architecture.init
   }
   New ← {𝕤
-    kind⇐kname ⋄ shows⇐"$f"∾(•Repr id⇐𝕩)∾"_"⊸∾⍟(0<≠)𝕨 ⋄ Matches⇐≡ ⋄ type⇐@
+    kind⇐kname ⋄ Matches⇐≡ ⋄ type⇐@
+    id⇐𝕩 ⋄ shows⇐("$f"∾(•Repr id)∾"_"⊸∾⍟(0<≠)𝕨)⊣"$main"
     arch⇐architecture.NewFunction@ ⋄ SetArch⇐{arch↩𝕩}
     label←¯1 ⋄ slabel←⟨⟩ ⋄ args←atypes←ctypes←⟨⟩ ⋄ rType⇐@
     labc⇐0 ⋄ IncLab⇐{𝕊:labc+↩1}  # Labels set: don't alias through label
@@ -698,10 +709,10 @@ functions ← {kname⇐"function"
     }
   }
   _with_ ⇐ {
-    u‿name ← 𝕨  # Passed in by nodes.Define, pretty hacky
+    # 𝕨 passed in by nodes.Define if not main, pretty hacky
     fs←current
-    f←current↩name program.AddFunction new
-    u.Set f
+    f←current↩(1⊑𝕨) program.AddFunction new
+    {(⊑𝕩).Set f} 𝕨
     f (f.Finish 𝔽)program._trace_ 𝕘 𝕩
     current↩fs
     f
@@ -1166,6 +1177,11 @@ nodes ← {
       𝕨.SetRType∘Ev¨ type
       Ev result
     } functions._with_ pos
+  }
+  Main ⇐ {
+    pos ← 𝕨
+    argFns ← ⟨Word∘"i32", (𝕨Run⋈⟜⋈)´ Word¨∘(2‿1/"__pnt"‿"u8")⟩
+    𝕨 Function ⟨(≠↑argFns˙)(𝕨Arg{⟨0,𝕩,𝕎@⟩})¨⊢, Word¨, ⊢⟩ {𝕎𝕩}¨ 𝕩
   }
   _setType ← { pos type‿env _𝕣 v:
     { ≠type ?
