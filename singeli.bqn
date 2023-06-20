@@ -833,7 +833,7 @@ builtins ← {
       ⟨"export",{𝕨 symbols.From⊸program.Export⚇0 𝕩}_p2⟩
       ⟨"require",{program.Require∘symbols.From⚇0 𝕩}⟩
       ⟨"witharch",architecture.With⟩
-      ⟨"withenv",{e←program.env⋄e.Push 2↑𝕩⋄⟨⟩{𝕎𝕩}˜2⊑𝕩⋄e.Pop@}_e3⟩
+      ⟨"withenv",{e←program.env⋄e.Push 2↑𝕩⋄r←⟨⟩{𝕎𝕩}˜2⊑𝕩⋄e.Pop@⋄r}_e3⟩
       ⟨"getenv",{program.env.Get 𝕩}_p1⟩
     ⟩
     functions.builtins
