@@ -120,14 +120,14 @@ If I save this as fib.singeli, then I can run it this way:
     $ singeli fib.singeli -o /tmp/t.c && gcc /tmp/t.c -o fib && ./fib
     832040
 
-I put the C file in `/tmp` so I don't have to clean it up later! I could do that with the `fib` executable too but it might be nice to be able to run it again without compiling. Like here I could run `time ./fib` to see how long it took. But it's so fast! Here's a version that gets the last nine digits of the *billionth* fibonacci number. There's a lot of digits so it would be much harder to keep track of *all* of them!
+I put the C file in `/tmp` so I don't have to clean it up later! I could do that with the `fib` executable too but it might be nice to be able to run it again without compiling. Like here I could run `time ./fib` to see how long it took. But it's so fast! Here's a version that takes a few seconds because it gets the last nine digits of the *billionth* fibonacci number. There's a lot of digits so it would be much harder to keep track of *all* of them!
 
     include 'skin/c'
     include 'arch/c'
     include 'util/tup'
 
     fn fib(n:u64) = {
-      f:copy{2,u64} = iota{2}
+      f:copy{2,u32} = iota{2}
       def f1 = tupsel{1, f}
       def next{t} = scan{+, reverse{t}}
       while (n>0) { n = n - 1; f = next{f}; f1 = f1%1e9 }
@@ -135,16 +135,57 @@ I put the C file in `/tmp` so I don't have to clean it up later! I could do that
     }
 
     include 'debug/printf'
-    main() = lprintf{fib(1e9)}
+    main() = lprintf{fib(1e9)}  # 560546875
 
 I'm getting ahead of myself, there's a lot here I haven't explained! The trick for reading `fn` is that it's really a straight-line block of code, but it *defines* a loopy program. So `while` only runs the condition and block once, but it does it symbolically so then it can make C code that does it like a billion times. Exactly a billion times! And one extra on the condition. You can put `show` anywhere to see how the interpreter runs things. It runs the block before the condition, quirky!
 
       while (show{n}>0) { n = n - 1; f = next{f}; show{f1} = f1%1e9 }
 
-Since `n` and `f1` don't have fixed values, `show` prints a symbolic description instead. For `f1` it shows `f:u64`, but that makes sense. We set `def f1 = tupsel{1, f}`, and why would `show{tupsel{1, f}}` use the name `f1`? Another thing, `show` works on the left of `=`! It's because `=` on its own without `def` is a regular operator. The only built-in one! Since the left-hand side is a symbol, it *makes* code that changes the value of this symbol but it doesn't actually change the symbol.
+Since `n` and `f1` don't have fixed values, `show` prints a symbolic description instead. For `f1` it shows `f:u32`, but that makes sense. We set `def f1 = tupsel{1, f}`, and why would `show{tupsel{1, f}}` use the name `f1`? Another thing, `show` works on the left of `=`! It's because `=` on its own without `def` is a regular operator. The only built-in one! Since the left-hand side is a symbol, it *makes* code that changes the value of this symbol but it doesn't actually change the symbol.
 
-So symbols work this way because when you're writing for the CPU you want types that match what it will handle, like `u64` here. And you want to be able to modify them in place like a register can, well not always, but here, kinda. A symbolic value like `n:u64` is actually called a *register* because of that! And it's really CPU-oriented, so it's always something that fits in one CPU register. When we define `f` to contain two values it defines two registers, each holding one value. That's why we can pick out one with `tupsel{}`! Also they're both called `f` but Singeli changes the way it names registers sometimes so maybe it can get more specific!
+So symbols work this way because when you're writing for the CPU you want types that match what it will handle, like `u64` or `u32` here. And you want to be able to modify them in place like a register can, well not always, but here, kinda. A symbolic value like `n:u64` is actually called a *register* because of that! And it's really CPU-oriented, so it's always something that fits in one CPU register. When we define `f` to contain two values it defines two registers, each holding one value. That's why we can pick out one with `tupsel{}`! Also they're both called `f` but Singeli changes the way it names registers sometimes so maybe it can get more specific!
 
-      f:copy{2,u64} = iota{2}
+      f:copy{2,u32} = iota{2}
 
-I also skipped `copy` but it's from util/tup too and it makes a tuple with two copies of `u64`! When you have registers bundled together like this, the type packs multiple types together the same way!
+I also skipped `copy` but it's from util/tup too and it makes a tuple with two copies of `u32`! When you have registers bundled together like this, the type packs multiple types together the same way.
+
+My `while` loop works but it could look a lot nicer! And it changes the value of `n`, but sometimes I want to know what `n` was after a loop.
+
+      while (n>0) { n = n - 1; f = next{f}; f1 = f1%1e9 }
+
+My first instinct when I see this kind of pattern is to wrap up the messy loop into a utility function. I can pass in an `iter{}` generator that says what to do, and `repeat` calls it when it needs to!
+
+    def repeat{count, iter} = {
+      i:u64 = 0
+      while (i < count) {
+        iter{}
+        i = i + 1
+      }
+    }
+
+      repeat{n, {} => { f = next{f}; f1 = f1%1e9 }}
+
+But *this* pattern is a case of a `@for` loop, a bit of syntax sugar! When we write `@something`, with a condition and body, it calls that thing as a generator with some particular arguments. We're not using `begin` or `vars`, but I think it's better to handle them so they're supported! For the parts we do use, `end` gets set to `n`, and `iter` is a generator that runs the block `{ f = next{f}; f1 = f1%1e9 }`.
+
+    include 'skin/c'
+    include 'arch/c'
+    include 'util/tup'
+
+    def for{vars, begin, end, iter} = {
+      i:u64 = begin
+      while (i < end) {
+        iter{i, vars}
+        i = i + 1
+      }
+    }
+
+    fn fib(n:u64) = {
+      f:copy{2,u32} = iota{2}
+      def f1 = tupsel{1, f}
+      def next{t} = scan{+, reverse{t}}
+      @for (n) { f = next{f}; f1 = f1%1e9 }
+      tupsel{0, f}
+    }
+
+    include 'debug/printf'
+    main() = lprintf{fib(1e9)}  # 560546875
