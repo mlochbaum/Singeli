@@ -1,8 +1,12 @@
 # Singeli
 
-Singeli is a domain-specific language for building [SIMD](https://en.wikipedia.org/wiki/SIMD) algorithms with flexible abstractions and control over every instruction emitted. It's implemented in [BQN](https://mlochbaum.github.io/BQN), with a frontend that emits IR and a backend that converts it to C. Other backends like LLVM or machine code are possible—it should be easy to support other CPU architectures but there are no plans to target GPUs.
+Introductions: [Singeli as interpreter](doc/interpreter.md) | [Singeli as compiler](doc/compiler.md)
 
-It's now proven to be pretty usable, and we're not finding many bugs any more (what we do see is mostly just broken error reporting). Debugging your compilation errors is easy since they come with parsing or stack traces, and `show{}` prints whatever you want at compile time. At runtime, `lprintf{}` provided by `include 'debug/printf'` prints what you pass to it, and the emitted C code is rather verbose but does embed source function and variable names you can use to get your bearings. The interactive [Singeli playground](https://github.com/dzaima/singeliPlayground) tool is a nice way to get parts of your code working without the awkward compile-debug loop.
+Singeli is a domain-specific language for building high-performance algorithms (including [SIMD](https://en.wikipedia.org/wiki/SIMD)) with flexible abstractions over code that corresponds to individual instructions. It's implemented in [BQN](https://mlochbaum.github.io/BQN), with a frontend that emits IR and a backend that converts it to C. Other backends like LLVM or machine code are possible—it should be easy to support other CPU architectures but there are no plans to target GPUs.
+
+It's not a mature project, but Singeli's reached the point where I enjoy using it at least! Debugging your compilation errors is easy since they come with parsing or stack traces (if not it's a bug—please report), and `show{}` prints whatever you want at compile time. At runtime, `lprintf{}` provided by `include 'debug/printf'` prints what you pass to it, and the emitted C code is rather verbose but it embeds source function and variable names you can use to get your bearings. The interactive [Singeli playground](https://github.com/dzaima/singeliPlayground) tool is a nice way to get parts of your code working without the awkward compile-debug loop.
+
+Working with SIMD does require a lot of setup to be nice since every intrinsic used has to be wrapped somehow. [arch/iintrinsic](include/arch/iintrinsic.singeli) does this in a very basic way, for x86 up to AVX2. CBQN files such as [avx2.singeli](https://github.com/dzaima/CBQN/blob/master/src/singeli/src/avx2.singeli) may make a better reference.
 
 To compile input.singeli:
 
@@ -10,7 +14,7 @@ To compile input.singeli:
 $ singeli input.singeli [-o output.c]
 ```
 
-For options see `$ singeli -h` or [this section](#command-line-options). To run `./singeli` as an executable, ensure that [CBQN](https://github.com/dzaima/CBQN) is installed as `bqn` in your executable path, or call as `/path/to/bqn singeli …`.
+For options see `$ singeli -h` or [this section](#command-line-options). To run `singeli` as an executable, ensure that [CBQN](https://github.com/dzaima/CBQN) is installed as `bqn` in your executable path, or call as `/path/to/bqn singeli …`.
 
 Singeli [is used](https://github.com/dzaima/CBQN/tree/master/src/singeli/src) for many CBQN primitive implementations, particularly for AVX2 support (compile with `o3n`). It's also the implementation language for [SingeliSort](https://github.com/mlochbaum/SingeliSort).
 
@@ -18,7 +22,7 @@ Early design discussion for Singeli took place at [topanswers.xyz](https://topan
 
 ## Language overview
 
-Singeli is primarily a metaprogramming language. Its purpose is to build abstractions around CPU instructions in order to create large amounts of specialized code. Programs will tend to do complicated things at compile time to emit programs that do relatively simple things at runtime, so it's probably better to orient your thinking around what happens at compile time.
+Singeli is primarily a metaprogramming language. Its purpose is to build abstractions around CPU instructions in order to create large amounts of specialized code. Source code will tend to do complicated things at compile time to emit programs that do relatively simple things at runtime, so it's probably better to orient your thinking around what happens at compile time.
 
 The primary tool for abstraction is the **generator**. Written with `{parameters}`, generators perform similar tasks as C macros, C++ templates, or generics, but offer more flexibility. They are expanded during compilation, and form a Turing-complete language. Generators use lexical scoping and allow recursive calls. Here's a generator that calls another one:
 
