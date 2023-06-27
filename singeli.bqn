@@ -310,7 +310,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Try "}" ? (0⥊<↕4)‿⟨⟩ ;
     Param ← {𝕤
       v ← Try "..."
-      n ← Name@
+      n ← Target@
       e ← When ⟨     Try "==", CondExpr⟩
       t ← When ⟨(≠e)◶Try‿0":", CondExpr⟩
       v‿n‿e‿t
@@ -1065,18 +1065,25 @@ nodes ← {
   Params ⇐ {
     ⟨paramsPlus,conds⟩ ← 𝕩 ⋄ pos←𝕨
     pgather‿params‿pmatch‿ptype ← <˘⍉>paramsPlus
+    pmult ← {"params"≡𝕩.node}¨ params
+    _flatWith ← {¬∨´𝕗? ⊢; n←𝕗∨1»𝕗⋄∾(n/𝕗)⊑∘⊢⍟⊣¨(¯1+`n)⊔⊢}
+    conds (∾<⊸∾)↩ {𝕩.conds}¨ pmult / params ⋄ conds⇐
+    names ← pmult _flatWith {𝕩.name}¨ params
     tname ← (¬∘∊⟜(⟨@⟩∾notTypeVar)⊸/ PhraseTryName¨)¨ ptype
-    _pc ← {n←𝕨⋄f←𝕗 ⋄ {pos Run ⟨Word f,⟨Word n,𝕩⟩⟩}¨𝕩}
+    _pc ← {n←𝕨⋄f←𝕗 ⋄ {pos Run ⟨Word f,⟨Word ⊑n.Disp@,𝕩⟩⟩}¨𝕩}
     conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "match"_pc¨ pmatch)
     iTyp←/≠¨tname
-    uPar‿iPar←(⍷⋈⊐)params∾∾tname
+    Flatten ← (pmult∾0¨iTyp) _flatWith
+    uPar‿iPar←(⍷⋈⊐)name⇐names∾∾tname
     ns ← pos⊸NewId¨ uPar
     Visit←{⟨𝕏¨ns,𝕏¨conds⟩}
     ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "params"‿visit
     VisitLambda ⇐ {⟨params∾⟜(∾""<⊸∾":"⊸∾¨)¨tname,𝕏¨conds⟩}
     ScopeLambda ⇐ {uPar scopes.New 𝕩}
     AllEq ← ∧´⊏Match¨1⊸↓
-    proc ← {⊢} {e‿F‿N𝕊𝕩:e‿F𝕊⊑⟨𝕏N⟩; e‿1𝕊𝕩:𝕏; e‿F𝕊𝕩:f◶⟨<e,𝕏⟩}´ ⟨
+    MakeProc ← ⊢˙ {@‿1‿N𝕊𝕩:𝕏⍟(0<=)N; # Special-case nesting
+                   e‿F‿N𝕊𝕩:e‿F𝕊⊑⟨𝕏N⟩; e‿1𝕊𝕩:𝕏; e‿F𝕊𝕩:f◶⟨<e,𝕏⟩}´ ⊢
+    proc ← MakeProc procs ← ⟨
       ⟨"lengths don't match"⟩∾(+´¬)⊸{
         ¬∨´𝕩 ? ⟨𝕨=≠⟩ ;
         ⟨𝕨≤≠, (0‿𝕨-˜⋈⁼/𝕩)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)⟩
@@ -1085,11 +1092,17 @@ nodes ← {
         ¬∨´𝕩 ? ⟨1⟩ ;
         ⟨∧´·IsTyped¨𝕩⊸/, ⊢∾·{𝕩.type}¨iTyp⊸⊏⟩
       } ≠¨ptype
+      ⟨@,1⟩∾{
+        0=≠𝕩 ? ⟨⟩ ;
+        F ← {∨´0=r←=¨𝕨 ? <∾⟜", "⊸∾´⊑¨r¬⊸/𝕨 ; Flatten 𝕩}
+        ⟨𝕩⊸⊏⊸F params {𝕨.ProcParamSub𝕩}¨⌾(𝕩⊸⊏) ⊢⟩
+      } /pmult
       ⟨"values given the same name don't match"⟩∾∊⊸{
         ∧´𝕨 ? ⟨1⟩ ;
         ⟨{𝕎∧𝕏}´{AllEq𝕩⊸⊏}¨(1<≠¨)⊸/⊔𝕩, 𝕨⊸/⟩
       } iPar
     ⟩
+    procParamSub ⇐ MakeProc ¯1↓procs
     GetTry ⇐ {𝕊 e:
       Try ⇐ {
         0==𝕩 ? @ ; # Error from static checking

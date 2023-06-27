@@ -4,3 +4,13 @@ new v4 emit u32 'all' v0_x v1_y v3_b
 ret v4
 endFn
 
+beginFn f1_nest f64 0
+new v0 emit f32 'g0' 0 1 2
+new v1 emit f32 'g1' 3 4
+new v2 emit f32 'g2' 5 4 3 2 1
+new v3 emit f32 'g3' 7 6
+new v4 emit i16 'g4' !8:i16 9
+new v5 emit f64 'out' v0 v1 v2 v3 v4
+ret v5
+endFn
+

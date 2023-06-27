@@ -77,11 +77,7 @@ So `iota{n}` lists the natural numbers up to `n`, and `fold{}` does a left fold 
 
     def repeat{gen, k, param} = fold{{a,b}=>gen{a}, param, iota{k}}
     def fib{n} = {
-      # Can't def next{{a, b}} yet but it's supposed to work!
-      def next{t} = {
-        def {a, b} = t
-        tup{b, a+b}
-      }
+      def next{{a, b}} = tup{b, a+b}
       tupsel{0, repeat{next, n, iota{2}}}
     }
 

@@ -4,3 +4,18 @@ fn f(x:u1, y:u8, z:u16) = {
   {...d,e,f,g} := c
   emit{u32,'all',a,f,g}
 }
+
+def g{...x}          = emit{f32, 'g0', ...x}
+def g{{a,b}}         = emit{f32, 'g1', a, b}
+def g{{a,b},c,{d,e}} = emit{f32, 'g2', a, b, c, d, e}
+def g{{a,b},a,{b,a}} = emit{f32, 'g3', a, b}
+def g{x:T,...{y,T}}  = emit{T,   'g4', x, y}
+fn nest() = {
+  emit{f64, 'out',
+    g{0,1,2},
+    g{tup{3,4}},
+    g{tup{5,4},3,tup{2,1}},
+    g{tup{7,6},7,tup{6,7}},
+    g{reinterpret{i16,8},9,i16}
+  }
+}
