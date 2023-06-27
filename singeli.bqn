@@ -310,9 +310,9 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Try "}" ? (0⥊<↕4)‿⟨⟩ ;
     Param ← {𝕤
       v ← Try "..."
-      n ← Target@
-      e ← When ⟨     Try "==", CondExpr⟩
-      t ← When ⟨(≠e)◶Try‿0":", CondExpr⟩
+      n ← Target@ ⋄ m ← "params"≡n.node
+      e ← When ⟨     m◶Try‿0"==", CondExpr⟩
+      t ← When ⟨(m∨≠e)◶Try‿0 ":", CondExpr⟩
       v‿n‿e‿t
     }
     vm ← "At most one variable-length parameter allowed"
