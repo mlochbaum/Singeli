@@ -1066,28 +1066,28 @@ nodes ← {
     ⟨paramsPlus,conds⟩ ← 𝕩 ⋄ pos←𝕨
     pgather‿params‿pmatch‿ptype ← <˘⍉>paramsPlus
     tname ← (¬∘∊⟜(⟨@⟩∾notTypeVar)⊸/ PhraseTryName¨)¨ ptype
-    uTyp‿iTyp←(⍷∘∾ ⋈ ⊐∘∾⊔·/≠¨)tname
     _pc ← {n←𝕨⋄f←𝕗 ⋄ {pos Run ⟨Word f,⟨Word n,𝕩⟩⟩}¨𝕩}
     conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "match"_pc¨ pmatch)
-    uPar‿iPar←(⍷⋈⊐)params
-    ns ← pos⊸NewId¨ uPar∾uTyp
+    c←≠params ⋄ iTyp←/≠¨tname
+    uPar‿iPar←(⍷⋈⊐)params∾∾tname
+    ns ← pos⊸NewId¨ uPar
     Visit←{⟨𝕏¨ns,𝕏¨conds⟩}
     ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "params"‿visit
-    VisitLambda ⇐ {⟨(iPar⊏uPar)∾⟜(∾""<⊸∾":"⊸∾¨)¨tname,𝕏¨conds⟩}
-    ScopeLambda ⇐ {(uPar∾uTyp) scopes.New 𝕩}
+    VisitLambda ⇐ {⟨params∾⟜(∾""<⊸∾":"⊸∾¨)¨tname,𝕏¨conds⟩}
+    ScopeLambda ⇐ {uPar scopes.New 𝕩}
     AllEq ← ∧´⊏Match¨1⊸↓
     proc ← {⊢} {e‿F‿N𝕊𝕩:e‿F𝕊⊑⟨𝕏N⟩; e‿1𝕊𝕩:𝕏; e‿F𝕊𝕩:f◶⟨<e,𝕏⟩}´ ⟨
       ⟨"lengths don't match"⟩∾(+´¬)⊸{
         ¬∨´𝕩 ? ⟨𝕨=≠⟩ ;
         ⟨𝕨≤≠, (0‿𝕨-˜⋈⁼/𝕩)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)⟩
       } pgather
+      ⟨"type is required",
+       {¬∨´𝕩?1 ; ∧´·IsTyped¨𝕩⊸/}≠¨ptype⟩
       ⟨"values given the same name don't match",
-       {∧´∊𝕩?1 ; {𝕎∧𝕏}´{AllEq𝕩⊸⊏}¨(1<≠¨)⊸/⊔𝕩}iPar⟩
-      ⟨"specified types don't match",
-       {0=≠𝕩?1 ; {𝕎∧𝕏}´{1=≠𝕩 ? IsTyped(⊑𝕩)⊸⊑
-                       ;(∧´IsTyped¨)_and_(AllEq{𝕩.type}¨)𝕩⊸⊏}¨𝕩}iTyp⟩
+       {∧´∊𝕩?1
+       ;{𝕎∧𝕏}´{AllEq·{𝕩.type}¨⌾((c≤𝕩)⊸/)(𝕩⊏iTyp∾˜↕c)⊸⊏}¨(1<≠¨)⊸/⊔𝕩}iPar⟩
     ⟩
-    ToVals ← {(iPar∊⊸/𝕩)∾{𝕩.type}¨iTyp⊑¨⊸⊏𝕩}
+    ToVals ← (∊iPar)/⊢∾·{𝕩.type}¨iTyp⊏⊢
     GetTry ⇐ {𝕊 e:
       Try ⇐ {
         0==𝕩 ? @ ; # Error from static checking
