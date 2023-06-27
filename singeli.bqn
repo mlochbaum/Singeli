@@ -1068,7 +1068,7 @@ nodes ← {
     tname ← (¬∘∊⟜(⟨@⟩∾notTypeVar)⊸/ PhraseTryName¨)¨ ptype
     _pc ← {n←𝕨⋄f←𝕗 ⋄ {pos Run ⟨Word f,⟨Word n,𝕩⟩⟩}¨𝕩}
     conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "match"_pc¨ pmatch)
-    c←≠params ⋄ iTyp←/≠¨tname
+    iTyp←/≠¨tname
     uPar‿iPar←(⍷⋈⊐)params∾∾tname
     ns ← pos⊸NewId¨ uPar
     Visit←{⟨𝕏¨ns,𝕏¨conds⟩}
@@ -1081,25 +1081,27 @@ nodes ← {
         ¬∨´𝕩 ? ⟨𝕨=≠⟩ ;
         ⟨𝕨≤≠, (0‿𝕨-˜⋈⁼/𝕩)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)⟩
       } pgather
-      ⟨"type is required",
-       {¬∨´𝕩?1 ; ∧´·IsTyped¨𝕩⊸/}≠¨ptype⟩
-      ⟨"values given the same name don't match",
-       {∧´∊𝕩?1
-       ;{𝕎∧𝕏}´{AllEq·{𝕩.type}¨⌾((c≤𝕩)⊸/)(𝕩⊏iTyp∾˜↕c)⊸⊏}¨(1<≠¨)⊸/⊔𝕩}iPar⟩
+      ⟨"type is required"⟩∾{
+        ¬∨´𝕩 ? ⟨1⟩ ;
+        ⟨∧´·IsTyped¨𝕩⊸/, ⊢∾·{𝕩.type}¨iTyp⊸⊏⟩
+      } ≠¨ptype
+      ⟨"values given the same name don't match"⟩∾∊⊸{
+        ∧´𝕨 ? ⟨1⟩ ;
+        ⟨{𝕎∧𝕏}´{AllEq𝕩⊸⊏}¨(1<≠¨)⊸/⊔𝕩, 𝕨⊸/⟩
+      } iPar
     ⟩
-    ToVals ← (∊iPar)/⊢∾·{𝕩.type}¨iTyp⊏⊢
     GetTry ⇐ {𝕊 e:
       Try ⇐ {
         0==𝕩 ? @ ; # Error from static checking
         t ← {⊢} {numbers.GetBool∘𝕨.Eval◶@‿𝕏}´ conds
-        T (ToVals 𝕩) env.Fixed e
+        T 𝕩 env.Fixed e
       }∘Proc
     }
     Eval⇐{ val‿decl 𝕊 e:
       A ← ! program._trace_ pos
       "Destructuring non-tuple" A IsTup val
       A∘("Destructuring: "∾⊑)⍟(0==) p←Proc val
-      ns {𝕩‿decl 𝕨.Eval e}¨ ToVals p
+      ns {𝕩‿decl 𝕨.Eval e}¨ p
       {"Destructuring condition failed" A numbers.GetBool 𝕩.Eval e}¨ conds
     }
     DefEval ⇐ { f‿ValEval 𝕊 e: ⟨ValEval @,0⟩ Eval e }
