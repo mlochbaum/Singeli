@@ -468,6 +468,7 @@ Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
 Show  ← {⟨"tup{"∾"}"∾˜1↓·∾(","∾𝕊)¨, FmtNum, !, {(𝕏˜@).name}, {𝕩.Shows@}⟩_tsel 𝕩}
 Match ← {𝕨 ⟨≡○≢◶⟨0,∧´𝕊¨⟩, numbers.Match,≡,≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
 IsTyped←∊⟜"register"‿"constant"‿"function"⌾< Kind
+HasType ← IsTyped∘⊣ _and_ ({𝕩.type}⊸Match)
 TypeOf← {⟨types.Tup 𝕊¨, {𝕩.Type@}⟩_tsel 𝕩}
 
 types ← {kname⇐"type"
@@ -827,9 +828,8 @@ builtins ← {
       ⟨"__set",functions.Mut _p2⟩
       ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"}⊣•Out∘Fmt⟩
       ⟨"exec",blocks.Exec _e3⟩ # Deprecated; will be removed
-      ⟨"is",Match _p2⟩
+      ⟨"is",Match _p2⟩, ⟨"hastype",HasType _p2⟩
       ⟨"undefined",(constants.Undefined⊣"undefined: expected type"!"type"≡Kind)_p1⟩
-      ⟨"hastype",IsTyped∘⊑ _and_ ({𝕩.type}⊸Match´)_e2⟩
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
       ⟨"typekind",symbols.New types.TypeKind _p1⟩
       ⟨"load",Load _e2⟩, ⟨"store",¯1⊸(⊑Store↓)_e3⟩
@@ -1078,8 +1078,8 @@ nodes ← {
     conds (∾<⊸∾)↩ {𝕩.conds}¨ pmult / params ⋄ conds⇐
     names ← pmult _flatWith {𝕩.name}¨ params
     tname ← (¬∘∊⟜(⟨@⟩∾notTypeVar)⊸/ PhraseTryName¨)¨ ptype
-    _pc ← {n←𝕨⋄f←𝕗 ⋄ {pos Run ⟨Word f,⟨Word ⊑n.Disp@,𝕩⟩⟩}¨𝕩}
-    conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "is"_pc¨ pmatch)
+    _pc ← {n←𝕨⋄f←{𝕩´˙_value 𝕨}´𝕗 ⋄ {pos Run ⟨f,⟨Word ⊑n.Disp@,𝕩⟩⟩}¨𝕩}
+    conds∾˜↩∾(params "hastype"‿HasType _pc¨ tname≠⊸↓¨ptype)∾(params "is"‿Match _pc¨ pmatch)
     iTyp←/≠¨tname
     Flatten ← (pmult∾0¨iTyp) _flatWith
     uPar‿iPar←(⍷⋈⊐)name⇐names∾∾tname
