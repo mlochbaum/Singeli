@@ -208,6 +208,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   "if",     { StIf 𝕩 }
   "while",  { StWhile 𝕩 }
   "do",     { DoWhile 𝕩 }
+  "match",  { Options 𝕩 }
   "@",      { For 𝕩 }
   "extend", { Extend 𝕩 }
   "def",    { Define 𝕩 } ⊣ AsrtStmt
@@ -277,6 +278,13 @@ Parse ← {𝕊 tokens‿ShowTrace:
   StIf ← c.if _node_ (Block _if) 
   StWhile ← c.while _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Block _seq)
   DoWhile ← c.while _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")" _seq)
+
+  Options ← c.options _node_ {𝕤
+    Get "match"
+    a ← @_opt_⟨"(", ⋈"("‿")"_args, ⟨⟩⟩ @
+    m ← c.lambda _node_ (Params‿"=>"‿Block _seq) _blockLines @
+    a‿m
+  }
 
   For ← c.for _node_ {𝕤
     OA← "@for: multiple variables must use ""over"""⊸Asrt
@@ -1345,6 +1353,16 @@ nodes ← {
       {Shows⇐!∘"Can't use while statement result as value"⋄kind⇐"error"}
     }
   }
+
+  OptPlain ← {
+    gens←𝕩
+    Visit←{⟨𝕏¨gens⟩}
+    ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "function"‿visit
+    Eval ⇐ { 𝕊 e:
+      {"No matching option"!0˙} {𝕩‿"(options)" 𝕨.Eval e}⟜{Get⇐𝕩˙}´ gens
+    }
+  }
+  Options ⇐ { (𝕨Run⋈⟜⊑˜)⍟(≠⊣)⟜(𝕨OptPlain⊢)´ 𝕩 }
 
   n0 ← Number "0"
   For ⇐ {
