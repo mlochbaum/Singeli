@@ -819,7 +819,7 @@ builtins ← {
       ⟨"__set",functions.Mut _p2⟩
       ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"}⊣•Out∘Fmt⟩
       ⟨"exec",blocks.Exec _e3⟩ # Deprecated; will be removed
-      ⟨"match",Match _p2⟩
+      ⟨"is",Match _p2⟩
       ⟨"undefined",(constants.Undefined⊣"undefined: expected type"!"type"≡Kind)_p1⟩
       ⟨"hastype",IsTyped∘⊑ _and_ ({𝕩.type}⊸Match´)_e2⟩
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
@@ -1071,7 +1071,7 @@ nodes ← {
     names ← pmult _flatWith {𝕩.name}¨ params
     tname ← (¬∘∊⟜(⟨@⟩∾notTypeVar)⊸/ PhraseTryName¨)¨ ptype
     _pc ← {n←𝕨⋄f←𝕗 ⋄ {pos Run ⟨Word f,⟨Word ⊑n.Disp@,𝕩⟩⟩}¨𝕩}
-    conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "match"_pc¨ pmatch)
+    conds∾˜↩∾(params "hastype"_pc¨ tname≠⊸↓¨ptype)∾(params "is"_pc¨ pmatch)
     iTyp←/≠¨tname
     Flatten ← (pmult∾0¨iTyp) _flatWith
     uPar‿iPar←(⍷⋈⊐)name⇐names∾∾tname

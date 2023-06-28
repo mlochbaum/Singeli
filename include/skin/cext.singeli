@@ -1,6 +1,6 @@
 # Additional operators for use with skin/c
 
-oper === match       infix none   0
+oper === is       infix none   0
 
 oper ~~  reinterpret infix right 55
 oper ^~  promote     infix right 55

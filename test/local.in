@@ -2,8 +2,8 @@ c:u8 = 2
 def g{a} = 'outer'
 local {
   local c:u8 = 3
-  def g{a & match{a,'ext'}} = 'inner'
-  local def g{a & match{a,'test'}} = 'fail!'
+  def g{a & is{a,'ext'}} = 'inner'
+  local def g{a & is{a,'test'}} = 'fail!'
   fn fi(x:u8) = {
     emit{u1, g{'default'}, x}
     emit{u1, g{'ext'}, c}

@@ -1,14 +1,14 @@
 local {
   local def extend promote{arith} = {
-    def arith{a:T,b & match{'number',kind{b}}} = arith{a , cast{T,b}}
-    def arith{a,b:T & match{'number',kind{a}}} = arith{cast{T,a} , b}
+    def arith{a:T,b & is{'number',kind{b}}} = arith{a , cast{T,b}}
+    def arith{a,b:T & is{'number',kind{a}}} = arith{cast{T,a} , b}
   }
   def arith{op} = { def extend _{arith} = {
-    def arith{a:T,b:T & match{'primitive',typekind{T}}} = emit{T, op, a, b}
+    def arith{a:T,b:T & is{'primitive',typekind{T}}} = emit{T, op, a, b}
     extend promote{arith}
   }}
   def arith1{op} = { def extend _{arith} = {
-    def arith{a:T & match{'primitive',typekind{T}}} = emit{T, op, a}
+    def arith{a:T & is{'primitive',typekind{T}}} = emit{T, op, a}
     arith
   }}
   def sh{op} = { def extend _{arith} = {
@@ -17,7 +17,7 @@ local {
   }}
   def pk{T} = {
     def k=typekind{T}
-    if (match{'primitive',k} or match{'pointer',k}) 1; else 0
+    if (is{'primitive',k} or is{'pointer',k}) 1; else 0
   }
   def compare{op} = { def extend _{arith} = {
     def arith{a:T,b:T & pk{T}} = emit{u1, op, a, b}
@@ -36,7 +36,7 @@ extend (arith{'op /'}){__div}
 extend (arith{'op %'}){__mod}
 
 local {
-  def isptr{T} = match{'pointer',typekind{T}}
+  def isptr{T} = is{'pointer',typekind{T}}
   def ptrwidth = width{__pnt{void}}
   def isize = primtype{'i',ptrwidth}
   def ptrdiff{a} = cast{isize, a}

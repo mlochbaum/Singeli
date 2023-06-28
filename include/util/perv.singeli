@@ -17,7 +17,7 @@ local def anytup{e, ...t} = if (\e) 1 else anytup{...t}
 local def anytup{} = 0
 
 def perv{n & knum{n}} = { def extend _{op} = {
-  def op{...t & match{n,tuplen{t}} & anytup{...t}} = {
+  def op{...t & is{n,tuplen{t}} & anytup{...t}} = {
     def len{e, ...t} = if (\e) tuplen{e} else len{...t}
     def l = len{...t}
     def r{t} = if (\t) t else copy{l,t}

@@ -1,5 +1,5 @@
 # Generators that check kind
-local def is{k}{x} = match{k, kind{x}}
+local def is{k}{x} = is{k, kind{x}}
 def knum = is{'number'}
 def ksym = is{'symbol'}
 def ktup = is{'tuple'}

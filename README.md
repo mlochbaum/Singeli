@@ -420,7 +420,7 @@ An architecture feature is an uppercase symbol such as `'AVX2'`. Each function i
 
 | Syntax              | Result
 |---------------------|--------
-| `match{a,b}`        | Return 1 if the parameters match and 0 otherwise
+| `is{a,b}`           | Return 1 if the parameters match and 0 otherwise
 | `hastype{val,type}` | Return 1 if `val` is a typed value of the given type
 | `type{val}`         | Return the type of `val`
 | `kind{val}`         | Return a symbol indicating the kind of value
