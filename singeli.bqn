@@ -395,13 +395,13 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
 operator ← {
   Parse ⇐ {
-  ⟨op⟩ 𝕊 ⟨v⟩: v⊣´{𝕩.V@}¨@⊸≢¨⊸/op.left‿op.null ;
+  ⟨op⟩ 𝕊 ⟨v⟩: v⊣´{𝕩.V v.pos}¨@⊸≢¨⊸/op.left‿op.null ;
   ops 𝕊 val:
     Peek‿Next‿Rem ← MakeStream ops {null‿left‿bind‿R⇐𝕨 ⋄ value⇐𝕩}¨ val
     E ← {𝕊test: {𝕊∘{𝕩 LeD Next@}⍟(Test Peek)⍟Rem 𝕩} NuD Rem◶Mis‿Next@ }
-    NuD ← { 𝕩.null ≢⟜@◶{𝕩.value}‿{𝕩 Run ⟨𝕩.R 𝕨.V@, ⟨E 𝕨.t⟩⟩} 𝕩 }
-    LeD ← { Unk⍟(@≡l←𝕩.left)𝕩 ⋄ 𝕩 Run ⟨𝕩.R l.V@, ⟨𝕨, E l.t⟩⟩ }
-    Run ← {𝕩.value.pos}⊸nodes.Run
+    Run ← nodes.Run ⋄ P ← {𝕩.value.pos}
+    NuD ← { pos←P𝕩 ⋄ 𝕩.null ≢⟜@◶{𝕩.value}‿{pos Run ⟨𝕩.R 𝕨.V pos, ⟨E 𝕨.t⟩⟩} 𝕩 }
+    LeD ← { pos←P𝕩 ⋄ Unk⍟(@≡l←𝕩.left)𝕩  ⋄  pos Run ⟨𝕩.R l.V pos, ⟨𝕨, E l.t⟩⟩ }
     Unk ← { Err "Unknown infix operator"‿𝕩.value.pos }
     Mis ← {𝕊: Err "Missing right operand"‿(¯1⊑val).pos }
     E 1
@@ -427,7 +427,7 @@ operator ← {
   NewScope ⇐ {
     parent ⇐ 𝕩
     Op ← {name𝕊val‿p‿c‿a:
-      V ⇐ nodes.Word∘val
+      V ⇐ nodes.Word⟜val
       AC ← { Err ("Associativity for operator "∾name∾" must be disambiguated")‿𝕨.value.pos }⍟(0⊸>)
       T ⇐ (p C {𝕩.bind}){{⊣AC𝕏}⍟a𝕗}
     }
@@ -1142,7 +1142,7 @@ nodes ← {
     ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "lambda"‿visit
     Scope⇐{ Visit scopes._defer o.Scope par.ScopeLambda 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value and name, from Define
-      next ← ({𝕩.Get@}⊑𝕨)⊣{"No matching generator definition"!0˙}
+      next ← ({𝕩.Get pos}⊑𝕨)⊣{"No matching generator definition"!0˙}
       name ← (1⊑𝕨)⊣""
       ⟨Try⟩←par.GetTry e
       Exec‿_cached ← { result.node≢"function"?
@@ -1183,7 +1183,7 @@ nodes ← {
     N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
     v←@ ⋄ Scope ⇐ { ext.Scope𝕩 ⋄ v ↩ pos⊸(N𝕩).AddLam¨ names }
     Eval ⇐ {
-      slots ← {𝕩.Set𝕨.Get@⋄𝕩}⍟≢○({𝕎𝕩}⟜(N𝕩))´¨ v
+      slots ← {𝕩.Set 𝕨.Get pos⋄𝕩}⍟≢○({𝕎𝕩}⟜(N𝕩))´¨ v
       (ext.Eval𝕩){𝔽} program._trace_ pos slots
     }
   }
