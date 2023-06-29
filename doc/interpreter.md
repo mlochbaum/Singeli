@@ -2,7 +2,7 @@
 
 (And [Haskell is a dynamically-typed, interpreted language](https://aphyr.com/posts/342-typing-the-technical-interview) but it's so hard to use!)
 
-So you want to write a quick script with Singeli! Perfect, it's a functional scripting language, kind of like Erlang. It's missing some features like reading files and the interpreter's a little basic and slow, but it's fine for small tasks!
+So you want to write a quick script with Singeli! Perfect, it's a functional scripting language, kind of like Elixir. It's missing some features like reading files and the interpreter's a little basic and slow, but it's fine for small tasks!
 
 Of course we start with Hello World. The Singeli interpreter is a little quirky, and it uses curly braces `{}` for everything! It also has different names for things. Instead of calling the `show` function on a string, in Singeli you say it's a *generator* called on a *symbol*.
 
@@ -52,7 +52,7 @@ Okay, to compute fibonacci numbers faster we want to keep track of two numbers a
 
 It prints `fib{90}` in hex, so quirky! It's not actually a special kind of number. Singeli's number's are all the same, a kind of high precision float. It fits exact integers just past 31 digits, which is pretty big!
 
-There's another way to define the two cases for `fib2{}` that looks more functional. You first write the general case and then the specific one `n==0`. Singeli scans the cases backwards! Secretly when you write the second definition it modifies `fib2`, which means a little bit of the language isn't pure functional. But that mostly doesn't make a difference.
+There's another way to define the two cases for `fib2{}` that looks more functional. You first write the general case and then the specific one `n==0`. Singeli scans the cases backwards! Secretly when you write the second definition it modifies `fib2`, which means a little bit of the language isn't pure functional. But that mostly doesn't make a difference. Also check out the [`match`](../README.md#match) structure which is another neat way to write this!
 
     def fib{n} = {
       def fib2{n} = {
@@ -81,7 +81,7 @@ So `iota{n}` lists the natural numbers up to `n`, and `fold{}` does a left fold 
       tupsel{0, repeat{next, n, iota{2}}}
     }
 
-Oh, I haven't used an anonymous function yet! `{a,b}=>gen{a}` is one of those, and it just wraps `gen` and ignores the `b` argument. One last thing, there's a tricky way to write `next{}` with using tuples. If we reverse `a,b` we get `b,a`, and the only difference from `b, a+b` is the added `b`. The `scan` generator can do this. `scan{+, tup{a,b,c}}` is `tup{a,a+b,a+b+c}` but we're going to use a short version!
+Oh, I haven't shown an anonymous function before! `{a,b}=>gen{a}` is one of those, and it just wraps `gen` and ignores the `b` argument. One last thing, there's a tricky way to write `next{}` with using tuples. If we reverse `a,b` we get `b,a`, and the only difference from `b, a+b` is the added `b`. The `scan` generator can do this. `scan{+, tup{a,b,c}}` is `tup{a,a+b,a+b+c}` but we're going to use a shorter version!
 
     def repeat{gen, k, param} = fold{{a,b}=>gen{a}, param, iota{k}}
     def fib{n} = {

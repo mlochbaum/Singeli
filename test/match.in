@@ -1,0 +1,12 @@
+def g = match {
+  {a,b} => emit{u8, 'g2', a, b}
+  {...a} => emit{u8, 'g', ...a}; {...b} => emit{u8, '!', ...b};
+}
+fn test() = {
+  emit{f64,'out',
+    g{0},
+    (match{{...any}=>g{...any}}){1,2},
+    match (3,1) { {a,b & __lt{a,b}} => emit{u16,'fail',a,b};
+                  {a,b}             => emit{u16,'pass',a,b} }
+  }
+}

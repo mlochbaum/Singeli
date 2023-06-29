@@ -1,0 +1,8 @@
+beginFn f0_test f64 0
+new v0 emit u8 'g' 0
+new v1 emit u8 'g2' 1 2
+new v2 emit u16 'pass' 3 1
+new v3 emit f64 'out' v0 v1 v2
+ret v3
+endFn
+

@@ -341,6 +341,25 @@ Here are some examples.
 
 `for_vec` showcases the flexibility of this approach. Since `for` is a normal generator, it can be called to avoid rewriting the same `while`-based logic everywhere. And since any pointer can be passed to `iter`, modified pointers `vvars` with a different type are fair game. This means `iter` will need to handle two different variable types, `T` and `[vlen]T`—fortunately Singeli is designed to support exactly this kind of polymorphism. And it's a requirement you control since you can decide what kind of for loop to use. Finally, `for_vec` takes another parameter *before* being called as a loop. It's invoked with, say, `@for_vec{8} (…)`.
 
+### Match
+
+The `match` structure performs compile-time case matching, similar to a switch-case statement. It wraps up the functionality of multiple `def` statements in an anonymous form. For example, this `match` statement:
+
+    def result = match (x, y) {
+      {{a,b}, c} => b
+      {a, {b,c}} => tup{a,c}
+      {...args} => 0
+    }
+
+Is equivalent to this sequence, except that it doesn't define `temp`.
+
+    def temp{...args} = 0
+    def temp{a, {b,c}} = tup{a,c}
+    def temp{{a,b}, c} = b
+    def result = temp{x, y}
+
+Note the reverse order: in `match`, the first matching case will be used. The matched values (`(x, y)` above) can also be left out to create an anonymous generator. `match (x, y) {…}` behaves identically to `(match {…}){x, y}`.
+
 ## Including files
 
 The `include` statement can be used at the top level of a program. It evaluates the specified file as though it were part of the current one. The filename is a symbol, which loads from a relative path if it starts with `.` and from Singeli's built-in scripts (kept in the [include/](include/) source folder) otherwise. The [option](#command-line-options) `-l` can be used to specify additional paths as well.
