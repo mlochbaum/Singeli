@@ -80,8 +80,8 @@ def printf{...vs0} = {
     }
   }
   
-  def is = flip{join{each{{v} => runfmt{0,v}, vs}}}
-  def es = each{join, is}
+  def fs = flip{join{each{{v} => runfmt{0,v}, vs}}}
+  def es = each{join, fs}
   
   emit{void, 'printf', merge{'"', 0!es, '"'}, ... 1!es}
 }
