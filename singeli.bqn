@@ -222,7 +222,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Expr ← (∾⟜" must appear on its own line" Asrt 0˙) _exprStmt
   Stmt ← ⊢ _exprStmt
 
-  Vec ← c.run _node_ (c.word∘"__vec" ⋈ "["‿Expr‿"]"‿{Expr0𝕩} _seq)
+  Vec ← c.run _node_ (c.consts.vec ⋈ "["‿Expr‿"]"‿{Expr0𝕩} _seq)
   Par ← ⊑ "("‿Expr‿")" _seq
   EWord ← c.token _node_ (∊⟜('''∾wc∾oc)_ifASCII _begin_ "expression")
   Expr0 ← @_opt_⟨"[",Vec, "(",Par, EWord⟩
@@ -275,7 +275,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     TrySeps ← {s←Seps@ ⋄ Back⊸⊢⍟(s>⊢) Rem◶0‿Try 𝕩}
     "if"‿"("‿Expr‿")"‿𝔽‿(When∘⟨TrySeps∘"else",𝔽⟩)_seq
   }
-  StIf ← c.if _node_ (Block _if) 
+  StIf ← c.if _node_ (Block _if)
   StWhile ← c.while _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Block _seq)
   DoWhile ← c.while _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")" _seq)
 
@@ -352,7 +352,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     b ← Result Try"="
     ⟨a,r,b⟩
   }
-  
+
   ExtPar ← "{"‿"}" _argsFn_ Name
   Extender ← c.extender _node_ (ExtPar‿"="‿Body _seq)
   Extend ← c.extend _node_ ("extend"‿Expr0‿ExtPar _seq)
@@ -618,6 +618,7 @@ types ← {kname⇐"type"
     ⟨"primtype"   ,"quality","isfloat","issigned","isint"⟩
     ⟨ PrimType _e2, Quality _p1⟩∾{𝕩_isQual _p1}¨⟨'f'⊸≡ ⋄ 'i'⊸≡ ⋄ ⊑∘∊⟜"iu"⟩
   ⟩
+  pp_u8 ⇐ Ptr⍟2 @_getPrim 'u'‿8  # **u8, for main
 }
 
 registers ← {kname⇐"register"
@@ -1041,6 +1042,14 @@ nodes ← {
   Number ⇐ numbers.Read _value
   Symbol ⇐ (symbols.New 1↓¯1↓⊢)_value
   Token ⇐ ('''≠⊑∘⊢)◶⟨Symbol,(⊑⊏∘⊢∊dig˙)◶Word‿Number⟩
+  consts ⇐ {
+    ⟨v⇐values,n⇐names⟩ ← builtins
+    Make ← {𝕩˙_value 𝕨}
+    s←"is"‿"hastype"‿"call"‿"i32"‿"__vec"
+    match ‿ hasType ‿ call ‿ i32 ‿   vec⇐ Make¨⟜(v⊏˜n⊐⊢)s
+    n0 ⇐ Number "0"
+    pp_u8 ⇐ "**u8" Make types.pp_u8
+  }
   Run ⇐ {
     𝕨𝕊⟨⟨infix⟩,params⟩: CondNode´ 𝕩;
     ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨
@@ -1055,7 +1064,7 @@ nodes ← {
       (3=•Type𝕨)◶⟨!∘"Running non-generator", 𝕎∘DeSpread⟩ program._trace_ pos 𝕩
     }´ d.Eval
   }
-  Call ⇐ { 𝕨 Run ⟨Word"call" , <⊸∾´𝕩⟩ }
+  Call ⇐ { 𝕨 Run ⟨consts.call , <⊸∾´𝕩⟩ }
   Phrase ⇐ {
     things←𝕩 ⋄ pos⇐𝕨
     ToWord⇐{𝕤⋄ (1=≠)◶⟨@,@⍟("word"≢{𝕩.node})⊑⟩ things }
@@ -1078,8 +1087,8 @@ nodes ← {
     conds (∾<⊸∾)↩ {𝕩.conds}¨ pmult / params ⋄ conds⇐
     names ← pmult _flatWith {𝕩.name}¨ params
     tname ← (¬∘∊⟜(⟨@⟩∾notTypeVar)⊸/ PhraseTryName¨)¨ ptype
-    _pc ← {n←𝕨⋄f←{𝕩´˙_value 𝕨}´𝕗 ⋄ {pos Run ⟨f,⟨Word ⊑n.Disp@,𝕩⟩⟩}¨𝕩}
-    conds∾˜↩∾(params "hastype"‿HasType _pc¨ tname≠⊸↓¨ptype)∾(params "is"‿Match _pc¨ pmatch)
+    is‿ht ← {𝕊f: {n←𝕨 ⋄ {pos Run ⟨f,⟨Word ⊑n.Disp@,𝕩⟩⟩}¨𝕩}}¨ consts.match‿consts.hasType
+    conds ∾˜↩ ∾ (ht¨⟜(tname≠⊸↓¨ptype) ∾ is¨⟜pmatch) params
     iTyp←/≠¨tname
     Flatten ← (pmult∾0¨iTyp) _flatWith
     uPar‿iPar←(⍷⋈⊐)name⇐names∾∾tname
@@ -1202,9 +1211,8 @@ nodes ← {
     } functions._with_ pos
   }
   Main ⇐ {
-    pos ← 𝕨
-    argFns ← ⟨Word∘"i32", (𝕨Run⋈⟜⋈)´ Word¨∘(2‿1/"__pnt"‿"u8")⟩
-    𝕨 Function ⟨(≠↑argFns˙)(𝕨Arg{⟨0,𝕩,𝕎@⟩})¨⊢, Word¨, ⊢⟩ {𝕎𝕩}¨ 𝕩
+    ty ← consts.i32‿consts.pp_u8
+    𝕨 Function ⟨(≠↑ty˙)(𝕨Arg{⟨0,𝕩,𝕎@⟩})¨⊢, Word¨, ⊢⟩ {𝕎𝕩}¨ 𝕩
   }
   _setType ← { pos type‿env _𝕣 v:
     { ≠type ?
@@ -1364,12 +1372,11 @@ nodes ← {
   }
   Options ⇐ { (𝕨Run⋈⟜⊑˜)⍟(≠⊣)⟜(𝕨OptPlain⊢)´ 𝕩 }
 
-  n0 ← Number "0"
   For ⇐ {
     ⟨fn,ptrs,ind,from,to,body⟩←𝕩 ⋄ pos←𝕨
     ptri←pos⊸Word¨ptrn←⊑¨ptrs
     ptrv←ptrs(1⊑∾⟜<)¨ptri
-    from↩n0⊣´from
+    from↩consts.n0⊣´from
     vardisp←1↓∾(","⊸∾¨ptrn)∾" over "⊸∾¨ind
     Visit←{⟨𝕏fn,vardisp⊣𝕏¨ptri≍˘ptrv,𝕏from,𝕏to,𝕏body⟩}
     ⟨node,Dump,Disp,NonLocal,Oper⟩⇐d←Defaults "for"‿visit
