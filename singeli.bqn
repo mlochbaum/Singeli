@@ -934,9 +934,9 @@ program ← {
     Report ⇐ {𝕤
       •Out (∧`lf⊸≠)⊸/⎊•Repr •CurrentError@
       •Out ""
-      # DispSource¨ ⌽ Dump@
+      # DispSource¨ ⌽ @⊸≢¨⊸/ Dump@
       # ^ would be the easy way, but we want to compress repeats
-      l ← ≠s ← Dump@
+      l ← ≠s ← @⊸≢¨⊸/ Dump@
       n ← (↕l)-˜ l⊸=⊸+ ⍷⊸(⊣≠⊸↓⊢⊒∾)⊐s  # Distance to next repetition
       n ⊏˜↩ i ← /»⊸≠n                 # Split into blocks of equal distance
       e ← n+l«i                       # Last possible endpoint
