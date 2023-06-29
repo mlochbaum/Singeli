@@ -44,7 +44,7 @@ Source ← { 𝕨 𝕊 src‿lc: file←𝕨⊣""
     •Out¨ disp Tr○((r=e)⊸/) c
   }
 }
-DispSource ← {𝕎𝕩}´
+DispSource ← @⊸≢◶⟨•Out¨∘"(unknown position!)"‿"", {𝕎𝕩}´⟩
 Err ← { (𝕩≠⊸⥊•Out‿DispSource) {𝕎𝕩}¨ 𝕩 ⋄ •Exit 1 }
 
 # Parameter checks for builtins (_p1 and _p2 to use BQN monad/dyad)
@@ -934,9 +934,9 @@ program ← {
     Report ⇐ {𝕤
       •Out (∧`lf⊸≠)⊸/⎊•Repr •CurrentError@
       •Out ""
-      # DispSource¨ ⌽ @⊸≢¨⊸/ Dump@
+      # DispSource¨ ⌽ Dump@
       # ^ would be the easy way, but we want to compress repeats
-      l ← ≠s ← @⊸≢¨⊸/ Dump@
+      l ← ≠s ← Dump@
       n ← (↕l)-˜ l⊸=⊸+ ⍷⊸(⊣≠⊸↓⊢⊒∾)⊐s  # Distance to next repetition
       n ⊏˜↩ i ← /»⊸≠n                 # Split into blocks of equal distance
       e ← n+l«i                       # Last possible endpoint
