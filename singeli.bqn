@@ -223,9 +223,9 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Stmt ← ⊢ _exprStmt
 
   Vec ← c.run _node_ (c.consts.vec ⋈ "["‿Expr‿"]"‿{Expr0𝕩} _seq)
-  Par ← ⊑ "("‿Expr‿")" _seq
+  ParEx ← ⊑ "("‿Expr‿")" _seq
   EWord ← c.token _node_ (∊⟜('''∾wc∾oc)_ifASCII _begin_ "expression")
-  Expr0 ← @_opt_⟨"[",Vec, "(",Par, EWord⟩
+  Expr0 ← @_opt_⟨"[",Vec, "(",ParEx, EWord⟩
 
   _spreadable ← {<∘⊢⍟⊣⟜𝔽∘Try∘"..."}
   _args ← {𝕗 _argsFn_ (Expr _spreadable)}
@@ -375,7 +375,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
     "infix",  @_optGet_(⟨'n'⟩∾˜∾⋈⟜⊑¨"none"‿"left"‿"right")
   ⟩
   Number ← c.number _node_ (∊⟜dig _begin_ "number")
-  OpDef ← c.opDef _node_ ("oper"‿Oper‿Name‿OpType‿Number _seq)
+  OpName ← @_opt_⟨"(",ParEx, Name⟩
+  OpDef ← c.opDef _node_ ("oper"‿Oper‿OpName‿OpType‿Number _seq)
 
   Include ← c.include _node_ ("include"‿Symbol _seq)
 
@@ -426,8 +427,7 @@ operator ← {
   }
   NewScope ⇐ {
     parent ⇐ 𝕩
-    Op ← {name𝕊val‿p‿c‿a:
-      V ⇐ nodes.Word⟜val
+    Op ← {name 𝕊 V‿p‿c‿a: V⇐
       AC ← { Err ("Associativity for operator "∾name∾" must be disambiguated")‿𝕨.value.pos }⍟(0⊸>)
       T ⇐ (p C {𝕩.bind}){{⊣AC𝕏}⍟a𝕗}
     }
@@ -1247,10 +1247,17 @@ nodes ← {
   OpDef ⇐ {
     ⟨op,fn,type,prec⟩←𝕩 ⋄ pos←𝕨
     prec ↩ prec.Eval@
-    Visit←{𝕤⋄⟨type,op,fn,•Repr prec⟩}
-    ⟨node,Dump,Disp,Scope,Eval⟩⇐Defaults "opdef"‿visit
+    Visit←{⟨type,op,𝕏⍟(0==)fn,•Repr prec⟩}
+    ⟨node,Dump,Disp,Scope,Eval⟩⇐d←Defaults "opdef"‿visit
     N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
-    Oper⇐{pos (N𝕩).Add type‿op‿fn‿prec}
+    value←{0<=fn?Word⟜fn;
+      v←var.New@
+      Eval↩{v.Set fn.Eval 𝕩} # OpDef eval
+      Eval⇐{𝕊:v.Get pos}
+      ⟨node,Dump,NonLocal,Oper,Scope⟩⇐Defaults "value"‿⟨⟩
+      Disp⇐{𝕤⋄⟨"(operator value)",op⟩}
+    }
+    Oper⇐{d.Oper 𝕩 ⋄ pos (N𝕩).Add type‿op‿value‿prec}
   }
   Include ⇐ {
     # Top-level if statements resolve in operator pass; expand then
@@ -1421,7 +1428,7 @@ ast ← {
   baseScope ← builtins.names scopes.New scopes.Init@
   baseEnv   ← builtins.values env.Fixed @
   baseOper  ← operator.NewScope operator.nilScope
-  @ baseOper.Add 'r'‿"="‿"__set"‿¯∞
+  @ baseOper.Add 'r'‿"="‿(nodes.Word⟜"__set")‿¯∞
   Build ⇐ Parse∘Tokenize
   Compile ⇐ {
     t ← files.Build 𝕩

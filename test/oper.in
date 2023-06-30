@@ -1,0 +1,11 @@
+def a{b} = 0
+oper %  a  prefix 10
+oper & (a) prefix 10
+
+def outer = tup{%4, &4}
+local {
+  def a{b} = 1
+  def inner = tup{%4, &4}
+}
+
+c:__pnt{u8} = merge{outer, inner}

@@ -148,7 +148,7 @@ The `oper` statement defines a new operator, and applies to all code later in th
     oper -  __neg prefix      30
     oper -  __sub infix left  30
 
-The declaration lists the operator's spelling, generator, form (arity, and associativity for infix operators), and precedence. After the declaration, applying the operator runs the associated generator. More precisely, the generator name is looked up in the scope where the operator is used each time: the `oper` statement only associates the operator with that name and not any particular value.
+The declaration lists the operator's spelling, generator, form (arity, and associativity for infix operators), and precedence. After the declaration, applying the operator runs the associated generator. More precisely, the generator name is looked up in the scope where the operator is used each time: by default the `oper` statement only associates the operator with a name and not any particular value. To assign a specific value instead, use a declaraction with the value—any expression—in parentheses such as `oper - (__neg) prefix 30`.
 
 An operator can have at most one infix and one prefix definition. Prefix operators have no associativity (as operators can't be used as operands, they always run from right to left), while infix operators can be declared `left`, `right`, or `none`. With `none`, an error occurs in ambiguous cases where the operator is applied multiple times. The precedence is any number, and higher numbers bind tighter.
 
