@@ -1,27 +1,18 @@
 # C operators that modify variables/registers
+oper += __incr infix right 5
+oper -= __decr infix right 5
 oper ++ __incr prefix 60
 oper -- __decr prefix 60
-def __decr{a}   = __decr{a,1}
-def __incr{a}   = __incr{a,1}
+def __incr{a,b} = { a = __add{a,b} }
+def __decr{a,b} = { a = __sub{a,b} }
+def __incr{a} = __incr{a,1}
+def __decr{a} = __decr{a,1}
 
-oper +=  __incr   infix right 5
-oper -=  __decr   infix right 5
-oper *=  __setmul infix right 5
-oper /=  __setdiv infix right 5
-oper %=  __setmod infix right 5
-oper <<= __setshl infix right 5
-oper >>= __setshr infix right 5
-oper &=  __setand infix right 5
-oper ^=  __setxor infix right 5
-oper |=  __setor  infix right 5
-
-def __incr  {a,b} = { a = __add{a,b} }
-def __decr  {a,b} = { a = __sub{a,b} }
-def __setmul{a,b} = { a = __mul{a,b} }
-def __setdiv{a,b} = { a = __div{a,b} }
-def __setmod{a,b} = { a = __mod{a,b} }
-def __setshl{a,b} = { a = __shl{a,b} }
-def __setshr{a,b} = { a = __shr{a,b} }
-def __setand{a,b} = { a = __and{a,b} }
-def __setxor{a,b} = { a = __xor{a,b} }
-def __setor {a,b} = { a = __or {a,b} }
+oper *=  ({a,b} => a = __mul{a,b}) infix right 5
+oper /=  ({a,b} => a = __div{a,b}) infix right 5
+oper %=  ({a,b} => a = __mod{a,b}) infix right 5
+oper <<= ({a,b} => a = __shl{a,b}) infix right 5
+oper >>= ({a,b} => a = __shr{a,b}) infix right 5
+oper &=  ({a,b} => a = __and{a,b}) infix right 5
+oper ^=  ({a,b} => a = __xor{a,b}) infix right 5
+oper |=  ({a,b} => a = __or {a,b}) infix right 5

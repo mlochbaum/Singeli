@@ -1,14 +1,14 @@
 # Additional operators for use with skin/c
 
-oper === is       infix none   0
+oper === (is)        infix none   0
 
 oper ~~  reinterpret infix right 55
 oper ^~  promote     infix right 55
 oper <~  cast_i      infix right 55  # Requires arch/c
-oper $  __vec        prefix      50
+oper $   __vec       prefix      50
+
+local def __store{ind}{ptr, val} = store{ptr, ind, val}
+local def __store{ptr, val} = __store{0}{ptr, val}
 
 oper ->  load        infix right 50
-oper <-  __store     infix right  5
-
-def __store{ind}{ptr, val} = store{ptr, ind, val}
-def __store{ptr, val} = __store{0}{ptr, val}
+oper <-  (__store)   infix right  5
