@@ -400,9 +400,9 @@ operator ← {
     Peek‿Next‿Rem ← MakeStream ops {null‿left‿bind‿R⇐𝕨 ⋄ value⇐𝕩}¨ val
     E ← {𝕊test: {𝕊∘{𝕩 LeD Next@}⍟(Test Peek)⍟Rem 𝕩} NuD Rem◶Mis‿Next@ }
     Run ← nodes.Run ⋄ P ← {𝕩.value.pos}
-    NuD ← { pos←P𝕩 ⋄ 𝕩.null ≢⟜@◶{𝕩.value}‿{pos Run ⟨𝕩.R 𝕨.V pos, ⟨E 𝕨.t⟩⟩} 𝕩 }
-    LeD ← { pos←P𝕩 ⋄ Unk⍟(@≡l←𝕩.left)𝕩  ⋄  pos Run ⟨𝕩.R l.V pos, ⟨𝕨, E l.t⟩⟩ }
-    Unk ← { Err "Unknown infix operator"‿𝕩.value.pos }
+    NuD ← { 𝕩.null ≢⟜@◶{𝕩.value}‿{pos←P𝕩 ⋄ pos Run ⟨𝕩.R 𝕨.V pos, ⟨E 𝕨.t⟩⟩} 𝕩 }
+    LeD ← { pos←P𝕩 ⋄ Unk⍟(@≡l←𝕩.left)pos ⋄ pos Run ⟨𝕩.R l.V pos, ⟨𝕨, E l.t⟩⟩ }
+    Unk ← { Err "Unknown infix operator"‿𝕩 }
     Mis ← {𝕊: Err "Missing right operand"‿(¯1⊑val).pos }
     E 1
   }
