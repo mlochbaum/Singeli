@@ -1326,16 +1326,16 @@ nodes ← {
     Eval ⇐ {
       lf ← IfLabel@
       c ← cond CondEval ⟨0‿lf, e←𝕩⟩
-      { @≢lf.label ?
-        then.Eval e
+      { ¬numbers.GetBool c ?
+        r ← {Shows⇐!∘"Can't use if-0 statement result as value"⋄kind⇐"error"}
+        functions.SetLabel⍟(@⊸≢) lf.label
+        r ⊣´ { 𝕩.Eval e }¨ else
+      ;
+        r ← then.Eval e ⋄ @≡lf.label ? r ;
         functions.Goto¨ lt ← functions.Label¨ else
         functions.SetLabel lf.label
         lt { 𝕩.Eval e ⋄ functions.SetLabel 𝕨 }¨ else
         {Shows⇐!∘"Can't use runtime if statement result as value"⋄kind⇐"error"}
-      ;
-        numbers.GetBool c ? then.Eval e ;
-        r ← {Shows⇐!∘"Can't use if-0 statement result as value"⋄kind⇐"error"}
-        r ⊣´ { 𝕩.Eval e }¨ else
       }
     }
   }
