@@ -71,6 +71,12 @@ def table{f, ...tups} = {
   else if (1 == $tups) each{f, *tups}
   else each{{e} => table{bind{f,e}, ...>tups}, *tups}
 }
+# Flattened into a single list
+def flat_table{f, ...tups} = {
+  if (empty{tups}) tup{f{}}
+  else if (1 == $tups) each{f, *tups}
+  else join{each{{e} => flat_table{bind{f,e}, ...>tups}, *tups}}
+}
 
 # Left fold, with or without initial element
 def fold{f, init, list} = {
