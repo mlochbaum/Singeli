@@ -45,6 +45,20 @@ arches ← MakeArch¨ ⟨
       1 ⋈ ∾⟨{f?"float"; (u/"u")∾"int"}, •Repr w, "x", •Repr v, "_t"⟩
     }
   }
+  {
+    name ⇐ "RV64"
+    width ⇐ 64
+    extfile ⇐ "rv"
+    header ⇐ "riscv_vector.h"
+    VecType ⇐ {
+      𝕊 1‿v‿1‿0:
+        1 ⋈ ∾⟨"vbool", •Repr 128÷v, "_t"⟩;
+      𝕊 w‿v‿u‿f:
+        lmul ← (v×w)÷128
+        mf ← lmul<1
+        1 ⋈ ∾⟨"v", {f?"float"; (u/"u")∾"int"}, •Repr w, "m", mf/"f", •Repr ÷⍟mf lmul, "_t"⟩
+    }
+  }
 ⟩
 
 allfeats ← ∾ archfeats ← {𝕩.feats}¨ arches
