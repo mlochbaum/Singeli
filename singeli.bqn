@@ -502,7 +502,7 @@ types ← {kname⇐"type"
 
   Is ⇐ kname≡Kind
   Vec ← {n𝕊t: "Vector size should be a constant integer"!IsNat n ⋄ !Is t ⋄ tVEC New ⟨n,t⟩}
-  Ptr ← { 𝕊t: "Pointer type wasn't type"!Is t ⋄ tPTR New t}
+  Ptr ⇐ { 𝕊t: "Pointer type wasn't type"!Is t ⋄ tPTR New t}
   Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´Is¨ t ⋄ tTUP New t}
   Fun ⇐ tFUN New ⋈
   _get⇐ {IsTup 𝕩 ? Tup 𝕊¨𝕩 ; !∘(𝕗∾" type must be a type"˙)⍟(¬Is) 𝕩}
@@ -657,7 +657,8 @@ constants ← {kname⇐"constant"
     shows⇐"$c"∾(""⊢"_"∾𝕨)∾˜•Repr handle ⋄ fmtType⇐1 ⋄ Matches⇐≡
   }
   Undefined ⇐ {
-    kind⇐kname ⋄ shows⇐"?:"∾Show type⇐𝕩 ⋄ fmtType⇐0 ⋄ Matches⇐≡
+    kind⇐kname ⋄ type⇐𝕨⊢⊘(types.Ptr⊢)𝕩 ⋄ fmtType⇐0 ⋄ Matches⇐≡
+    shows⇐∾⟨"?",(•Repr𝕨)⊣"",":",Show type⟩
   }
   Exportable ⇐ (kname‿"function"⊸⊐⌾< Kind)◶{"?:"≢2↑𝕩.shows}‿1‿0
 }
@@ -823,6 +824,11 @@ builtins ← {
     l "slice: first parameter must be a tuple or symbol"⊸symbols.From⍟s↩
     i←l≠⊸(0⌈⊣⌊+⍟(0⊸>)¨)numbers.From¨1↓𝕩 ⋄ symbols.New⍟s (⊑i)↓(1↓i)↑´˜l
   }
+  Undefined ← {
+    "undefined: one or two parameters (type, length) expected"!(1⊸≤∧≤⟜2)≠𝕩
+    "undefined: first parameter must be a type"!"type"≡Kind⊑𝕩
+    constants.Undefined{(1<≠)◶⟨𝔽⊑,𝔽˜⟜numbers.From´⟩} 𝕩
+  }
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
     ⍉> ⟨
@@ -830,7 +836,7 @@ builtins ← {
       ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"}⊣•Out∘Fmt⟩
       ⟨"exec",blocks.Exec _e3⟩ # Deprecated; will be removed
       ⟨"is",Match _p2⟩, ⟨"hastype",HasType _p2⟩
-      ⟨"undefined",(constants.Undefined⊣"undefined: expected type"!"type"≡Kind)_p1⟩
+      ⟨"undefined",Undefined⟩
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
       ⟨"typekind",symbols.New types.TypeKind _p1⟩
       ⟨"load",Load _e2⟩, ⟨"store",¯1⊸(⊑Store↓)_e3⟩

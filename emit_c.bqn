@@ -140,9 +140,10 @@ Export ← {
   ∾⟨ret," = ",val,";"⟩
 }
 Define ← {st 𝕊 ty‿id‿val:
-  arr ← {'{'=⊑1↑⊑val? '*'=⊑ty? # Define array, then pointer cover
+  arr ← {'*'=⊑ty? ∨´"{?"=c←⊑1↑⊑val? # Define array, then pointer cover
     v←val ⋄ val↩i←id∾"_" ⋄ id∾⍟st˜↩"const "
-    {cpp>st? DefCppArr ⟨ty,i,∾v⟩ ; ⟨st Define ⟨1↓ty,i∾"[]",v⟩, "; "⟩}
+    {'?'=c? UndefArr ⟨ty,i,(∧`':'⊸≠)⊸/1↓⊑v⟩ ;
+     cpp>st? DefCppArr ⟨ty,i,∾v⟩ ; ⟨st Define ⟨1↓ty,i∾"[]",v⟩, "; "⟩}
   ; ⟨⟩}
   eq ← {cpp>st? ⟨"; ",id," = "⟩ ; ⟨" = "⟩}
   ∾∾⟨
@@ -150,12 +151,13 @@ Define ← {st 𝕊 ty‿id‿val:
     ⟨id as.Type ty⟩, (('?'≠·⊑1↑⊑) / eq⊸∾) val
   ⟩
 }
+UndefArr ← {𝕊 ty‿id‿n: (0 Define ⟨1↓ty,∾id‿"["‿n‿"]",⟨"?"⟩⟩) ∾ "; "}
 # For C++, initialize array by creating a second in a temp scope and copying
 DefCppArr ← {𝕊 ty‿i‿v:
   it←i∾"t"
   n←•Repr("{}"≢v)+´(','⊸=∧1="{}"⊸Nest)v
   ∾⟨
-    0 Define ⟨1↓ty,∾i‿"["‿n‿"]",⟨"?"⟩⟩, "; { "
+    UndefArr ty‿i‿n, "{ "
     2 Define ⟨1↓ty,it∾"[]",v⟩, "; "
     "for (unsigned i=0; i<",n,"; i++) ",i,"[i] = ",it,"[i]; } "
   ⟩

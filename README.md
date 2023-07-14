@@ -437,15 +437,16 @@ An architecture feature is an uppercase symbol such as `'AVX2'`. Each function i
 
 ### Values
 
-| Syntax              | Result
-|---------------------|--------
-| `is{a,b}`           | Return 1 if the parameters match and 0 otherwise
-| `hastype{val,type}` | Return 1 if `val` is a typed value of the given type
-| `type{val}`         | Return the type of `val`
-| `kind{val}`         | Return a symbol indicating the kind of value
-| `__set{reg,val}`    | Set value `val` for register `reg`, same as `reg = val`.
-| `undefined{type}`   | Unspecified or uninitialized value of the given type
-| `show{vals…}`       | For debugging: print the parameters, and return it if there's exactly one
+| Syntax                | Result
+|-----------------------|--------
+| `is{a,b}`             | Return 1 if the parameters match and 0 otherwise
+| `hastype{val,type}`   | Return 1 if `val` is a typed value of the given type
+| `type{val}`           | Return the type of `val`
+| `kind{val}`           | Return a symbol indicating the kind of value
+| `__set{reg,val}`      | Set value `val` for register `reg`, same as `reg = val`.
+| `undefined{type}`     | Unspecified or uninitialized value of the given type
+| `undefined{type,len}` | Pointer to undefined array with the given element type and length
+| `show{vals…}`         | For debugging: print the parameters, and return it if there's exactly one
 
 Possible `kind` results are `number`, `constant`, `symbol`, `tuple`, `generator`, `type`, `register`, and `function`.
 

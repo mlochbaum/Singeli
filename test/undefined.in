@@ -1,5 +1,6 @@
 fn fun() = {
   a := undefined{i32}
   b:i32 = undefined{i32}
-  emit{i32, 'add', a, b}
+  c:__pnt{i32} = undefined{i32, 7}
+  emit{i32, 'add', a, b, load{c,2}}
 }
