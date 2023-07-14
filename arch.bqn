@@ -28,12 +28,13 @@ arches ← MakeArch¨ ⟨
     header ⇐ "immintrin.h"
     us ← "Unsupported vector type"
     VecType ⇐ {
-      𝕊 1‿v‿1‿0: v≤64?
+      𝕊 1‿⟨v⟩‿1‿0: v≤64?
         us ! ∊⟜(2⋆3+↕4)⌾<v      # 8…64
         ⟨4, "__mmask"∾•Repr v⟩; # AVX-512 mask
-      𝕊 w‿v‿u‿f:
+      𝕊 w‿⟨v⟩‿u‿f:
         us ! ∊⟜(2⋆6+↕4)⌾<l←w×v  # 64…512
-        ⟨5-˜2⋆⁼l, ∾⟨"__m", •Repr l, {l=64?"";¬f?"i";(64=w)/"d"}⟩⟩
+        ⟨5-˜2⋆⁼l, ∾⟨"__m", •Repr l, {l=64?"";¬f?"i";(64=w)/"d"}⟩⟩;
+      !"Nested vector type unsupported in x86"
     }
   }
   {
@@ -41,8 +42,10 @@ arches ← MakeArch¨ ⟨
     width ⇐ 64
     extfile ⇐ "armv8"
     header ⇐ "arm_neon.h"
-    VecType ⇐ { 𝕊 w‿v‿u‿f:
-      1 ⋈ ∾⟨{f?"float"; (u/"u")∾"int"}, •Repr w, "x", •Repr v, "_t"⟩
+    VecType ⇐ {
+      𝕊 w‿⟨v⟩‿u‿f:
+        1 ⋈ ∾⟨{f?"float"; (u/"u")∾"int"}, •Repr w, "x", •Repr v, "_t"⟩;
+      !"Nested vector type not yet supported in ARM"
     }
   }
   {
@@ -51,12 +54,14 @@ arches ← MakeArch¨ ⟨
     extfile ⇐ "rv"
     header ⇐ "riscv_vector.h"
     VecType ⇐ {
-      𝕊 1‿v‿1‿0:
+      𝕊 ⟨w, x‿v, u, f⟩: 1 ⋈ ∾⟨¯2↓1⊑𝕊 w‿⟨v⟩‿u‿f, 'x', •Repr x, "_t"⟩;
+      𝕊 1‿⟨v⟩‿1‿0:
         1 ⋈ ∾⟨"vbool", •Repr 128÷v, "_t"⟩;
-      𝕊 w‿v‿u‿f:
+      𝕊 w‿⟨v⟩‿u‿f:
         lmul ← (v×w)÷128
         mf ← lmul<1
-        1 ⋈ ∾⟨"v", {f?"float"; (u/"u")∾"int"}, •Repr w, "m", mf/"f", •Repr ÷⍟mf lmul, "_t"⟩
+        1 ⋈ ∾⟨"v", {f?"float"; (u/"u")∾"int"}, •Repr w, "m", mf/"f", •Repr ÷⍟mf lmul, "_t"⟩;
+      !"Only two levels of vector nesting supported in RISC-V"
     }
   }
 ⟩
