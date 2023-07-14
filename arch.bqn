@@ -26,9 +26,14 @@ arches ← MakeArch¨ ⟨
     width ⇐ 64
     extfile ⇐ "x86"
     header ⇐ "immintrin.h"
-    VecType ⇐ { 𝕊 w‿v‿u‿f:
-      "Unsupported vector type" ! ∊⟜(2⋆6+↕4)⌾<l←w×v  # 64…512
-      ⟨5-˜2⋆⁼l, ∾⟨"__m", •Repr l, {l=64?"";¬f?"i";(64=w)/"d"}⟩⟩
+    us ← "Unsupported vector type"
+    VecType ⇐ {
+      𝕊 1‿v‿1‿0: v≤64?
+        us ! ∊⟜(2⋆3+↕4)⌾<v      # 8…64
+        ⟨4, "__mmask"∾•Repr v⟩; # AVX-512 mask
+      𝕊 w‿v‿u‿f:
+        us ! ∊⟜(2⋆6+↕4)⌾<l←w×v  # 64…512
+        ⟨5-˜2⋆⁼l, ∾⟨"__m", •Repr l, {l=64?"";¬f?"i";(64=w)/"d"}⟩⟩
     }
   }
   {
