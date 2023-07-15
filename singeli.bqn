@@ -841,7 +841,7 @@ builtins ← {
       ⟨"typekind",symbols.New types.TypeKind _p1⟩
       ⟨"load",Load _e2⟩, ⟨"store",¯1⊸(⊑Store↓)_e3⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑⚇0‿∞ _p2⟩, ⟨"tuplen",≠_p1⟩
-      ⟨"merge",Merge⟩, ⟨"slice",Slice⟩
+      ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.From _p1⟩
       ⟨"symchars",(symbols.New∘⋈¨"expected symbol"⊸symbols.From)_p1⟩
       ⟨"fmtnat",(symbols.New∘•Repr⊣"expected natural number"!IsNat)numbers.From _p1⟩
       ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓_v1⟩

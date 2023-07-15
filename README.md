@@ -478,6 +478,7 @@ Possible `typekind` results are `void`, `primitive`, `vector`, `pointer`, `funct
 | Syntax                 | Result
 |------------------------|--------
 | `tup{elems…}`          | Create a tuple of the parameters
+| `range{len}`           | The tuple 0, 1,… len-1
 | `merge{tups…}`         | Concatenate elements from multiple tuples into one tuple
 | `tuplen{tuple}`        | Return the length of a tuple
 | `tupsel{ind,tuple}`    | Select the `ind`th element (0-indexed) from the tuple

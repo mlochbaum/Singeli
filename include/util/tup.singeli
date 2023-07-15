@@ -25,7 +25,7 @@ def collect{vars,begin,end,exec & begin<=end} = {
 }
 
 # Integers [0,n)
-def iota{n & knum{n}} = @collect (i to n) i
+def iota{n & knum{n}} = range{n}
 
 # All indices into tuple t
 def inds{t} = iota{$t}
