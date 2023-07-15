@@ -815,18 +815,18 @@ builtins ← {
   Fmt ⇐ 2↓·∾·", "⊸∾¨(UnEsc∘Show∾TypeSuff)⎊("("∾")"∾˜Kind⎊"unknown")¨
   Merge ← {
     0<⌈´=¨𝕩 ? ∾𝕩 ;
-    m←"merge: parameters must include at least one tuple or all be symbols"
+    m←"parameters must include at least one tuple or all be symbols"
     symbols.New ∾ m⊸symbols.From¨𝕩
   }
   Slice ← {
-    "slice: one or two slicing values expected"!(2⊸≤∧≤⟜3)≠𝕩
+    "one or two slicing values expected"!(2⊸≤∧≤⟜3)≠𝕩
     s←¬=l←⊑𝕩
-    l "slice: first parameter must be a tuple or symbol"⊸symbols.From⍟s↩
+    l "first parameter must be a tuple or symbol"⊸symbols.From⍟s↩
     i←l≠⊸(0⌈⊣⌊+⍟(0⊸>)¨)numbers.From¨1↓𝕩 ⋄ symbols.New⍟s (⊑i)↓(1↓i)↑´˜l
   }
   Undefined ← {
-    "undefined: one or two parameters (type, length) expected"!(1⊸≤∧≤⟜2)≠𝕩
-    "undefined: first parameter must be a type"!"type"≡Kind⊑𝕩
+    "one or two parameters (type, length) expected"!(1⊸≤∧≤⟜2)≠𝕩
+    "first parameter must be a type"!"type"≡Kind⊑𝕩
     constants.Undefined{(1<≠)◶⟨𝔽⊑,𝔽˜⟜numbers.From´⟩} 𝕩
   }
   names‿values ⇐ <˘∾≍⟨
@@ -842,9 +842,9 @@ builtins ← {
       ⟨"load",Load _e2⟩, ⟨"store",¯1⊸(⊑Store↓)_e3⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑⚇0‿∞ _p2⟩, ⟨"tuplen",≠_p1⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩
-      ⟨"symchars",(symbols.New∘⋈¨"symchars: expected symbol"⊸symbols.From)_p1⟩
+      ⟨"symchars",(symbols.New∘⋈¨"expected symbol"⊸symbols.From)_p1⟩
       ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓_v1⟩
-      ⟨"apply",{"apply: second parameter must be a tuple"!1==𝕩⋄𝕎𝕩}_p2⟩
+      ⟨"apply",{"second parameter must be a tuple"!1==𝕩⋄𝕎𝕩}_p2⟩
       ⟨"export",{𝕨 symbols.From⊸program.Export⚇0 𝕩}_p2⟩
       ⟨"require",{program.Require∘symbols.From⚇0 𝕩}⟩
       ⟨"witharch",architecture.With⟩
@@ -859,7 +859,8 @@ builtins ← {
       =‿≠‿<‿>‿≤‿≥ Ty2¨ ⟨Match,¬Match⟩ ∾ ·⥊≍˘⟜({𝕏˜}¨) ⟨types.SSubtype,types.Subtype⟩
     ⟩
   ⟩
-  values {name⇐𝕩}⊸{𝕏⊘𝕨}⍟(3=•Type∘⊢)¨˜↩ names
+  ReErr ← {! 𝕩 ∾ (∨`':'⊸=)⊸((∨´⊣)◶⟨": "⊸∾,/⟩) •CurrentError@}
+  values {n←𝕨⋄𝕏⎊(ReErr∘n)⊘{name⇐n}}⍟(3=•Type∘⊢)¨˜↩ names
 }
 
 var ← {
