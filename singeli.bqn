@@ -812,7 +812,7 @@ builtins ← {
   Ty2 ← {𝕏⚇0 _p2}∘Kinds ⊣∾⟜(<·"symbol"⌾⊑⊢´)∘⊢⍟(⊑∊⟜=‿≠)"number"‿"type"⋈¨{𝕏numbers._cmp}⊸⋈
   TypeSuff ← IsTyped◶0‿{𝕩.fmtType}◶""‿{":"∾Fmt TypeOf𝕩}
   UnEsc ← ⊢-128×(' '+128)⊸= # Non-breaking space to space
-  Fmt ← 2↓·∾·", "⊸∾¨(UnEsc∘Show∾TypeSuff)⎊("("∾")"∾˜Kind⎊"unknown")¨
+  Fmt ⇐ 2↓·∾·", "⊸∾¨(UnEsc∘Show∾TypeSuff)⎊("("∾")"∾˜Kind⎊"unknown")¨
   Merge ← {
     0<⌈´=¨𝕩 ? ∾𝕩 ;
     m←"merge: parameters must include at least one tuple or all be symbols"
@@ -1144,8 +1144,12 @@ nodes ← {
     RunEval ⇐ {𝕏 <params}
     DefEval ⇐ { f‿ValEval 𝕊 e: ⟨RunEval valEval,0⟩ Eval e }
   }
+  _errNoMatch ← {
+    •Out (∾⟜": "⍟(0<≠)𝕨)⊢⊘∾"No matching "∾𝕗
+    ! "Parameters: "∾(0<≠)◶⟨"none",builtins.Fmt⟩𝕩
+  }
   _unmatchedGen ⇐ {
-     n _𝕣𝕩: !(∾⟜": "⍟(0<≠)n)∾"No matching generator definition" ;
+     n _𝕣𝕩: 𝕗 "generator definition"_errNoMatch 𝕩 ;
     𝕨n _𝕣𝕩: {name⇐n}
   }
   Lambda ⇐ {
@@ -1392,7 +1396,7 @@ nodes ← {
     Visit←{⟨𝕏¨gens⟩}
     ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "function"‿visit
     Eval ⇐ { 𝕊 e:
-      {"No matching option"!0˙} {𝕩‿"(options)" 𝕨.Eval e}⟜{Get⇐𝕩˙}´ gens
+      {"option"_errNoMatch} {𝕩‿"(options)" 𝕨.Eval e}⟜{Get⇐𝕩˙}´ gens
     }
   }
   Options ⇐ { (𝕨Run⋈⟜⊑˜)⍟(≠⊣)⟜(𝕨OptPlain⊢)´ 𝕩 }
