@@ -843,6 +843,7 @@ builtins ← {
       ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑⚇0‿∞ _p2⟩, ⟨"tuplen",≠_p1⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩
       ⟨"symchars",(symbols.New∘⋈¨"expected symbol"⊸symbols.From)_p1⟩
+      ⟨"fmtnat",(symbols.New∘•Repr⊣"expected natural number"!IsNat)numbers.From _p1⟩
       ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓_v1⟩
       ⟨"apply",{"second parameter must be a tuple"!1==𝕩⋄𝕎𝕩}_p2⟩
       ⟨"export",{𝕨 symbols.From⊸program.Export⚇0 𝕩}_p2⟩

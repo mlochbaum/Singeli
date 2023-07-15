@@ -485,6 +485,7 @@ Possible `typekind` results are `void`, `primitive`, `vector`, `pointer`, `funct
 | `apply{gen,tuple}`     | `gen{...tuple}`
 | `each{gen,tuple…}`     | Map a generator over the given tuples
 | `symchars{symbol}`     | Return the characters of a symbol, as a tuple of symbols
+| `fmtnat{num}`          | Format natural number as symbol
 
 Generators `merge{}` and `slice{}` also work if applied to symbols instead of tuples.
 
