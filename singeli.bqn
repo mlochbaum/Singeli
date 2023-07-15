@@ -443,6 +443,8 @@ operator ← {
       (l⊑tabs).Add ⟨𝕨, name, value‿prec∾l⥊type⟩
     }
     Lookup ⇐ nul.Get Compose lef.Get
+    # include statements also resolved in the operator pass
+    includes←⟨⟩ ⋄ AlreadyIncluded⇐{∊⟜includes⌾<𝕩 ? 1 ; includes∾↩<𝕩⋄0}
   }
   nilScope ⇐ { tabs ⇐ 2⥊{Get⇐nil˙} } # Lookup ⇐ nil˙
   CondScope ⇐ { 𝕊 par:
@@ -1287,9 +1289,10 @@ nodes ← {
     # Top-level if statements resolve in operator pass; expand then
     ⟨filename⟩ ← 𝕩 ⋄ pos←𝕨
     file ← pos files.Resolve symbols.From filename.Eval@
-    NL←⊢ ⋄ NonLocal⇐{𝕊:NL↩{𝕩.NonLocal@⋄𝕩}}
+    N←NL←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}⋄NL↩{𝕩.NonLocal@⋄𝕩}}
     ⟨node,Dump,Disp⟩⇐Defaults "include"‿{⟨file⟩} ⋄ Scope⇐Eval⇐!
     Oper ⇐ {𝕤
+      (N𝕩).AlreadyIncluded file ? Scope↩Eval↩@˙ ;
       b ← NL files.Include file
       ⟨node,Dump,Disp,Oper,Scope,Eval⟩ ↩ b # Always a body so fields can't change
       b.Oper 𝕩

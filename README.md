@@ -376,6 +376,8 @@ As a result, an included file's definitions affect the file that includes it, an
 
 The `local` keyword restricts the scope of compile-time value and operator definitions. It doesn't do anything at runtime: all the functions and so on are still placed together in one big output file.
 
+A file can only included once per scope; inclusions after the first will be ignored.
+
 For larger sets of definitions, `local` also allows a block syntax. The contents of the block behave like a separate file included with `local include`, and more `local` statements are allowed inside—they'll apply inside the block but not to the rest of the file.
 
     local {
