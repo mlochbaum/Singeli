@@ -357,7 +357,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Extender ← c.extender _node_ (ExtPar‿"="‿Body _seq)
   Extend ← c.extend _node_ ("extend"‿Expr0‿ExtPar _seq)
 
-  Generator ← {𝕤⋄ Get"=" ⋄ Result 1} _withParams
+  Generator ← @_optGet_⟨"=", Result∘1, @⟩ _withParams
   Define ← c.define _node_ {
     Get "def" ⋄ e ← Try "extend"
     ⟨Target, e◶Generator‿Extender⟩_seq 𝕩
@@ -1034,6 +1034,7 @@ nodes ← {
       Eval↩{val‿decl 𝕊 𝕩: u←V𝕩 ⋄ u.Set name⊸functions.Declare⚇0⍟decl val}
     }
     # If f≡1, set value in Eval for function recursion
+    RunEval ⇐ {𝕏 ⟨@, name⟩}
     DefEval ⇐ { f‿ValEval 𝕊 e:
       u←V e ⋄ u.Set program._trace_ pos⍟(¬f) ValEval ⟨f◶⟨V0,u˙⟩ e, name⟩
     }
@@ -1140,7 +1141,12 @@ nodes ← {
       ns {𝕩‿decl 𝕨.Eval e}¨ p
       {"Destructuring condition failed" A numbers.GetBool 𝕩.Eval e}¨ conds
     }
-    DefEval ⇐ { f‿ValEval 𝕊 e: ⟨ValEval @,0⟩ Eval e }
+    RunEval ⇐ {𝕏 <params}
+    DefEval ⇐ { f‿ValEval 𝕊 e: ⟨RunEval valEval,0⟩ Eval e }
+  }
+  _unmatchedGen ⇐ {
+     n _𝕣𝕩: !(∾⟜": "⍟(0<≠)n)∾"No matching generator definition" ;
+    𝕨n _𝕣𝕩: {name⇐n}
   }
   Lambda ⇐ {
     ⟨par,result⟩←𝕩 ⋄ pos←𝕨
@@ -1148,8 +1154,8 @@ nodes ← {
     ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "lambda"‿visit
     Scope⇐{ Visit scopes._defer o.Scope par.ScopeLambda 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value and name, from Define
-      next ← ({𝕩.Get pos}⊑𝕨)⊣{"No matching generator definition"!0˙}
       name ← (1⊑𝕨)⊣""
+      next ← ({𝕩.Get pos}⊑𝕨) ⊣ {name _unmatchedGen}
       ⟨Try⟩←par.GetTry e
       Exec‿_cached ← { result.node≢"function"?
         Exec ⇐ result.Eval∘⊢ ⋄ _cached ⇐ {𝔽}
@@ -1239,6 +1245,7 @@ nodes ← {
   }
   Define ⇐ {
     ⟨name,value⟩←𝕩 ⋄ pos←𝕨
+    value no_def˙⍟(@⊸≡)↩
     Visit←{⟨𝕏name,𝕏value⟩}
     ⟨node,Dump,Disp,Oper⟩⇐Defaults "define"‿visit
     N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
@@ -1249,6 +1256,11 @@ nodes ← {
     Eval⇐{
       ⟨"function"≡value.node, value.Eval⟜𝕩⟩ name.DefEval N 𝕩
     }
+  }
+  no_def ← {
+    Eval⇐{=𝕨 ? n←1⊑𝕨 ⋄ n _unmatchedGen ; 𝕊⟜𝕩{𝕩.RunEval 𝕗}¨⊑𝕨}
+    ⟨node,Dump,NonLocal,Oper,Scope⟩⇐Defaults "value"‿⟨⟩
+    Disp⇐⟨"(no definition)"⟩˙
   }
   OpDef ⇐ {
     ⟨op,fn,type,prec⟩←𝕩 ⋄ pos←𝕨
