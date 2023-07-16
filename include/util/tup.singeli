@@ -16,12 +16,8 @@ def empty{tup} = 0 == $tup
 
 # Constant-time evaluation returning a list
 def collect{vars,begin,end,exec & begin<=end} = {
-  def c{i,l} = {
-    def r = exec{i, vars}
-    merge{tup{r}, c{i+1, l}}
-  }
-  def c{l,l} = tup{}
-  c{begin,end}
+  def inds = begin + range{end-begin}
+  each{{i}=>exec{i, vars}, inds}
 }
 
 # Integers [0,n)
