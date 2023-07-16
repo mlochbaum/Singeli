@@ -717,8 +717,8 @@ functions ← {kname⇐"function"
     Finish⇐{"Explicit result type needed"!IsTyped 𝕩⋄SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
     Prot⇐{𝕊 showReg:
       ext ← (0<≠)◶⟨⟩‿(⋈·'+'⌾⊑·∾','⊸∾¨) architecture.ListExt arch
-      at ← ∾ args {IsTup𝕨 ? ∾𝕨𝕊¨𝕩 ; ≍⟨ShowReg𝕨,Show𝕩⟩}⟜types.Unpack¨ atypes
-      1↓∾" "⊸∾¨⟨1↓shows,Show rType⟩∾((<∘•Repr∘≠∾⥊)at)∾ext
+      at ← ∾ args {IsTup𝕨 ? ∾𝕨𝕊¨𝕩 ; ⋈⟨ShowReg𝕨,Show𝕩⟩}⟜types.Unpack¨ atypes
+      1↓∾" "⊸∾¨⟨1↓shows,Show rType⟩∾((<∘•Repr∘≠∾∾)at)∾ext
     }
   }
   _with_ ⇐ {
