@@ -1288,7 +1288,8 @@ nodes ← {
   Include ⇐ {
     # Top-level if statements resolve in operator pass; expand then
     ⟨filename⟩ ← 𝕩 ⋄ pos←𝕨
-    file ← pos files.Resolve symbols.From filename.Eval@
+    rp ← {⟨R⇐RealPath⟩:R; (¬·»⊸∨'.'⊸=∧·(»∧«)'/'⊸=)⊸/} •file
+    file ← RP pos files.Resolve symbols.From filename.Eval@
     N←NL←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}⋄NL↩{𝕩.NonLocal@⋄𝕩}}
     ⟨node,Dump,Disp⟩⇐Defaults "include"‿{⟨file⟩} ⋄ Scope⇐Eval⇐!
     Oper ⇐ {𝕤
