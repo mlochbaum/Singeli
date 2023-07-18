@@ -109,3 +109,8 @@ FeatInd ⇐ { # 𝕨 is 0 to allow features outside current architecture
   !∘(1↓·∾' '∾¨⟨"Features not in",arch.name,"architecture:"⟩∾⊢)⍟(0<≠)⍟𝕨 m
   i
 }
+
+# For external tools, return base architecture as C compiler flags
+GetCFlags ⇐ {𝕊:
+  "-m"⊸∾¨ ((-´"aA")×'A'⊸≤∧≤⟜'Z')⊸+ (baseArch ∧ (arch.name)⊸≢¨)⊸/ feats
+}
