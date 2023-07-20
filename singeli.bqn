@@ -1038,6 +1038,10 @@ nodes ← {
       }
       Eval↩{val‿decl 𝕊 𝕩: u←V𝕩 ⋄ u.Set name⊸functions.Declare⚇0⍟decl val}
     }
+    {name≢"_"?@; # _ does nothing on assignment, and errors on access
+      scope↩@ ⋄ Eval↩!∘"Can't get value of _"
+      IsDef↩{𝕊:eval↩@⋄V↩{Set⇐⊢}˙}
+    }
     # If f≡1, set value in Eval for function recursion
     RunEval ⇐ {𝕏 ⟨@, name⟩}
     DefEval ⇐ { f‿ValEval 𝕊 e:
@@ -1103,7 +1107,9 @@ nodes ← {
     conds ∾˜↩ ∾ (ht¨⟜(tname≠⊸↓¨ptype) ∾ is¨⟜pmatch) params
     iTyp←/≠¨tname
     Flatten ← (pmult∾0¨iTyp) _flatWith
-    uPar‿iPar←(⍷⋈⊐)name⇐names∾∾tname
+    name ⇐ names∾∾tname
+    iPar ← 1-˜ 1↓⊐⟨"_"⟩∾name
+    uPar ← iPar (∊∧0⊸≤)⊸/ name
     ns ← pos⊸NewId¨ uPar
     Visit←{⟨𝕏¨ns,𝕏¨conds⟩}
     ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "params"‿visit
@@ -1126,8 +1132,9 @@ nodes ← {
         F ← {∨´0=r←=¨𝕨 ? <∾⟜", "⊸∾´⊑¨r¬⊸/𝕨 ; Flatten 𝕩}
         ⟨𝕩⊸⊏⊸F params {𝕨.ProcParamSub𝕩}¨⌾(𝕩⊸⊏) ⊢⟩
       } /pmult
-      ⟨"values given the same name don't match"⟩∾∊⊸{
+      ⟨"values given the same name don't match"⟩∾(∊∧0⊸≤)⊸{
         ∧´𝕨 ? ⟨1⟩ ;
+        ∧´𝕨∨𝕩<0 ? ⟨1, 𝕨⊸/⟩ ;
         ⟨{𝕎∧𝕏}´{AllEq𝕩⊸⊏}¨(1<≠¨)⊸/⊔𝕩, 𝕨⊸/⟩
       } iPar
     ⟩
