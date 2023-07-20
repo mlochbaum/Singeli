@@ -21,7 +21,7 @@ Tokenize←{
   {⟨⊑/𝕩,"Unclosed quote"⟩!0}⍟(∨´)(s∨d)>k∨a
   ign←(𝕩∊" "∾tab)∨≠`ab∧c∨n                  # Ignored characters
   # Other stuff
-  da←(»𝕩='.')∧𝕩∊alph                        # Don't group ...word
+  da←»⊸≠«⊸∨»⊸∧𝕩='.'                         # >1 dots group alone
   k∨↩da<∨´(»⊸∧k<𝕩⊸∊)¨wc‿oc                  # Group names, numbers, and ops
   bt←(⌈`↕∘≠×¬)k ⋄ xd←𝕩∊dig
   k∨↩»⊸∨(»(bt⊏xd)∧𝕩='e')∧(𝕩='-')∧«xd        # Negative exponents 12e-3
