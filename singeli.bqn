@@ -318,9 +318,9 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Try "}" ? (0⥊<↕4)‿⟨⟩ ;
     Param ← {𝕤
       v ← Try "..."
-      n ← Target@ ⋄ m ← "params"≡n.node
-      e ← When ⟨     m◶Try‿0"==", CondExpr⟩
-      t ← When ⟨(m∨≠e)◶Try‿0 ":", CondExpr⟩
+      n ← Target@
+      e ← When ⟨     Try  "==", CondExpr⟩
+      t ← When ⟨(≠e)◶Try‿0 ":", CondExpr⟩
       v‿n‿e‿t
     }
     vm ← "At most one variable-length parameter allowed"
@@ -1107,6 +1107,7 @@ nodes ← {
     keep ← (∊∧0⊸≤) iPar ← 1-˜ 1↓⊐⟨"_"⟩∾name
     uPar ← keep / name
     ns ← pos⊸NewId¨ uPar
+    # conds is a list of Fn‿node to be evaluated as par Fn node.Eval e
     mconds ← HasType‿Match⋈¨¨(tname≠⊸↓¨ptype)≍pmatch
     subconds ← <∘∾˘⍉(pmult⊣◶⟨⟩‿{𝕩.conds}¨params)∾mconds
     GB ← numbers.GetBool∘⊢
