@@ -312,17 +312,18 @@ Parse ← {𝕊 tokens‿ShowTrace:
          ⋈∘Expr "Missing = before body?"Asrt⊢
   ⟩)
 
+  TargetPlus ← {𝕤
+    n ← Target@
+    e ← When ⟨     Try  "==", CondExpr⟩
+    t ← When ⟨(≠e)◶Try‿0 ":", CondExpr⟩
+    n‿e‿t
+  }
+  SubParam ← @_opt_⟨"(", {(c.NewId"_")‿𝕩‿⟨⟩}∘Expr, TargetPlus⟩
   Params ← c.params _node_ {𝕤
     Get "{"
     LFs@
     Try "}" ? (0⥊<↕4)‿⟨⟩ ;
-    Param ← {𝕤
-      v ← Try "..."
-      n ← Target@
-      e ← When ⟨     Try  "==", CondExpr⟩
-      t ← When ⟨(≠e)◶Try‿0 ":", CondExpr⟩
-      v‿n‿e‿t
-    }
+    Param ← <⊸∾´ ⟨Try∘"...", SubParam⟩_seq
     vm ← "At most one variable-length parameter allowed"
     a ← While ⟨Div∘",", Param, 1⟩ ⋄ vm Asrt 1≥+´⊑¨a
     c ← While ⟨Div∘"&", CondExpr, 0⟩
