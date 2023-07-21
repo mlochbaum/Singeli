@@ -1,0 +1,5 @@
+beginFn f0_f u32 0
+new v0 emit u32 'out' 0 1 2 3 4 5
+ret v0
+endFn
+

@@ -237,7 +237,14 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Get 1⊑𝕗
     a
   }
-  AddParams ← @_opt_⟨"{", {AddParams∘(c.run  _node_ (⊢⋈"{"‿"}"_args)) 𝕩}, ⊢⟩
+  ParC ← {𝕤 # Parameter in call
+    s ← Try "..."
+    p ← s◶⟨Try∘".", (sep∾","‿"}")_any⟩ @  # Partial application
+    <⍟s Expr⍟(¬p) @
+  }
+  err_ex_gather ← "At most one variable-length parameter allowed"
+  ParCs ← ⊢ ⋈ · (err_ex_gather Asrt 1≥·+´(<@)⊸≡¨)⊸⊢ "{"‿"}"_argsFn_ ParC
+  AddParams ← @_opt_⟨"{", {AddParams∘(c.run  _node_ ParCs           ) 𝕩}, ⊢⟩
   AddArgs   ← @_opt_⟨"(", {          (c.call _node_ (⊢⋈"("‿")"_args)) 𝕩}, ⊢⟩
   Callable ← AddParams∘Expr0
   CanCall ← (¬IsLogic∨´(oc∾"[")=⊏) _test
@@ -324,8 +331,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     LFs@
     Try "}" ? (0⥊<↕4)‿⟨⟩ ;
     Param ← <⊸∾´ ⟨Try∘"...", SubParam⟩_seq
-    vm ← "At most one variable-length parameter allowed"
-    a ← While ⟨Div∘",", Param, 1⟩ ⋄ vm Asrt 1≥+´⊑¨a
+    a ← While ⟨Div∘",", Param, 1⟩ ⋄ err_ex_gather Asrt 1≥+´⊑¨a
     c ← While ⟨Div∘"&", CondExpr, 0⟩
     Get "}"
     a‿c
@@ -1070,14 +1076,23 @@ nodes ← {
     𝕨𝕊⟨⟨infix⟩,params⟩: CondNode´ 𝕩;
     ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨
     spread ← 0=•Type¨params ⋄ params ⊑¨↩
-    deSpread ← (∨´spread)⊑⊢‿{
-      ∾ spread ⊣◶⟨⋈⊢,("Spread input must be tuple"!IsTup)⊸⊢⊢⟩¨𝕩
+    Sp ← ⊣◶⟨⋈⊢,("Spread input must be tuple"!IsTup)⊸⊢⊢⟩
+    DeSpread ← spread{∨´𝕗? ∾𝕗Sp¨⊢; ⊢}
+    # Partial parameters .
+    realpar ← params /˜¬ pp ← @⊸≡¨params
+    em ← {¬∨´pp? {𝔽};
+      Proc ← (pp/spread){
+        ¬∨´𝕗 ? ⊢⊣(𝕘!(≠𝕗)=≠) ;
+        c←+´¬𝕗 ⋄ (0‿c-˜⋈⁼/𝕗)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)⊣(𝕘!c≤≠)
+      }"Partial and given parameter counts don't match"
+      gp ← ⍋⍋ pp
+      {𝔽 gp⊏𝕩∾Proc}
     }
-    Visit←{⟨𝕏caller,𝕏¨params⟩}
+    Visit←{⟨𝕏caller,𝕏¨realpar⟩}
     ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "run"‿visit
     Oper ⇐ {𝕤⋄ pos operator.Run ⟨⊑Visit o.Oper 𝕩, params⟩}
     Eval ⇐ {
-      (3=•Type𝕨)◶⟨!∘"Running non-generator", 𝕎∘DeSpread⟩ program._trace_ pos 𝕩
+      (3=•Type𝕨)◶⟨!∘"Running non-generator", 𝕎∘DeSpread⟩ program._trace_ pos _em 𝕩
     }´ d.Eval
   }
   Call ⇐ { 𝕨 Run ⟨consts.call , <⊸∾´𝕩⟩ }
