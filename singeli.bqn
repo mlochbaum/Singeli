@@ -1061,8 +1061,7 @@ nodes ← {
   consts ⇐ {
     ⟨v⇐values,n⇐names⟩ ← builtins
     Make ← {𝕩˙_value 𝕨}
-    s←"is"‿"hastype"‿"call"‿"i32"‿"__vec"
-    match ‿ hasType ‿ call ‿ i32 ‿   vec⇐ Make¨⟜(v⊏˜n⊐⊢)s
+    call‿i32‿vec ⇐ Make¨⟜(v⊏˜n⊐⊢) "call"‿"i32"‿"__vec"
     n0 ⇐ Number "0"
     pp_u8 ⇐ "**u8" Make types.pp_u8
   }
@@ -1096,24 +1095,26 @@ nodes ← {
   PhraseTryName ⇐ {𝕩.name}⍟(@⊸≢)PhraseTryWord
   notTypeVar ← types.primTypes≠⊸↑builtins.names
   Params ⇐ {
-    ⟨paramsPlus,conds⟩ ← 𝕩 ⋄ pos←𝕨
+    ⟨paramsPlus,condExprs⟩ ← 𝕩 ⋄ pos←𝕨
     pgather‿params‿pmatch‿ptype ← <˘⍉>paramsPlus
     pmult ← {"params"≡𝕩.node}¨ params
     _flatWith ← {¬∨´𝕗? ⊢; n←𝕗∨1»𝕗⋄∾(n/𝕗)⊑∘⊢⍟⊣¨(¯1+`n)⊔⊢}
-    conds (∾<⊸∾)↩ {𝕩.conds}¨ pmult / params ⋄ conds⇐
     names ← pmult _flatWith {𝕩.name}¨ params
     tname ← (¬∘∊⟜(⟨@⟩∾notTypeVar)⊸/ PhraseTryName¨)¨ ptype
-    is‿ht ← {𝕊f: {n←𝕨 ⋄ {pos Run ⟨f,⟨Word ⊑n.Disp@,𝕩⟩⟩}¨𝕩}}¨ consts.match‿consts.hasType
-    conds ∾˜↩ ∾ (ht¨⟜(tname≠⊸↓¨ptype) ∾ is¨⟜pmatch) params
     iTyp←/≠¨tname
     Flatten ← (pmult∾0¨iTyp) _flatWith
     name ⇐ names∾∾tname
-    iPar ← 1-˜ 1↓⊐⟨"_"⟩∾name
-    uPar ← iPar (∊∧0⊸≤)⊸/ name
+    keep ← (∊∧0⊸≤) iPar ← 1-˜ 1↓⊐⟨"_"⟩∾name
+    uPar ← keep / name
     ns ← pos⊸NewId¨ uPar
-    Visit←{⟨𝕏¨ns,𝕏¨conds⟩}
+    mconds ← HasType‿Match⋈¨¨(tname≠⊸↓¨ptype)≍pmatch
+    subconds ← <∘∾˘⍉(pmult⊣◶⟨⟩‿{𝕩.conds}¨params)∾mconds
+    GB ← numbers.GetBool∘⊢
+    conds ⇐ (((/≠¨){𝕨⊸⊑⊸𝕏}⌾⊑⍟(gb˙⊸≢)¨∾) subconds) ∾ gb ⋈¨ condExprs
+    cexpr ← 1⊑¨conds
+    Visit←{⟨𝕏¨ns,𝕏¨cexpr⟩}
     ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "params"‿visit
-    VisitLambda ⇐ {⟨params∾⟜(∾""<⊸∾":"⊸∾¨)¨tname,𝕏¨conds⟩}
+    VisitLambda ⇐ {⟨params∾⟜(∾""<⊸∾":"⊸∾¨)¨tname,𝕏¨cexpr⟩}
     ScopeLambda ⇐ {uPar scopes.New 𝕩}
     AllEq ← ∧´⊏Match¨1⊸↓
     MakeProc ← ⊢˙ {@‿1‿N𝕊𝕩:𝕏⍟(0<=)N; # Special-case nesting
@@ -1132,7 +1133,7 @@ nodes ← {
         F ← {∨´0=r←=¨𝕨 ? <∾⟜", "⊸∾´⊑¨r¬⊸/𝕨 ; Flatten 𝕩}
         ⟨𝕩⊸⊏⊸F params {𝕨.ProcParamSub𝕩}¨⌾(𝕩⊸⊏) ⊢⟩
       } /pmult
-      ⟨"values given the same name don't match"⟩∾(∊∧0⊸≤)⊸{
+      ⟨"values given the same name don't match"⟩∾keep {
         ∧´𝕨 ? ⟨1⟩ ;
         ∧´𝕨∨𝕩<0 ? ⟨1, 𝕨⊸/⟩ ;
         ⟨{𝕎∧𝕏}´{AllEq𝕩⊸⊏}¨(1<≠¨)⊸/⊔𝕩, 𝕨⊸/⟩
@@ -1142,16 +1143,16 @@ nodes ← {
     GetTry ⇐ {𝕊 e:
       Try ⇐ {
         0==𝕩 ? @ ; # Error from static checking
-        t ← {⊢} {numbers.GetBool∘𝕨.Eval◶@‿𝕏}´ conds
-        T 𝕩 env.Fixed e
-      }∘Proc
+        t ← {⊢} {f‿n𝕊𝕩:f⟜n.Eval◶@‿𝕏}´ conds
+        𝕨 T 𝕩 env.Fixed e
+      }⟜Proc
     }
     Eval⇐{ val‿decl 𝕊 e:
       A ← ! program._trace_ pos
       "Destructuring non-tuple" A IsTup val
       A∘("Destructuring: "∾⊑)⍟(0==) p←Proc val
       ns {𝕩‿decl 𝕨.Eval e}¨ p
-      {"Destructuring condition failed" A numbers.GetBool 𝕩.Eval e}¨ conds
+      {f‿n: "Destructuring condition failed" A val F n.Eval e}¨ conds
     }
     RunEval ⇐ {𝕏 <params}
     DefEval ⇐ { f‿ValEval 𝕊 e: ⟨RunEval valEval,0⟩ Eval e }
