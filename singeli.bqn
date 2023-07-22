@@ -1077,17 +1077,18 @@ nodes ← {
     ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨
     spread ← 0=•Type¨params ⋄ params ⊑¨↩
     Sp ← ⊣◶⟨⋈⊢,("Spread input must be tuple"!IsTup)⊸⊢⊢⟩
-    DeSpread ← spread{∨´𝕗? ∾𝕗Sp¨⊢; ⊢}
     # Partial parameters .
     realpar ← params /˜¬ pp ← @⊸≡¨params
     em ← {¬∨´pp? {𝔽};
       Proc ← (pp/spread){
-        ¬∨´𝕗 ? ⊢⊣(𝕘!(≠𝕗)=≠) ;
-        c←+´¬𝕗 ⋄ (0‿c-˜⋈⁼/𝕗)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)⊣(𝕘!c≤≠)
+        ¬∨´𝕗 ? ((⍋⍋pp)⊏∾) ⊣ (𝕘!(≠𝕗)=≠∘⊢) ;
+        c ← +´pp∧»∨`ps←pp∧spread
+        i ← (⋈⁼/ps)(↑⋈↓)(⊢-≠×(c-˜≠)⊸≤)⍋⍋ps¬⊸/pp
+        (∾0‿2‿1⊏(i⊏¨<∘∾)∾⟜<(c-˜0⋈¯1+´pp)↓´˜⊢) ⊣ (𝕘!c≤≠∘⊢)
       }"Partial and given parameter counts don't match"
-      gp ← ⍋⍋ pp
-      {𝔽 gp⊏𝕩∾Proc}
+      {𝔽 𝕩⊸Proc}
     }
+    DeSpread ← (pp<spread){∨´𝕗? ∾𝕗Sp¨⊢; ⊢}
     Visit←{⟨𝕏caller,𝕏¨realpar⟩}
     ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "run"‿visit
     Oper ⇐ {𝕤⋄ pos operator.Run ⟨⊑Visit o.Oper 𝕩, params⟩}
