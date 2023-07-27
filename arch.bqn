@@ -1,4 +1,5 @@
 # CPU architecture
+argfeats‿infer ← ⋈⟜0⍟(0=≠) •args
 
 Spl ← (⊢-˜+`×¬)∘=⊔⊢
 ToUpper ← ((-´"Aa")×'a'⊸≤∧≤⟜'z')⊸+
@@ -24,7 +25,7 @@ arches ← MakeArch¨ ⟨
   {
     name ⇐ "X86_64"
     width ⇐ 64
-    extfile ⇐ "x86"
+    extfile ⇐ infer⊑"x86_strict"‿"x86"
     header ⇐ "immintrin.h"
     us ← "Unsupported vector type"
     VecType ⇐ {
@@ -91,7 +92,7 @@ ReadNative ← {𝕊:
 }
 
 MaybeNat ← "NATIVE"⊸≡¨ (¬⊸/∾ReadNative)⍟((0=≠)⊸(∨´)⊣) ⊢
-arg ← ⟨"NONE"⟩⊸≢◶⟨⟩‿MaybeNat ToUpper •args
+arg ← ⟨"NONE"⟩⊸≢◶⟨⟩‿MaybeNat ToUpper argfeats
 all ← "ALL"⊸≡¨ arg
 !∘(∾"Unknown features:"<⊸∾' '∾¨/⟜arg)⍟(∨´) ¬all∨arg∊allfeats
 "Incompatible features" ! ∨´ supp ← (all¬⊸/arg)⊸(∧´∊)¨ archfeats

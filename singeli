@@ -7,9 +7,10 @@ Argument is a list of input files and options. Supported:"
 short‿long‿args‿dup‿desc ← <˘⍉> ⟨
   "h"‿"help"  ‿0‿1‿"Print this message and exit"
   "o"‿"out"   ‿1‿0‿"Output file (print to stdout by default)"
-# "i"‿"stdin" ‿0‿0‿"Use stdin as input, after any argument files"
+# "?"‿"stdin" ‿0‿0‿"Use stdin as input, after any argument files"
   "t"‿"target"‿1‿0‿"Output type: c (default), cpp, ir"
   "a"‿"arch"  ‿1‿1‿"Architecture features: list, or none, native (default), all"
+  "i"‿"infer" ‿1‿0‿"Type of architecture inference: strict, or loose (default)"
   "l"‿"lib"   ‿1‿1‿"Library paths: lib=path to try path/x for include 'lib/x'"
   "c"‿"config"‿1‿1‿"Configuration: name=value to set config name to value"
   "p"‿"pre"   ‿1‿0‿"Preamble placed before C output"
@@ -27,7 +28,7 @@ op ⌈↩ c ×¬ <`⊸= op⊏args
 opts ← ((1+c)∾˜f/op) ⊔ ((op=c)(1-˜×⟜(+`))○(∾⟜1)f←¬0»op⊏args) ⊔ •args
 "Option can't be duplicated" ! ∧´ (dup∾1) ≥ 1<≠¨opts
 os ← (0⌾⊑dup∾0) (∾','⊸Spl¨)⍟⊣¨ (1⌾(¯1⊸⊑)args) ⊣◶⟨0<≠∘⊢,⊑¨⊢⟩¨ opts
-help‿out‿target‿feats‿lib‿config‿pre‿namepre‿deplog‿files ← os
+help‿out‿target‿feats‿inf‿lib‿config‿pre‿namepre‿deplog‿files ← os
 
 { help ?
   opt_help ← ∾¨´ ⟨desc⟩ ∾˜ (1+·⌈´≠¨)⊸(↑¨)¨ short‿long ∾¨¨ ",:"
@@ -43,7 +44,7 @@ SplitEq ← (»⊸(⊣-<)·∨`'='⊸=)⊸⊔
 libpaths ← (Rel⌾(1⊸⊑) ¯2 ↑ SplitEq)¨ lib
 configs ← (2 ↑ SplitEq)¨ config
 
-arch ← feats •Import "arch.bqn"
+arch ← ⟨feats,⟨"strict"⟩≢inf⟩ •Import "arch.bqn"
 frontend ← arch‿libpaths‿configs •Import "singeli.bqn"
 backend ← {
   ⟨"ir"⟩≡target ? ⊢ ;

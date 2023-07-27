@@ -522,6 +522,8 @@ The arguments to the `singeli` command are input files and options in any order.
 
 `-a`, `--arch`: List of architecture features in the target system.
 
+`-i`, `--infer`: Inference type, or when to assume one architecture feature implies another: `strict` to use only specified dependencies, `loose` to assume based on currently-existing architectures.
+
 `-l`, `--lib`: Library paths to search in `include` statements. So `-l path` means `include 'x'` will check for `lib/x.singeli`, and `-l lib=path` means `include 'lib/x'` will check for `path/x.singeli`. All paths implied by `-l` are searched in order, followed by Singeli's built-in includes.
 
 `-c`, `--config`: Specify the value of a `config` variable. For example, `config var=4` normally acts as `def var=4`, but with `-c var='conf'` it will act as `def var='conf'` instead.
