@@ -50,7 +50,7 @@ Okay, to compute fibonacci numbers faster we want to keep track of two numbers a
     show{fib{ 90}}  # 0x27f80ddaa1ba7878
     show{fib{100}}  # 3.542248481792619e20
 
-It prints `fib{90}` in hex, so quirky! It's not actually a special kind of number. Singeli's number's are all the same, a kind of high precision float. It fits exact integers just past 31 digits, which is pretty big!
+It prints `fib{90}` in hex, so quirky! It's not actually a special kind of number. Singeli's numbers are all the same, a kind of high precision float. It fits exact integers just past 31 digits, which is pretty big!
 
 There's another way to define the two cases for `fib2{}` that looks more functional. You first write the general case and then the specific one `n==0`. Singeli scans the cases backwards! Secretly when you write the second definition it modifies `fib2`, which means a little bit of the language isn't pure functional. But that mostly doesn't make a difference. Also check out the [`match`](../README.md#match) structure which is another neat way to write this!
 
