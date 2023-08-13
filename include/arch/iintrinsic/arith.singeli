@@ -20,6 +20,7 @@ local {
 
   def sse{V} = 128==width{V}
   def avx{V} = 256==width{V}
+  def sse_avx{V} = __or{...tup{128,256}==width{V}}
   def ef{V} = isfloat{eltype{V}}
   def ei{V} = isint  {eltype{V}}
   def ew{V} = width  {eltype{V}}
@@ -42,8 +43,12 @@ def __min {a:V, b:V & go{V} & has_minmax{V}} = emit{V, intrin{'min', V  }, a, b}
 def __max {a:V, b:V & go{V} & has_minmax{V}} = emit{V, intrin{'max', V  }, a, b}
 def __mul {a:V, b:V & go{V} & has_mul{V}}    = emit{V, intrin{if (ef{V}) 'mul' else 'mullo', V,1}, a, b}
 
-def __shl{a:V, b & num{b} & go{V} & has_shift_imm{V}} = emit{V, intrin{'slli',V,1}, a, b}
-def __shr{a:V, b & num{b} & go{V} & has_rsh_imm  {V}} = emit{V, intrin{if (issigned{eltype{V}}) 'srai' else 'srli',V,1}, a, b}
+def __shl{a:V, b & num{b} & go{V} & has_shift{V}} = emit{V, intrin{'slli',V,1}, a, b}
+def __shr{a:V, b & num{b} & go{V} & has_rsh  {V}} = emit{V, intrin{if (issigned{eltype{V}}) 'srai' else 'srli',V,1}, a, b}
+def __shl_hom{a:V, b:V & go{V} & has_shift{V}} = emit{V, intrin{'sll',V,1}, a, b}
+def __shr_hom{a:V, b:V & go{V} & has_rsh  {V}} = emit{V, intrin{if (issigned{eltype{V}}) 'sra' else 'srl',V,1}, a, b}
+def __shl{a:V, b:V & go{V} & has_vshift{V}} = emit{V, intrin{'sllv',V,1}, a, b}
+def __shr{a:V, b:V & go{V} & has_vrsh  {V}} = emit{V, intrin{if (issigned{eltype{V}}) 'srav' else 'srlv',V,1}, a, b}
 
 def __eq{a:V, b:V & go{V} & has_eq{V}} = emit{uns{V}, intrin{'cmpeq',V,1}, b, a}
 def __gt{a:V, b:V & go{V} & has_gt{V}} = emit{uns{V}, intrin{'cmpgt',V  }, a, b}
@@ -53,7 +58,8 @@ local def cmp_flt{V, a, b, name, num} = {
   def c = if (sse{V}) emit{V, intrin{merge{'cmp',name}, V}, a, b}
           else        emit{V, intrin{'cmp', V}, a, b, num}
   # Return unsigned int even though intrinsics use floats
-  emit{uns{V}, intrin_b{merge{'cast',fmt_p{V}}, V}, c}
+  def U = uns{V}
+  emit{U, intrin_b{merge{'cast',fmt_p{eltype{V}}}, U}, c}
 }
 def __eq{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'eq' ,  0}
 def __ne{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'neq',  4}
@@ -63,7 +69,14 @@ def __lt{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'lt' , 17}
 def __le{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'le' , 18}
 
 def __abs {a:V & go{V} & has_abs {V}} = emit{V, intrin{'abs' , V}, a}
-def __sqrt{a:V & go{V} & has_sqrt{V}} = emit{V, intrin{'sqrt', V}, a}
+def __sqrt{a:V & go{V} & has_float{V}} = emit{V, intrin{'sqrt', V}, a}
+def __div  {a:V, b:V & go{V} & has_float{V}} = emit{V, intrin{'div',   V}, a, b}
+def __floor{a:V, b:V & go{V} & has_round{V}} = emit{V, intrin{'floor', V}, a, b}
+def __ceil {a:V, b:V & go{V} & has_round{V}} = emit{V, intrin{'ceil',  V}, a, b}
+def __round{a:V, b:V & go{V} & has_round{V}} = emit{V, intrin{'round', V}, a, b}
+
+def __avg {a:V, b:V & go{V} & has_int_op{V,'SSE2' ,'u',16}} = emit{V, intrin{'avg' ,V}, a, b}
+def __sign{a:V      & go{V} & has_int_op{V,'SSSE3','i',32}} = emit{V, intrin{'sign',V}, a}
 
 local {
   def has_bitwise{_} = 0  # and, or, xor, andnot
@@ -100,10 +113,13 @@ local {
   def has_mul{V & hasarch{'AVX'   } & avx{V} & ef{V}} = 1
   def has_mul{V & hasarch{'AVX2'  } & avx{V} & ew{V}<=32 & ew{V}>=16} = 1
 
-  def has_shift_imm{_} = 0  # shift by immediate
-  def has_shift_imm{V & hasarch{'SSE2'} & sse{V} & ei{V} & ew{V}>=16} = 1
-  def has_shift_imm{V & hasarch{'AVX2'} & avx{V} & ei{V} & ew{V}>=16} = 1
-  def has_rsh_imm{V} = if (eltype{V}==i64) 0 else has_shift_imm{V}
+  def has_shift{_} = 0  # shift by scalar
+  def has_shift{V & hasarch{'SSE2'} & sse{V} & ei{V} & ew{V}>=16} = 1
+  def has_shift{V & hasarch{'AVX2'} & avx{V} & ei{V} & ew{V}>=16} = 1
+  def has_rsh{V} = if (eltype{V}==i64) 0 else has_shift{V}
+  def has_vshift{_} = 0  # shift by vector
+  def has_vshift{V & hasarch{'AVX2'} & sse_avx{V} & ei{V} & ew{V}>=32} = 1
+  def has_vrsh{V} = if (eltype{V}==i64) 0 else has_vshift{V}
 
   def has_eq{_} = 0  # equals, integer only
   def has_eq{V & hasarch{'SSE2'  } & sse{V}} = width{eltype{V}}<=32
@@ -121,8 +137,16 @@ local {
   def has_absi{V & hasarch{'AVX2' } & avx{V}} = width{eltype{V}}<=32
   def has_abs{V} = if (issigned{eltype{V}}) has_absi{V} else 0
 
-  def has_sqrt{_} = 0  # square root
-  def has_sqrt{V==[4]f32 & hasarch{'SSE' }} = 1
-  def has_sqrt{V==[2]f64 & hasarch{'SSE2'}} = 1
-  def has_sqrt{V & hasarch{'AVX'} & avx{V} & ef{V}} = 1
+  def has_float{_} = 0  # div, square root
+  def has_float{V==[4]f32 & hasarch{'SSE' }} = 1
+  def has_float{V==[2]f64 & hasarch{'SSE2'}} = 1
+  def has_float{V & hasarch{'AVX'} & avx{V} & ef{V}} = 1
+  # floor, ceiling, round
+  def has_round{V} = if (hasarch{'SSE4.1'}) has_float{V} else 0
+
+  # avg, sign
+  def has_int_op{V, arch_s, q, w} = {
+    def check_el{T} = if (width{T}<=w) q==quality{T} else 0
+    if (sse_avx{V} and hasarch{if (sse{V}) arch_s else 'AVX2'}) check_el{eltype{V}} else 0
+  }
 }
