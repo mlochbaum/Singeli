@@ -222,7 +222,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Expr ← (∾⟜" must appear on its own line" Asrt 0˙) _exprStmt
   Stmt ← ⊢ _exprStmt
 
-  Vec ← c.run _node_ (c.consts.vec ⋈ "["‿Expr‿"]"‿{Expr0𝕩} _seq)
+  Vec ← c.run _node_ (c.consts.vec ⋈ "["‿Expr‿"]"‿{Callable𝕩} _seq)
   ParEx ← ⊑ "("‿Expr‿")" _seq
   EWord ← c.token _node_ (∊⟜('''∾wc∾oc)_ifASCII _begin_ "expression")
   Expr0 ← @_opt_⟨"[",Vec, "(",ParEx, EWord⟩
