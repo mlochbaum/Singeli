@@ -1,0 +1,2 @@
+def _iintrinsic_use_fill = 0
+include './basic_main'

@@ -1,3 +1,6 @@
+# This file should not be included directly:
+# instead use arch/iintrinsic/basic or arch/iintrinsic/basic_strict
+# which define whether fills should be used
 local {
   include 'skin/c'
   oper ~~ reinterpret infix right 55
@@ -40,7 +43,7 @@ def make_const_vector{V, x:eltype{V} & eu{V}} = { def I=sgn{V}; V~~I**eltype{I}~
 def make_const_vector{V, x & num{x}} = V**cast{eltype{V}, x}
 
 # Worst definitions go first
-local def fill = 1
+local def fill = _iintrinsic_use_fill
 def __min{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a<b); (a&c) | __andnot{b,c} }
 def __max{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a>b); (a&c) | __andnot{b,c} }
 def __max{a:V, b:V & fill & go{V} & has_satur{V} & eu{V}} = __subs{a,b}+b
