@@ -1,5 +1,7 @@
 local {
   include 'skin/c'
+  oper ~~ reinterpret infix right 55
+  oper ** make_const_vector infix right 55
   def num{x} = is{'number',kind{x}}
 
   def fmt_p{T, ...s} = {
@@ -23,17 +25,44 @@ local {
   def sse_avx{V} = __or{...tup{128,256}==width{V}}
   def ef{V} = isfloat{eltype{V}}
   def ei{V} = isint  {eltype{V}}
+  def eu{V} = 'u'==quality{eltype{V}}
   def ew{V} = width  {eltype{V}}
 
-  def uns{V} = [vcount{V}]primtype{'u', ew{V}}
+  def change_qual{V,q} = [vcount{V}]primtype{q, ew{V}}
+  def uns = change_qual{.,'u'}
+  def sgn = change_qual{.,'i'}
 
   def go{V} = if ('vector'==typekind{V}) u1!=eltype{V} else 0
 }
 
+def make_const_vector{V, x:eltype{V}} = emit{V, merge{intrin{'set1',V}, if (eltype{V}==i64) 'x' else ''}, x}
+def make_const_vector{V, x:eltype{V} & eu{V}} = { def I=sgn{V}; V~~I**eltype{I}~~x }
+def make_const_vector{V, x & num{x}} = V**cast{eltype{V}, x}
+
+# Worst definitions go first
+local def fill = 1
+def __min{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a<b); (a&c) | __andnot{b,c} }
+def __max{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a>b); (a&c) | __andnot{b,c} }
+def __max{a:V, b:V & fill & go{V} & has_satur{V} & eu{V}} = __subs{a,b}+b
+def __min{a:V, b:V & fill & go{V} & has_satur{V} & eu{V}} = a-__subs{a,b}
+def __lt{a:V, b:V & fill & go{V}} = b>a
+def __ge{a:V, b:V & fill & go{V}} = b<=a
+def __le{a:V, b:V & fill & go{V}} = ~(a>b)
+def __ne{a:V, b:V & fill & go{V}} = ~(b==a)
+def __gt{a:V, b:V & fill & go{V} & eu{V} & has_gt{sgn{V}}} = {
+  t:= V**(1<<(ew{V}-1))
+  def I = sgn{V}; def s{v} = I~~(t^v)
+  s{a} > s{b}
+}
+def __le{a:V, b:V & fill & go{V} & has_minmax{V}} = a==__min{a,b}
+def __gt{a:V, b:V & fill & go{V} & ~has_gt{V} & has_minmax{V}} = ~(a<=b)
+def __eq{a:V, b:V & fill & go{V} & ei{V} & ew{V}==64} = { def H=[4]u32; t := H~~a == H~~b; V~~(t & emit{H, '_mm_shuffle_epi32', t, 4b2301}) }
+def __not{a:V & fill & go{V} & has_bitwise{V}} = a ^ (V ** ~cast{eltype{V},0})
+
 def __and   {a:V, b:V & go{V} & has_bitwise{V}} = emit{V, intrin_b{'and'   ,V}, a, b}
 def __or    {a:V, b:V & go{V} & has_bitwise{V}} = emit{V, intrin_b{'or'    ,V}, a, b}
 def __xor   {a:V, b:V & go{V} & has_bitwise{V}} = emit{V, intrin_b{'xor'   ,V}, a, b}
-def __andnot{a:V, b:V & go{V} & has_bitwise{V}} = emit{V, intrin_b{'andnot',V}, a, b}
+def __andnot{a:V, b:V & go{V} & has_bitwise{V}} = emit{V, intrin_b{'andnot',V}, b, a}
 
 def __add {a:V, b:V & go{V} & has_arith{V}}  = emit{V, intrin{'add', V,1}, a, b}
 def __sub {a:V, b:V & go{V} & has_arith{V}}  = emit{V, intrin{'sub', V,1}, a, b}
@@ -71,9 +100,9 @@ def __le{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'le' , 18}
 def __abs {a:V & go{V} & has_abs {V}} = emit{V, intrin{'abs' , V}, a}
 def __sqrt{a:V & go{V} & has_float{V}} = emit{V, intrin{'sqrt', V}, a}
 def __div  {a:V, b:V & go{V} & has_float{V}} = emit{V, intrin{'div',   V}, a, b}
-def __floor{a:V, b:V & go{V} & has_round{V}} = emit{V, intrin{'floor', V}, a, b}
-def __ceil {a:V, b:V & go{V} & has_round{V}} = emit{V, intrin{'ceil',  V}, a, b}
-def __round{a:V, b:V & go{V} & has_round{V}} = emit{V, intrin{'round', V}, a, b}
+def __floor{a:V & go{V} & has_round{V}} = emit{V, intrin{'floor', V}, a}
+def __ceil {a:V & go{V} & has_round{V}} = emit{V, intrin{'ceil',  V}, a}
+def __round{a:V & go{V} & has_round{V}} = emit{V, intrin{'round', V}, a}
 
 def __avg {a:V, b:V & go{V} & has_int_op{V,'SSE2' ,'u',16}} = emit{V, intrin{'avg' ,V}, a, b}
 def __sign{a:V      & go{V} & has_int_op{V,'SSSE3','i',32}} = emit{V, intrin{'sign',V}, a}
