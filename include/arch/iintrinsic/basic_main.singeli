@@ -42,7 +42,7 @@ def make_const_vector{V, x:eltype{V}} = emit{V, merge{intrin{'set1',V}, if (elty
 def make_const_vector{V, x:eltype{V} & eu{V}} = { def I=sgn{V}; V~~I**eltype{I}~~x }
 def make_const_vector{V, x & num{x}} = V**cast{eltype{V}, x}
 
-# Worst definitions go first
+# Multi-instruction fills; slowest ones go first
 local def fill = _iintrinsic_use_fill
 def __min{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a<b); (a&c) | __andnot{b,c} }
 def __max{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a>b); (a&c) | __andnot{b,c} }
@@ -62,6 +62,7 @@ def __gt{a:V, b:V & fill & go{V} & ~has_gt{V} & has_minmax{V}} = ~(a<=b)
 def __eq{a:V, b:V & fill & go{V} & ei{V} & ew{V}==64} = { def H=[4]u32; t := H~~a == H~~b; V~~(t & emit{H, '_mm_shuffle_epi32', t, 4b2301}) }
 def __not{a:V & fill & go{V} & has_bitwise{V}} = a ^ (V ** ~cast{eltype{V},0})
 
+# Single-instruction definitions
 def __and   {a:V, b:V & go{V} & has_bitwise{V}} = emit{V, intrin_b{'and'   ,V}, a, b}
 def __or    {a:V, b:V & go{V} & has_bitwise{V}} = emit{V, intrin_b{'or'    ,V}, a, b}
 def __xor   {a:V, b:V & go{V} & has_bitwise{V}} = emit{V, intrin_b{'xor'   ,V}, a, b}
@@ -100,15 +101,15 @@ def __ge{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'ge' , 29}
 def __lt{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'lt' , 17}
 def __le{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'le' , 18}
 
-def __abs {a:V & go{V} & has_abs {V}} = emit{V, intrin{'abs' , V}, a}
-def __sqrt{a:V & go{V} & has_float{V}} = emit{V, intrin{'sqrt', V}, a}
-def __div  {a:V, b:V & go{V} & has_float{V}} = emit{V, intrin{'div',   V}, a, b}
+def __div{a:V, b:V & go{V} & has_float{V}} = emit{V, intrin{'div', V}, a, b}
+def __sqrt {a:V & go{V} & has_float{V}} = emit{V, intrin{'sqrt',  V}, a}
 def __floor{a:V & go{V} & has_round{V}} = emit{V, intrin{'floor', V}, a}
 def __ceil {a:V & go{V} & has_round{V}} = emit{V, intrin{'ceil',  V}, a}
 def __round{a:V & go{V} & has_round{V}} = emit{V, intrin{'round', V}, a}
 
-def __avg {a:V, b:V & go{V} & has_int_op{V,'SSE2' ,'u',16}} = emit{V, intrin{'avg' ,V}, a, b}
-def __sign{a:V      & go{V} & has_int_op{V,'SSSE3','i',32}} = emit{V, intrin{'sign',V}, a}
+def __abs    {a:V      & go{V} & has_int_op{V,'SSSE3','i',32}} = emit{V, intrin{'abs' ,V}, a}
+def copy_sign{a:V, b:V & go{V} & has_int_op{V,'SSSE3','i',32}} = emit{V, intrin{'sign',V}, a, b}
+def __avg    {a:V, b:V & go{V} & has_int_op{V,'SSE2' ,'u',16}} = emit{V, intrin{'avg' ,V}, a, b}
 
 local {
   def has_bitwise{_} = 0  # and, or, xor, andnot
@@ -138,7 +139,7 @@ local {
   def has_minmax{V & hasarch{'AVX2'} & avx{V}} = avx_minmax{eltype{V}}
 
   def has_mul{_} = 0  # same-width multiply (mullo for ints)
-  def has_mul{V==[4]f32 & hasarch{'SSE' }} = 1
+  def has_mul{V==[4]f32 & hasarch{'SSE'}} = 1
   def has_mul{V & hasarch{'SSE2'  } & sse{V} & ef{V}} = 1
   def has_mul{V & hasarch{'SSE2'  } & sse{V} & ew{V}==16} = 1
   def has_mul{V & hasarch{'SSE4.1'} & sse{V} & ew{V}==32} = 1
@@ -160,14 +161,9 @@ local {
   def has_gt{V} = if (issigned{eltype{V}}) has_eq{V} else 0
 
   def has_cmp_flt{_} = 0  # float comparisons with cmpeq, etc.
-  def has_cmp_flt{V==[ 4]f32 & hasarch{'SSE'}} = 1
+  def has_cmp_flt{V==[4]f32 & hasarch{'SSE'}} = 1
   def has_cmp_flt{V & hasarch{'SSE2'} & sse{V} & ef{V}} = 1
   def has_cmp_flt{V & hasarch{'AVX' } & avx{V} & ef{V}} = 1
-
-  def has_absi{_} = 0  # absolute value, signed integer only
-  def has_absi{V & hasarch{'SSSE3'} & sse{V}} = width{eltype{V}}<=32
-  def has_absi{V & hasarch{'AVX2' } & avx{V}} = width{eltype{V}}<=32
-  def has_abs{V} = if (issigned{eltype{V}}) has_absi{V} else 0
 
   def has_float{_} = 0  # div, square root
   def has_float{V==[4]f32 & hasarch{'SSE' }} = 1
@@ -176,7 +172,7 @@ local {
   # floor, ceiling, round
   def has_round{V} = if (hasarch{'SSE4.1'}) has_float{V} else 0
 
-  # avg, sign
+  # abs, sign, avg
   def has_int_op{V, arch_s, q, w} = {
     def check_el{T} = if (width{T}<=w) q==quality{T} else 0
     if (sse_avx{V} and hasarch{if (sse{V}) arch_s else 'AVX2'}) check_el{eltype{V}} else 0
