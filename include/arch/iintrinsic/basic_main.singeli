@@ -31,6 +31,7 @@ local {
   def ef{V} = isfloat{eltype{V}}
   def ei{V} = isint  {eltype{V}}
   def eu{V} = 'u'==quality{eltype{V}}
+  def es{V} = 'i'==quality{eltype{V}}
   def ew{V} = width  {eltype{V}}
 
   def change_qual{V,q} = [vcount{V}]primtype{q, ew{V}}
@@ -76,6 +77,8 @@ def store_aligned{p:*V, i, v:V & go{V} & has_make{V}} = emit{void, intrin_b{'sto
 
 # Multi-instruction fills; slowest ones go first
 local def fill = _iintrinsic_use_fill
+def __not{a:V & fill & go{V} & has_arith{V}} = a ^ (V ** ~cast{eltype{V},0})
+def __neg{a:V & fill & go{V} & has_arith{V}} = V**0 - a
 def __min{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a<b); (a&c) | __andnot{b,c} }
 def __max{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a>b); (a&c) | __andnot{b,c} }
 def __max{a:V, b:V & fill & go{V} & has_satur{V} & eu{V}} = __subs{a,b}+b
@@ -92,7 +95,10 @@ def __gt{a:V, b:V & fill & go{V} & eu{V} & has_gt{sgn{V}}} = {
 def __le{a:V, b:V & fill & go{V} & has_minmax{V}} = a==__min{a,b}
 def __gt{a:V, b:V & fill & go{V} & ~has_gt{V} & has_minmax{V}} = ~(a<=b)
 def __eq{a:V, b:V & fill & go{V} & ei{V} & ew{V}==64} = { def H=[4]u32; t := H~~a == H~~b; V~~(t & emit{H, '_mm_shuffle_epi32', t, 4b2301}) }
-def __not{a:V & fill & go{V} & has_arith{V}} = a ^ (V ** ~cast{eltype{V},0})
+def __abs{a:V & fill & go{V} & es{V} & has_rsh{V}} = { s:=a>>31; (s^a) - s }
+def __abs{a:V & fill & go{V} & es{V} & has_minmax{uns{V}}} = { u:=uns{V}~~a; V~~__min{u, -u} }
+def __abs{a:V & fill & go{V} & es{V} & has_minmax{    V }} = __max{a, -a}
+def __abs{a:V & fill & go{V} & has_arith{V} & ef{V}} = a & V~~uns{V}**(1<<(ew{V}-1)-1)
 
 # Single-instruction definitions
 def __and   {a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'and'   ,V}, a, b}
@@ -109,11 +115,11 @@ def __max {a:V, b:V & go{V} & has_minmax{V}} = emit{V, intrin{'max', V  }, a, b}
 def __mul {a:V, b:V & go{V} & has_mul{V}}    = emit{V, intrin{if (ef{V}) 'mul' else 'mullo', V,1}, a, b}
 
 def __shl{a:V, b & num{b} & go{V} & has_shift{V}} = emit{V, intrin{'slli',V,1}, a, b}
-def __shr{a:V, b & num{b} & go{V} & has_rsh  {V}} = emit{V, intrin{if (issigned{eltype{V}}) 'srai' else 'srli',V,1}, a, b}
+def __shr{a:V, b & num{b} & go{V} & has_rsh  {V}} = emit{V, intrin{if (es{V}) 'srai' else 'srli',V,1}, a, b}
 def __shl_hom{a:V, b:[2]u64 & go{V} & has_shift{V}} = emit{V, intrin{'sll',V,1}, a, b}
-def __shr_hom{a:V, b:[2]u64 & go{V} & has_rsh  {V}} = emit{V, intrin{if (issigned{eltype{V}}) 'sra' else 'srl',V,1}, a, b}
+def __shr_hom{a:V, b:[2]u64 & go{V} & has_rsh  {V}} = emit{V, intrin{if (es{V}) 'sra' else 'srl',V,1}, a, b}
 def __shl{a:V, b:U & go{V} & U==uns{V} & has_vshift{V}} = emit{V, intrin{'sllv',V,1}, a, b}
-def __shr{a:V, b:U & go{V} & U==uns{V} & has_vrsh  {V}} = emit{V, intrin{if (issigned{eltype{V}}) 'srav' else 'srlv',V,1}, a, b}
+def __shr{a:V, b:U & go{V} & U==uns{V} & has_vrsh  {V}} = emit{V, intrin{if (es{V}) 'srav' else 'srlv',V,1}, a, b}
 
 def __eq{a:V, b:V & go{V} & has_eq{V}} = emit{uns{V}, intrin{'cmpeq',V,1}, b, a}
 def __gt{a:V, b:V & go{V} & has_gt{V}} = emit{uns{V}, intrin{'cmpgt',V  }, a, b}
@@ -189,7 +195,7 @@ local {
   def has_eq{V & hasarch{'SSE2'  } & sse{V}} = width{eltype{V}}<=32
   def has_eq{V & hasarch{'SSE4.2'} & sse{V}} = 1
   def has_eq{V & hasarch{'AVX2'  } & avx{V}} = 1
-  def has_gt{V} = if (issigned{eltype{V}}) has_eq{V} else 0
+  def has_gt{V} = if (es{V}) has_eq{V} else 0
 
   # float comparisons, div, square root
   def has_float{V} = if (ef{V}) has_arith{V} else 0
