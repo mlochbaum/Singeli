@@ -60,13 +60,13 @@ def __gt{a:V, b:V & fill & go{V} & eu{V} & has_gt{sgn{V}}} = {
 def __le{a:V, b:V & fill & go{V} & has_minmax{V}} = a==__min{a,b}
 def __gt{a:V, b:V & fill & go{V} & ~has_gt{V} & has_minmax{V}} = ~(a<=b)
 def __eq{a:V, b:V & fill & go{V} & ei{V} & ew{V}==64} = { def H=[4]u32; t := H~~a == H~~b; V~~(t & emit{H, '_mm_shuffle_epi32', t, 4b2301}) }
-def __not{a:V & fill & go{V} & has_bitwise{V}} = a ^ (V ** ~cast{eltype{V},0})
+def __not{a:V & fill & go{V} & has_arith{V}} = a ^ (V ** ~cast{eltype{V},0})
 
 # Single-instruction definitions
-def __and   {a:V, b:V & go{V} & has_bitwise{V}} = emit{V, intrin_b{'and'   ,V}, a, b}
-def __or    {a:V, b:V & go{V} & has_bitwise{V}} = emit{V, intrin_b{'or'    ,V}, a, b}
-def __xor   {a:V, b:V & go{V} & has_bitwise{V}} = emit{V, intrin_b{'xor'   ,V}, a, b}
-def __andnot{a:V, b:V & go{V} & has_bitwise{V}} = emit{V, intrin_b{'andnot',V}, b, a}
+def __and   {a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'and'   ,V}, a, b}
+def __or    {a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'or'    ,V}, a, b}
+def __xor   {a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'xor'   ,V}, a, b}
+def __andnot{a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'andnot',V}, b, a}
 
 def __add {a:V, b:V & go{V} & has_arith{V}}  = emit{V, intrin{'add', V,1}, a, b}
 def __sub {a:V, b:V & go{V} & has_arith{V}}  = emit{V, intrin{'sub', V,1}, a, b}
@@ -94,12 +94,12 @@ local def cmp_flt{V, a, b, name, num} = {
   def U = uns{V}
   emit{U, intrin_b{merge{'cast',fmt_p{eltype{V}}}, U}, c}
 }
-def __eq{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'eq' ,  0}
-def __ne{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'neq',  4}
-def __gt{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'gt' , 30}
-def __ge{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'ge' , 29}
-def __lt{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'lt' , 17}
-def __le{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'le' , 18}
+def __eq{a:V, b:V & go{V} & has_float{V}} = cmp_flt{V, a, b, 'eq' ,  0}
+def __ne{a:V, b:V & go{V} & has_float{V}} = cmp_flt{V, a, b, 'neq',  4}
+def __gt{a:V, b:V & go{V} & has_float{V}} = cmp_flt{V, a, b, 'gt' , 30}
+def __ge{a:V, b:V & go{V} & has_float{V}} = cmp_flt{V, a, b, 'ge' , 29}
+def __lt{a:V, b:V & go{V} & has_float{V}} = cmp_flt{V, a, b, 'lt' , 17}
+def __le{a:V, b:V & go{V} & has_float{V}} = cmp_flt{V, a, b, 'le' , 18}
 
 def __div{a:V, b:V & go{V} & has_float{V}} = emit{V, intrin{'div', V}, a, b}
 def __sqrt {a:V & go{V} & has_float{V}} = emit{V, intrin{'sqrt',  V}, a}
@@ -112,13 +112,7 @@ def copy_sign{a:V, b:V & go{V} & has_int_op{V,'SSSE3','i',32}} = emit{V, intrin{
 def __avg    {a:V, b:V & go{V} & has_int_op{V,'SSE2' ,'u',16}} = emit{V, intrin{'avg' ,V}, a, b}
 
 local {
-  def has_bitwise{_} = 0  # and, or, xor, andnot
-  def has_bitwise{V==[4]f32 & hasarch{'SSE'}} = 1
-  def has_bitwise{V & hasarch{'SSE2'} & sse{V}} = 1
-  def has_bitwise{V & hasarch{'AVX'} & avx{V} & ef{V}} = 1
-  def has_bitwise{V & hasarch{'AVX2'} & avx{V}} = 1
-
-  def has_arith{_} = 0  # add, subtract
+  def has_arith{_} = 0  # add, subtract, and, or, xor, andnot
   def has_arith{V==[4]f32 & hasarch{'SSE'}} = 1
   def has_arith{V & hasarch{'SSE2'} & sse{V}} = 1
   def has_arith{V & hasarch{'AVX'} & avx{V} & ef{V}} = 1
@@ -160,15 +154,8 @@ local {
   def has_eq{V & hasarch{'AVX2'  } & avx{V}} = 1
   def has_gt{V} = if (issigned{eltype{V}}) has_eq{V} else 0
 
-  def has_cmp_flt{_} = 0  # float comparisons with cmpeq, etc.
-  def has_cmp_flt{V==[4]f32 & hasarch{'SSE'}} = 1
-  def has_cmp_flt{V & hasarch{'SSE2'} & sse{V} & ef{V}} = 1
-  def has_cmp_flt{V & hasarch{'AVX' } & avx{V} & ef{V}} = 1
-
-  def has_float{_} = 0  # div, square root
-  def has_float{V==[4]f32 & hasarch{'SSE' }} = 1
-  def has_float{V==[2]f64 & hasarch{'SSE2'}} = 1
-  def has_float{V & hasarch{'AVX'} & avx{V} & ef{V}} = 1
+  # float comparisons, div, square root
+  def has_float{V} = if (ef{V}) has_arith{V} else 0
   # floor, ceiling, round
   def has_round{V} = if (hasarch{'SSE4.1'}) has_float{V} else 0
 
