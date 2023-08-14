@@ -22,6 +22,8 @@ local {
     merge{'_mm', fw, '_', name, '_', fmt_p{eltype{V}, ...s}}
   }
   def intrin_b{name, V} = intrin{name, V, width{V}}
+  def set_intrin{name, V} = merge{intrin{name,V,1}, if (eltype{V}==i64) 'x' else ''}
+  def vec_ptr{V,p:*V} = { def T = eltype{V}; if (isfloat{T}) *T~~p else p }
 
   def sse{V} = 128==width{V}
   def avx{V} = 256==width{V}
@@ -36,11 +38,41 @@ local {
   def sgn = change_qual{.,'i'}
 
   def go{V} = if ('vector'==typekind{V}) u1!=eltype{V} else 0
+  def gop{P, test} = if ('pointer'==typekind{P}) go{eltype{P}} else 0
 }
 
-def make_const_vector{V, x:eltype{V}} = emit{V, merge{intrin{'set1',V}, if (eltype{V}==i64) 'x' else ''}, x}
-def make_const_vector{V, x:eltype{V} & eu{V}} = { def I=sgn{V}; V~~I**eltype{I}~~x }
-def make_const_vector{V, x & num{x}} = V**cast{eltype{V}, x}
+# Building vectors from scalars
+local {
+  def can_make_sub{V,x} = if (num{x}) 1 else hastype{x, eltype{V}}
+  def can_make_sub{V,x & 'tuple'==kind{x}} = {
+    def all{t} = {
+      def l = tuplen{t}
+      if (l==1) tupsel{0,t}
+      else { def h=l>>1; all{slice{t,0,-h} & slice{t,h}} }
+    }
+    if (vcount{V}==tuplen{x}) all{each{can_make{V,.}, x}} else 0
+  }
+  def can_make{V,x} = if (go{V} and has_make{V}) can_make_sub{V,x} else 0
+  def mv_sub{m, V, x} = {
+    def T = eltype{V}
+    def tx = each{cast{T,.}, x}
+    if ('u'!=quality{T}) m{V, tx} else {
+      def I=primtype{'i', width{T}}
+      V~~m{[vcount{V}]I, each{~~{I,.},tx}}
+    }
+  }
+  def mvc{V,x} = emit{V, set_intrin{'set1',V}, ...x}
+  def mvi{V,x} = emit{V, set_intrin{'setr',V}, ...x}
+  def mvi{V==[2]i64, x} = emit{V, set_intrin{'set',V}, ...tupsel{tup{1,0}, x}}
+}
+def make_vector{V, ...x & can_make{V,x}} = mv_sub{mvi, V, x}
+def make_vector{V, x & 'tuple'==kind{x} & can_make{V,x}} = mv_sub{mvi, V, x}
+def make_const_vector{V, x & can_make{V,x}} = mv_sub{mvc, V, tup{x}}
+
+def load        {p:P, i & gop{P, has_make}} = { def V=eltype{P}; emit{V, intrin_b{'loadu', V}, vec_ptr{V,p+i}} }
+def load_aligned{p:P, i & gop{P, has_make}} = { def V=eltype{P}; emit{V, intrin_b{'load' , V}, vec_ptr{V,p+i}} }
+def store        {p:*V, i, v:V & go{V} & has_make{V}} = emit{void, intrin_b{'storeu', V}, vec_ptr{V,p+i}, v}
+def store_aligned{p:*V, i, v:V & go{V} & has_make{V}} = emit{void, intrin_b{'store' , V}, vec_ptr{V,p+i}, v}
 
 # Multi-instruction fills; slowest ones go first
 local def fill = _iintrinsic_use_fill
@@ -112,6 +144,11 @@ def copy_sign{a:V, b:V & go{V} & has_int_op{V,'SSSE3','i',32}} = emit{V, intrin{
 def __avg    {a:V, b:V & go{V} & has_int_op{V,'SSE2' ,'u',16}} = emit{V, intrin{'avg' ,V}, a, b}
 
 local {
+  def has_make{_} = 0  # set, load, store
+  def has_make{V==[4]f32 & hasarch{'SSE'}} = 1
+  def has_make{V & hasarch{'SSE2'} & sse{V}} = 1
+  def has_make{V & hasarch{'AVX' } & avx{V}} = 1
+
   def has_arith{_} = 0  # add, subtract, and, or, xor, andnot
   def has_arith{V==[4]f32 & hasarch{'SSE'}} = 1
   def has_arith{V & hasarch{'SSE2'} & sse{V}} = 1
