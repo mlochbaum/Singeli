@@ -77,10 +77,10 @@ def __mul {a:V, b:V & go{V} & has_mul{V}}    = emit{V, intrin{if (ef{V}) 'mul' e
 
 def __shl{a:V, b & num{b} & go{V} & has_shift{V}} = emit{V, intrin{'slli',V,1}, a, b}
 def __shr{a:V, b & num{b} & go{V} & has_rsh  {V}} = emit{V, intrin{if (issigned{eltype{V}}) 'srai' else 'srli',V,1}, a, b}
-def __shl_hom{a:V, b:V & go{V} & has_shift{V}} = emit{V, intrin{'sll',V,1}, a, b}
-def __shr_hom{a:V, b:V & go{V} & has_rsh  {V}} = emit{V, intrin{if (issigned{eltype{V}}) 'sra' else 'srl',V,1}, a, b}
-def __shl{a:V, b:V & go{V} & has_vshift{V}} = emit{V, intrin{'sllv',V,1}, a, b}
-def __shr{a:V, b:V & go{V} & has_vrsh  {V}} = emit{V, intrin{if (issigned{eltype{V}}) 'srav' else 'srlv',V,1}, a, b}
+def __shl_hom{a:V, b:[2]u64 & go{V} & has_shift{V}} = emit{V, intrin{'sll',V,1}, a, b}
+def __shr_hom{a:V, b:[2]u64 & go{V} & has_rsh  {V}} = emit{V, intrin{if (issigned{eltype{V}}) 'sra' else 'srl',V,1}, a, b}
+def __shl{a:V, b:U & go{V} & U==uns{V} & has_vshift{V}} = emit{V, intrin{'sllv',V,1}, a, b}
+def __shr{a:V, b:U & go{V} & U==uns{V} & has_vrsh  {V}} = emit{V, intrin{if (issigned{eltype{V}}) 'srav' else 'srlv',V,1}, a, b}
 
 def __eq{a:V, b:V & go{V} & has_eq{V}} = emit{uns{V}, intrin{'cmpeq',V,1}, b, a}
 def __gt{a:V, b:V & go{V} & has_gt{V}} = emit{uns{V}, intrin{'cmpgt',V  }, a, b}
