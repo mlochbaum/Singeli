@@ -460,14 +460,26 @@ Possible `kind` results are `number`, `constant`, `symbol`, `tuple`, `generator`
 | `eltype{type}`   | The underlying type of a vector or pointer type
 | `vcount{[n]t}`   | The number of elements `n` in a vector type
 | `cast{type,val}` | `val` converted to the given type
+| `quality{type}`  | Quality of primitive type: unsigned `'u'`, int `'i'`, or float `'f'`
 | `isfloat{type}`  | 1 if `type` is floating point and 0 otherwise
 | `issigned{type}` | 1 if `type` is signed integer and 0 otherwise
 | `isint{type}`    | 1 if `type` is integer and 0 otherwise
 | `typekind{type}` | A symbol indicating the nature of the type
+| `primtype{q, w}` | The primitive type with quality `q` and width `w`
 | `__pnt{t}`       | Pointer type with element `t`
 | `__vec{n,t}`     | Vector type with element `t` and length `n`; equivalent to `[n]t`
 
 Possible `typekind` results are `void`, `primitive`, `vector`, `pointer`, `function`, and `tuple`.
+
+#### Typecasts
+
+Casting generators convert untyped constants to typed, or convert between types, under specific conditions. In each case an untyped constant can be converted to any type that contains it. The conditions and behavior for converting between types are shown below.
+
+| Syntax                  | Requirement if typed                      | Conversion
+|-------------------------|-------------------------------------------|-----------
+| `cast{type,val}`        | `val`'s type matches `type`               | Same value
+| `promote{type,val}`     | `val`'s type is a subset of `type`        | Same value
+| `reinterpret{type,val}` | `val`'s type has the same width as `type` | Same binary representation
 
 ### Generators
 
