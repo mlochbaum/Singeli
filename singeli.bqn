@@ -1128,7 +1128,8 @@ nodes ← {
     mconds ← HasType‿Match⋈¨¨(tname≠⊸↓¨ptype)≍pmatch
     subconds ← <∘∾˘⍉(pmult⊣◶⟨⟩‿{𝕩.conds}¨params)∾mconds
     GB ← numbers.GetBool∘⊢
-    conds ⇐ (((/≠¨){𝕨⊸⊑⊸𝕏}⌾⊑⍟(gb˙⊸≢)¨∾) subconds) ∾ gb ⋈¨ condExprs
+    GIF ← (∨`⊸+pgather){n←≠𝕗⋄k←𝕩⊑𝕗⋄{k≤1?(𝕩-k×n)⊸⊑;𝕩↓(𝕩¬n)↓⊢}𝕩}
+    conds ⇐ (((/≠¨)GIF⊸{𝕎⊸𝕏}⌾⊑⍟(gb˙⊸≢)¨∾) subconds) ∾ gb ⋈¨ condExprs
     cexpr ← 1⊑¨conds
     Visit←{⟨𝕏¨ns,𝕏¨cexpr⟩}
     ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "params"‿visit
