@@ -170,9 +170,11 @@ Constant ← {
 }
 Require ← { types.Require Name 𝕩 ⋄ "" }
 ⟨New, Mut⟩ ← {
+  Cast ← {∾"("‿(as.Type 𝕨)‿")"‿𝕩}
   Special ← {
-    "^promote"𝕊⟨t,v⟩  : ∾"("‿(as.Type t)‿")"‿v ;
-    "^bitcast"𝕊⟨s,t,v⟩: {s∧○(⊑⊏∊"iu*"˙)t? ∾"("‿(as.Type s)‿")"‿v; "^bitcast"‿t‿v} ;
+    "^promote"𝕊⟨t,v⟩  : t Cast v ;
+    "^bitcast"𝕊⟨s,t,v⟩: { s∧○(⊑⊏∊"iu*"˙)t ? s Cast v ;
+                          s ≡○as.Type t ? v ; "^bitcast"‿t‿v } ;
     "^load"   𝕊⟨p,i  ⟩: ∾p‿"["‿i‿"]" ;
     "^store"  𝕊⟨p,i,v⟩: ∾p‿"["‿i‿"] = "‿v
   }
