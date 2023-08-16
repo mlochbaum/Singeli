@@ -585,10 +585,10 @@ types ← {kname⇐"type"
     𝕨 ⟨Tup˜, Num˜, Fail˜, Fail˜, Obj˜⟩_tsel˜ 𝕩
   }
   _cc ← { Test‿Conv‿Fail _𝕣:
-    (Conv ⊣ Fail○Show⍟(¬Test˜)⟜TypeOf)_asCast
+    (Conv ⊣ Fail○Show⍟(¬Test˜)⟜TypeOf)⍟(¬Equiv⟜TypeOf)_asCast
   }
   Cast ⇐ ⟨
-    Equiv, ⊢
+    0, !
     {!∾⟨"Explicit conversion required to change ",𝕩," to ",𝕨⟩}
   ⟩_cc
   Promote ← ⟨
