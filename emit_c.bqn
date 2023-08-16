@@ -172,6 +172,7 @@ Require ← { types.Require Name 𝕩 ⋄ "" }
 ⟨New, Mut⟩ ← {
   Special ← {
     "^promote"𝕊⟨t,v⟩  : ∾"("‿(as.Type t)‿")"‿v ;
+    "^bitcast"𝕊⟨s,t,v⟩: {s∧○(⊑⊏∊"iu*"˙)t? ∾"("‿(as.Type s)‿")"‿v; "^bitcast"‿t‿v} ;
     "^load"   𝕊⟨p,i  ⟩: ∾p‿"["‿i‿"]" ;
     "^store"  𝕊⟨p,i,v⟩: ∾p‿"["‿i‿"] = "‿v
   }
@@ -185,6 +186,11 @@ Require ← { types.Require Name 𝕩 ⋄ "" }
       ⟩ ⊢)
     "array"‿{"{"∾"}"∾˜∾1↓⥊(<",")≍˘ as.Lit¨ All 𝕩}
   ⟩
+  Memcpy ← {id𝕊"^bitcast"‿t‿v:
+    types.Require "string.h"
+    m ← id∾"_"
+    ∾⟨"{",0 Define ⟨t,m,v⟩,"; memcpy(&",id,", &",m,", sizeof(",as.Type t,"));}"⟩
+  ;𝕊:@}
   New ⇐ {
     id   ← Name 𝕩
     kind ← Name 𝕩
@@ -192,7 +198,11 @@ Require ← { types.Require Name 𝕩 ⋄ "" }
     c ← code⊸⊐⌾< kind
     (∾"Unknown new: `"‿kind‿"`") ! c<≠code
     val ← (c⊑op) {𝕎𝕩} 𝕩
-    {"void"≡ty?∾val; 0 Define ty‿id‿val}
+    {
+      "void"≡ty?∾val ;
+      @≢m←id Memcpy val?∾⟨id as.Type ty,"; ",m⟩ ;
+      0 Define ty‿id‿val
+    }
   }
   Mut ⇐ {
     id   ← Name 𝕩
@@ -202,7 +212,7 @@ Require ← { types.Require Name 𝕩 ⋄ "" }
       c=≠code ? ⟨as.Lit kind⟩ ;
       Name 𝕩 ⋄ (c⊑op) {𝕎𝕩} 𝕩  # Discard type
     } 𝕩
-    ∾id‿" = "∾val
+    {@≢m←id Memcpy val? m ; ∾id‿" = "∾val}
   }
 }
 

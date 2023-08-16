@@ -593,10 +593,10 @@ types ← {kname⇐"type"
   ⟩_cc
   Promote ← ⟨
     Subtype, {functions.Emit⟨𝕨, symbols.New "^promote", 𝕨, 𝕩⟩}
-    {!∾⟨"Can't promote from type ",𝕩," to non-subset ",𝕨⟩}
+    {!∾⟨"Can't promote from type ",𝕩," to non-superset ",𝕨⟩}
   ⟩_cc
   Reinterpret ← ⟨
-    ≡○Width, {functions.Emit⟨𝕨, symbols.New "^promote", 𝕨, 𝕩⟩}
+    ≡○Width, {functions.Emit⟨𝕨, symbols.New "^bitcast", 𝕨, TypeOf 𝕩, 𝕩⟩}
     {!∾⟨"Can't reinterpret type ",𝕩," as different-width type ",𝕨⟩}
   ⟩_cc
 
