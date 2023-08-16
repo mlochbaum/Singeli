@@ -42,9 +42,35 @@ local {
   def gop{P, test} = if ('pointer'==typekind{P}) go{eltype{P}} else 0
 }
 
+# Multi-instruction fills; slowest ones go first
+local def fill = _iintrinsic_use_fill
+def __not{a:V & fill & go{V} & has_arith{V}} = a ^ (V ** ~cast{eltype{V},0})
+def __neg{a:V & fill & go{V} & has_arith{V}} = V**0 - a
+def __min{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a<b); (a&c) | __andnot{b,c} }
+def __max{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a>b); (a&c) | __andnot{b,c} }
+def __max{a:V, b:V & fill & go{V} & has_satur{V} & eu{V}} = __subs{a,b}+b
+def __min{a:V, b:V & fill & go{V} & has_satur{V} & eu{V}} = a-__subs{a,b}
+def __lt{a:V, b:V & fill & go{V}} = b>a
+def __ge{a:V, b:V & fill & go{V}} = b<=a
+def __le{a:V, b:V & fill & go{V}} = ~(a>b)
+def __ne{a:V, b:V & fill & go{V}} = ~(b==a)
+def __gt{a:V, b:V & fill & go{V} & eu{V} & has_gt{sgn{V}}} = {
+  t:= V**(1<<(ew{V}-1))
+  def I = sgn{V}; def s{v} = I~~(t^v)
+  s{a} > s{b}
+}
+def __le{a:V, b:V & fill & go{V} & has_minmax{V}} = a==__min{a,b}
+def __gt{a:V, b:V & fill & go{V} & ~has_gt{V} & has_minmax{V}} = ~(a<=b)
+def __eq{a:V, b:V & fill & go{V} & ei{V} & ew{V}==64} = { def H=[4]u32; t := H~~a == H~~b; V~~(t & emit{H, '_mm_shuffle_epi32', t, 4b2301}) }
+def __abs{a:V & fill & go{V} & es{V} & has_rsh{V}} = { s:=a>>31; (s^a) - s }
+def __abs{a:V & fill & go{V} & es{V} & has_minmax{uns{V}}} = { u:=uns{V}~~a; V~~__min{u, -u} }
+def __abs{a:V & fill & go{V} & es{V} & has_minmax{    V }} = __max{a, -a}
+def __abs{a:V & fill & go{V} & has_arith{V} & ef{V}} = a & V~~uns{V}**(1<<(ew{V}-1)-1)
+
 # Building vectors from scalars
 local {
-  def can_make_sub{V,x} = if (num{x}) 1 else hastype{x, eltype{V}}
+  def can_elt{V,x} = if (num{x}) 1 else hastype{x, eltype{V}}
+  def can_make_sub = can_elt
   def can_make_sub{V,x & 'tuple'==kind{x}} = {
     def all{t} = {
       def l = tuplen{t}
@@ -75,30 +101,26 @@ def load_aligned{p:P, i & gop{P, has_make}} = { def V=eltype{P}; emit{V, intrin_
 def store        {p:*V, i, v:V & go{V} & has_make{V}} = emit{void, intrin_b{'storeu', V}, vec_ptr{V,p+i}, v}
 def store_aligned{p:*V, i, v:V & go{V} & has_make{V}} = emit{void, intrin_b{'store' , V}, vec_ptr{V,p+i}, v}
 
-# Multi-instruction fills; slowest ones go first
-local def fill = _iintrinsic_use_fill
-def __not{a:V & fill & go{V} & has_arith{V}} = a ^ (V ** ~cast{eltype{V},0})
-def __neg{a:V & fill & go{V} & has_arith{V}} = V**0 - a
-def __min{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a<b); (a&c) | __andnot{b,c} }
-def __max{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a>b); (a&c) | __andnot{b,c} }
-def __max{a:V, b:V & fill & go{V} & has_satur{V} & eu{V}} = __subs{a,b}+b
-def __min{a:V, b:V & fill & go{V} & has_satur{V} & eu{V}} = a-__subs{a,b}
-def __lt{a:V, b:V & fill & go{V}} = b>a
-def __ge{a:V, b:V & fill & go{V}} = b<=a
-def __le{a:V, b:V & fill & go{V}} = ~(a>b)
-def __ne{a:V, b:V & fill & go{V}} = ~(b==a)
-def __gt{a:V, b:V & fill & go{V} & eu{V} & has_gt{sgn{V}}} = {
-  t:= V**(1<<(ew{V}-1))
-  def I = sgn{V}; def s{v} = I~~(t^v)
-  s{a} > s{b}
+def extract{a:V, i==0 & go{V} & has_extract0{V}} = {
+  def T = eltype{V}
+  def nt = if (not isfloat{T}) 'si128_si' else if (width{T}==32) 'ss_f' else 'sd_f'
+  def name = merge{'_mm_cvt', nt, fmtnat{width{T}}}
+  if ('u'!=quality{T}) emit{T,name,a}
+  else { def I=primtype{'i', width{T}}; T~~emit{I,name,[vcount{V}]I~~a} }
 }
-def __le{a:V, b:V & fill & go{V} & has_minmax{V}} = a==__min{a,b}
-def __gt{a:V, b:V & fill & go{V} & ~has_gt{V} & has_minmax{V}} = ~(a<=b)
-def __eq{a:V, b:V & fill & go{V} & ei{V} & ew{V}==64} = { def H=[4]u32; t := H~~a == H~~b; V~~(t & emit{H, '_mm_shuffle_epi32', t, 4b2301}) }
-def __abs{a:V & fill & go{V} & es{V} & has_rsh{V}} = { s:=a>>31; (s^a) - s }
-def __abs{a:V & fill & go{V} & es{V} & has_minmax{uns{V}}} = { u:=uns{V}~~a; V~~__min{u, -u} }
-def __abs{a:V & fill & go{V} & es{V} & has_minmax{    V }} = __max{a, -a}
-def __abs{a:V & fill & go{V} & has_arith{V} & ef{V}} = a & V~~uns{V}**(1<<(ew{V}-1)-1)
+def extract{a:V, i & go{V} & num{i} & has_extract{V}} = {
+  def e{V,a} = emit{eltype{V}, intrin{'extract',V}, a, i}
+  if (es{V}) e{V,a} else { def I=sgn{V}; eltype{V}~~e{I,I~~a} }
+}
+def insert{a:V, x, i & go{V} & num{i} & has_extract{V} & can_elt{V,x}} = {
+  def m{V,a,x} = emit{V, intrin{'insert',V}, a, x, i}
+  def T = eltype{V}
+  def tx = cast{T,x}
+  if (issigned{T}) m{V, a, tx} else {
+    def I=sgn{V}
+    V~~m{I, I~~a, eltype{I}~~tx}
+  }
+}
 
 # Single-instruction definitions
 def __and   {a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'and'   ,V}, a, b}
@@ -154,6 +176,14 @@ local {
   def has_make{V==[4]f32 & hasarch{'SSE'}} = 1
   def has_make{V & hasarch{'SSE2'} & sse{V}} = 1
   def has_make{V & hasarch{'AVX' } & avx{V}} = 1
+
+  def has_extract{_} = 0  # extract
+  def has_extract{V & hasarch{'SSE2'  } & sse{V}} = width{eltype{V}}==16
+  def has_extract{V & hasarch{'SSE4.1'} & sse{V}} = 1
+  def has_extract{V & hasarch{'AVX'   } & avx{V}} = width{eltype{V}}>=32
+  def has_extract{V & hasarch{'AVX2'  } & avx{V}} = 1
+  def has_extract0{_} = 0
+  def has_extract0{V & hasarch{'SSE2'} & sse{V} & ew{V}>=32} = 1
 
   def has_arith{_} = 0  # add, subtract, and, or, xor, andnot
   def has_arith{V==[4]f32 & hasarch{'SSE'}} = 1
