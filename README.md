@@ -520,6 +520,12 @@ Arithmetic functions are named with a double underscore, as they're meant to be 
 |---------|---------|---------|---------|---------|---------|
 | `x==y`  | `x!=y`  | `x<y`   | `x>y`   | `x<=y`  | `x>=y`  |
 
+The following builtins do the same thing as C's math.h functions with the same names.
+
+| `__abs`        | `__floor` | `__ceil` | `__min` | `__max` |
+|----------------|-----------|----------|---------|---------|
+| Absolute value | Floor     | Ceiling  | Minimum | Maximum |
+
 Built-in arithmetic is pervasive over tuples, meaning that if one or both arguments are tuples it will map over them, recursively until reaching non-tuples.
 
 ## Command-line options
