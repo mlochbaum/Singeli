@@ -4,7 +4,7 @@
 local {
   include 'skin/c'
   oper ~~ reinterpret infix right 55
-  oper ** make_const_vector infix right 55
+  oper ** vec_broadcast infix right 55
   def num{x} = is{'number',kind{x}}
 
   def fmt_p{T, ...s} = {
@@ -46,8 +46,8 @@ local {
 local def fill = _iintrinsic_use_fill
 def __not{a:V & fill & go{V} & has_arith{V}} = a ^ (V ** ~cast{eltype{V},0})
 def __neg{a:V & fill & go{V} & has_arith{V}} = V**0 - a
-def __min{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a<b); (a&c) | __andnot{b,c} }
-def __max{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a>b); (a&c) | __andnot{b,c} }
+def __min{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a<b); (a&c) | andnot{b,c} }
+def __max{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a>b); (a&c) | andnot{b,c} }
 def __max{a:V, b:V & fill & go{V} & has_satur{V} & eu{V}} = __subs{a,b}+b
 def __min{a:V, b:V & fill & go{V} & has_satur{V} & eu{V}} = a-__subs{a,b}
 def __lt{a:V, b:V & fill & go{V}} = b>a
@@ -66,6 +66,8 @@ def __abs{a:V & fill & go{V} & es{V} & has_rsh{V}} = { s:=a>>31; (s^a) - s }
 def __abs{a:V & fill & go{V} & es{V} & has_minmax{uns{V}}} = { u:=uns{V}~~a; V~~__min{u, -u} }
 def __abs{a:V & fill & go{V} & es{V} & has_minmax{    V }} = __max{a, -a}
 def __abs{a:V & fill & go{V} & has_arith{V} & ef{V}} = a & V~~uns{V}**(1<<(ew{V}-1)-1)
+def __shl{a:V, b:S & fill & go{V} & S<u64 & has_shift{V}} = shl_uniform{a, vec_make{[2]u64, promote{u64,b}, 0}}
+def __shr{a:V, b:S & fill & go{V} & S<u64 & has_rsh  {V}} = shr_uniform{a, vec_make{[2]u64, promote{u64,b}, 0}}
 
 # Building vectors from scalars
 local {
@@ -92,9 +94,9 @@ local {
   def mvi{V,x} = emit{V, set_intrin{'setr',V}, ...x}
   def mvi{V==[2]i64, x} = emit{V, set_intrin{'set',V}, ...tupsel{tup{1,0}, x}}
 }
-def make_vector{V, ...x & can_make{V,x}} = mv_sub{mvi, V, x}
-def make_vector{V, x & 'tuple'==kind{x} & can_make{V,x}} = mv_sub{mvi, V, x}
-def make_const_vector{V, x & can_make{V,x}} = mv_sub{mvc, V, tup{x}}
+def vec_make{V, ...x & can_make{V,x}} = mv_sub{mvi, V, x}
+def vec_make{V, x & 'tuple'==kind{x} & can_make{V,x}} = mv_sub{mvi, V, x}
+def vec_broadcast{V, x & can_make{V,x}} = mv_sub{mvc, V, tup{x}}
 
 def load        {p:P, i & gop{P, has_make}} = { def V=eltype{P}; emit{V, intrin_b{'loadu', V}, vec_ptr{V,p+i}} }
 def load_aligned{p:P, i & gop{P, has_make}} = { def V=eltype{P}; emit{V, intrin_b{'load' , V}, vec_ptr{V,p+i}} }
@@ -123,10 +125,10 @@ def insert{a:V, x, i & go{V} & num{i} & has_extract{V} & can_elt{V,x}} = {
 }
 
 # Single-instruction definitions
-def __and   {a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'and'   ,V}, a, b}
-def __or    {a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'or'    ,V}, a, b}
-def __xor   {a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'xor'   ,V}, a, b}
-def __andnot{a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'andnot',V}, b, a}
+def __and {a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'and'   ,V}, a, b}
+def __or  {a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'or'    ,V}, a, b}
+def __xor {a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'xor'   ,V}, a, b}
+def andnot{a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'andnot',V}, b, a}
 
 def __add {a:V, b:V & go{V} & has_arith{V}}  = emit{V, intrin{'add', V,1}, a, b}
 def __sub {a:V, b:V & go{V} & has_arith{V}}  = emit{V, intrin{'sub', V,1}, a, b}
@@ -138,10 +140,10 @@ def __mul {a:V, b:V & go{V} & has_mul{V}}    = emit{V, intrin{if (ef{V}) 'mul' e
 
 def __shl{a:V, b & num{b} & go{V} & has_shift{V}} = emit{V, intrin{'slli',V,1}, a, b}
 def __shr{a:V, b & num{b} & go{V} & has_rsh  {V}} = emit{V, intrin{if (es{V}) 'srai' else 'srli',V,1}, a, b}
-def __shl_hom{a:V, b:[2]u64 & go{V} & has_shift{V}} = emit{V, intrin{'sll',V,1}, a, b}
-def __shr_hom{a:V, b:[2]u64 & go{V} & has_rsh  {V}} = emit{V, intrin{if (es{V}) 'sra' else 'srl',V,1}, a, b}
 def __shl{a:V, b:U & go{V} & U==uns{V} & has_vshift{V}} = emit{V, intrin{'sllv',V,1}, a, b}
 def __shr{a:V, b:U & go{V} & U==uns{V} & has_vrsh  {V}} = emit{V, intrin{if (es{V}) 'srav' else 'srlv',V,1}, a, b}
+def shl_uniform{a:V, b:[2]u64 & go{V} & has_shift{V}} = emit{V, intrin{'sll',V,1}, a, b}
+def shr_uniform{a:V, b:[2]u64 & go{V} & has_rsh  {V}} = emit{V, intrin{if (es{V}) 'sra' else 'srl',V,1}, a, b}
 
 def __eq{a:V, b:V & go{V} & has_eq{V}} = emit{uns{V}, intrin{'cmpeq',V,1}, b, a}
 def __gt{a:V, b:V & go{V} & has_gt{V}} = emit{uns{V}, intrin{'cmpgt',V  }, a, b}
@@ -167,9 +169,9 @@ def __floor{a:V & go{V} & has_round{V}} = emit{V, intrin{'floor', V}, a}
 def __ceil {a:V & go{V} & has_round{V}} = emit{V, intrin{'ceil',  V}, a}
 def __round{a:V & go{V} & has_round{V}} = emit{V, intrin{'round', V}, a}
 
-def __abs    {a:V      & go{V} & has_int_op{V,'SSSE3','i',32}} = emit{V, intrin{'abs' ,V}, a}
-def copy_sign{a:V, b:V & go{V} & has_int_op{V,'SSSE3','i',32}} = emit{V, intrin{'sign',V}, a, b}
-def __avg    {a:V, b:V & go{V} & has_int_op{V,'SSE2' ,'u',16}} = emit{V, intrin{'avg' ,V}, a, b}
+def __abs      {a:V      & go{V} & has_int_op{V,'SSSE3','i',32}} = emit{V, intrin{'abs' ,V}, a}
+def copy_sign  {a:V, b:V & go{V} & has_int_op{V,'SSSE3','i',32}} = emit{V, intrin{'sign',V}, a, b}
+def average_int{a:V, b:V & go{V} & has_int_op{V,'SSE2' ,'u',16}} = emit{V, intrin{'avg' ,V}, a, b}
 
 local {
   def has_make{_} = 0  # set, load, store
