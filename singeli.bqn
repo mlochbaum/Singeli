@@ -548,7 +548,7 @@ types ← {kname⇐"type"
 
   FnCast ⇐ {
     args‿ret ← ⟨tFUN,⊢, !∘"Calling non-function"⟩_cases 𝕨
-    args(("Wrong number of arguments: expected "∾•Repr∘⊣)!≡)○≠𝕩
+    args(("Wrong number of arguments (expected "∾•Repr∘⊣∾")"˙)!≡)○≠𝕩
     ⟨args Cast¨ 𝕩, ret⟩
   }
 
@@ -857,12 +857,12 @@ builtins ← {
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.From _p1⟩
       ⟨"symchars",(symbols.New∘⋈¨"expected symbol"⊸symbols.From)_p1⟩
       ⟨"fmtnat",(symbols.New∘•Repr⊣"expected natural number"!IsNat)numbers.From _p1⟩
-      ⟨"bind",⊑{𝕎𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨<˘⍉>𝕩}1⊸↓_v1⟩
-      ⟨"apply",{"second parameter must be a tuple"!1==𝕩⋄𝕎𝕩}_p2⟩
+      ⟨"bind",⊑{𝕎_ne𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨_ne<˘⍉>𝕩}1⊸↓_v1⟩
+      ⟨"apply",{"second parameter must be a tuple"!1==𝕩⋄𝕎_ne𝕩}_p2⟩
       ⟨"export",{𝕨 symbols.From⊸program.Export⚇0 𝕩}_p2⟩
       ⟨"require",{program.Require∘symbols.From⚇0 𝕩}⟩
       ⟨"witharch",architecture.With⟩
-      ⟨"withenv",{e←program.env⋄e.Push 2↑𝕩⋄r←⟨⟩{𝕎𝕩}˜2⊑𝕩⋄e.Pop@⋄r}_e3⟩
+      ⟨"withenv",{e←program.env⋄e.Push 2↑𝕩⋄r←⟨⟩{𝕎_ne𝕩}˜2⊑𝕩⋄e.Pop@⋄r}_e3⟩
       ⟨"getenv",{program.env.Get 𝕩}_p1⟩
     ⟩
     functions.builtins
@@ -873,7 +873,8 @@ builtins ← {
       =‿≠‿<‿>‿≤‿≥ Ty2¨ ⟨Match,¬Match⟩ ∾ ·⥊≍˘⟜({𝕏˜}¨) ⟨types.SSubtype,types.Subtype⟩
     ⟩
   ⟩
-  ReErr ← {! 𝕩 ∾ (∨`':'⊸=)⊸((∨´⊣)◶⟨": "⊸∾,/⟩) •CurrentError@}
+  _ne ← {𝔽⎊{𝕊:!":"∾•CurrentError@}} # Protect error from ReErr if builtin runs generator
+  ReErr ← {! (':'≠⊑)◶⟨1⊸↓, 𝕩 ∾ (∨`':'⊸=)⊸(∨´∘⊣◶⟨": "⊸∾,/⟩)⟩ •CurrentError@}
   values {n←𝕨⋄𝕏⎊(ReErr∘n)⊘{name⇐n}}⍟(3=•Type∘⊢)¨˜↩ names
 }
 
