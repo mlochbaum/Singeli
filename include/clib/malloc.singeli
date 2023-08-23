@@ -1,0 +1,3 @@
+require{'stdlib.h'}
+def alloc{T, len} = *T ~~ emit{*void, 'malloc', len*(width{T}/8)}
+def free{ptr} = emit{void, 'free', ptr}
