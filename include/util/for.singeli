@@ -1,0 +1,44 @@
+local {
+  include 'skin/cop'
+  def ux = primtype{'u', width{*void}}
+  def num{n} = is{'number',kind{n}}
+  def loop_var{a, b} = {
+    if (num{a}) { cast{if (num{b}) ux else type{b}, a} }
+    else {
+      def ta=type{a}
+      match (b) { {_:tb & ta<tb}=>promote{tb,a}; {_}=>a }
+    }
+  }
+}
+
+def for{vars,begin,end,iter} = {
+  i := loop_var{begin, end}
+  while (i < end) {
+    iter{i, vars}
+    i = i + 1
+  }
+}
+
+def for_backwards{vars,begin,end,iter} = {
+  i := loop_var{end, begin}
+  while (i > begin) {
+    i = i - 1
+    iter{i, vars}
+  }
+}
+
+def for_const{vars,begin,end,iter & num{begin} & num{end}} = {
+  each{iter{., vars}, begin + range{end-begin}}
+}
+
+def for_unroll{unr & num{unr}}{vars,begin,end,iter} = {
+  i := loop_var{begin, end}
+  while (i + unr <= end) {
+    each{{j}=>iter{i+j, vars}, range{unr}}
+    i = i + unr
+  }
+  while (i < end) {
+    iter{i, vars}
+    i = i + 1
+  }
+}
