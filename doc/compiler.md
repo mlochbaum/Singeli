@@ -126,7 +126,7 @@ And it makes sense that `-` should be able to act on multiple numbers at compile
 
 The basic idea is to read an entire vector regardless of length, reverse only the first `len` elements, and put it back. So this reads from and writes to memory beyond the actual vector argument. Obviously you need to know you have access to that memory, but that's easy to ensure if you control the allocations. But C and other compilers can't figure it out so it's one way writing your own SIMD is better.
 
-The specific idea is to blend a vector that starts at `len-1` and goes down with the identity vector `f`. We choose the descending vector for the first `len` elements, using the mask `f < l`. The result of an SSE comparison is all 0 bits or all 1, and it has an unsigned type but `V` is signed, so slap on `V~~`. In a real project I'd define operator `&~` for `andnot`, and also I usually have some sort of blend function so I could write `blend{f<l, l-f-vec_broadcast{V,1}, f}`.
+The specific idea is to blend a vector that starts at `len-1` and goes down with the identity vector `f`. We choose the descending vector for the first `len` elements, using the mask `f < l`. The result of an SSE comparison is all 0 bits or all 1, and it has an unsigned type but `V` is signed, so slap on `V~~`. Next section I'll show a blend utility that keeps this mess out of sight.
 
 And another cast `<~` in there. The three casts skin/cext defines are `~~` for reinterpret, `^~` for promoting from a type to a superset, and `<~`. At the moment this one just always does a C cast, but the idea is to use it for a narrowing integer conversion. Get familiar with these because Singeli requires a lot of casting. Or at least the standard definitions do, nothing preventing you from extending those.
 
@@ -157,3 +157,64 @@ So now we can put together a function that works on any length. Language-wise th
     }
 
 There you have it, reversing bytes at SSE speed. AVX2 ought to be twice as fast but it's got this ridiculous design where it only shuffles within 16-byte lanes—it's not that much overhead but it's more of a headache than I'm willing to put up with right now.
+
+## Generics
+
+I already said I don't like repeating myself. Instead of copy-pasting, I'll make this vector reverse work on multiple types, which will take a little more macro usage. First some cleanup.
+
+    oper &~ andnot infix none 35
+
+This defines the and-not operator so that `a &~ b` is `a & ~b`. The C backend could probably work the second one out, but it's nice to know you're generating one `andnot` intrinsic. And even if an `&~` operator isn't defined, `&~` with no space won't split into `&` and `~` for consistency. Or maybe because developers are scared of working on the lexer, take your pick. The `infix none 35` thing is the parsing information, which I just copied from `&` in cop.singeli.
+
+    def blend{m:M, t:T, f:T} = (t & T~~m) | (f &~ T~~m)
+
+And this is a macro for blend, the vector equivalent of `if (m) t else f`. Again we've got the smart macro, where the inputs all have to be typed and `t` and `f` have to have the same type. What it does is to get all their types and then check that the ones with the same name are consistent. Another thing, we use `m` twice, which should have a C programmer twitching. But it's safe: `blend` isn't operating on source tokens, but instead saying what to do with values. Which is also how it can check types, because by the time the macro gets processed its inputs have been handled by the compiler and their types are known. And the story is the same at runtime: all macro inputs are evaluated, and then the code in the macro runs.
+
+Now the hard part, which is to make this work on other types. For a lot of simpler vector algorithms you mostly just have to change the vector type, so you'd write something like `def V = [128/width{T}]T` to make a 128-bit vector and you're done. Here that doesn't work because SSSE3 only has this one shuffle instruction, which works on 1-byte units. So we're going to define `V` as `[16]i8`. Then it's bit-bashing time to reverse the `T`-width units in those vectors. Here, I'll dump it all out so you can see what I'm talking about.
+
+    include 'arch/iintrinsic/basic'
+    oper &~ andnot infix none 35
+    def blend{m:M, t:T, f:T} = (t & T~~m) | (f &~ T~~m)
+    def shuffle{a:T, b:T & T==[16]i8} = emit{T, '_mm_shuffle_epi8', a, b}
+
+    fn reverse{T & hasarch{'SSSE3'}}(arr:*T, len:u64) : void = {
+      def b = width{T} / 8  # width of T in bytes
+      def vb = 16
+      def vi = range{vb}
+      def V = [vb]i8
+      def scal{x} = vec_broadcast{V, x}
+      f := vec_make{V, vi}
+      r := vec_make{V, vb-b - vi + 2*(vi%b)}
+      av := *V~~arr
+      bv := *V~~(arr+len)
+      while (av+1 < bv) {
+        --bv
+        c  := shuffle{av->0, r}
+        av <- shuffle{bv->0, r}
+        bv <- c
+        ++av
+      }
+      if (av < bv) {
+        rem := *T~~bv - *T~~av
+        l := scal{i8<~(b*rem)}
+        m := V~~(f < l)
+        s := blend{m, r + l - scal{vb}, f}
+        av <- shuffle{av->0, s}
+      }
+    }
+
+The main loop always does the same permutation, analogous to `vec_make{V, 15 - range{16}}` from before but with more arithmetic. I've defined `vi = range{vb}` to make this a little simpler—if you haven't noticed, just about anything can go in a `def`. Still, `r` is a real head-scratcher. But it's a compile-time head scratcher, and that means I can stick `show` calls all over the place before compiling to see what's going on. `show` just returns its input so it doesn't affect the compiler output, but it also prints that input. See below. These are for the `i32` case, and since I don't actually call it I just added a line `reverse{i32}` which is enough to make sure the function is compiled.
+
+      r := vec_make{V, show{vb-b} - vi + 2*(vi%b)}
+    # 12
+      r := vec_make{V, show{vb-b - vi} + 2*(vi%b)}
+    # tup{12,11,10,9,8,7,6,5,4,3,2,1,0,-1,-2,-3}
+      r := vec_make{V, show{vb-b - vi + show{2*(vi%b)}}}
+    # tup{0,2,4,6,0,2,4,6,0,2,4,6,0,2,4,6}
+    # tup{12,13,14,15,8,9,10,11,4,5,6,7,0,1,2,3}
+
+First line shows `vb-b`, which is the first byte after reversing, or the start of the last element before. And the elements go down from there so I subtract `vi`. But this means bytes go down within an element when I want them going up, so I add twice the byte index `vi%b` within each element.
+
+And then the last vector is a minor variation on what we did before. Work it out yourself if you really care. Can't get reverse by subtracting the forward vector from a constant any more, so I added the reverse one to a different constant. This arithmetic all happens at runtime, so you won't get anything useful out of `show`, but `lprintf` does handle vectors.
+
+What about AVX2, or other architectures? It's all possible. NEON support is going to be pretty easy here since it has just about the same instructions: use `hasarch{'SSSE3'}|hasarch{'AARCH64'}` for the condition, qualify the `shuffle` we have here with `hasarch{'SSSE3'}`, and add a NEON one too. Then as `reverse` is compiled it'll check the architecture when it calls `shuffle` and use the right one. For AVX2 you have a few options. First thing I'd try is to change `def vb = 16` to `def vb = if (hasarch{'AVX2'}) 32 else 16`, and then make other things check `vb` as necessary. Have fun dealing with that within-lane shuffle.
