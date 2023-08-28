@@ -6,7 +6,7 @@ Singeli is a domain-specific language for building high-performance algorithms (
 
 It's not a mature project, but Singeli's reached the point where I enjoy using it at least! Debugging your compilation errors is easy since they come with parsing or stack traces (if not it's a bug—please report), and `show{}` prints whatever you want at compile time. At runtime, `lprintf{}` provided by `include 'debug/printf'` prints what you pass to it, and the emitted C code is rather verbose but it embeds source function and variable names you can use to get your bearings. The interactive [Singeli playground](https://github.com/dzaima/singeliPlayground) tool is a nice way to get parts of your code working without the awkward compile-debug loop.
 
-Working with SIMD does require a lot of setup to be nice since every intrinsic used has to be wrapped somehow. [arch/iintrinsic](include/arch/iintrinsic.singeli) does this in a very basic way, for x86 up to AVX2. CBQN files such as [avx2.singeli](https://github.com/dzaima/CBQN/blob/master/src/singeli/src/avx2.singeli) may make a better reference.
+Working with SIMD does take a lot of setup to be nice since every intrinsic used has to be wrapped somehow. Work is in progress on providing standard includes for x86 and ARM with a reasonable interface and good coverage of available instructions.
 
 To compile input.singeli:
 
