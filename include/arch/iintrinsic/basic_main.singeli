@@ -192,8 +192,8 @@ local {
   def has_extract{_} = 0  # extract
   def has_extract{V & hasarch{'SSE2'  } & sse{V}} = width{eltype{V}}==16
   def has_extract{V & hasarch{'SSE4.1'} & sse{V}} = 1
-  def has_extract{V & hasarch{'AVX'   } & avx{V}} = width{eltype{V}}>=32
-  def has_extract{V & hasarch{'AVX2'  } & avx{V}} = 1
+  def has_extract{V & hasarch{'AVX'   } & avx{V} & fill} = width{eltype{V}}>=32
+  def has_extract{V & hasarch{'AVX2'  } & avx{V} & fill} = 1
   def has_extract0{_} = 0
   def has_extract0{V & hasarch{'SSE2'} & sse{V} & ew{V}>=32} = 1
 
