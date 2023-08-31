@@ -1,6 +1,6 @@
 # Singeli
 
-Introductions: [Singeli as interpreter](doc/interpreter.md) | [Singeli as compiler](doc/compiler.md)
+Introductions: [Singeli as interpreter](doc/interpreter.md) | [Singeli as compiler](doc/compiler.md) -> [Purity and Ford write a min filter](doc/minfilter.md)
 
 Singeli is a domain-specific language for building high-performance algorithms (including [SIMD](https://en.wikipedia.org/wiki/SIMD)) with flexible abstractions over code that corresponds to individual instructions. It's implemented in [BQN](https://mlochbaum.github.io/BQN), with a frontend that emits IR and a backend that converts it to C. Other backends like LLVM or machine code are possible—it should be easy to support other CPU architectures but there are no plans to target GPUs.
 
