@@ -275,3 +275,91 @@ Enough tuple macros and you can drag a thousand words out of any picture, huh. A
     0.74396759ns/elt at width 200, half: 15405690, end: 11431447
 
 *Five* times faster, all right then.
+
+You typed it so fast too! I think I can follow it, the variables keep changing though. So s starts out as the segment length but then when it's too long you change it to the… oh, it's the length of the scan and s0 is the segment! And m is the accumulator, it goes through the… this one doesn't write anything so it's a fold, and only sometimes, then this one is backwards and a scan, then this one is a scan and an operation!
+
+Yep, all straightened out I think.
+
+No I'm still working through it! Okay, you write after setting m so it's an inclusive scan—no, it's because you do the operation before you write. So interesting seeing the assignments in the middle of the line, you can't do that with definitions!
+
+Yeah, I usually split them up eventually. Just banging it out here.
+
+And if you change the scan length, that implies it was more than r but now it's equal to r so then you subtract it and r is zero and you stop. And if s is more than r when you subtract well that can't happen because the if statement would have—well it creates an invariant that s is at most r.
+
+The scan length's k - 1 except on the last iteration where you might lower it. Stop complicating things.
+
+It's a little spooky is all, with the variable and the loop! And then when you finish it what's s, I mean you don't need it again but what if you did?
+
+How do you *breathe*?
+
+Oh nooooooooo you got me thinking about it it's going to feel so weird for like an hour! Haha, got me good! Okay, okay, there's also the operation ordering. The backwards scan has m on the left but it's scanning from the right so it's kind of supposed to be the other way around, like if you have something that associates but doesn't commute.
+
+What even does that?
+
+Um well all the scalar stuff is both really so you have… oh, permutation! And matrix products of course.
+
+Of course.
+
+And for the initializer you take the first value of the scan, or fold maybe, which I guess works for min and max since they're idempotent but even for addition you add it in twice. Idem… POTENT! So I like to pass in the identity value as a parameter.
+
+You have to be careful because x86 does funny stuff with NaNs. I'll review that later.
+
+Okay! Um do you mind if I make the fold and scans into their own generators? I just think better that way.
+
+Go ahead. That's going to be the best way to vectorize this anyway. Here, let me shuffle around the s0 thing first. End pointer's cleaner, you're right about not needing the global s.
+
+    def fold{op, src:*T, init:T, len} = {
+      a := init
+      @for (src over len) a = op{a, src}
+      a
+    }
+
+    # Reverse scan
+    def scan_rev{op, dst:*T, src:*T, init:T, len} = {
+      a := init
+      @for_rev (dst, src over len) {
+        a = op{src, a}
+        dst = a
+      }
+    }
+
+    # Forwards scan combined with existing values
+    def scan_op{op, dst:*T, src:*T, init:T, len} = {
+      a := init
+      @for (dst, src over len) {
+        a = op{a, src}
+        dst = op{dst, a}
+      }
+    }
+
+    fn minmax_filter_scan{op, T}(dst:*T, src:*T, n:ux, k:ux) : void = {
+      s := k - 1
+      end := dst + n - s
+      while (dst < end) {
+        r := ux~~(end - dst)
+        m := src->(s-1)
+        if (r >= s) r = s
+        else m = fold{op, src+r, m, s-r}  # Last segment
+        scan_rev{op, dst, src, m, r}
+        scan_op{op, dst, src+s, src->s, r}
+        dst += r; src += r
+      }
+    }
+
+There… we… go! Oh, we could maybe put the two scans together with some functional programming. Pass in the for loop, and we write with either the operation or the identity, and then the reverse one can flip the operator too, look!
+
+    def scan_any{for, combine, op}{dst:*T, src:*T, init:T, len} = {
+      a := init
+      @for (dst, src over len) {
+        a = op{src, a}
+        dst = combine{dst, a}
+      }
+    }
+    def scan_rev{op} = scan_any{for_rev, {_,a}=>a, {a,b}=>op{b,a}}
+    def scan_op {op} = scan_any{for    , op      , op}
+
+Absolutely not, reign in the macro brain please. Or… how similar is a vector backwards scan to a forwards one? Eh, hold on to that. May be useful.
+
+Vectors, right! We need vectors!
+
+Not as bad as we need lunch. Let's leave this be for a minute.
