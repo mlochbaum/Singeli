@@ -28,7 +28,7 @@ def printf{...vs0} = {
     if (tuplen{vs}==0) {
       lit{merge{open, close}}
     } else {
-      def f = each{{v} => runfmt{hex, v}, vs}
+      def f = each{runfmt{hex, .}, vs}
       def d = each{lit1, tup{open, ', ', close}}
       merge{...each{merge, (0 != inds{f}) ! d, f}, 2 ! d}
     }
@@ -63,7 +63,7 @@ def printf{...vs0} = {
         def l = vcount{T}
         tmp:*E = copy{l, 0}
         *T~~tmp <- x
-        listfmt{hex, '[', ']', each{{i} => tmp->i, iota{l}}}
+        listfmt{hex, '[', ']', each{load{tmp,.}, range{l}}}
       } else if (k === 'pointer') {
         tup{tup{'%p', tup{x}}}
       } else {
@@ -80,7 +80,7 @@ def printf{...vs0} = {
     }
   }
   
-  def fs = flip{join{each{{v} => runfmt{0,v}, vs}}}
+  def fs = flip{join{each{runfmt{0,.}, vs}}}
   def es = each{join, fs}
   
   emit{void, 'printf', merge{'"', 0!es, '"'}, ... 1!es}
