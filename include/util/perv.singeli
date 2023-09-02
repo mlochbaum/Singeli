@@ -20,7 +20,7 @@ def perv{n & knum{n}} = { def extend _{op} = {
   def op{...t & is{n,tuplen{t}} & anytup{...t}} = {
     def len{e, ...t} = if (\e) tuplen{e} else len{...t}
     def l = len{...t}
-    def r{t} = if (\t) t else copy{l,t}
+    def r{t} = if (\t) t else each{{_}=>t, range{l}}
     bind{each,op}{...each{r,t}}
   }
 }}
