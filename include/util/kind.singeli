@@ -1,11 +1,11 @@
 # Generators that check kind
-local def is{k}{x} = is{k, kind{x}}
-def knum = is{'number'}
-def ksym = is{'symbol'}
-def ktup = is{'tuple'}
-def kgen = is{'generator'}
-def ktyp = is{'type'}
-def kcon = is{'constant'}
-def kreg = is{'register'}
-def kfun = is{'function'}
-def klab = is{'label'}
+local def ki{k}{x} = is{k, kind{x}}
+def knum = ki{'number'}
+def ksym = ki{'symbol'}
+def ktup = ki{'tuple'}
+def kgen = ki{'generator'}
+def ktyp = ki{'type'}
+def kcon = ki{'constant'}
+def kreg = ki{'register'}
+def kfun = ki{'function'}
+def klab = ki{'label'}
