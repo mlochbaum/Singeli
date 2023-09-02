@@ -17,17 +17,17 @@ def empty{tup} = 0 == $tup
 # Constant-time evaluation returning a list
 def collect{vars,begin,end,exec & begin<=end} = {
   def inds = begin + range{end-begin}
-  each{{i}=>exec{i, vars}, inds}
+  each{exec{., vars}, inds}
 }
 
 # Integers [0,n)
 def iota{n & knum{n}} = range{n}
 
 # All indices into tuple t
-def inds{t} = iota{$t}
+def inds{t} = range{$t}
 
 # Tuple of n copies of v
-def copy{n, v & knum{n}} = @collect (n) v
+def copy{n, v & knum{n}} = each{{_}=>v, range{n}}
 
 # Merge a tuple of tuples
 def join{l} = merge{...l}
@@ -44,18 +44,17 @@ def cycle{n, t & knum{n}} = {
   def l = $t
   def m = n % l; def e = slice{t, 0, m}
   if (m == n) e
-  else join{merge{copy{(n-m)/l, t}, tup{e}}}
+  else merge{...copy{(n-m)/l, t}, e}
 }
 
 # Split into groups of length n, possibly less for the last
 def split{n, list & knum{n}} = {
-  def l = $list
-  def d = (l + (-l)%n) / n
-  @collect (i to d) sl{list, i*n, n}
+  def d = __ceil{($list) / n}
+  each{sl{list, ., n}, n*range{d}}
 }
 def split{n, list & ktup{n}} = {
   def start = shiftright{0, scan{+,n}}
-  each{bind{sl, list}, start, n}
+  each{sl{list,...}, start, n}
 }
 
 # Transpose tuple of tuples, assuming each has the same length
@@ -65,13 +64,13 @@ def flip{tup} = table{tupsel, inds{*tup}, tup}
 def table{f, ...tups} = {
   if (empty{tups}) f{}
   else if (1 == $tups) each{f, *tups}
-  else each{{e} => table{bind{f,e}, ...>tups}, *tups}
+  else each{{e} => table{f{e,...}, ...>tups}, *tups}
 }
 # Flattened into a single list
 def flat_table{f, ...tups} = {
   if (empty{tups}) tup{f{}}
   else if (1 == $tups) each{f, *tups}
-  else join{each{{e} => flat_table{bind{f,e}, ...>tups}, *tups}}
+  else join{each{{e} => flat_table{f{e,...}, ...>tups}, *tups}}
 }
 
 # Left fold, with or without initial element
@@ -82,7 +81,7 @@ def fold{f, init, list} = {
 def fold{f, list} = fold{f, *list, >list}
 
 # Inclusive left scan
-def scan{f, init, list} = scan_sub{f, {e} => f{init, e}, list}
+def scan{f, init, list} = scan_sub{f, f{init, .}, list}
 def scan{f, list}       = scan_sub{f, {e} => e, list}
 local def scan_sub{f, get, list} = {
   if (empty{list}) list
@@ -94,7 +93,7 @@ local def scan_sub{f, get, list} = {
 
 # Copy list elements based on list, constant, or generator (like filter)
 def replicate{reps, list} = join{each{copy, reps, list}}
-def replicate{r, list & knum{r}} = join{each{bind{copy, r}, list}}
+def replicate{r, list & knum{r}} = join{each{copy{r,.}, list}}
 def replicate{f, list & kgen{f}} = replicate{each{f,list}, list}
 
 # For boolean i, return indices of 1s
