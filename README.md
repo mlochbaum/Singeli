@@ -98,12 +98,14 @@ The parameter list in a generator definition has to give the names of parameters
 * The number of parameters
 * Two parameters with the same name match
 * A `par:typ` parameter must be a typed value with the given type
-* A `par==val` parameter matches the given value
+* A `par==val` or `(val)` parameter matches the given value
 * Explicit conditions `& cond` must hold (result in `1`)
 
 Each of the values `typ`, `val`, and `cond` can be an expression, which is fully evaluated whenever the condition is reached. Parameter names are all bound before evaluating any conditions, so that a condition can refer to parameter values, even ones that come after it in the source code.
 
 The value `typ` can also be a name, which functions something like an extra parameter: the underlying parameter must be typed and the name is set to its type (like any parameter, this value is accessible to conditions). Built-in type names such as `i16` and `f64` can't be used here, but other names will be shadowed. If you have an alias like `def size = u64`, parenthesize it to use it as a value, as in `par:(size)`.
+
+Here it's also useful to know that the name `_` is not assigned, and instead serves as a sink for an unused value. While `def g{a,a}` would error when called with two different parameters, `def g{_,_}` wouldn't.
 
 ### Gathered parameters
 
