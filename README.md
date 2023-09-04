@@ -113,6 +113,12 @@ Up to one parameter slot can be variable-length if marked with a leading `...`. 
 
 When calling a generator, any parameter slot may be preceded by `...` to expand it from a tuple into multiple parameters. For example, `gen{a, ...tup{b, c}, d}` expands to `gen{a, b, c, d}`. Any expression can follow: while `...` isn't an operator, it acts like it has infinitely low precedence.
 
+### Partial application
+
+A generator can be partially applied by using `.` in place of one or more parameters in call syntax. This doesn't call the generator, but creates a new generator whose parameters are used for those `.` positions. For example, `gen{., 5, .}` is a generator with two parameters, and when called on `{a, b}` the result is `gen{a, 5, b}`.
+
+One parameter slot can also be replaced with `...` without any following expression. This stands for any number of parameters, so that for example when `gen{., 5, ...}` is called on one or more values, the first is taken for the `.` and the rest are passed at the end where the `...` is.
+
 ## Kinds of value
 
 A generator is one kind of value—that is, something that's first-class at compile time. Like most values, it doesn't exist at runtime. Hopefully it's already done what's needed! In fact it's one of the more complicated kinds of value. Here's the full list:
@@ -485,7 +491,7 @@ Casting generators convert untyped constants to typed, or convert between types,
 
 | Syntax             | Result
 |--------------------|--------
-| `bind{gen,param…}` | Bind/curry the given parameters to the generator
+| `bind{gen,param…}` | `gen{param…, ...}`
 
 ### Tuples
 
