@@ -67,7 +67,7 @@ Nat ← ≠⊸{
 }
 ParseDec ⇐ { # 𝕨 is base-10 exponent; 𝕩 is digit string
   0≤𝕨 ? 𝕨 Exp10⊸Mul⍟(0<⊣) Nat 𝕩 ;
-  (𝕨↓𝕩) Nat⊸Add⍟(0<≠∘⊣) (Exp10-𝕨) Div˜ Nat 𝕨↑𝕩
+  (𝕨↓𝕩) Nat⊸Add⍟(0<≠∘⊣) (Exp10-𝕨) Div˜ Nat (𝕨⌈-≠𝕩)↑𝕩
 }
 
 _repr ⇐ { len‿b _𝕣:
