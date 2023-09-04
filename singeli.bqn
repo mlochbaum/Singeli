@@ -690,7 +690,7 @@ symbols ← {kname⇐"symbol"
 functions ← {kname⇐"function"
   current⇐nofn←{
     Append⇐NextLabel⇐Return⇐SetArch⇐!∘"No function active"
-    arch ⇐ architecture.init
+    arch⇐architecture.init ⋄ labc⇐0
   }
   New ← {𝕤
     kind⇐kname ⋄ Matches⇐≡ ⋄ type⇐@
