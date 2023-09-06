@@ -306,7 +306,7 @@ You have to be careful because x86 does funny stuff with NaNs. I'll review that 
 
 Okay! Um do you mind if I make the fold and scans into their own generators? I just think better that way.
 
-Go ahead. That's going to be the best way to vectorize this anyway. Here, let me shuffle around the s0 thing first. End pointer's cleaner, you're right about not needing the global s.
+Go ahead. That's going to be the best way to vectorize this thing anyway. Here, let me shuffle around s0 first. End pointer's cleaner, you're right about not needing the global s. And… all yours.
 
     def fold{op, src:*T, init:T, len} = {
       a := init
@@ -358,8 +358,131 @@ There… we… go! Oh, we could maybe put the two scans together with some funct
     def scan_rev{op} = scan_any{for_rev, {_,a}=>a, {a,b}=>op{b,a}}
     def scan_op {op} = scan_any{for    , op      , op}
 
-Absolutely not, reign in the macro brain please. Or… how similar is a vector backwards scan to a forwards one? Eh, hold on to that. May be useful.
+Absolutely not, rein in the macro brain please. Or… how similar is a vector backwards scan to a forwards one? Eh, hold on to that. May be useful.
 
 Vectors, right! We need vectors!
 
-Not as bad as we need lunch. Let's leave this be for a minute.
+Not as bad as I need lunch. Let's leave this be for a minute.
+
+---
+
+All right, we were going to make those min filter scans SIMD?
+
+Wait, first, I was thinking about inclusive and exclusive scans, and I found something! An exclusive scan is just an inclusive scan with an identity at the beginning and without the last result, right? For the first scan, you still have to write the initial value so it's not really better, but for the second one where you combine it with what's there, you can skip that spot! So you can make the window one longer, let me draw it out!
+
+    #   0 1 2 3|4 5 6 7|8  (k=4)
+    # 0 <-<-<-<|       in
+    # 1   <-<-<|>
+    # 2     <-<|>->
+    # 3       <|>->->
+    # 4         <-<|---|
+    # 5 out       <|---|>
+
+That's an exclusive scan? Looks like it's inclusive, just shifted… well that's what you said isn't it. So, use the full window size and cut the beginning of the second scan.
+
+    fn minmax_filter_scan{op, T}(dst:*T, src:*T, n:ux, k:ux) : void = {
+      end := dst + n - (k-1)
+      while (dst < end) {
+        r := ux~~(end - dst)
+        m := src->(k-1)
+        if (r >= k) r = k
+        else m = fold{op, src+r, m, k-r}  # Last segment
+        scan_rev{op, dst, src, m, r}
+        scan_op{op, dst+1, src+k, src->k, r-1}
+        dst += r; src += r
+      }
+    }
+
+    0.94050455ns/elt at width 4, half: 47590078, end: 667920292
+    0.81363809ns/elt at width 200, half: 15405690, end: 11431447
+
+Oh no, it's worse! Look, it was 0.91 and 0.74 before! So it gets even worser for the bigger width but that doesn't make a lot of sense because there are way less windows and each one only changes by one—oh but it's moving from a window that's divisible by lots of 2s to an odd one, I mean it should all be doing scalar operations that don't really care about alignment but maybe if there's unrolling in the backend then—
+
+Cool it. We haven't measured in a little while, why do you think the last change is what did it? Let's undo that and… yep, the latest change is an improvement at small widths.
+
+    1.0401994ns/elt at width 4, half: 47590078, end: 667920292
+    0.81073344ns/elt at width 200, half: 15405690, end: 11431447
+
+Oh good! But uh what's happening?
+
+I remember two changes between the last timing and here. Second one is moving the scans to macros, which isn't likely to change the timing because they expand to the same thing other than maybe a temp variable or two. And the first one is when I swapped over from the remainder amount to an end pointer, which is very suspicious, so let's undo back to there and… slower. So I posit that what happened is the compiler did some stuff.
+
+It just… did stuff? But why, I mean is a pointer comparison worse?
+
+Compilers do stuff all the time, it's a pretty good explanation. You spotted that the larger width changes times, but there it should be spending all the time in the scan loops—nothing about those is different at all.
+
+Um I kind of think being unfalsifiable is the opposite of a good explanation! There has to be something about the pointers that it cares about, right? I bet it's really interesting!
+
+Look, dig into it if you want to, but do it on your own time. If it even reproduces with your compiler version. It'll all change when we start vectorizing this anyway.
+
+Oh, right… So do you know a good way to do that?
+
+We have some vector scan code already, for prefix sums, let me find it… Rolling average uses it, takes the prefix sum and then differences of that based on the window size. Come to think of it, we could probably do that without putting the sum in a buffer. I remember there are problems if the window is larger than the result but something like that scan-fold-scan thing should work. Anyway, here's the scan. Along with our lovely collection of shuffle instructions courtesy of Intel.
+
+    include 'arch/c'
+    include 'skin/c'
+    include 'skin/cext'
+    include 'util/for'
+    include 'arch/iintrinsic/basic'
+
+    # Lane crossing permutes shuf_32 and shuf_64 are much slower
+    # e.g. 3-cycle versus 1-cycle latency
+    def base{b,l} = if (0==tuplen{l}) 0 else tupsel{0,l}+b*base{b,slice{l,1}}
+    def shuf_sub{I, intrin, make}{v:V, t} = V~~emit{I, intrin, I~~v, make{t}}
+    def shuf_vec{I, intrin} = shuf_sub{I, intrin, vec_make{I,.}}
+    def shuf_lane_8{v, t} = shuf_vec{[32]i8, '_mm256_shuffle_epi8'}{v, merge{t,t}}
+    def shuf_32 = shuf_vec{[8]i32, '_mm256_permutevar8x32_epi32'}
+    def shuf_lane_32 = shuf_sub{[8]i32, '_mm256_shuffle_epi32', base{4,.}}
+    def shuf_64 = shuf_sub{[4]i64, '_mm256_permute4x64_epi64', base{4,.}}
+
+    # Left shift by n bytes
+    def shl_lane{x:V, n & width{V}==256} = V~~emit{[32]i8, '_mm256_bslli_epi128', [32]i8~~x, n}
+
+    def blend{m:M, t:T, f:T} = (t & T~~m) | andnot{f, T~~m}
+
+    # Fill each lane with its last element
+    def to_lane_last{v:V} = {
+      def w = width{eltype{V}}
+      def k{l, b} = l-b + range{l}%b
+      if (w<=16) shuf_lane_8 {v, k{16,w/8}}
+      else       shuf_lane_32{v, k{4,w/32}}
+    }
+    # Fill entire vector with the last element
+    def to_last{v:V} = {
+      l := if (width{eltype{V}}<=32) to_lane_last{v} else v
+      shuf_64{l, range{4}*0 + 3}
+    }
+
+    fn scan{T, op==(+) & hasarch{'AVX2'}}(dst:*T, src:*T, len:u64) : void = {
+      def vlen = 256/width{T}
+      def V = [vlen]T
+      # Shift-like step: log(vlen) of these used in a scan
+      def shl0{v, k} = shl_lane{v, k/8}
+      def shl0{v, k==128} = {
+        # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
+        def S = [8]i32; def perm = '_mm256_permute2x128_si256'
+        V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 8b02}
+      }
+      # Scan steps from width k to end
+      def pre{v, k} = if (k < width{V}) pre{op{v, shl0{v,k}}, 2*k} else v
+      # Full scan
+      def pre{v} = pre{v, width{T}}
+
+      x := *V~~src
+      r := *V~~dst
+      p := vec_broadcast{V, 0}  # Accumulator
+      e := len/vlen; q := len & (vlen-1)
+      @for (x, r over e) {
+        r = op{pre{x}, p}
+        p = to_last{r}
+      }
+      if (q) {
+        m := vec_make{V, range{vlen}} < vec_broadcast{V, T<~q}
+        s := op{pre{x->e}, p}
+        r <-{e} blend{m, s, r->e}
+      }
+    }
+
+You're right, what a neat collection! So the ones that take vectors are shuf—or, hrm, oh, the lane ones are shuffles and the ones for a whole register are permutes! And then for permute it says permutevar if it takes a vector and just permute for a constant. But the shuffles are all shuffles, is it an older name?
+
+It's thoroughly insane. There's a reason we almost always use wrappers instead of calling these things directly. Exception with the permute2x128 down here, I'd tell you it won't last long but I know better than to say it.
