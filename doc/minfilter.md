@@ -199,7 +199,7 @@ Oh neat! Wow, huh. Ooh. It's copying the parts into an integer array so it can u
 
 Don't tell her not to look at something if you don't want her to look at it, got it. Anyway, stick this at the bottom of the file and we can get some timings.
 
-    $ singeli min.singeli -o /tmp/m.c && gcc -O3 -march=native /tmp/m.c && ./a.out 
+    $ singeli min.singeli -o /tmp/m.c && gcc -O3 -march=native /tmp/m.c && ./a.out
     3.3737676ns/elt at width 4, half: 47590078, end: 667920292
     4.2123556ns/elt at width 200, half: 15405690, end: 11431447
 
@@ -457,14 +457,14 @@ We have some vector scan code already, for prefix sums, let me find it… Rollin
       def vlen = 256/width{T}
       def V = [vlen]T
       # Shift-like step: log(vlen) of these used in a scan
-      def shl0{v, k} = shl_lane{v, k/8}
-      def shl0{v, k==128} = {
+      def shift{v, k} = shl_lane{v, k/8}
+      def shift{v, k==128} = {
         # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
         def S = [8]i32; def perm = '_mm256_permute2x128_si256'
         V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 8b02}
       }
       # Scan steps from width k to end
-      def pre{v, k} = if (k < width{V}) pre{op{v, shl0{v,k}}, 2*k} else v
+      def pre{v, k} = if (k < width{V}) pre{op{v, shift{v,k}}, 2*k} else v
       # Full scan
       def pre{v} = pre{v, width{T}}
 
@@ -483,6 +483,123 @@ We have some vector scan code already, for prefix sums, let me find it… Rollin
       }
     }
 
-You're right, what a neat collection! So the ones that take vectors are shuf—or, hrm, oh, the lane ones are shuffles and the ones for a whole register are permutes! And then for permute it says permutevar if it takes a vector and just permute for a constant. But the shuffles are all shuffles, is it an older name?
+You're right, what a neat collection! So the ones that take vectors are shuf—or, hrm, oh, the lane crossing ones are shuffles and the others are permutes! And then for permute it says permutevar if it takes a vector and just permute for a constant. But the shuffles are all shuffles, is it an older name?
 
 It's thoroughly insane. There's a reason we almost always use wrappers instead of calling these things directly. Exception with the permute2x128 down here, I'd tell you it won't last long but I know better than to say it.
+
+What's lane crossing mean though?
+
+Oh. How about you sit down. Why… why were you standing anyway?
+
+Okay, sitting!
+
+Lanes, right. With the 16-byte SSE registers you have operations like—let's start with shift, it'll be easier—you have a 16-byte shift that moves the entire register by a fixed number of bytes. You might think the extension to a 32-byte AVX register is to shift the whole thing too. But no, the AVX instruction splits the register into two 16-byte lanes and shifts each of *those* by 16 bytes. Which means you get zeros in the middle and there's no easy way to shift an entire register. So AVX and AVX2 are less like an instruction set and more like a two-for-one deal on SSE operations. Twice as much work as far as I'm concerned, maybe more.
+
+So it's a more efficient design? If you get better performance just for writing more Singeli that's good! And if you don't need the tippy-top performance you could write a generator for big shifts, right?
+
+Hardware with lanes could be more efficient. Or maybe the cross-lane stuff is just slow because designing around lanes was convenient. It's slow even in the newer processors that support AVX-512 though, and that has a more reasonable number of lane-crossing instructions.
+
+Think twice before crossing the lane! Now how does the scan work, pre is a scan on a vector register? Oh, what a pretty recursion! So shift by the width, and then double, and quadruple, up to a whole vector.
+
+Ugh, that took forever to work out when I wrote it.
+
+I've seen this scan pattern, I found a nice way to visualize it once!
+
+    #                    000a
+    #                    00ab
+    #          0abc     (0abc)
+    # abcd -> (abcd) -> (abcd)
+
+Okay it doesn't look as nice when you draw it out. But see, first you shift by one, then add which I just draw by stacking, then when you shift by two it's like you're shifting both parts! And at the end the first one is a, the next is a plus b, up to a plus b plus c plus d.
+
+That looks like what happens on a lane, yeah.
+
+Oh, the lane thing, right! So we actually have… *two* lanes, and then when those are done it says it copies the last result of one scan over, so that would look like, this? Oh it works! Although the shifted vector should really go first in case the operation isn't commutative. Also can I move the vector scan to its own generator?
+
+    #                                          ....aaaa
+    #                                          ....bbbb
+    #                                          ....cccc
+    #                                          ....dddd
+    #                            ...a...A     (...a...A)
+    #                            ..ab..AB     (..ab..AB)
+    #              .abc.ABC     (.abc.ABC)    (.abc.ABC)
+    # abcdABCD -> (abcdABCD) -> (abcdABCD) -> (abcdABCD)
+
+    # Make generator to do a scan on one vector register
+    def make_scan_vec{op==(+)} = {
+      # Shift-like step: log(vlen) of these used in a scan
+      def shift{v:V, k} = shl_lane{v, k/8}
+      def shift{v:V, k==128} = {
+        # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
+        def S = [8]i32; def perm = '_mm256_permute2x128_si256'
+        V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 8b02}
+      }
+      # Scan steps from width k to end
+      def pre{v:V, k} = if (k < width{V}) pre{op{shift{v,k}, v}, 2*k} else v
+      {v:V} => pre{v, width{eltype{V}}}
+    }
+
+      def pre = make_scan_vec{op}
+
+You seem to have done that, yes. Well we're probably going to want to share some code with min-scan. This add-last-to-all step is pretty similar to how it works in the main loop here, where we do the scan on x and then add the carry value p.
+
+      @for (x, r over e) {
+        r = op{pre{x}, p}
+        p = to_last{r}
+      }
+
+But with this one we know the value to add in before we start the scan! Can't we add it just once, before scanning x?
+
+Bad idea. This design keeps pre{x} outside of the critical path, since that whole scan computation doesn't depend on anything before it. If you introduce the dependency, suddenly you're latency-bound, and scan latency is a *lot* lower than throughput.
+
+Oh, that's because each step in pre is just a shift and an add, and they depend on the step bef—and the add depends on the shift, all the instructions are one long chain!
+
+Yeah, so what the processor does for this is it starts one scan, dispatches a bunch of instructions, and then when they all stall out waiting on each other it has time to load the next vector and start scanning that.
+
+Cool!
+
+Now, we can't just drop min into your scan\_vec. Shifting in zeros is going to kill all our results.
+
+Oh, right, we should shift in the identity value instead!
+
+But the instruction we *have* shifts in zeros. Adding a bitwise or to each step isn't great. Better idea: we shuffle instead of shifting, and repeat the first value?
+
+Oh, like this! Also, here, I can separate the shift pattern!
+
+    #                            aaaaAAAA
+    #                            ababABAB
+    #              aabcAABC     (aabcAABC)
+    # abcdABCD -> (abcdABCD) -> (abcdABCD)
+
+    # Make prefix scan from op and shifter by applying the operation
+    # at increasing power-of-two shifts
+    def prefix_byshift{op, sh} = {
+      def pre{v:V, k} = if (k < width{V}) pre{op{v, sh{v,k}}, 2*k} else v
+      {v:V} => pre{v, width{eltype{V}}}
+    }
+
+    def make_scan_vec{op==(+)} = {
+      def shift{v:V, k} = shl_lane{v, k/8}
+      def shift{v:V, k==128} = {
+        # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
+        def S = [8]i32; def perm = '_mm256_permute2x128_si256'
+        V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 8b02}
+      }
+      prefix_byshift{op, shift}
+    }
+
+So our shared code is down to… two lines. Although they are the hardest two. So the caller only provides a shift function. That's not awful.
+
+The shift also doesn't depend on the operation! Or even the starting size, since you use the same shift for 4-byte or 2-byte that's already been shifted once or 1-byte shifted twice!
+
+So, what's that mean, you can even define it on the outside?
+
+    def shift_zero{v:V, k} = shl_lane{v, k/8}
+    def shift_zero{v:V, k==128} = {
+      # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
+      def S = [8]i32; def perm = '_mm256_permute2x128_si256'
+      V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 8b02}
+    }
+    def make_scan_vec{op==(+)} = prefix_byshift{op, shift_zero}
+
+Trippy. Clearer to keep it all bundled together though, that shift\_zero thing is not a generally usable macro.
