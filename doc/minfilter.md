@@ -450,7 +450,7 @@ We have some vector scan code already, for prefix sums, let me find it… Rollin
     # Fill entire vector with the last element
     def to_last{v:V} = {
       l := if (width{eltype{V}}<=32) to_lane_last{v} else v
-      shuf_64{l, range{4}*0 + 3}
+      shuf_64{l, copy{4, 3}}
     }
 
     fn scan{T, op==(+) & hasarch{'AVX2'}}(dst:*T, src:*T, len:u64) : void = {
@@ -590,7 +590,7 @@ Oh, like this! Also, here, I can separate the shift pattern!
 
 So our shared code is down to… two lines. Although they are the hardest two. So the caller only provides a shift function. That's not awful.
 
-The shift also doesn't depend on the operation! Or even the starting size, since you use the same shift for 4-byte or 2-byte that's already been shifted once or 1-byte shifted twice!
+The shift also doesn't depend on the operation! Or even the starting size, since you use the same shift for 4-byte or 2-byte that's already been shifted once or 1-byte that—wait, the last shift for 16-byte does, but to\_lane\_last reads it from the argument so you don't see it.
 
 So, what's that mean, you can even define it on the outside?
 
@@ -603,3 +603,96 @@ So, what's that mean, you can even define it on the outside?
     def make_scan_vec{op==(+)} = prefix_byshift{op, shift_zero}
 
 Trippy. Clearer to keep it all bundled together though, that shift\_zero thing is not a generally usable macro.
+
+Okay I tweaked the prefix generator a little and here's an interpreted min scan! I took your strategy for shift, so it takes a slice of the first k numbers and shifts them into the original list instead of zeros!
+
+    include 'util/tup'
+    include 'skin/c'
+    def prefix_byshift{op, sh} = {
+      def pre{v, k} = if (k < tuplen{v}) pre{op{v, sh{v,k}}, 2*k} else v
+      {v} => pre{v, 1}
+    }
+    def shift{v,k} = shiftright{slice{v,0,k}, v}
+    def min_scan = prefix_byshift{__min, shift}
+    show{min_scan{show{tup{9,4,5,3,6,6,0,1}}}}
+    #tup{9,4,5,3,6,6,0,1}
+    #tup{9,4,4,3,3,3,0,0}
+
+Macros again, this shiftright is a tuple thing? Like an align instruction, I see. And it's a Singeli right shift but an x86 left shift because the x86 instructions are named after big-endian ordering. Hate that.
+
+And when we want to go backwards we shift left but take from the end, something like… this, perfect!
+
+    def shift{v,k} = shiftleft{v, slice{v,-k}}
+    show{min_scan{show{reverse{tup{9,4,5,3,6,6,0,1}}}}}
+    #tup{9,4,5,3,6,6,0,1}
+    #tup{9,4,4,3,3,3,0,0}
+
+Hold on, we don't have instructions for any of this. We're going to need indices so we can use those shuffles.
+
+Okay sure!
+
+    def shift_ind{k,l} = shiftright{range{k},range{l}}
+    def shift{v,k} = tupsel{shift_ind{k,tuplen{v}}, v}
+
+Oh, uh, yeah, that works. So I take the plus scan thing and replace the shift with a shuffle? May as well do a dedicated 32-bit one too, probably not any faster but it won't waste a register. Then for the last step… maybe not the most elegant way but using the un-permuted vector instead of zeros works.
+
+    def make_scan_idem{T, op} = {
+      def shift_ind{k,l} = shiftright{range{k},range{l}}
+      def shift{v:V, k        } = shuf_lane_8 {v, shift_ind{k/8,16}}
+      def shift{v:V, k & k>=32} = shuf_lane_32{v, shift_ind{k/32,4}}
+      def shift{v:V, k & k==128} = {
+        def S = [8]i32; def perm = '_mm256_permute2x128_si256'
+        V~~emit{S, perm, S~~to_lane_last{v}, v, 8b02}
+      }
+      prefix_byshift{op, shift}
+    }
+
+Great! And then the outer loop is the same?
+
+Yeah, let's just copy that body for now, and we change pre, and initializer's passed in instead of always being zero. Done.
+
+And this is the scan\_op version, so we need to combine with the existing values!
+
+Right.
+
+    # Assumes op is __min or __max
+    def scan_op{op, dst:*T, src:*T, init:T, len & hasarch{'AVX2'}} = {
+      def vlen = 256/width{T}
+      def V = [vlen]T
+      def pre = make_scan_idem{T, op}
+      x := *V~~src
+      r := *V~~dst
+      p := vec_broadcast{V, init}  # Accumulator
+      e := len/vlen; q := len & (vlen-1)
+      @for (x, r over e) {
+        r = op{r, op{pre{x}, p}}
+        p = to_last{r}
+      }
+      if (q) {
+        m := vec_make{V, range{vlen}} < vec_broadcast{V, T<~q}
+        re:= r->e
+        s := op{pre{x->e}, p}
+        store{r, e, blend{m, op{re, s}, re}}
+      }
+    }
+
+    1.7209255ns/elt at width 4, half: 47590078, end: 667920292
+    0.48559672ns/elt at width 200, half: 15405690, end: 11431447
+
+That's just one of the scans replaced, fair amount of improvement on the larger window.
+
+But the width 4 was under a nanosecond before!
+
+Vector loops tend to be slower to start up. We've got some length arithmetic and a masked write here, doesn't take much to push it above—well, I was surprised the scalar version was that quick for that matter. If we have to we can test the length and switch over to the scalar scan if it's short.
+
+I didn't ask about that last step! Isn't there a partial store thing? I think I've heard of that.
+
+For 4-byte and 8-byte types, yeah. Our prefix sums are pretty long so I didn't optimize here, just used what would work on all types. And there can be some hardware issues with maskstore. The blend's predictable.
+
+Oh okay! So the idea is we have the range—that's the index, so where the index is less than q we set the mask to true. And for those first q ones it's the scan result, and for the rest it's the same thing that was already there! So q is the number of numbers we still have to fill in?
+
+Yeah, you have the definition up here with a mask. It's a pretty common pattern, number of full vectors e and the remainder q.
+
+But the last step does write over the end, right? Even though it doesn't change anything.
+
+We manage the allocations so there's space for it. It's pretty cheap, since it doesn't matter what's after the destination array as long as we can write to it.
