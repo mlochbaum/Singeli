@@ -10,6 +10,7 @@ Standard includes are those built into the compiler. Each can be included with a
 - `arch/` Operation generation
   - [`arch/c`](arch/c.singeli) Platform-independent C
   - `arch/iintrinsic/` Intel intrinsics for x86 extensions
+  - `arch/neon_intrin/` NEON vector intrinsics (ARM)
 - `clib/` Bindings for C libraries
   - [`clib/malloc`](clib/malloc.singeli) malloc (as `alloc{}`) and free
 - `util/` Utilities
