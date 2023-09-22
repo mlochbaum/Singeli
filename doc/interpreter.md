@@ -63,7 +63,7 @@ There's another way to define the two cases for `fib2{}` that looks more functio
       tupsel{0, fib2{n}}
     }
 
-This recursion doesn't do that much though. It just starts with `tup{0, 1}` and does a transformation on it `n` times! Is there a simpler way to write it? Singeli has a built-in library [util/tup](../include/util/tup.singeli) with some tuple functions that help with this. It's inspired by K, how cool is that?
+This recursion doesn't do that much though. It just starts with `tup{0, 1}` and does a transformation on it `n` times! Is there a simpler way to write it? Singeli has a built-in library [util/tup](../include/README.md#utiltup) with some tuple functions that help with this. It's inspired by K, how cool is that?
 
     include 'skin/c'
     include 'util/tup'
@@ -167,6 +167,7 @@ But *this* pattern is a case of a `@for` loop, a bit of syntax sugar! When we wr
     include 'arch/c'
     include 'util/tup'
 
+    # (or include 'util/for')
     def for{vars, begin, end, iter} = {
       i:u64 = begin
       while (i < end) {
@@ -185,3 +186,88 @@ But *this* pattern is a case of a `@for` loop, a bit of syntax sugar! When we wr
 
     include 'debug/printf'
     main() = lprintf{fib(1e9)}  # 560546875
+
+It's nice to see the `for` loop written out so you can make a different version if you need it, but the basic loop is so common there's a library for it! It's in [util/for](../include/README.md#utilfor).
+
+## Fibonacci math
+
+Using C speeds up that calculation a lot! But I know how to get the result instantly, just using interpreted Singeli! Here, I'll show you.
+
+Let's say we already computed `fib(n) = x` and `fib(n+1) = y`. We know how to keep computing the sequence from there!
+
+    x, y, x+y, y+(x+y), (x+y)+(y+x+y), (y+x+y)+(x+y+y+x+y), ...
+
+Okay, it makes pretty patterns but writing it out like this is just confusing! It's always some number of `x`s and some `y`s, so I'll write it that way:
+
+    fib(n)   = 1*x + 0*y
+    fib(n+1) = 0*x + 1*y
+    fib(n+2) = 1*x + 1*y
+    fib(n+3) = 1*x + 2*y
+    fib(n+4) = 2*x + 3*y
+    fib(n+5) = 3*x + 5*y
+
+Wait, we've seen these numbers! Both columns are the Fibonacci sequence, just shifted differently. That's because the number of `x`s is the sum of the numbers in the last two terms, and same for the `y`s. Actually to make the table, I didn't even count the `x`s and `y`s from above but I just added them according to that rule!
+
+So a term like `2*x + 3*y` can also be written `fib(3)*x + fib(4)*y`. Following this pattern we can translate the first few lines, although the very first is a little tricky! The Fibonacci rule says `fib(-1) + fib(0) = fib(1)`, which means `fib(-1) = fib(1) - fib(0) = 1 - 0 = 1`. So there are *three* ways to write `1`, and I choose the one that fits the pattern!
+
+    fib(n)   = fib(-1)*x + fib(0)*y
+    fib(n+1) = fib( 0)*x + fib(1)*y
+    fib(n+1) = fib( 1)*x + fib(2)*y
+
+And here's the general version. You can prove it with induction on `j` from the first two lines if you want to be sure!
+
+    fib(n+j) = fib(j-1)*fib(n) + fib(j)*fib(n+1)
+
+Why is this good? If we know the Fibonacci numbers for a large value of `j`, it means we get to jump ahead by that much! Let's look at setting `j` to `n` and `n+1`, since those are the ones we already know!
+
+    fib(n+n)   = fib(n-1)*fib(n) + fib(n)  *fib(n+1)
+    fib(n+n+1) = fib(n)  *fib(n) + fib(n+1)*fib(n+1)
+
+These formulas let us jump from `fib(n)` and `fib(n+1)` to `fib(2*n)` and `fib(2*n+1)`, so our index grows exponentially instead of linearly! Well, almost… there's still `fib(n-1)` that we don't know. But we can write it as `fib(n+1) - fib(n)`!
+
+    fib(n+n) = (fib(n+1) - fib(n))*fib(n) + fib(n)*fib(n+1)
+
+So here's a little derivation of how we would compute this in Singeli. We're using the `fib2{}` generator like above, so `a` is `fib(n)` and `b` is `fib(n+1)`. The first term simplifies just a little!
+
+    def {a, b} = fib2{n}
+    fib2{2*n} = tup{(b-a)*a + a*b, a*a + b*b}
+              = tup{a*(b+b-a), a*a + b*b}
+
+If `n` is a power of two that's all fine, but how do we use this to get any Fibonacci number? Well remember we actually know *two* things: we can get from `fib2{n}` to `fib2{2*n}`, but also to `fib2{n+1}`, just with the `next{}` function from before! 
+
+Let's say `double{fib2{n}}` gives us `fib2{2*n}`. Then it's actually pretty easy to define what we want to do with recursion!
+- If it's even, write as `2*k`, so it's `double{fib2{k}}`
+- If it's odd, write as `2*k+1, so it's `next{double{fib2{k}}}`
+
+In both cases, `k` is half of the number we want to get, rounded down. We can write that as `n >> 1`, although `__floor{n/2}` works too! And `n` is odd if `n%2` is `1`. Lastly, we use the base case 0 from before—sometimes with exponential things you have to define 1 too, but when rounding down `1 >> 0` is `0` so it's not needed! Also I wrote `(0)` instead of `n==0` just to show another way to write it.
+
+    include 'skin/c'
+    include 'util/tup'
+
+    def fib{n} = {
+      def next  {{a, b}} = tup{b, a+b}
+      def double{{a, b}} = tup{a*(b+b-a), a*a + b*b}
+      def fib2{n} = {
+        def g = double{fib2{n >> 1}}
+        (if (n%2) next{g} else g) % 1e9
+      }
+      def fib2{(0)} = iota{2}
+      tupsel{0, fib2{n}}
+    }
+
+    show{fib{1e9}}  # 560546875
+
+Like I said, it's instant! 1e9 is about 2 to the 30 because 1e3 is just under 1024 which is 2 to the 10th power. So it's only 30 steps to go all the way to a billion!
+
+Another cool thing we can see now that we can compute last digits fast is that those digits repeat! Here's the sequence starting at 1,500,000,000:
+
+    show{each{fib, 1.5e9 + iota{5}}}  # tup{0,1,1,2,3}
+
+Of course the actual numbers that far along in the sequence are *huge*, but the last nine digits aren't! As soon as we see 0 then 1 in the sequence we know it has to repeat exactly from the start. This is called the 1e9th [Pisano period](https://en.wikipedia.org/wiki/Pisano_period), and you can find a guaranteed multiple of it but it's a little more math than I want to go into here! But once you know the multiple you check all the divisors for that 0-1 pattern and the first one is it!
+
+Here's an extension to `fib2{}` that takes this into account. Now if there's a really huge number you won't hit a recursion limit!
+
+      def pis = 1.5e9  # modulo 1e9
+      def fib2{n & n>=pis} = fib2{n % pis}
+
+This could all be translated into a C loop, but why should I if it's already instant? Maybe it's a fun exercise though—try looking at the bits of the index.
