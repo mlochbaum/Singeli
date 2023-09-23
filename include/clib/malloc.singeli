@@ -1,3 +1,6 @@
 require{'stdlib.h'}
-def alloc{T, len} = *T ~~ emit{*void, 'malloc', len*(width{T}/8)}
+def alloc{T, len} = reinterpret{
+  __pnt{T},
+  emit{__pnt{void}, 'malloc', __mul{len, __div{width{T}, 8}}}
+}
 def free{ptr} = emit{void, 'free', ptr}
