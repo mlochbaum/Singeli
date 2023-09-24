@@ -265,9 +265,152 @@ Another cool thing we can see now that we can compute last digits fast is that t
 
 Of course the actual numbers that far along in the sequence are *huge*, but the last nine digits aren't! As soon as we see 0 then 1 in the sequence we know it has to repeat exactly from the start. This is called the 1e9th [Pisano period](https://en.wikipedia.org/wiki/Pisano_period), and you can find a guaranteed multiple of it but it's a little more math than I want to go into here! But once you know the multiple you check all the divisors for that 0-1 pattern and the first one is it!
 
-Here's an extension to `fib2{}` that takes this into account. Now if there's a really huge number you won't hit a recursion limit!
+Here's an extension you can add to `fib2{}` that takes this into account. Now if there's a really huge number you won't hit a recursion limit!
 
-      def pis = 1.5e9  # modulo 1e9
-      def fib2{n & n>=pis} = fib2{n % pis}
+      def pisano = 1.5e9  # modulo 1e9
+      def fib2{n & n>=pisano} = fib2{n % pisano}
 
 This could all be translated into a C loop, but why should I if it's already instant? Maybe it's a fun exercise though—try looking at the bits of the index.
+
+## To infinity
+
+Making a specific Fibonacci number is too easy, what about making *all* the Fibonacci numbers? Well, the last nine digits. Since they repeat, writing out the first one-and-a-half billion is like having every single one, in like a list structure that goes all circly. But look out, it takes 6 gigabytes to store! I put the constants at the beginning so you can use smaller ones if you don't have 6GB free.
+
+    include 'skin/c'
+    include 'arch/c'
+    include 'util/tup'
+    include 'util/for'
+
+    def mod = 1e9
+    def pisano = 1.5e9
+    def test_ind = 1e9
+
+    def next{{a, b}} = tup{b, a+b}
+
+    fn fib_fill(dst:*u32, n:u64) : void = {
+      f:copy{2,u32} = iota{2}
+      def {f0, f1} = f
+      @for (dst over n) {
+        dst = f0
+        f = next{f}
+        f1 = f1 % mod
+      }
+    }
+
+    include 'debug/printf'
+    include 'clib/malloc'  # alloc{} and free{}
+    main() = {
+      fs := alloc{u32, pisano}
+      fib_fill(fs, pisano)
+      lprintf{load{fs, test_ind}}  # 560546875
+      free{fs}
+    }
+
+It's mostly the same as what we had before but there's one thing to watch for! When we start, `f0` is 0, the 0th Fibonacci number, so we want to write it to `dst` right away before calling `next{}`. After `n` loops `f0` will be the `n`th Fibonacci number, but that's exactly the one we don't need to write because it's the same as the 0th! There are some other ways to do it that don't make the extra computation at the end, but it's only one or two extra iterations out of a billion and I think this way is clearer.
+
+Another thing is that inside the `@for` loop, `dst` doesn't have the same value as outside! This might seem scary but it's only a kind of variable shadowing, for example if I wrote `{dst} => { dst = 2 }`, it could also be passed a different value of `dst`. If you don't like it you can write `@for (d in dst over n)` instead, so it defines `d` not `dst`. But what value does `dst` have anyway? Well, the outside `dst` is a pointer to `u32` values that we allocated in `main`, but the inside one is a `u32` register that represents one of these values. At the beginning of the loop it loads the value, and if the register is ever modified, at the end of the loop it writes it back!
+
+This takes about 5.7 seconds when I run it, which is… zero seconds per number! There's one easy improvement: since we only have one addition we can simplify the modular division, which is taking some time. The sum can be more than `mod` but not more than *two* times `mod`, so we either need to leave `f1` alone or subtract `mod`. Here's a way to do that without branching:
+
+    fn fib_fill(dst:*u32, n:u64) : void = {
+      f:copy{2,u32} = iota{2}
+      def {f0, f1} = f
+      @for (dst over n) {
+        dst = f0
+        f = next{f}
+        f1 -= mod & -promote{u32, f1 >= mod}
+      }
+    }
+
+If `f1` is less than `mod` the comparison gives 0, so it cancels out `mod` and `f1` doesn't change. Otherwise, we get 1 and then negating it gives the number where all bits are 1. This time `mod` gets left alone, and then it's subtracted from `f1`!
+
+Now it's down to 3.5 seconds! And okay this is kind of a silly thing to optimize but we're going to learn some stuff about parallel computations here! Not like multi-core, since Singeli doesn't have anything for that. But a single CPU can run a lot of instructions at once, and we're not letting it! Every iteration, we need to finish the last Fibonacci number before we can add it to the one before, which means lots of instructions have to be sequential. Try running `perf stat ./fib`. For me it only shows 2.12 instructions per cycle, out of 5 possible!
+
+We know a parallel way to compute Fibonacci numbers, from the `fib(n+j)` formula before. If we have `fib(n)` and `fib(n+1)`, plus Fibonacci numbers for a bunch of different `j` values, we could run that formula for every `j` in parallel! But that step's not as fast as the one addition we've been using, and we'd need a real modular division and actually the intermediate result wouldn't even fit in a `u32` any more! Instead, we can jump ahead to find a bunch of different starting points using the fast formula, and advance *all* of these by one in one iteration of a for loop. Something like:
+
+      def gap = n/k
+      def fs = ?    # k starting pairs
+      def dsts = ?  # k destination pointers
+      @for (i to gap) {
+        def iter{f, dst} = {
+          def {f0, f1} = f
+          store{dst, i, f0}
+          f = next{f}
+          f1 -= mod & -promote{u32, f1 >= mod}
+        }
+        each{iter, fs, dsts}
+      }
+
+How do we get the starting points? Going back to our `fib(n+j)` formula, we have a way to jump ahead by `j`:
+
+    fib(n+j)   = fib(j-1)*fib(n) + fib(j  )*fib(n+1)
+    fib(n+j+1) = fib(j  )*fib(n) + fib(j+1)*fib(n+1)
+
+You might notice that it has the structure of a matrix product! But even without knowing this, we can simplify by writing some of the columns as `fib2{}` results.
+
+    fib2{n+j} = fib2{j-1}*fib(n) + fib2{j}*fib(n+1)
+
+And now we can combine `fib(n)` and `fib(n+1)`, if we know how to add the results of the multiplication. We do, it's a fold!
+
+    fib2{n+j} = fold{+, tup{fib2{j-1}, fib2{j}} * fib2{n}}
+
+So to get `num` starting points each separated by `dist` from the next, here's what we do. It's using a scan that ignores one of the arguments, a lot like `repeat{}` from before. But we want to include the starting value, so it's not an initialized scan! I think of this like an exclusive scan with initial value `iota{2}`, but the tuple library doesn't have an exclusive scan generator to use for that.
+
+    def fib_starts{num, dist} = {
+      def mat = tup{fib2{dist-1}, fib2{dist}}
+      def inc{v} = fold{+, mat * v} % mod
+      scan{{a,_}=>inc{a}, copy{num, iota{2}}}
+    }
+
+Let's do some jumping ahead of our own and write the whole new function out!
+
+    include 'skin/c'
+    include 'arch/c'
+    include 'util/tup'
+    include 'util/for'
+    include 'util/perv'
+    extend perv2{__add}
+
+    def mod = 1e9
+    def pisano = 1.5e9
+
+    def next  {{a, b}} = tup{b, a+b}
+    def double{{a, b}} = tup{a*(b+b-a), a*a + b*b}
+    def fib2{n} = if (n==0) iota{2} else {
+      def g = double{fib2{n >> 1}}
+      (if (n%2) next{g} else g) % mod
+    }
+    def fib_starts{num, dist} = {
+      def mat = tup{fib2{dist-1}, fib2{dist}}
+      def inc{v} = fold{+, mat * v} % mod
+      scan{{a,_}=>inc{a}, copy{num, iota{2}}}
+    }
+
+    fn fib_fill_interleave{k, n}(dst:*u32) : void = {
+      def gap = n/k
+      def to_u32{a} = { f:u32 = a }
+      f := each{each{to_u32, .}, flip{fib_starts{k, gap}}}
+      def {f0, f1} = f
+      d := dst + gap*iota{k}
+      @for (i to gap) {
+        each{store{., i, .}, d, f0}
+        f = next{f}
+        each{{f1} => f1 -= mod & -promote{u32, f1 >= mod}, f1}
+      }
+    }
+
+    include 'debug/printf'
+    include 'clib/malloc'
+    main() = {
+      fs := alloc{u32, pisano}
+      fib_fill_interleave{4, pisano}(fs)
+      lprintf{load{fs, 1e9}}
+    }
+
+And it's about 2.3 seconds, so it's faster!
+
+But the loop is totally different from what I showed before, what happened? I rewrote it using some array principles: the key is to `flip` the starting points, translating it from a list of `k` starting pairs to a pair of lists! We have a tricky thing to convert all these to registers, and then each *list* of registers can be used a lot like the single registers before.
+
+The key line `f = next{f}` is exactly the same, but that doesn't happen automatically! All the built-in arithmetic maps over lists, but the register arithmetic from arch/c doesn't. Fortunately there's a tool to make it work. It stands for "pervasion" but it's named [perv](https://dfns.dyalog.com/n_perv.htm) after John Scholes' love of silly abbreviations. Rest in peace John!
+
+So the extension is `include 'util/perv'` and `extend perv2{__add}`, with the 2 because `__add` takes two parameters. The definition of `d` also uses it to add multiple starting indices to `dst`! In a bigger project with more setup, I might extend parts of the next line, like `&`, `-`, and even `-=`, but an `each` works perfectly fine too. And I have to use the `store` function instead of assignment but this line works out really nicely! `store{d, i, f0}` would store one value at index `i` offset from pointer `d`, and it's equivalent to `store{., i, .}{d, f0}`, so when `d` and `f0` are lists `each{store{., i, .}, d, f0}` works.

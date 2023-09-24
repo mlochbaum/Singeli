@@ -672,7 +672,7 @@ Right.
         m := vec_make{V, range{vlen}} < vec_broadcast{V, T<~q}
         re:= r->e
         s := op{pre{x->e}, p}
-        store{r, e, blend{m, op{re, s}, re}}
+        r <-{e} blend{m, op{re, s}, re}
       }
     }
 
