@@ -272,7 +272,7 @@ Here's an extension you can add to `fib2{}` that takes this into account. Now if
 
 This could all be translated into a C loop, but why should I if it's already instant? Maybe it's a fun exercise though—try looking at the bits of the index.
 
-## To infinity
+## To infinity!
 
 Making a specific Fibonacci number is too easy, what about making *all* the Fibonacci numbers? Well, the last nine digits. Since they repeat, writing out the first one-and-a-half billion is like having every single one, in like a list structure that goes all circly. But look out, it takes 6 gigabytes to store! I put the constants at the beginning so you can use smaller ones if you don't have 6GB free.
 
@@ -404,7 +404,8 @@ Let's do some jumping ahead of our own and write the whole new function out!
     main() = {
       fs := alloc{u32, pisano}
       fib_fill_interleave{4, pisano}(fs)
-      lprintf{load{fs, 1e9}}
+      lprintf{load{fs, test_ind}}  # 560546875
+      free{fs}
     }
 
 And it's about 2.3 seconds, so it's faster!
@@ -414,3 +415,104 @@ But the loop is totally different from what I showed before, what happened? I re
 The key line `f = next{f}` is exactly the same, but that doesn't happen automatically! All the built-in arithmetic maps over lists, but the register arithmetic from arch/c doesn't. Fortunately there's a tool to make it work. It stands for "pervasion" but it's named [perv](https://dfns.dyalog.com/n_perv.htm) after John Scholes' love of silly abbreviations. Rest in peace John!
 
 So the extension is `include 'util/perv'` and `extend perv2{__add}`, with the 2 because `__add` takes two parameters. The definition of `d` also uses it to add multiple starting indices to `dst`! In a bigger project with more setup, I might extend parts of the next line, like `&`, `-`, and even `-=`, but an `each` works perfectly fine too. And I have to use the `store` function instead of assignment but this line works out really nicely! `store{d, i, f0}` would store one value at index `i` offset from pointer `d`, and it's equivalent to `store{., i, .}{d, f0}`, so when `d` and `f0` are lists `each{store{., i, .}, d, f0}` works.
+
+## Using SIMD
+
+Flipping the starting points doesn't just make `fib_fill_interleave` easier to write, it also brings it closer to a CPU-friendly vector implementation! Currently `f0` and `f1` are each tuples of four `u32` values, so they both take up four CPU registers. But modern CPUs also have *vector* registers that store multiple values and operate on all of them at once! To use them I can change this:
+
+      def to_u32{a} = { f:u32 = a }
+      f := each{each{to_u32, .}, flip{fib_starts{k, gap}}}
+
+to this:
+
+      def V = [k]u32
+      def to_V{a} = { f:V = vec_make{V,a} }
+      f := each{to_V, flip{fib_starts{k, gap}}}
+
+Wait, I need `include 'arch/iintrinsic/basic'` to use `vec_make`! I'm using the file for x86 here because that's what my computer is, but there's `arch/neon_intrin/basic` for ARM too. It has the `vec_make` function to make a register with type `[4]u32` from four `u32` parameters, and it also defines basic arithmetic and logic for us which is good because we're going to need them!
+
+But it doesn't have anything to store every part of the register to a different place, like `each{store{., i, .}, d, f0}` does! And I mean, a CPU can do this, it's called a scatter instruction, but it's not really good to use. Because of the way memory architecture works it's just a bunch of requests piled into one instruction.
+
+The only way to get the most out of a store instruction is to store four values all next to each other—but the way we compute them only ever gives us four that are separated! It's not as bad as it sounds though. What we do is keep four vectors *of* four values each, and then—remember `flip`? Well there's no `flip` instruction but there's a sequence of instructions for it, and also it turns out there's a weird macro thing for exactly the one we need!
+
+    def transpose4x4{f} = {
+      def re{T, xs} = each{reinterpret{T, .}, xs}
+      ft := re{[4]f32, f}
+      emit{void, '_MM_TRANSPOSE4_PS', ...ft}
+      re{[4]u32, ft}
+    }
+
+Okay so this isn't actually a good thing to use! Because `_MM_TRANSPOSE4_PS` modifies its arguments in place, but Singeli doesn't expect it to do that! So it could squash it together with another register that isn't supposed to be modified. Here it works because the registers in `ft` don't alias with any other registers, but it would be a lot better to write the transpose with normal instructions. And educational! I'll try doing this once there's built-in support for the unpack instructions that transpose needs I think.
+
+Now what I need to do is change the loop so it makes four vectors at a time, instead of only one. To initialize it I'm just going to extend our starting points using `merge{fs, next{next{fs}}}`. Then inside the loop I want to replace all four vectors instead of just making a new one. Since the number of values I want is divisible by 16 I don't have to worry about having any leftovers at the end, but if it wasn't I'd get an error and have to fix things. Before I get into explaining it, here's all the code together!
+
+    include 'skin/c'
+    include 'arch/c'
+    include 'util/tup'
+    include 'util/for'
+    include 'arch/iintrinsic/basic'
+    include 'util/perv'
+    extend perv2{__add}  # Has to go after arch includes!
+
+    def mod = 1e9
+    def pisano = 1.5e9
+    def test_ind = 1e9
+
+    def next  {{a, b}} = tup{b, a+b}
+    def double{{a, b}} = tup{a*(b+b-a), a*a + b*b}
+    def fib2{n} = if (n==0) iota{2} else {
+      def g = double{fib2{n >> 1}}
+      (if (n%2) next{g} else g) % mod
+    }
+    def fib_starts{num, dist} = {
+      def mat = tup{fib2{dist-1}, fib2{dist}}
+      def inc{v} = fold{+, mat * v} % mod
+      scan{{a,_}=>inc{a}, copy{num, iota{2}}}
+    }
+
+    def transpose4x4{f} = {
+      def re{T, xs} = each{reinterpret{T, .}, xs}
+      ft := re{[4]f32, f}
+      emit{void, '_MM_TRANSPOSE4_PS', ...ft}
+      re{[4]u32, ft}
+    }
+
+    fn fib_fill_vector{k==4, n}(dst:*u32) : void = {
+      def gap = n/k; def gv = gap/k
+      def V = [k]u32
+      def fs = flip{fib_starts{k, gap}}
+      def f4 = merge{fs, next{next{fs}}}
+      def to_V{a} = { f:V = vec_make{V,a} }
+      f := each{to_V, f4}
+      d := reinterpret{*V, dst} + gv*iota{k}
+      m := vec_broadcast{V, mod}
+      @for (i to gv) {
+        each{store{., i, .}, d, transpose4x4{f}}
+        @for_const (j to k) {
+          def fr = tupsel{j, f}
+          fr = fold{+, tupsel{j+tup{-2,-1}, f}}
+          fr -= m & (fr >= m)
+        }
+      }
+    }
+
+    include 'debug/printf'
+    include 'clib/malloc'
+    main() = {
+      fs := alloc{u32, pisano}
+      fib_fill_vector{4, pisano}(fs)
+      lprintf{load{fs, test_ind}}  # 560546875
+      free{fs}
+    }
+
+The idea is that I only want to change each register once, so instead of shifting the register list I use an index `j` and update register `j` only. So if I started by rotating register `j` to the beginning it's kind of like I want to drop that first value, and use the last two registers to get the new one that goes at the end. The inputs to add together are the two registers that come before `j`, cyclically! `tupsel{j+tup{-2,-1}, f}` gets these because, first it can select with multiple indices at once, and second, negative indices wrap around to the end. If `j` is `1` you get `tupsel{tup{-1,0}, f}`, which gets the last and first ones, for example!
+
+Another thing that changes is the modular reduction that used to look like this. In vector registers, comparison automatically gives you a bitmask of all 0 or 1, so it's just `fr -= m & (fr >= m)`!
+
+      each{{f1} => f1 -= mod & -promote{u32, f1 >= mod}, f1}
+
+Timing the new version I get 1.9 seconds, almost twice as fast as the best straight-line version! Okay, that's not actually a very big speedup for SIMD code. Using vectors of four numbers can make things four times faster a lot of the time! My first thought was the transpose taking up all the time, but it isn't because when I take it out nothing gets faster even though I'm not even writing in the right order. But if I take out the modular part `fr -= m & (fr >= m)` it does speed up, a little. The difference is that that the modular reduction has to be done before the next step—it's the same problem we had before with not using our instruction-level parallelism! So doing multiple sets of vector registers at once would probably be faster. Or wider ones, because 16-byte vector registers are the smallest kind!
+
+But that won't get us that far either because even if I snip out *all* the computation and just use `each{store{., i, .}, d, f}` for the loop body it takes 1.6 seconds! This program goes over a whole 6GB of memory and never revisits any of it, so it doesn't get to use caches at all. And uncached memory is kind of slow, well 4GB in a second is pretty fast if you think about it but it's not always enough to keep up with a vector CPU!
+
+Anyway, I think using almost all the memory bandwidth for some Fibonacci digits I didn't really need is fun but if you need to speed it up more I know Singeli can do it!
