@@ -333,9 +333,11 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Params ← c.params _node_ {𝕤
     Get "{"
     LFs@
-    Try "}" ? (0⥊<↕4)‿⟨⟩ ;
-    Param ← <⊸∾´ ⟨Try∘"...", SubParam⟩_seq
-    a ← While ⟨"}"_divList, Param, 1⟩ ⋄ err_ex_gather Asrt 1≥+´⊑¨a
+    a ← {
+      ∊⟜"}"‿"&"⌾<_test@ ? 0⥊<↕4 ;
+      Param ← <⊸∾´ ⟨Try∘"...", SubParam⟩_seq
+      a ← While ⟨"}"_divList, Param, 1⟩ ⋄ err_ex_gather Asrt 1≥+´⊑¨a ⋄ a
+    }
     c ← While ⟨Div∘"&", CondExpr, 0⟩
     Get "}"
     a‿c
