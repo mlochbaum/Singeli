@@ -232,11 +232,12 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   _spreadable ← {<∘⊢⍟⊣⟜𝔽∘Try∘"..."}
   _args ← {𝕗 _argsFn_ (Expr _spreadable)}
+  _divList ← {Div∘"," _and_ (𝕗⊸≢_test)}
   _argsFn_ ← {𝕤
     Get ⊑𝕗
     LFs@
     Try 1⊑𝕗 ? ⟨⟩ ;
-    a ← While ⟨Div∘",", 𝔾, 1⟩
+    a ← While ⟨(1⊑𝕗)_divList, 𝔾, 1⟩
     Get 1⊑𝕗
     a
   }
@@ -334,7 +335,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     LFs@
     Try "}" ? (0⥊<↕4)‿⟨⟩ ;
     Param ← <⊸∾´ ⟨Try∘"...", SubParam⟩_seq
-    a ← While ⟨Div∘",", Param, 1⟩ ⋄ err_ex_gather Asrt 1≥+´⊑¨a
+    a ← While ⟨"}"_divList, Param, 1⟩ ⋄ err_ex_gather Asrt 1≥+´⊑¨a
     c ← While ⟨Div∘"&", CondExpr, 0⟩
     Get "}"
     a‿c
