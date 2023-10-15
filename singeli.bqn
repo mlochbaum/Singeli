@@ -72,7 +72,7 @@ numbers ← {kname⇐"number"
     (≠𝕩)>s←⌊´𝕩⊐"bx" ? # Base n with 0x9abc or 31bNUMBER
       b ← ('b'=s⊑𝕩)◶⟨16⊣·!"0"⊸≡,Nat⟩ s↑𝕩
       "Invalid base" ! b≤≠da
-      d ← (b↑da) (≠∘⊣(⊢⊣"Invalid digits"!∧´∘>)⊐) (1+s)↓𝕩
+      d ← b 𝕎 (b↑da) (≠∘⊣(⊢⊣"Invalid digits"!∧´∘>)⊐) (1+s)↓𝕩
       E ← b⊸×⊸+˜´⌽∘⊢
       EE ← {h‿l←f.To∘E¨𝕨-⊸(↓⋈↑)𝕩⋄Wrap l f.Add (f.To b⋆𝕨)f.Mul h}
       (⌊53÷2⋆⁼b) <⟜≠◶E‿EE d
@@ -80,7 +80,19 @@ numbers ← {kname⇐"number"
       _n ← {('-'=⊑)◶⟨𝔽, -∘𝔽 1⊸↓⟩}
       pe ← ⊑𝕩⊐'e' ⋄ e ← pe <⟜≠◶⟨0,Nat _n+⟜1⊸↓⟩ 𝕩
       m ← pe↑𝕩 ⋄ m /˜↩ ¬dm←m='.'
-      (0≠⊢´)◶⟨⊑,Wrap⟩ (e - (≠m)-⊑dm⊐1)⊸f.ParseDec _cn _n m
+      (0≠⊢´)◶⟨⊑,Wrap⟩ (e - (≠m)-⊑dm⊐1)⊸f.ParseDec _cn _n 10 𝕎 m
+  }{
+    # Pass digit repeater as 𝕎
+    ∨´m←𝕩∊c←"rdw" ? # r repeat; d total digits; w total bits
+      f ← {(𝕩×≠)⊸Re⊢}‿{𝕩⊸Re}‿{𝕩_wf} ⋄ Re←{𝕨⊸⥊⌾⌽𝕩}
+      p ← 𝕩⊔˜(¬×1+`⊢)m  # ⟨codes, ...counts, rest⟩
+      n ← Nat¨ ¯1↓1↓p   # Parsed counts
+      wfm←"Repetition with w requires the base to be a power of two"
+      _wf←{b n _𝕣 𝕩: wfm!⌊⊸=l←2⋆⁼b ⋄ (l|n) 2⊸⋆⊸|⌾⊑⍟(≠⟜0) (⌈n÷l) Re 𝕩 }
+      mm←"Digit repetition prefixes don't agree"
+      ((1<≠)◶⊑‿{(⊑⊣mm!⊣`⊸≡)𝕩{𝕨𝕩{𝕨𝕏𝕗}¨𝕗}} n{𝕎𝕩}¨˜f⊏˜c⊐⊑p) 𝔽 ⊢´p
+    ;
+      {⊢} 𝔽 𝕩
   }⟜LC⎊{Err⟨•CurrentError@,𝕨⟩}
 
   InRange ← {1=⊑0⍋˜-˜´⟜(⌽𝕨)¨𝕩}
