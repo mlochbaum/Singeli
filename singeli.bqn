@@ -84,6 +84,7 @@ numbers ← {kname⇐"number"
   }{
     # Pass digit repeater as 𝕎
     ∨´m←𝕩∊c←"rdw" ? # r repeat; d total digits; w total bits
+    ∧´¬"bx"∊˜𝕩/˜¬∨`m ? # Not part of the digit stream
       f ← {(𝕩×≠)⊸Re⊢}‿{𝕩⊸Re}‿{𝕩_wf} ⋄ Re←{𝕨⊸⥊⌾⌽𝕩}
       p ← 𝕩⊔˜(¬×1+`⊢)m  # ⟨codes, ...counts, rest⟩
       n ← Nat¨ ¯1↓1↓p   # Parsed counts
