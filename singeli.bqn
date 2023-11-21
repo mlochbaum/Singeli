@@ -342,7 +342,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     t ← When ⟨(≠e)◶Try‿0 ":", CondExpr⟩
     n‿e‿t
   }
-  SubParam ← @_opt_⟨"(", {(c.NewId"_")‿𝕩‿⟨⟩}∘Expr, TargetPlus⟩
+  SubParam ← @_opt_⟨"(", {(c.NewId"_")‿𝕩‿⟨⟩}∘ParEx, TargetPlus⟩
   Params ← c.params _node_ {𝕤
     Get "{"
     LFs@
