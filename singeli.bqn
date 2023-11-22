@@ -110,8 +110,11 @@ numbers ← {kname⇐"number"
   }
   _cmp ⇐ {(f.Cmp 𝔽 0˙)○Promote}
   builtins ⇐ {
-    W←Wrap ⋄ P←{𝕊:Promote𝕩 ; 𝕊⁼:W𝕩} ⋄ B←f.Bits∘P
+    W←Wrap ⋄ P←{𝕊:Promote𝕩 ; 𝕊⁼:W𝕩}
     E←f.To 2⋆From
+    # B gives ⟨sign, 2's complement bits⟩
+    Comp←(f.To ¯1)⊸f.Sub ⋄ IsNeg←0>f.Cmp⟜(f.To 0)
+    B←≠`∘(f.Bits∘{𝕊⁼:𝕨𝕊𝕩;𝕊:Comp⍟𝕨𝕩}`)∘{𝕊⁼:1⊑𝕩;𝕊:⟨IsNeg𝕩,𝕩⟩}∘P
     [pr,val] ← ⍉[
       ({NN◶⟨𝕎,W∘𝕏○Unwrap⟩}´)‿⟨"neg"‿⟨-,f.Neg⟩, "abs"‿⟨|,f.Abs⟩,
                               "floor"‿⟨⌊,f.Floor⟩, "ceil"‿⟨⌈,f.Ceil⟩⟩

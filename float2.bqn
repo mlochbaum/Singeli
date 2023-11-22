@@ -77,7 +77,7 @@ _repr ⇐ { len‿b _𝕣:
 Bits ⇐ {
   𝕊⁼𝕩: (2⋆48)⊸×⊸Add12˜○(2⊸×⊸+˜´)˝ 2‿∘⥊𝕩 ;
   ∧´𝕩=⟜1⊸∨⌾⊑𝕩=0 ? 96↑⊏𝕩 ;
-  "Bitwise operation: arguments must be unsigned integers" ! ⌊⊸≡◶⟨0,>⟜-´⟩ 𝕩
+  "Bitwise operation: arguments must be integers" ! ⌊⊸≡◶⟨0,>⟜-´⟩ 𝕩
   "Bitwise operation: arguments can't exceed 2^96" ! 0<(2⋆96)-˜´⌽𝕩
   96‿2 _repr 𝕩
 }
