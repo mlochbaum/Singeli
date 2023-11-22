@@ -161,12 +161,12 @@ local def cmp_flt{V, a, b, name, num} = {
   def U = uns{V}
   emit{U, intrin_b{merge{'cast',fmt_p{eltype{V}}}, U}, c}
 }
-def __eq{a:V, b:V & go{V} & has_float{V}} = cmp_flt{V, a, b, 'eq' ,  0}
-def __ne{a:V, b:V & go{V} & has_float{V}} = cmp_flt{V, a, b, 'neq',  4}
-def __gt{a:V, b:V & go{V} & has_float{V}} = cmp_flt{V, a, b, 'gt' , 30}
-def __ge{a:V, b:V & go{V} & has_float{V}} = cmp_flt{V, a, b, 'ge' , 29}
-def __lt{a:V, b:V & go{V} & has_float{V}} = cmp_flt{V, a, b, 'lt' , 17}
-def __le{a:V, b:V & go{V} & has_float{V}} = cmp_flt{V, a, b, 'le' , 18}
+def __eq{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'eq' ,  0}
+def __ne{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'neq',  4}
+def __gt{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'gt' , 30}
+def __ge{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'ge' , 29}
+def __lt{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'lt' , 17}
+def __le{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'le' , 18}
 
 def __div{a:V, b:V & go{V} & has_float{V}} = emit{V, intrin{'div', V}, a, b}
 def __sqrt {a:V & go{V} & has_float{V}} = emit{V, intrin{'sqrt',  V}, a}
@@ -250,6 +250,7 @@ local {
 
   # float comparisons, div, square root
   def has_float{V} = if (ef{V}) has_arith{V} else 0
+  def has_cmp_flt{V} = if (sse_avx{V}) has_float{V} else 0
   # floor, ceiling, round
   def has_round{V} = if (hasarch{'SSE4.1'}) has_float{V} else 0
 
