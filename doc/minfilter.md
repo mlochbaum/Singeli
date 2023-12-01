@@ -302,7 +302,7 @@ Of course.
 
 And for the initializer you take the first value of the scan, or fold maybe, which I guess works for min and max since they're idempotent but even for addition you add it in twice. Idem… POTENT! So I like to pass in the identity value as a parameter.
 
-You have to be careful because x86 does funny stuff with NaNs. I'll review that later.
+You have to be careful because x86 does funny stuff with NaNs. Not that it should have to handle them but some of the script monkeys in this place… I'll review that later.
 
 Okay! Um do you mind if I make the fold and scans into their own generators? I just think better that way.
 
@@ -461,7 +461,7 @@ We have some vector scan code already, for prefix sums, let me find it… Rollin
       def shift{v, k==128} = {
         # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
         def S = [8]i32; def perm = '_mm256_permute2x128_si256'
-        V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 8b02}
+        V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 16b02}
       }
       # Scan steps from width k to end
       def pre{v, k} = if (k < width{V}) pre{op{v, shift{v,k}}, 2*k} else v
@@ -532,7 +532,7 @@ Oh, the lane thing, right! So we actually have… *two* lanes, and then when tho
       def shift{v:V, k==128} = {
         # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
         def S = [8]i32; def perm = '_mm256_permute2x128_si256'
-        V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 8b02}
+        V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 16b02}
       }
       # Scan steps from width k to end
       def pre{v:V, k} = if (k < width{V}) pre{op{shift{v,k}, v}, 2*k} else v
@@ -541,7 +541,7 @@ Oh, the lane thing, right! So we actually have… *two* lanes, and then when tho
 
       def pre = make_scan_vec{op}
 
-You seem to have done that, yes. Well we're probably going to want to share some code with min-scan. This add-last-to-all step is pretty similar to how it works in the main loop here, where we do the scan on x and then add the carry value p.
+Apparently you can. Sure, we're probably going to want to share some code with min-scan. This add-last-to-all step is pretty similar to how it works in the main loop here, where we do the scan on x and then add the carry value p.
 
       @for (x, r over e) {
         r = op{pre{x}, p}
@@ -583,7 +583,7 @@ Oh, like this! Also, here, I can separate the shift pattern!
       def shift{v:V, k==128} = {
         # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
         def S = [8]i32; def perm = '_mm256_permute2x128_si256'
-        V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 8b02}
+        V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 16b02}
       }
       prefix_byshift{op, shift}
     }
@@ -598,7 +598,7 @@ So, what's that mean, you can even define it on the outside?
     def shift_zero{v:V, k==128} = {
       # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
       def S = [8]i32; def perm = '_mm256_permute2x128_si256'
-      V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 8b02}
+      V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 16b02}
     }
     def make_scan_vec{op==(+)} = prefix_byshift{op, shift_zero}
 
@@ -624,10 +624,10 @@ And when we want to go backwards we shift left but take from the end, something 
 
     def shift{v,k} = shiftleft{v, slice{v,-k}}
     show{min_scan{show{reverse{tup{9,4,5,3,6,6,0,1}}}}}
-    #tup{9,4,5,3,6,6,0,1}
-    #tup{9,4,4,3,3,3,0,0}
+    #tup{1,0,6,6,3,5,4,9}
+    #tup{0,0,3,3,3,4,4,9}
 
-Hold on, we don't have instructions for any of this. We're going to need indices so we can use those shuffles.
+Hold on, we don't have instructions for any of this. The shuffle instructions take indices, not shifts.
 
 Okay sure!
 
@@ -642,7 +642,7 @@ Oh, uh, yeah, that works. So I take the plus scan thing and replace the shift wi
       def shift{v:V, k & k>=32} = shuf_lane_32{v, shift_ind{k/32,4}}
       def shift{v:V, k & k==128} = {
         def S = [8]i32; def perm = '_mm256_permute2x128_si256'
-        V~~emit{S, perm, S~~to_lane_last{v}, v, 8b02}
+        V~~emit{S, perm, S~~to_lane_last{v}, v, 16b02}
       }
       prefix_byshift{op, shift}
     }
