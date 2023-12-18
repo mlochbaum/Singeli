@@ -37,7 +37,7 @@ local {
   def mv_sub{V, x} = {
     def T = eltype{V}
     tmp:*T = each{cast{T,.}, x}
-    load{*V~~tmp}
+    load{*V~~tmp, 0}
   }
 }
 def vec_make{V, ...x & can_make{V,x}} = mv_sub{V, x}
