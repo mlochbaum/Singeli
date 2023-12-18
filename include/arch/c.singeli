@@ -1,7 +1,7 @@
 local {
   local def extend promote{arith} = {
-    def arith{a:T,b & is{'number',kind{b}}} = arith{a , cast{T,b}}
-    def arith{a,b:T & is{'number',kind{a}}} = arith{cast{T,a} , b}
+    def arith{a:T,b & is{'number',kind{b}} & is{'primitive',typekind{T}}} = arith{a , cast{T,b}}
+    def arith{a,b:T & is{'number',kind{a}} & is{'primitive',typekind{T}}} = arith{cast{T,a} , b}
   }
   def arith{op} = { def extend _{arith} = {
     def arith{a:T,b:T & is{'primitive',typekind{T}}} = emit{T, op, a, b}
