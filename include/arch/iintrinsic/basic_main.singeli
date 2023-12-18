@@ -85,10 +85,14 @@ local {
   def can_make{V,x} = if (go{V} and has_make{V}) can_make_sub{V,x} else 0
   def mv_sub{m, V, x} = {
     def T = eltype{V}
-    def tx = each{cast{T,.}, x}
-    if ('u'!=quality{T}) m{V, tx} else {
-      def I=primtype{'i', width{T}}
-      V~~m{[vcount{V}]I, each{~~{I,.},tx}}
+    if ('u'!=quality{T}) {
+      m{V, each{cast{T,.}, x}}
+    } else {
+      def w = width{T}
+      def I = primtype{'i', w}
+      def smax = 1<<(w-1)  # Convert compile-time numbers in Singeli to avoid lots of cast instructions
+      def ic{a} = I~~(if (num{a}) a - (a>=smax)<<w else cast{T,a})
+      V~~m{[vcount{V}]I, each{ic, x}}
     }
   }
   def mvc{V,x} = emit{V, set_intrin{'set1',V}, ...x}
