@@ -61,7 +61,7 @@ numbers ← {kname⇐"number"
   Unwrap ← {6=•Type𝕩?kname≡𝕩.kind?𝕩.value; !𝕨⊣"Expected constant number"}
   Promote ← NN◶f.To‿Unwrap
   GetFloat ⇐ f.From∘Unwrap⍟(NN⊢)
-  _getter_ ← {(𝕘∾" expected")⊘⊣ (!⟜𝔽⊢⊢) GetFloat}
+  _getter_ ← {(𝕘∾" expected")⊘⊣ (!⊣∾" (got "∾•Repr∘⊢∾")"˙)⍟(¬𝔽∘⊢) GetFloat}
   GetBool ⇐ ⊑∘∊⟜0‿1 _getter_ "Boolean"
   GetNat  ⇐   |∘⌊⊸= _getter_ "Natural number"
   GetInt  ⇐     ⌊⊸= _getter_ "Integer"
