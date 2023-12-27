@@ -60,9 +60,11 @@ numbers ← {kname⇐"number"
   Wrap ← {kind⇐kname⋄value⇐𝕩⋄Matches⇐Match⋄Shows⇐FmtLarge∘𝕩}
   Unwrap ← {6=•Type𝕩?kname≡𝕩.kind?𝕩.value; !𝕨⊣"Expected constant number"}
   Promote ← NN◶f.To‿Unwrap
-  From ⇐ f.From∘Unwrap⍟(NN⊢)
-  GetBool ⇐ {(𝕨⊣"Boolean expected")!⊑0‿1∊˜n←𝕨From𝕩 ⋄ n}
-  GetNat ⇐ {(𝕨⊣"Natural number expected")!|∘⌊⊸=n←𝕨From𝕩 ⋄ n}
+  GetFloat ⇐ f.From∘Unwrap⍟(NN⊢)
+  _getter_ ← {(𝕘∾" expected")⊘⊣ (!⟜𝔽⊢⊢) GetFloat}
+  GetBool ⇐ ⊑∘∊⟜0‿1 _getter_ "Boolean"
+  GetNat  ⇐   |∘⌊⊸= _getter_ "Natural number"
+  GetInt  ⇐     ⌊⊸= _getter_ "Integer"
   Match ⇐ ∧○Is◶⟨0,≡○Promote⟩
 
   _cn ← {𝔽 ⊣ "Ill-formed number"!·∧´'0'⊸≤∧≤⟜'9'}
@@ -112,7 +114,7 @@ numbers ← {kname⇐"number"
   _cmp ⇐ {(f.Cmp 𝔽 0˙)○Promote}
   builtins ⇐ {
     W←Wrap ⋄ P←{𝕊:Promote𝕩 ; 𝕊⁼:W𝕩}
-    E←f.To 2⋆From
+    E←f.To 2⋆GetFloat
     # B gives ⟨sign, 2's complement bits⟩
     Comp←(f.To ¯1)⊸f.Sub ⋄ IsNeg←0>f.Cmp⟜(f.To 0)
     B←≠`∘(f.Bits∘{𝕊⁼:𝕨𝕊𝕩;𝕊:Comp⍟𝕨𝕩}`)∘{𝕊⁼:1⊑𝕩;𝕊:⟨IsNeg𝕩,𝕩⟩}∘P
@@ -624,9 +626,9 @@ types ← {kname⇐"type"
     {!∾⟨"Can't reinterpret type ",𝕩," as different-width type ",𝕨⟩}
   ⟩_cc
 
+  GetWidth ← "Type width must be a natural number"⊘⊣ numbers.GetNat ⊢
   IncWidth ← {
-    "First parameter of promote must be a type or number"!"number"≡Kind𝕨
-    n←numbers.From 𝕨
+    n←"First parameter must be a type or natural number" GetWidth 𝕨
     t←TypeOf 𝕩
     (1 + n ×∘- Width t)◶⟨
       !∘"Can't decrease width in promotion"
@@ -642,7 +644,7 @@ types ← {kname⇐"type"
     n ← e symbols.From 𝕩 ⋄ e!1=≠n
     ⊑n
   }
-  PrimType ← "Invalid primitive type specification"_getPrim ⟨GetQual,numbers.From⟩ {𝕎𝕩}¨ ⊢
+  PrimType ← "Invalid primitive type specification"_getPrim GetQual‿GetWidth {𝕎𝕩}¨ ⊢
 
   builtins ⇐ ∾˘⍉∘‿2⥊⟨
     ⟨"cast"   ,             "promote"   ,"reinterpret"⟩
@@ -856,12 +858,12 @@ builtins ← {
     "one or two slicing values expected"!(2⊸≤∧≤⟜3)≠𝕩
     s←¬=l←⊑𝕩
     l "first parameter must be a tuple or symbol"⊸symbols.From⍟s↩
-    i←l≠⊸(0⌈⊣⌊+⍟(0⊸>)¨)numbers.From¨1↓𝕩 ⋄ symbols.New⍟s (⊑i)↓(1↓i)↑´˜l
+    i←l≠⊸(0⌈⊣⌊+⍟(0⊸>)¨)numbers.GetInt¨1↓𝕩 ⋄ symbols.New⍟s (⊑i)↓(1↓i)↑´˜l
   }
   Undefined ← {
     "one or two parameters (type, length) expected"!(1⊸≤∧≤⟜2)≠𝕩
     "first parameter must be a type"!"type"≡Kind⊑𝕩
-    constants.Undefined{(1<≠)◶⟨𝔽⊑,𝔽˜⟜numbers.From´⟩} 𝕩
+    constants.Undefined{(1<≠)◶⟨𝔽⊑,𝔽˜⟜numbers.GetNat´⟩} 𝕩
   }
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
@@ -874,10 +876,10 @@ builtins ← {
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
       ⟨"typekind",symbols.New types.TypeKind _p1⟩
       ⟨"load",Load _e2⟩, ⟨"store",¯1⊸(⊑Store↓)_e3⟩
-      ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑⚇0‿∞ _p2⟩, ⟨"tuplen",≠_p1⟩
-      ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.From _p1⟩
+      ⟨"tup",⊢⟩, ⟨"tupsel",numbers.GetInt⊸⊑⚇0‿∞ _p2⟩, ⟨"tuplen",≠_p1⟩
+      ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.GetNat _p1⟩
       ⟨"symchars",(symbols.New∘⋈¨"expected symbol"⊸symbols.From)_p1⟩
-      ⟨"fmtnat",symbols.New∘•Repr "expected natural number"⊸numbers.GetNat _p1⟩
+      ⟨"fmtnat",symbols.New∘•Repr numbers.GetNat _p1⟩
       ⟨"bind",⊑{𝕎_ne𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨_ne<˘⍉>𝕩}1⊸↓_v1⟩
       ⟨"apply",{"second parameter must be a tuple"!1==𝕩⋄𝕎_ne𝕩}_p2⟩
       ⟨"export",{𝕨 symbols.From⊸program.Export⚇0 𝕩}_p2⟩
