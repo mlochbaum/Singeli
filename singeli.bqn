@@ -553,6 +553,7 @@ types ← {kname⇐"type"
 
   Quality ← ⟨tPRIM,{symbols.New ⋈⊑𝕩}, !∘"Non-primitive type"⟩_cases
   _isQual ← {⟨tPRIM,𝔽⊑,0⟩_cases TypeOf⍟(¬Is)}
+  IsInt ⇐ ⊑∘∊⟜"iu"_isQual
 
   Unpack ⇐ ⟨tTUP,{Unpack¨𝕩},⊢⟩_cases
   Ungather ⇐ ⟨tTUP,⊢,!∘"Gathered argument must have a tuple type"⟩_cases
@@ -835,9 +836,19 @@ blocks ← {
     Block ind‿vars
   }
 }
-AccessPtr ← { (⊢⊣ "Can't access void pointer" ! ·¬types.IsVoid) types.Deref TypeOf 𝕩 }
-Load ← {  𝕊 ptr‿i: functions.Emit ⟨AccessPtr ptr, symbols.New "^load", ptr, i⟩ }
-Store← {v 𝕊 ptr‿i: functions.Emit ⟨AccessPtr ptr, symbols.New "^store", ptr, i, v⟩ }
+# Load/store
+AccessPtr ← {
+  t ← types.Deref TypeOf 𝕩
+  "Can't access void pointer" ! ¬types.IsVoid t
+  t
+}
+GetIndex ← {
+  "number"≡Kind𝕩 ? numbers.GetInt 𝕩 ;
+  IsTyped𝕩 ? types.IsInt 𝕩 ? 𝕩 ;
+  !"Index must be numeric"
+}
+Load ← {  𝕊 ptr‿i: functions.Emit ⟨  AccessPtr ptr, symbols.New "^load",  ptr, GetIndex i⟩ }
+Store← {v 𝕊 ptr‿i: functions.Emit ⟨t←AccessPtr ptr, symbols.New "^store", ptr, GetIndex i, t types.Cast v⟩ }
 
 
 builtins ← {
