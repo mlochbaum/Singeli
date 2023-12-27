@@ -58,10 +58,11 @@ numbers ← {kname⇐"number"
   NN ← 1≠•Type  # Not native number
   Is ← kname≡{Kind𝕩}
   Wrap ← {kind⇐kname⋄value⇐𝕩⋄Matches⇐Match⋄Shows⇐FmtLarge∘𝕩}
-  Unwrap ← {6=•Type𝕩?kname≡𝕩.kind?𝕩.value; !"Expected constant number"}
+  Unwrap ← {6=•Type𝕩?kname≡𝕩.kind?𝕩.value; !𝕨⊣"Expected constant number"}
   Promote ← NN◶f.To‿Unwrap
-  From ⇐ f.From∘Unwrap⍟NN
-  GetBool ⇐ {"Boolean expected"!⊑𝕩∊0‿1⋄𝕩}∘From
+  From ⇐ f.From∘Unwrap⍟(NN⊢)
+  GetBool ⇐ {(𝕨⊣"Boolean expected")!⊑0‿1∊˜n←𝕨From𝕩 ⋄ n}
+  GetNat ⇐ {(𝕨⊣"Natural number expected")!|∘⌊⊸=n←𝕨From𝕩 ⋄ n}
   Match ⇐ ∧○Is◶⟨0,≡○Promote⟩
 
   _cn ← {𝔽 ⊣ "Ill-formed number"!·∧´'0'⊸≤∧≤⟜'9'}
@@ -488,9 +489,6 @@ operator ← {
 # - BQN values tuple (list), number, generator (function)
 # - Classes symbols, types, registers, constants, functions, blocks
 _and_ ← { 𝔽◶⟨0,𝔾⟩ }
-IsNum ← 1=•Type
-IsInt ← IsNum _and_ (⌊⊸=)
-IsNat ← IsInt _and_ (0⊸≤)
 IsTup ← 0=•Type
 FmtNum ← ('¯'(⊢+=×'-'-⊣)•Repr){(∞>|)◶⟨"/0"∾˜·𝔽0(<->)⊢,𝔽⟩}
 
@@ -533,7 +531,11 @@ types ← {kname⇐"type"
   _getPrim ← {{𝕏@} (⟨!∘𝕗⟩«primTypes) ⊑˜ qw⊸⊐⌾<}
 
   Is ⇐ kname≡Kind
-  Vec ← {n𝕊t: "Vector size should be a constant integer"!IsNat n ⋄ !Is t ⋄ tVEC New ⟨n,t⟩}
+  Vec ← {n𝕊t:
+    l ← "Vector size should be a constant integer" numbers.GetNat n
+    "Vector type wasn't type" ! Is t
+    tVEC New ⟨l,t⟩
+  }
   Ptr ⇐ { 𝕊t: "Pointer type wasn't type"!Is t ⋄ tPTR New t}
   Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´Is¨ t ⋄ tTUP New t}
   Fun ⇐ tFUN New ⋈
@@ -645,8 +647,8 @@ types ← {kname⇐"type"
   builtins ⇐ ∾˘⍉∘‿2⥊⟨
     ⟨"cast"   ,             "promote"   ,"reinterpret"⟩
     ⟨ Cast _p2,Is∘⊣◶IncWidth‿Promote _p2, Reinterpret _p2⟩
-    ⟨"eltype"   ,"vcount"   ,"width"   ,          "__vec"   ,"__pnt"⟩
-    ⟨ VType _p1 , VCount _p1, Width _p1,numbers.From⊸Vec _p2,   Ptr _p1⟩
+    ⟨"eltype"   ,"vcount"   ,"width"   ,"__vec"   ,"__pnt"⟩
+    ⟨ VType _p1 , VCount _p1, Width _p1,   Vec _p2,   Ptr _p1⟩
     ⟨"primtype"   ,"quality","isfloat","issigned","isint"⟩
     ⟨ PrimType _e2, Quality _p1⟩∾{𝕩_isQual _p1}¨⟨'f'⊸≡ ⋄ 'i'⊸≡ ⋄ ⊑∘∊⟜"iu"⟩
   ⟩
@@ -875,7 +877,7 @@ builtins ← {
       ⟨"tup",⊢⟩, ⟨"tupsel",numbers.From⊸⊑⚇0‿∞ _p2⟩, ⟨"tuplen",≠_p1⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.From _p1⟩
       ⟨"symchars",(symbols.New∘⋈¨"expected symbol"⊸symbols.From)_p1⟩
-      ⟨"fmtnat",(symbols.New∘•Repr⊣"expected natural number"!IsNat)numbers.From _p1⟩
+      ⟨"fmtnat",symbols.New∘•Repr "expected natural number"⊸numbers.GetNat _p1⟩
       ⟨"bind",⊑{𝕎_ne𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨_ne<˘⍉>𝕩}1⊸↓_v1⟩
       ⟨"apply",{"second parameter must be a tuple"!1==𝕩⋄𝕎_ne𝕩}_p2⟩
       ⟨"export",{𝕨 symbols.From⊸program.Export⚇0 𝕩}_p2⟩
@@ -1150,7 +1152,7 @@ nodes ← {
     # conds is a list of Fn‿node to be evaluated as par Fn node.Eval e
     mconds ← HasType‿Match⋈¨¨(tname≠⊸↓¨ptype)≍pmatch
     subconds ← <∘∾˘⍉(pmult⊣◶⟨⟩‿{𝕩.conds}¨params)∾mconds
-    GB ← numbers.GetBool∘⊢
+    GB ← "Generator condition must evaluate to boolean" numbers.GetBool ⊢
     GIF ← (∨`⊸+pgather){n←≠𝕗⋄k←𝕩⊑𝕗⋄{k≤1?(𝕩-k×n)⊸⊑;𝕩↓(𝕩¬n)↓⊢}𝕩}
     conds ⇐ (((/≠¨)GIF⊸{𝕎⊸𝕏}⌾⊑⍟(gb˙⊸≢)¨∾) subconds) ∾ gb ⋈¨ condExprs
     cexpr ← 1⊑¨conds
@@ -1379,7 +1381,8 @@ nodes ← {
     "cond"≡𝕨.node ? 𝕨.Eval 𝕩 ;
     n𝕊⟨jv‿label,e⟩:
     c ← n.Eval e
-    { IsTyped c ? jv label.GotoC c ⋄ ¬jv ; numbers.GetBool c }
+    { IsTyped c ? jv label.GotoC c ⋄ ¬jv
+    ; "If condition must evaluate to boolean" numbers.GetBool c }
   }
   CAccum ← {𝕊id: {
     ⟨jv‿label,e⟩←𝕩
@@ -1405,7 +1408,7 @@ nodes ← {
     Eval ⇐ {
       lf ← IfLabel@
       c ← cond CondEval ⟨0‿lf, e←𝕩⟩
-      { ¬numbers.GetBool c ?
+      { ¬c ?
         r ← {Shows⇐!∘"Can't use if-0 statement result as value"⋄kind⇐"error"}
         functions.SetLabel⍟(@⊸≢) lf.label
         r ⊣´ { 𝕩.Eval e }¨ else
