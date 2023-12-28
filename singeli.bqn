@@ -843,11 +843,6 @@ blocks ← {
       r
     }_e2
   }
-  Exec ⇐ {𝕊 ind‿vars‿block:
-    "Executing non-block" ! "generator"≡Kind block
-    •Out "exec{i, vars, block} is deprecated; switch to block{i, vars}"
-    Block ind‿vars
-  }
 }
 # Load/store
 AccessPtr ← {
@@ -894,7 +889,6 @@ builtins ← {
     ⍉> ⟨
       ⟨"__set",functions.Mut _p2⟩
       ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"}⊣•Out∘Fmt⟩
-      ⟨"exec",blocks.Exec _e3⟩ # Deprecated; will be removed
       ⟨"is",Match _p2⟩, ⟨"hastype",HasType _p2⟩
       ⟨"undefined",Undefined⟩
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
