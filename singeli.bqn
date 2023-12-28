@@ -47,21 +47,27 @@ Source ← { 𝕨 𝕊 src‿lc: file←𝕨⊣""
 DispSource ← @⊸≢◶⟨•Out¨∘"(unknown position!)"‿"", {𝕎𝕩}´⟩
 Err ← { (𝕩≠⊸⥊•Out‿DispSource) {𝕎𝕩}¨ 𝕩 ⋄ •Exit 1 }
 
+AsrtGotGen ← {𝕊 disp: {𝔽𝕩 ? 𝕩 ; !∾⟨𝕎𝕩," (got ",Disp𝕩,")"⟩}}
+_asrtGotR‿_asrtGotS ← AsrtGotGen¨ •Repr‿{Show𝕩}
+
 # Parameter checks for builtins (_p1 and _p2 to use BQN monad/dyad)
-_e1 ← {𝔽⊣"Expected one parameter" !1=≠} ⋄ _p1←{𝔽⊑_e1}
-_e2 ← {𝔽⊣"Expected two parameters"!2=≠} ⋄ _p2←{𝔽´_e2}
-_e3 ← {𝔽⊣"Expected three parameters"!3=≠}
-_v1 ← {𝔽⊣"Expected at least one parameter"!1≤≠}
+_e1 ← {𝔽⊣"Expected one parameter"  1⊸=_asrtGotR ≠} ⋄ _p1←{𝔽⊑_e1}
+_e2 ← {𝔽⊣"Expected two parameters" 2⊸=_asrtGotR ≠} ⋄ _p2←{𝔽´_e2}
+_e3 ← {𝔽⊣"Expected three parameters" 3⊸=_asrtGotR ≠}
+_v1 ← {𝔽⊣"Expected at least one parameter" 1⊸≤_asrtGotR ≠}
 
 numbers ← {kname⇐"number"
   f ← •Import "float2.bqn"
   NN ← 1≠•Type  # Not native number
   Is ← kname≡{Kind𝕩}
   Wrap ← {kind⇐kname⋄value⇐𝕩⋄Matches⇐Match⋄Shows⇐FmtLarge∘𝕩}
-  Unwrap ← {6=•Type𝕩?kname≡𝕩.kind?𝕩.value; !𝕨⊣"Expected constant number"}
+  Unwrap ← {
+    6=•Type𝕩 ? kname≡𝕩.kind ? 𝕩.value ;
+    (𝕨⊣"Expected constant number") 0 _asrtGotS 𝕩
+  }
   Promote ← NN◶f.To‿Unwrap
   GetFloat ⇐ f.From∘Unwrap⍟(NN⊢)
-  _getter_ ← {(𝕘∾" expected")⊘⊣ (!⊣∾" (got "∾•Repr∘⊢∾")"˙)⍟(¬𝔽∘⊢) GetFloat}
+  _getter_ ← {(𝕘∾" expected")⊘⊣ 𝔽_asrtGotR GetFloat}
   GetBool ⇐ ⊑∘∊⟜0‿1 _getter_ "Boolean"
   GetNat  ⇐   |∘⌊⊸= _getter_ "Natural number"
   GetInt  ⇐     ⌊⊸= _getter_ "Integer"
@@ -73,8 +79,8 @@ numbers ← {kname⇐"number"
   da ← dig∾'a'+↕26
   Read ⇐ {
     (≠𝕩)>s←⌊´𝕩⊐"bx" ? # Base n with 0x9abc or 31bNUMBER
-      b ← ('b'=s⊑𝕩)◶⟨16⊣·!"0"⊸≡,Nat⟩ s↑𝕩
-      "Invalid base" ! b≤≠da
+      b ← ('b'=s⊑𝕩)◶⟨16⊣"x can only appear in 0x in a number"!"0"⊸≡,Nat⟩ s↑𝕩
+      (!"Invalid base (max "∾•Repr∾")"˙)⍟(b⊸>) ≠da
       d ← b 𝕎 (b↑da) (≠∘⊣(⊢⊣"Invalid digits"!∧´∘>)⊐) (1+s)↓𝕩
       E ← b⊸×⊸+˜´⌽∘⊢
       EE ← {h‿l←f.To∘E¨𝕨-⊸(↓⋈↑)𝕩⋄Wrap l f.Add (f.To b⋆𝕨)f.Mul h}
@@ -107,9 +113,9 @@ numbers ← {kname⇐"number"
   }
 
   Cast ⇐ {'f'‿l𝕊n:1; q‿l𝕊n: # 1 if valid; error otherwise
-    n NN◶⋈‿Unwrap↩
-    "Cannot cast float to integer"!⌊⊸≡n
-    "Constant doesn't fit"!n InRange -⟜(1⊸⊑÷2˙)⍟(q='i') ⟨0,2⋆l⟩
+    n NN◶⋈‿Unwrap↩ ⋄ a←AsrtGotGen {•Repr+´}
+    "Can't cast float to integer" ⌊⊸≡_a n
+    "Constant doesn't fit" (n InRange -⟜(1⊸⊑÷2˙)⍟(q='i') ⟨0,2⋆l⟩)_a n
   }
   _cmp ⇐ {(f.Cmp 𝔽 0˙)○Promote}
   builtins ⇐ {
@@ -520,7 +526,7 @@ types ← {kname⇐"type"
   }
   tVOID‿tPRIM‿tVEC‿tPTR‿tFUN‿tTUP ← ↕6
   TypeKind⇐{
-    "typekind argument must be type"!Is 𝕩
+    ReqTyp 𝕩
     𝕩.typeKind⊑"void"‿"primitive"‿"vector"‿"pointer"‿"function"‿"tuple"
   }
   IsVoid ⇐ {tVOID≡𝕩.typeKind}
@@ -532,47 +538,50 @@ types ← {kname⇐"type"
   ⟩
   _getPrim ← {{𝕏@} (⟨!∘𝕗⟩«primTypes) ⊑˜ qw⊸⊐⌾<}
 
-  Is ⇐ kname≡Kind
+  Is ← kname≡Kind
+  ReqTyp ⇐ {"Expected type";𝕨∾" type wasn't type"˙} Is _asrtGotS ⊢
   Vec ← {n𝕊t:
     l ← "Vector size should be a constant integer" numbers.GetNat n
-    "Vector type wasn't type" ! Is t
+    "Vector" ReqTyp t
     tVEC New ⟨l,t⟩
   }
-  Ptr ⇐ { 𝕊t: "Pointer type wasn't type"!Is t ⋄ tPTR New t}
+  Ptr ⇐ { 𝕊t: "Pointer" ReqTyp t ⋄ tPTR New t}
   Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´Is¨ t ⋄ tTUP New t}
   Fun ⇐ tFUN New ⋈
-  _get⇐ {IsTup 𝕩 ? Tup 𝕊¨𝕩 ; !∘(𝕗∾" type must be a type"˙)⍟(¬Is) 𝕩}
+  _get⇐ {IsTup 𝕩 ? Tup 𝕊¨𝕩 ; 𝕗 ReqTyp 𝕩}
 
   _cases ← {
     Kind←{𝕩.typeKind} ⋄ Dat←{𝕩.dat}
     c ← ⌊‿2⥊𝕗
     k ← ⊏˘c
-    d ← (1⊏˘c) ∾ ((≠⥊c)↓𝕗)»⟨!∘0⟩
-    (k⊸⊐⌾< ⊢⊘(≠◶⊢‿¯1)○Kind)◶({𝕏○Dat}¨⌾((≠k)⊸↑)d) ⊣ @○(!Is)
+    d ← (1⊏˘c) ∾ ((≠⥊c)↓𝕗)»⟨!"Unhandled type "∾Show⟩
+    (k⊸⊐⌾< ⊢⊘(≠◶⊢‿¯1)○Kind)◶({𝕏○Dat}¨⌾((≠k)⊸↑)d) ⊣ @○ReqTyp
   }
 
-  Quality ← ⟨tPRIM,{symbols.New ⋈⊑𝕩}, !∘"Non-primitive type"⟩_cases
+  TypeErr ← {!∾⟨𝕨," (type was ",Show 𝕩,")"⟩}
+
+  Quality ← ⟨tPRIM,{symbols.New ⋈⊑𝕩}, "Expected primitive type"⊸TypeErr⟩_cases
   _isQual ← {⟨tPRIM,𝔽⊑,0⟩_cases TypeOf⍟(¬Is)}
   IsInt ⇐ ⊑∘∊⟜"iu"_isQual
 
   Unpack ⇐ ⟨tTUP,{Unpack¨𝕩},⊢⟩_cases
-  Ungather ⇐ ⟨tTUP,⊢,!∘"Gathered argument must have a tuple type"⟩_cases
-  Deref ⇐ { Is 𝕩 ? tPTR=𝕩.typeKind ? 𝕩.dat ; !"Expected pointer" }
+  Ungather ⇐ ⟨tTUP,⊢,"Gathered argument must have a tuple type"⊸TypeErr⟩_cases
+  Deref ⇐ { Is 𝕩 ? tPTR=𝕩.typeKind ? 𝕩.dat ; "Expected pointer" TypeErr 𝕩 }
 
   Width ← ⟨
     tPRIM, 1⊸⊑
     tVEC,  ×⟜{Width𝕩}´
     tTUP,  +´{Width𝕩}¨
     tPTR,  ptrWidth
-    {!∾⟨"Can't find width of ",TypeKind𝕩," types"⟩}
+    {!∾⟨"Can't find width of ",TypeKind𝕩," type ",Show𝕩⟩}
   ⟩_cases
 
   VCount ← ⟨ tVEC,⊑, 1 ⟩ _cases
   VType ← ⟨ tVEC,1⊸⊑, tPTR,⊢ ⟩ _cases
 
   FnCast ⇐ {
-    args‿ret ← ⟨tFUN,⊢, !∘"Calling non-function"⟩_cases 𝕨
-    args(("Wrong number of arguments (expected "∾•Repr∘⊣∾")"˙)!≡)○≠𝕩
+    args‿ret ← ⟨tFUN,⊢, "Calling non-function"⊸TypeErr⟩_cases 𝕨
+    args (!"Expected "∾⊣∾" arguments, got "∾⊢)○•Repr⍟≢○≠ 𝕩
     ⟨args Cast¨ 𝕩, ret⟩
   }
 
@@ -595,7 +604,7 @@ types ← {kname⇐"type"
   SSubtype ⇐ < _cmpPrim _typeRel_ 0
 
   _asCast ← {
-    "Can't cast to non-type"!Is𝕨
+    "Cast" ReqTyp 𝕨
     Fail ← {!∾⟨"Can't cast ",Kind𝕩," to ",Show𝕨⟩}
     Num ← {t𝕊n:
       ⟨ tPRIM,numbers.Cast⟜n, Fail⟜n ⟩ _cases t
@@ -641,7 +650,7 @@ types ← {kname⇐"type"
     ⟩ 𝕩
   }
   GetQual ← {
-    e ← "Quality must be a single-letter symbol (i,u,f)"
+    e ← "Quality must be 'i', 'u', or 'f'"
     n ← e symbols.From 𝕩 ⋄ e!1=≠n
     ⊑n
   }
@@ -705,7 +714,7 @@ labels ← {kname⇐"label"
 }
 symbols ← {kname⇐"symbol"
   Is ← kname ≡ Kind
-  From ⇐ {!⟜(Is𝕩˙)𝕨 ⋄ 𝕩.symstr}
+  From ⇐ {Is _asrtGotS⟜(𝕩˙) 𝕨 ⋄ 𝕩.symstr}
   M ← Is∘⊢_and_(≡○From)
   Enc ← "'"(∾∾⊣)⊢+128×' '⊸= # Space to non-breaking space
   New ⇐ { kind⇐kname ⋄ symstr⇐𝕩 ⋄ Shows⇐Enc∘symstr ⋄ Matches⇐M }
@@ -736,7 +745,7 @@ functions ← {kname⇐"function"
     Instrs⇐Arr
     Append⇐{ current registers.CheckAppend¨ 1↓𝕩 ⋄ Push𝕩 ⋄ @ }
     SetRType⇐{
-      SetRType↩!∘0 ⋄ !types.Is rType↩𝕩
+      SetRType↩!∘0 ⋄ "Result" types.ReqTyp rType↩𝕩
       type ↩ ctypes types.Fun rType
     }
     _ret_←{
@@ -749,7 +758,11 @@ functions ← {kname⇐"function"
       A _ret_ 1 @⊣´𝕩
       {Shows⇐!∘"Can't use return result as value"⋄kind⇐"error"}
     }
-    Finish⇐{"Explicit result type needed"!IsTyped 𝕩⋄SetRtype TypeOf 𝕩⋄𝕩} _ret_ 0
+    Finish⇐{
+      e ← "Explicit function result type needed, as result is untyped"
+      e IsTyped _asrtGotS 𝕩
+      SetRtype TypeOf 𝕩⋄𝕩
+    } _ret_ 0
     Prot⇐{𝕊 showReg:
       ext ← (0<≠)◶⟨⟩‿(⋈·'+'⌾⊑·∾','⊸∾¨) architecture.ListExt arch
       at ← ∾ args {IsTup𝕨 ? ∾𝕨𝕊¨𝕩 ; ⋈⟨ShowReg𝕨,Show𝕩⟩}⟜types.Unpack¨ atypes
@@ -790,14 +803,14 @@ functions ← {kname⇐"function"
     𝕨𝕊¨𝕩
   }
   Mut  ⇐ {
-    "Can't assign to non-register" ! registers.Mutable 𝕨
+    "Can't assign to non-register" registers.Mutable _asrtGotS 𝕨
     Append "mut"‿𝕨‿(𝕨.type types.Cast 𝕩)
     𝕨.SetMut@
     𝕨
   }_destructure
   Call ⇐ {
     f ← ⊑𝕩
-    "Calling non-function" ! IsTyped f
+    "Calling non-function" IsTyped _asrtGotS f
     a‿t ← (TypeOf f) types.FnCast 1↓𝕩
     t AppendNew ⟨"call",t,f⟩ ∾ ≠⊸∾ {IsTup𝕩 ? ∾𝕊¨𝕩 ; ⟨𝕩⟩} a
   }
@@ -839,13 +852,13 @@ blocks ← {
 # Load/store
 AccessPtr ← {
   t ← types.Deref TypeOf 𝕩
-  "Can't access void pointer" ! ¬types.IsVoid t
+  "Can't access void pointer" (¬types.IsVoid t)_asrtGotS 𝕩
   t
 }
 GetIndex ← {
   "number"≡Kind𝕩 ? numbers.GetInt 𝕩 ;
   IsTyped𝕩 ? types.IsInt 𝕩 ? 𝕩 ;
-  !"Index must be numeric"
+  "Index must be numeric" 0 _asrtGotS 𝕩
 }
 Load ← {  𝕊 ptr‿i: functions.Emit ⟨  AccessPtr ptr, symbols.New "^load",  ptr, GetIndex i⟩ }
 Store← {v 𝕊 ptr‿i: functions.Emit ⟨t←AccessPtr ptr, symbols.New "^store", ptr, GetIndex i, t types.Cast v⟩ }
@@ -862,18 +875,18 @@ builtins ← {
   Fmt ⇐ 2↓·∾·", "⊸∾¨(UnEsc∘Show∾TypeSuff)⎊("("∾")"∾˜Kind⎊"unknown")¨
   Merge ← {
     0<⌈´=¨𝕩 ? ∾𝕩 ;
-    m←"parameters must include at least one tuple or all be symbols"
+    m←"Parameters must include at least one tuple or all be symbols"
     symbols.New ∾ m⊸symbols.From¨𝕩
   }
   Slice ← {
-    "one or two slicing values expected"!(2⊸≤∧≤⟜3)≠𝕩
+    "Expected two or three parameters" (2⊸≤∧≤⟜3)_asrtGotR ≠𝕩
     s←¬=l←⊑𝕩
-    l "first parameter must be a tuple or symbol"⊸symbols.From⍟s↩
+    l "First parameter must be a tuple or symbol"⊸symbols.From⍟s↩
     i←l≠⊸(0⌈⊣⌊+⍟(0⊸>)¨)numbers.GetInt¨1↓𝕩 ⋄ symbols.New⍟s (⊑i)↓(1↓i)↑´˜l
   }
   Undefined ← {
-    "one or two parameters (type, length) expected"!(1⊸≤∧≤⟜2)≠𝕩
-    "first parameter must be a type"!"type"≡Kind⊑𝕩
+    "Expected one or two parameters" (1⊸≤∧≤⟜2)_asrtGotR ≠𝕩
+    "First parameter must be a type" ("type"≡Kind)_asrtGotS ⊑𝕩
     constants.Undefined{(1<≠)◶⟨𝔽⊑,𝔽˜⟜numbers.GetNat´⟩} 𝕩
   }
   names‿values ⇐ <˘∾≍⟨
@@ -889,10 +902,10 @@ builtins ← {
       ⟨"load",Load _e2⟩, ⟨"store",¯1⊸(⊑Store↓)_e3⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",numbers.GetInt⊸⊑⚇0‿∞ _p2⟩, ⟨"tuplen",≠_p1⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.GetNat _p1⟩
-      ⟨"symchars",(symbols.New∘⋈¨"expected symbol"⊸symbols.From)_p1⟩
+      ⟨"symchars",(symbols.New∘⋈¨"Expected symbol"⊸symbols.From)_p1⟩
       ⟨"fmtnat",symbols.New∘•Repr numbers.GetNat _p1⟩
       ⟨"bind",⊑{𝕎_ne𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨_ne<˘⍉>𝕩}1⊸↓_v1⟩
-      ⟨"apply",{"second parameter must be a tuple"!1==𝕩⋄𝕎_ne𝕩}_p2⟩
+      ⟨"apply",{"Second parameter must be a tuple"IsTup _asrtGotS 𝕩⋄𝕎_ne𝕩}_p2⟩
       ⟨"export",{𝕨 symbols.From⊸program.Export⚇0 𝕩}_p2⟩
       ⟨"require",{program.Require∘symbols.From⚇0 𝕩}⟩
       ⟨"witharch",architecture.With⟩
@@ -982,8 +995,8 @@ program ← {
     ∾ ⟨DispHeader¨req, DispConstants cns, ∾DispFunction¨fns, DispExport¨exp⟩
   }
   CheckExport ← {
-    "Exports must be typed" ! IsTyped 𝕩
-    "Exports must be global fixed values" ! constants.Exportable 𝕩
+    "Exports must be typed" IsTyped _asrtGotS 𝕩
+    "Exports must be global fixed values" constants.Exportable _asrtGotS 𝕩
   }
   Stack ← {𝕤
     ⟨_trace_⇐_while_⟩ ⇐ ⟨Dump⇐Arr⟩ ← MakeStack@
@@ -1114,7 +1127,7 @@ nodes ← {
     𝕨𝕊⟨⟨infix⟩,params⟩: CondNode´ 𝕩;
     ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨
     spread ← 0=•Type¨params ⋄ params ⊑¨↩
-    Sp ← ⊣◶⟨⋈⊢,("Spread input must be tuple"!IsTup)⊸⊢⊢⟩
+    Sp ← ⊣◶⟨⋈⊢, "Spread input must be tuple" IsTup _asrtGotS ⊢⟩
     # Partial parameters .
     realpar ← params /˜¬ pp ← @⊸≡¨params
     em ← {¬∨´pp? {𝔽};
@@ -1305,7 +1318,7 @@ nodes ← {
       t ← "Variable" types._get (⊑type).Eval 𝕩
       t types.Cast v
     ;
-      "Explicit type needed for untyped initial value" ! {=𝕩?∧´𝕊¨𝕩;IsTyped𝕩} v
+      "Explicit type needed for untyped initial value" {=𝕩?∧´𝕊¨𝕩;IsTyped𝕩} _asrtGotS v
       v
     } program._trace_ pos env
   }
