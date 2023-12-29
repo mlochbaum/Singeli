@@ -844,20 +844,6 @@ blocks ← {
     }_e2
   }
 }
-# Load/store
-AccessPtr ← {
-  t ← types.Deref TypeOf 𝕩
-  "Can't access void pointer" (¬types.IsVoid t)_asrtGotS 𝕩
-  t
-}
-GetIndex ← {
-  "number"≡Kind𝕩 ? numbers.GetInt 𝕩 ;
-  IsTyped𝕩 ? types.IsInt 𝕩 ? 𝕩 ;
-  "Index must be numeric" 0 _asrtGotS 𝕩
-}
-Load ← {  𝕊 ptr‿i: functions.Emit ⟨  AccessPtr ptr, symbols.New "^load",  ptr, GetIndex i⟩ }
-Store← {v 𝕊 ptr‿i: functions.Emit ⟨t←AccessPtr ptr, symbols.New "^store", ptr, GetIndex i, t types.Cast v⟩ }
-
 
 builtins ← {
   Kinds ← {
@@ -873,27 +859,44 @@ builtins ← {
     m←"Parameters must include at least one tuple or all be symbols"
     symbols.New ∾ m⊸symbols.From¨𝕩
   }
-  Slice ← {
-    "Expected two or three parameters" (2⊸≤∧≤⟜3)_asrtGotR ≠𝕩
+  _exp_ ← {
+    Il ← 1↓·⥊<⊸(≍˘)
+    num ← 𝕗⊏"zero"‿"one"‿"two"‿"three"
+    err ← ∾" " Il "Expected" <⊸∾ ("or" Il num) ∾⟜< "parameters"
+    𝔾⊣ err ({𝕎∨𝕏}´{𝕏⊸=}¨𝕗)_asrtGotR ≠
+  }
+  Slice ← 2‿3 _exp_ {
     s←¬=l←⊑𝕩
     l "First parameter must be a tuple or symbol"⊸symbols.From⍟s↩
     i←l≠⊸(0⌈⊣⌊+⍟(0⊸>)¨)numbers.GetInt¨1↓𝕩 ⋄ symbols.New⍟s (⊑i)↓(1↓i)↑´˜l
   }
-  Undefined ← {
-    "Expected one or two parameters" (1⊸≤∧≤⟜2)_asrtGotR ≠𝕩
+  Undefined ← 1‿2 _exp_ {
     "First parameter must be a type" ("type"≡Kind)_asrtGotS ⊑𝕩
     constants.Undefined{(1<≠)◶⟨𝔽⊑,𝔽˜⟜numbers.GetNat´⟩} 𝕩
   }
+  # Load/store
+  AccessPtr ← {
+    t ← types.Deref TypeOf 𝕩
+    "Can't access void pointer" (¬types.IsVoid t)_asrtGotS 𝕩
+    t
+  }
+  GetIndex ← {
+    "number"≡Kind𝕩 ? numbers.GetInt 𝕩 ;
+    IsTyped𝕩 ? types.IsInt 𝕩 ? 𝕩 ;
+    "Index must be numeric" 0 _asrtGotS 𝕩
+  }
+  Load ← { 𝕊 ptr‿i  : functions.Emit ⟨  AccessPtr ptr, symbols.New "^load",  ptr, GetIndex i⟩ } _e2
+  Store← { 𝕊 ptr‿i‿v: functions.Emit ⟨t←AccessPtr ptr, symbols.New "^store", ptr, GetIndex i, t types.Cast v⟩ } _e3
+
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
     ⍉> ⟨
       ⟨"__set",functions.Mut _p2⟩
       ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"}⊣•Out∘Fmt⟩
       ⟨"is",Match _p2⟩, ⟨"hastype",HasType _p2⟩
-      ⟨"undefined",Undefined⟩
+      ⟨"undefined",Undefined⟩, ⟨"load",Load⟩, ⟨"store",Store⟩
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
       ⟨"typekind",symbols.New types.TypeKind _p1⟩
-      ⟨"load",Load _e2⟩, ⟨"store",¯1⊸(⊑Store↓)_e3⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",numbers.GetInt⊸⊑⚇0‿∞ _p2⟩, ⟨"tuplen",≠_p1⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.GetNat _p1⟩
       ⟨"symchars",(symbols.New∘⋈¨"Expected symbol"⊸symbols.From)_p1⟩
