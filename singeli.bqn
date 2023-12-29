@@ -1207,7 +1207,7 @@ nodes ← {
         ⟨{𝕎∧𝕏}´{AllEq𝕩⊸⊏}¨(1<≠¨)⊸/⊔𝕩, 𝕨⊸/⟩
       } iPar
     ⟩
-    procParamSub ⇐ MakeProc ¯1↓procs
+    procParamSub ⇐ MakeProc ⟨"expected tuple",IsTup⟩ <⊸∾ ¯1↓procs
     GetTry ⇐ {𝕊 e:
       Try ⇐ {
         0==𝕩 ? @ ; # Error from static checking
