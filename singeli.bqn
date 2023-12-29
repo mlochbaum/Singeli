@@ -898,6 +898,7 @@ builtins ← {
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
       ⟨"typekind",symbols.New types.TypeKind _p1⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",numbers.GetInt⊸⊑⚇0‿∞ _p2⟩, ⟨"tuplen",≠_p1⟩
+                 ⟨"select",numbers.GetInt⊸⊑⚇0‿∞˜_p2⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.GetNat _p1⟩
       ⟨"symchars",(symbols.New∘⋈¨"Expected symbol"⊸symbols.From)_p1⟩
       ⟨"fmtnat",symbols.New∘•Repr numbers.GetNat _p1⟩

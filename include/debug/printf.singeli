@@ -6,7 +6,7 @@ local {
   include 'skin/cext'
   include 'util/kind'
   include 'util/tup'
-  oper ! tupsel infix right 50
+  oper ! select infix left 50
 }
 
 require{'stdio.h', 'inttypes.h'}
@@ -30,7 +30,7 @@ def printf{...vs0} = {
     } else {
       def f = each{runfmt{hex, .}, vs}
       def d = each{lit1, tup{open, ', ', close}}
-      merge{...each{merge, (0 != inds{f}) ! d, f}, 2 ! d}
+      merge{...each{merge, d ! (0 != inds{f}), f}, d ! 2}
     }
   }
   
@@ -38,7 +38,7 @@ def printf{...vs0} = {
     if (ksym{x}) {
       lit1{x}
     } else if (ktup{x}) {
-      if (tuplen{x}==2 and (0!x)==='x') runfmt{1, 1!x}
+      if (tuplen{x}==2 and (x!0)==='x') runfmt{1, x!1}
       else listfmt{hex, '{', '}', x}
     } else if (kreg{x} or kcon{x}) {
       def T = type{x}
@@ -83,5 +83,5 @@ def printf{...vs0} = {
   def fs = flip{join{each{runfmt{0,.}, vs}}}
   def es = each{join, fs}
   
-  emit{void, 'printf', merge{'"', 0!es, '"'}, ... 1!es}
+  emit{void, 'printf', merge{'"', es!0, '"'}, ... es!1}
 }

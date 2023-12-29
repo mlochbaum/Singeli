@@ -11,7 +11,7 @@ local {
     if (isfloat{T}) {
       if (width{T}==32) 'ps' else 'pd'
     } else {
-      def sgn = if (tuplen{s}==1) tupsel{0,s} else issigned{T}
+      def sgn = if (tuplen{s}==1) select{s,0} else issigned{T}
       merge{'ep', if (sgn) 'i' else 'u', fmtnat{width{T}}}
     }
   }
@@ -77,7 +77,7 @@ local {
   def can_make_sub{V,x & 'tuple'==kind{x}} = {
     def all{t} = {
       def l = tuplen{t}
-      if (l==1) tupsel{0,t}
+      if (l==1) select{t,0}
       else { def h=l>>1; all{slice{t,0,-h} & slice{t,h}} }
     }
     if (vcount{V}==tuplen{x}) all{each{can_elt{V,.}, x}} else 0
@@ -100,7 +100,7 @@ local {
     emit{V, set_intrin{'setr',V}, ...x}
   } else {
     def l=tuplen{x}
-    emit{V, set_intrin{'set',V}, ...tupsel{l-1-range{l}, x}}
+    emit{V, set_intrin{'set',V}, ...select{x, l-1-range{l}}}
   }
 }
 def vec_make{V, ...x & can_make{V,x}} = mv_sub{mvi, V, x}

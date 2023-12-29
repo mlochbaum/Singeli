@@ -28,7 +28,7 @@ local {
   def can_make_sub{V,x & 'tuple'==kind{x}} = {
     def all{t} = {
       def l = tuplen{t}
-      if (l==1) tupsel{0,t}
+      if (l==1) select{t,0}
       else { def h=l>>1; all{slice{t,0,-h} & slice{t,h}} }
     }
     if (vcount{V}==tuplen{x}) all{each{can_elt{V,.}, x}} else 0

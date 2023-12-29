@@ -1,5 +1,5 @@
 def divmod{a,b} = tup{emit{u32,'div',a,b},emit{u32,'mod',a,b}}
 fn divplusmod(a:u32, b:u32) : u32 = {
   def dm = divmod{a,b}
-  emit{u32, 'add', tupsel{0,dm}, tupsel{1,dm}}
+  emit{u32, 'add', select{dm,0}, select{dm,1}}
 }

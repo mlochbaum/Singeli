@@ -8,8 +8,8 @@ def fortup{vars,begin,end,block} = {
   f{begin,end}
 }
 
-def load{p,i} = tupsel{i,p}
-def store{p,i,v} = { tupsel{i,p} = v }
+def load{p,i} = select{p,i}
+def store{p,i,v} = { select{p,i} = v }
 fn test(a:tup{u64,u64,u64}) = {
   @fortup (r in a, k in tup{8,1,3} over _ from 1 to 3) r = k
   emit{u1, 'res', ...a}

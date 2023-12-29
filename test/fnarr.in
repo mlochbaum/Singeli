@@ -1,4 +1,4 @@
-fn fun{x}(a:u32, b:u32) = tupsel{x,tup{a,b}}
+fn fun{x}(a:u32, b:u32) = select{tup{a,b},x}
 fns:__pnt{type{fun{0}}} = tup{fun{0},fun{1}}
 
 export{'fn_arr', fns}

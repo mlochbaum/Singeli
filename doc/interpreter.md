@@ -25,11 +25,11 @@ Running this prints out `'fib{12} = ', 144`. It's very literal I guess! The `fib
 Loops are imperative programming, why would you do that? We'll make one with recursion. We need to use lists but they're called tuples!
 
     def things = tup{12, 'Fibonacci', 'Hello'}
-    show{tupsel{1, things}}          # 'Fibonacci'
+    show{select{things, 1}}          # 'Fibonacci'
     def {number, name, hi} = things
     show{hi, 'World!'}               # 'Hello', 'World!'
 
-The comments with `#` say what this prints. We make a tuple with `tup{}`, and we can select one part with `tupsel{}`. See, curly braces for everything! We also have `def {…}` to break up a tuple, but it doesn't use `tup` because it's special syntax.
+The comments with `#` say what this prints. We make a tuple with `tup{}`, and we can select one part with `select{}`. See, curly braces for everything! We also have `def {…}` to break up a tuple, but it doesn't use `tup` because it's special syntax.
 
 Okay, to compute fibonacci numbers faster we want to keep track of two numbers at a time. For the second one we'll keep the next fibonacci number because it makes handling 0 easier. At the end we throw it out!
 
@@ -43,7 +43,7 @@ Okay, to compute fibonacci numbers faster we want to keep track of two numbers a
           tup{b, a+b}
         }
       }
-      tupsel{0, fib2{n}}
+      select{fib2{n}, 0}
     }
 
     show{fib{ 30}}  # 832040
@@ -60,7 +60,7 @@ There's another way to define the two cases for `fib2{}` that looks more functio
         tup{b, a+b}
       }
       def fib2{n==0} = tup{0, 1}
-      tupsel{0, fib2{n}}
+      select{fib2{n}, 0}
     }
 
 This recursion doesn't do that much though. It just starts with `tup{0, 1}` and does a transformation on it `n` times! Is there a simpler way to write it? Singeli has a built-in library [util/tup](../include/README.md#utiltup) with some tuple functions that help with this. It's inspired by K, how cool is that?
@@ -78,7 +78,7 @@ So `iota{n}` lists the natural numbers up to `n`, and `fold{}` does a left fold 
     def repeat{gen, k, param} = fold{{a,b}=>gen{a}, param, iota{k}}
     def fib{n} = {
       def next{{a, b}} = tup{b, a+b}
-      tupsel{0, repeat{next, n, iota{2}}}
+      select{repeat{next, n, iota{2}}, 0}
     }
 
 Oh, I haven't shown an anonymous function before! `{a,b}=>gen{a}` is one of those, and it just wraps `gen` and ignores the `b` argument. One last thing, there's a tricky way to write `next{}` with using tuples. If we reverse `a,b` we get `b,a`, and the only difference from `b, a+b` is the added `b`. The `scan` generator can do this. `scan{+, tup{a,b,c}}` is `tup{a,a+b,a+b+c}` but we're going to use a shorter version!
@@ -86,7 +86,7 @@ Oh, I haven't shown an anonymous function before! `{a,b}=>gen{a}` is one of thos
     def repeat{gen, k, param} = fold{{a,b}=>gen{a}, param, iota{k}}
     def fib{n} = {
       def next{t} = scan{+, reverse{t}}
-      tupsel{0, repeat{next, n, iota{2}}}
+      select{repeat{next, n, iota{2}}, 0}
     }
 
 Lots of curly braces!
@@ -103,7 +103,7 @@ The Singeli interpreter's a little slow, right? But a cool extra feature it has 
       f:copy{2,u64} = iota{2}
       def next{t} = scan{+, reverse{t}}
       while (n>0) { n = n - 1; f = next{f} }
-      tupsel{0, f}
+      select{f, 0}
     }
 
     include 'debug/printf'
@@ -124,10 +124,10 @@ I put the C file in `/tmp` so I don't have to clean it up later! I could do that
 
     fn fib(n:u64) = {
       f:copy{2,u32} = iota{2}
-      def f1 = tupsel{1, f}
+      def f1 = select{f, 1}
       def next{t} = scan{+, reverse{t}}
       while (n>0) { n = n - 1; f = next{f}; f1 = f1%1e9 }
-      tupsel{0, f}
+      select{f, 0}
     }
 
     include 'debug/printf'
@@ -137,9 +137,9 @@ I'm getting ahead of myself, there's a lot here I haven't explained! The trick f
 
       while (show{n}>0) { n = n - 1; f = next{f}; show{f1} = f1%1e9 }
 
-Since `n` and `f1` don't have fixed values, `show` prints a symbolic description instead. For `f1` it shows `f:u32`, but that makes sense. We set `def f1 = tupsel{1, f}`, and why would `show{tupsel{1, f}}` use the name `f1`? Another thing, `show` works on the left of `=`! It's because `=` on its own without `def` is a regular operator. The only built-in one! Since the left-hand side is a symbol, it *makes* code that changes the value of this symbol but it doesn't actually change the symbol.
+Since `n` and `f1` don't have fixed values, `show` prints a symbolic description instead. For `f1` it shows `f:u32`, but that makes sense. We set `def f1 = select{f, 1}`, and why would `show{select{f, 1}}` use the name `f1`? Another thing, `show` works on the left of `=`! It's because `=` on its own without `def` is a regular operator. The only built-in one! Since the left-hand side is a symbol, it *makes* code that changes the value of this symbol but it doesn't actually change the symbol.
 
-So symbols work this way because when you're writing for the CPU you want types that match what it will handle, like `u64` or `u32` here. And you want to be able to modify them in place like a register can, well not always, but here, kinda. A symbolic value like `n:u64` is actually called a *register* because of that! And it's really CPU-oriented, so it's always something that fits in one CPU register. When we define `f` to contain two values it defines two registers, each holding one value. That's why we can pick out one with `tupsel{}`! Also they're both called `f` but Singeli changes the way it names registers sometimes so maybe it can get more specific!
+So symbols work this way because when you're writing for the CPU you want types that match what it will handle, like `u64` or `u32` here. And you want to be able to modify them in place like a register can, well not always, but here, kinda. A symbolic value like `n:u64` is actually called a *register* because of that! And it's really CPU-oriented, so it's always something that fits in one CPU register. When we define `f` to contain two values it defines two registers, each holding one value. That's why we can pick out one with `select{}`! Also they're both called `f` but Singeli changes the way it names registers sometimes so maybe it can get more specific!
 
       f:copy{2,u32} = iota{2}
 
@@ -178,10 +178,10 @@ But *this* pattern is a case of a `@for` loop, a bit of syntax sugar! When we wr
 
     fn fib(n:u64) = {
       f:copy{2,u32} = iota{2}
-      def f1 = tupsel{1, f}
+      def f1 = select{f, 1}
       def next{t} = scan{+, reverse{t}}
       @for (n) { f = next{f}; f1 = f1%1e9 }
-      tupsel{0, f}
+      select{f, 0}
     }
 
     include 'debug/printf'
@@ -252,7 +252,7 @@ In both cases, `k` is half of the number we want to get, rounded down. We can wr
         (if (n%2) next{g} else g) % 1e9
       }
       def fib2{(0)} = iota{2}
-      tupsel{0, fib2{n}}
+      select{fib2{n}, 0}
     }
 
     show{fib{1e9}}  # 560546875
@@ -489,8 +489,8 @@ Now what I need to do is change the loop so it makes four vectors at a time, ins
       @for (i to gv) {
         each{store{., i, .}, d, transpose4x4{f}}
         @for_const (j to k) {
-          def fr = tupsel{j, f}
-          fr = fold{+, tupsel{j+tup{-2,-1}, f}}
+          def fr = select{f, j}
+          fr = fold{+, select{f, j+tup{-2,-1}}}
           fr -= m & (fr >= m)
         }
       }
@@ -505,7 +505,7 @@ Now what I need to do is change the loop so it makes four vectors at a time, ins
       free{fs}
     }
 
-The idea is that I only want to change each register once, so instead of shifting the register list I use an index `j` and update register `j` only. So if I started by rotating register `j` to the beginning it's kind of like I want to drop that first value, and use the last two registers to get the new one that goes at the end. The inputs to add together are the two registers that come before `j`, cyclically! `tupsel{j+tup{-2,-1}, f}` gets these because, first it can select with multiple indices at once, and second, negative indices wrap around to the end. If `j` is `1` you get `tupsel{tup{-1,0}, f}`, which gets the last and first ones, for example!
+The idea is that I only want to change each register once, so instead of shifting the register list I use an index `j` and update register `j` only. So if I started by rotating register `j` to the beginning it's kind of like I want to drop that first value, and use the last two registers to get the new one that goes at the end. The inputs to add together are the two registers that come before `j`, cyclically! `select{f, j+tup{-2,-1}}` gets these because, first it can select with multiple indices at once, and second, negative indices wrap around to the end. If `j` is `1` you get `select{f, tup{-1,0}}`, which gets the last and first ones, for example!
 
 Another thing that changes is the modular reduction that used to look like this. In vector registers, comparison automatically gives you a bitmask of all 0 or 1, so it's just `fr -= m & (fr >= m)`!
 

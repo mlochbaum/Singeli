@@ -178,7 +178,7 @@ I probably still have the file I used for this one, one sec… this looks like i
     include 'debug/printf'
     main() : void = {
       def fndat = tup{minmax_filter{__min, i32}}
-      fns:*type{tupsel{0,fndat}} = fndat
+      fns:*type{select{fndat,0}} = fndat
       def len = 1e4
       def iter = 1e4
       src := alloc{i32, len}; @for (src over len) src = rand{}
@@ -427,7 +427,7 @@ We have some vector scan code already, for prefix sums, let me find it… Rollin
 
     # Lane crossing permutes shuf_32 and shuf_64 are much slower
     # e.g. 3-cycle versus 1-cycle latency
-    def base{b,l} = if (0==tuplen{l}) 0 else tupsel{0,l}+b*base{b,slice{l,1}}
+    def base{b,l} = if (0==tuplen{l}) 0 else select{l,0}+b*base{b,slice{l,1}}
     def shuf_sub{I, intrin, make}{v:V, t} = V~~emit{I, intrin, I~~v, make{t}}
     def shuf_vec{I, intrin} = shuf_sub{I, intrin, vec_make{I,.}}
     def shuf_lane_8{v, t} = shuf_vec{[32]i8, '_mm256_shuffle_epi8'}{v, merge{t,t}}
@@ -632,7 +632,7 @@ Hold on, we don't have instructions for any of this. The shuffle instructions ta
 Okay sure!
 
     def shift_ind{k,l} = shiftright{range{k},range{l}}
-    def shift{v,k} = tupsel{shift_ind{k,tuplen{v}}, v}
+    def shift{v,k} = select{v, shift_ind{k,tuplen{v}}}
 
 Oh, uh, yeah, that works. So I take the plus scan thing and replace the shift with a shuffle? May as well do a dedicated 32-bit one too, probably not any faster but it won't waste a register. Then for the last step… maybe not the most elegant way but using the un-permuted vector instead of zeros works.
 

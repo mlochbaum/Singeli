@@ -1,4 +1,4 @@
-fn gen{T}(a:T) : u8 = tupsel{0,a}
+fn gen{T}(a:T) : u8 = select{a,0}
 
 fn fun(none:tup{}) = {
   x:tup{u8,i32} = tup{4, 1}
