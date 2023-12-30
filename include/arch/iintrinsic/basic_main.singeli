@@ -22,7 +22,7 @@ local {
     merge{'_mm', fw, '_', name, '_', fmt_p{eltype{V}, ...s}}
   }
   def intrin_b{name, V} = intrin{name, V, width{V}}
-  def set_intrin{name, V} = merge{intrin{name,V,1}, if (eltype{V}==i64) 'x' else ''}
+  def set_intrin{name, V} = merge{intrin{name,V,1}, if (eltype{V}==i64 and not av5{V}) 'x' else ''}
   def vec_ptr{V,p:*V} = { def T = eltype{V}; if (isfloat{T}) *T~~p else p }
 
   def sse{V} = 128==width{V}
