@@ -1465,12 +1465,19 @@ nodes ← {
     Visit←{⟨𝕏cond,𝕏stmt⟩}
     ⟨node,Dump,Disp,NonLocal,Scope⟩⇐Defaults "while"‿visit
     Oper ⇐ { cond.Oper operator.CondScope 𝕩 ⋄ stmt.Oper 𝕩 ⋄ operator.nil }
-    Eval ⇐ {
-      functions.Goto¨ lc ← functions.Label¨↕testFirst
-      functions.SetLabel lt ← functions.Label@
-      stmt.Eval 𝕩
-      functions.SetLabel¨ lc
-      functions.Goto∘lt⍟(1≡⊢) cond CondEval ⟨1‿(LazyLabel lt), 𝕩⟩
+    Eval ⇐ { 𝕊 e:
+      functions.SetLabel ll ← functions.Label@
+      { testFirst ?
+        lt ← LazyLabel@
+        { cond CondEval ⟨0‿lt, e⟩ ?
+          stmt.Eval e
+          functions.Goto ll
+        ; @ }
+        functions.SetLabel⍟(@⊸≢) lt.label
+      ;
+        stmt.Eval e
+        functions.Goto∘ll⍟(1≡⊢) cond CondEval ⟨1‿(LazyLabel ll), e⟩
+      }
       {Shows⇐!∘"Can't use while statement result as value"⋄kind⇐"error"}
     }
   }

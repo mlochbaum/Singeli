@@ -1,16 +1,16 @@
 beginFn f0_loop void 4 v0_dst *f64 v1_x *f64 v2_w *f64 v3_len u64
 new v4 emit *f64 'op +' v2_w !1:i64
 new v5_i val u64 !0:u64
+lbl l0
+new v6 emit u1 'op <' v5_i v3_len
+gotoF v6 l1
+new v7_d emit f64 '^load' v0_dst v5_i
+new v8_x emit f64 '^load' v1_x v5_i
+new v9_e emit f64 '^load' v4 v5_i
+mut v7_d emit f64 'op' v9_e v8_x
+new v10 emit f64 '^store' v0_dst v5_i v7_d
+mut v5_i emit u64 'op +' v5_i !1:u64
 goto l0
 lbl l1
-new v6_d emit f64 '^load' v0_dst v5_i
-new v7_x emit f64 '^load' v1_x v5_i
-new v8_e emit f64 '^load' v4 v5_i
-mut v6_d emit f64 'op' v8_e v7_x
-new v9 emit f64 '^store' v0_dst v5_i v6_d
-mut v5_i emit u64 'op +' v5_i !1:u64
-lbl l0
-new v10 emit u1 'op <' v5_i v3_len
-gotoT v10 l1
 endFn
 

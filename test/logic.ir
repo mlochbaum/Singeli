@@ -9,15 +9,14 @@ gotoT v3 l1
 new v4 emit i32 'op *' !2:i32 v0_x
 ret v4
 lbl l1
-goto l2
-lbl l3
-mut v0_x emit i32 'op +' v0_x !1:i32
 lbl l2
 new v5 emit u1 'op <' v0_x !10:i32
-gotoF v5 l4
+gotoF v5 l3
 new v6 emit u1 'op !=' v0_x !5:i32
-gotoT v6 l3
-lbl l4
+gotoF v6 l3
+mut v0_x emit i32 'op +' v0_x !1:i32
+goto l2
+lbl l3
 ret v0_x
 endFn
 

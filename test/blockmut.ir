@@ -1,12 +1,12 @@
 beginFn f0_fun void 0
 new v0_b val i32 !0:i32
 new v1_i val u64 !0:u64
-goto l0
-lbl l1
-mut v0_b emit i32 'op +' v0_b !2:i32
-mut v1_i emit u64 'op +' v1_i !1:u64
 lbl l0
 new v2 emit u1 'op <' v1_i !4:u64
-gotoT v2 l1
+gotoF v2 l1
+mut v0_b emit i32 'op +' v0_b !2:i32
+mut v1_i emit u64 'op +' v1_i !1:u64
+goto l0
+lbl l1
 endFn
 

@@ -133,7 +133,7 @@ I put the C file in `/tmp` so I don't have to clean it up later! I could do that
     include 'debug/printf'
     main() = lprintf{fib(1e9)}  # 560546875
 
-I'm getting ahead of myself, there's a lot here I haven't explained! The trick for reading `fn` is that it's really a straight-line block of code, but it *defines* a loopy program. So `while` only runs the condition and block once, but it does it symbolically so then it can make C code that does it like a billion times. Exactly a billion times! And one extra on the condition. You can put `show` anywhere to see how the interpreter runs things. It runs the block before the condition, quirky!
+I'm getting ahead of myself, there's a lot here I haven't explained! The trick for reading `fn` is that it's really a straight-line block of code, but it *defines* a loopy program. So `while` only runs the condition and block once, but it does it symbolically so then it can make C code that does it like a billion times. Exactly a billion times! And one extra on the condition. You can put `show` anywhere to see how the interpreter runs things.
 
       while (show{n}>0) { n = n - 1; f = next{f}; show{f1} = f1%1e9 }
 
