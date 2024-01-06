@@ -4,5 +4,6 @@ include 'skin/c'
 fn fun(x:i32) : i32 = {
   if ((x>=4 or x==2) and not x>6) return{2*x}
   while (x<10 and x!=5) ++x
+  do --x while ((1 and x>2) or (not (0 or 1)))
   x
 }

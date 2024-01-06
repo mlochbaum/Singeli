@@ -1401,23 +1401,24 @@ nodes ← {
     Visit←{⟨name,𝕏¨terms⟩}
     ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "cond"‿visit
   }
-  CondEval ← {
+  CondEvalS ← {  # Return 0 or 1 for constant result and @ for unknown
     "cond"≡𝕨.node ? 𝕨.Eval 𝕩 ;
     n𝕊⟨jv‿label,e⟩:
     c ← n.Eval e
-    { IsTyped c ? jv label.GotoC c ⋄ ¬jv
+    { IsTyped c ? jv label.GotoC c ⋄ @
     ; "If condition must evaluate to boolean" numbers.GetBool c }
   }
+  CondEval ← ⊑∘⊑∘⊢ ≢ CondEvalS  # Return 1 if it might jump
   CAccum ← {𝕊id: {
     ⟨jv‿label,e⟩←𝕩
     l ← LazyLabel@
-    i ← (⊑𝕗) CondEval ⟨¬id,l⟩⌾⊑⍟(id=jv) 𝕩
-    c ← (1⊑𝕗) CondEval⟜𝕩⍟((¬id)≢⊢) i
+    i ← (⊑𝕗) CondEvalS ⟨¬id,l⟩⌾⊑⍟(id=jv) 𝕩
+    c ← (1⊑𝕗) CondEvalS⟜𝕩⍟((¬id)≢⊢) i
     functions.SetLabel⍟(@⊸≢) l.label
-    c
+    i⍟(id⊸≡) c
   }}
   condNodes ← ⟨
-    { name⇐"not" ⋄ infix⇐0 ⋄ _ev ⇐ { ¬ (⊑𝕗) CondEval ¬⌾(⊑⊑)𝕩 } }
+    { name⇐"not" ⋄ infix⇐0 ⋄ _ev ⇐ { ¬⍟(@⊸≢) (⊑𝕗) CondEvalS ¬⌾(⊑⊑)𝕩 } }
     { name⇐"and" ⋄ infix⇐1 ⋄ ev ⇐ CAccum 1 }
     { name⇐"or"  ⋄ infix⇐1 ⋄ ev ⇐ CAccum 0 }
   ⟩
@@ -1476,7 +1477,7 @@ nodes ← {
         functions.SetLabel⍟(@⊸≢) lt.label
       ;
         stmt.Eval e
-        functions.Goto∘ll⍟(1≡⊢) cond CondEval ⟨1‿(LazyLabel ll), e⟩
+        functions.Goto∘ll⍟¬ cond CondEval ⟨1‿(LazyLabel ll), e⟩
       }
       {Shows⇐!∘"Can't use while statement result as value"⋄kind⇐"error"}
     }
