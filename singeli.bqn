@@ -54,7 +54,8 @@ _asrtGotR‿_asrtGotS ← AsrtGotGen¨ •Repr‿{Show𝕩}
 _e1 ← {𝔽⊣"Expected one parameter"  1⊸=_asrtGotR ≠} ⋄ _p1←{𝔽⊑_e1}
 _e2 ← {𝔽⊣"Expected two parameters" 2⊸=_asrtGotR ≠} ⋄ _p2←{𝔽´_e2}
 _e3 ← {𝔽⊣"Expected three parameters" 3⊸=_asrtGotR ≠}
-_v1 ← {𝔽⊣"Expected at least one parameter" 1⊸≤_asrtGotR ≠}
+_v1 ← {𝔽⊣"Expected at least one parameter"  1⊸≤_asrtGotR ≠}
+_v2 ← {𝔽⊣"Expected at least two parameters" 2⊸≤_asrtGotR ≠}
 
 numbers ← {kname⇐"number"
   f ← •Import "float2.bqn"
@@ -823,7 +824,7 @@ functions ← {kname⇐"function"
     symbols.New "l_" ∾ UseSymLabel⍟𝕨 l
   }⍟("label"≢Kind∘⊢)
   builtins ⇐ ⍉> ⟨
-    ⟨"call",Call _v1⟩, ⟨"emit",Emit _v1⟩, ⟨"return",Return⟩
+    ⟨"call",Call _v1⟩, ⟨"emit",Emit _v2⟩, ⟨"return",Return⟩
     ⟨"makelabel",Label⟩, ⟨"goto",(Goto 0⊸ReadLabel) _p1⟩
     ⟨"setlabel",(SetLabel 1⊸ReadLabel) _p1 ⋈∘Label⍟(0=≠)⟩
   ⟩ ∾ { New‿Union‿Has‿List ← architecture ⋄ S←SetArch ⋄ G←GetArch ⋄ ⟨
@@ -902,7 +903,7 @@ builtins ← {
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.GetNat _p1⟩
       ⟨"symchars",(symbols.New∘⋈¨"Expected symbol"⊸symbols.From)_p1⟩
       ⟨"fmtnat",symbols.New∘•Repr numbers.GetNat _p1⟩
-      ⟨"bind",⊑{𝕎_ne𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨_ne<˘⍉>𝕩}1⊸↓_v1⟩
+      ⟨"bind",⊑{𝕎_ne𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨_ne<˘⍉>𝕩}1⊸↓_v2⟩
       ⟨"apply",{"Second parameter must be a tuple"IsTup _asrtGotS 𝕩⋄𝕎_ne𝕩}_p2⟩
       ⟨"export",{𝕨 symbols.From⊸program.Export⚇0 𝕩}_p2⟩
       ⟨"require",{program.Require∘symbols.From⚇0 𝕩}⟩
