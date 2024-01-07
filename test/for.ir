@@ -8,7 +8,7 @@ new v7_d emit f64 '^load' v0_dst v5_i
 new v8_x emit f64 '^load' v1_x v5_i
 new v9_e emit f64 '^load' v4 v5_i
 mut v7_d emit f64 'op' v9_e v8_x
-new v10 emit f64 '^store' v0_dst v5_i v7_d
+new v10 emit void '^store' v0_dst v5_i v7_d
 mut v5_i emit u64 'op +' v5_i !1:u64
 goto l0
 lbl l1

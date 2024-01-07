@@ -2,6 +2,6 @@ beginFn f0_fun void 2 v0_x *i32 v1_y *u8
 new v2_a emit i32 '^load' v0_x 0
 new v3_a emit u8 '^load' v1_y 0
 mut v3_a !2:u8
-new v4 emit u8 '^store' v1_y 0 v3_a
+new v4 emit void '^store' v1_y 0 v3_a
 endFn
 

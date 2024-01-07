@@ -532,7 +532,8 @@ types ← {kname⇐"type"
   }
   IsVoid ⇐ {tVOID≡𝕩.typeKind}
 
-  primTypes ⇐ (tVOID New ⟨⟩) ∾ tPRIM New¨ qw ← ∾⋈¨¨˝⍉ ∘‿2⥊⟨
+  void ⇐ tVOID New ⟨⟩
+  primTypes ⇐ void ∾ tPRIM New¨ qw ← ∾⋈¨¨˝⍉ ∘‿2⥊⟨
     'u', 2⋆0∾3+↕4  # 1/8/16/32/64
     'i', 2⋆  3+↕4  #   8/16/32/64
     'f', 2⋆  5+↕2  #        32/64
@@ -886,8 +887,8 @@ builtins ← {
     IsTyped𝕩 ? types.IsInt 𝕩 ? 𝕩 ;
     "Index must be numeric" 0 _asrtGotS 𝕩
   }
-  Load ← { 𝕊 ptr‿i  : functions.Emit ⟨  AccessPtr ptr, symbols.New "^load",  ptr, GetIndex i⟩ } _e2
-  Store← { 𝕊 ptr‿i‿v: functions.Emit ⟨t←AccessPtr ptr, symbols.New "^store", ptr, GetIndex i, t types.Cast v⟩ } _e3
+  Load ← { 𝕊 ptr‿i  : functions.Emit ⟨AccessPtr ptr, symbols.New "^load",  ptr, GetIndex i⟩ } _e2
+  Store← { 𝕊 ptr‿i‿v: t←AccessPtr ptr ⋄ functions.Emit ⟨types.void, symbols.New "^store", ptr, GetIndex i, vc←t types.Cast v⟩ ⋄ vc } _e3
 
   names‿values ⇐ <˘∾≍⟨
     Show¨⊸≍ types.primTypes
