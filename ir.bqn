@@ -11,26 +11,35 @@ _onFns ← {
 
 # Attempt to replace goto{,T,F} with:
 #
-# - beginBlock/endBlock: a breakable code section
-# - beginLoop /endLoop: jumps to beginLoop when endLoop is reached
-# - break{,T,F} d: jumps to the end of loop or block at depth d
+# - beginBlock/endBlock: breaks go to end       (do {...} while (0))
+# - beginLoop /endLoop:  breaks go to beginning (while (1) {...;break;})
+# - break{,T,F}: conditionally jump to beginning/end of a section
 #
-# Loops and blocks are properly nested, and depth 0 indicates the
-# immediately enclosing section, depth 1 the one enclosing it, and so on.
-# Breaking "from" a loop effectively goes to the beginning, making it
-# more like a continue statement.
+# Loops and blocks are properly nested, and have named labels.
+# Since breaking "from" a loop goes to the beginning, it's more like a
+# continue statement. Note that no jump happens when endLoop is reached.
 Restructure ⇐ {
-  lm‿ai ← (⊣⋈/∘∨)˝ "lbl "‿"goto" ≡⌜ 4↑¨𝕩
-  lb ← ai ⊏ lm                # Which statements are lbl (not goto)
-  id ← (∧`⌾⌽' '⊸≠)⊸/¨ ai ⊏ 𝕩  # Label ID
-  l ← ∊⌾⌽ i ← ⊐ id            # Last use of label
-  l ≡ lb?                     # Only handle forward goto
-  f ← (l/i) ⊏ (/⟜i⍋⊸⊏/) ∊i    # First use of label, ordered by l
-  e ← f ⊏ +`l                 # Next label after it
-  b←bm←1↑e                    # Block start; bm≡⌊`b
-  {b∾↩a←𝕩⊑b∾≠b⋄bm∾↩a⌊⊢´bm⋄@}¨ 1↓e
-  xm ← (⟨"break"∾4⊸↓,"endBlock"∾3⊸↓⟩{𝕎¨𝕩}¨⊢)⌾(l⊔ai⊸⊏)𝕩
-  ((b⊏f⊏ai)∾↕≠𝕩) ⍋⊸⊏ ("beginBlock "⊸∾¨l/id)∾xm
+  [lm,am] ← ∨` "lbl "‿"goto" ≡⌜ 4↑¨𝕩
+  ai ← /am
+  lb ← ai ⊏ lm                    # Which statements are lbl (not goto)
+  i ← ⊐id ← (∧`⌾⌽' '⊸≠)⊸/¨ ai ⊏ 𝕩 # Label ID
+  f ← ∊i ⋄ l ← ∊⌾⌽i               # First and last use of label
+  IM ← {(𝕩⊐○(/⟜i)𝕨) ⊏ /𝕩}         # /𝕩 ordered by matching 𝕨 (requires 𝕨≡○(∧/⟜i)𝕩)
+  ff ← (fl ← f<lb) IM lb<f        # First use of label, ordered by fl
+  ll ← (bl ← lb<l) IM l<lb        # Loop start, ordered by end
+  ff ⌊↩ {⌊´𝕨↓𝕩↑ll}¨˝[ff,/fl]⊏+`bl # Surround loops where end is caught
+  b ← ↕0                          # Block start
+  ff {b∾↩𝕨⌊´𝕩↓b⋄@}¨ ff ⊏ +`fl     # Surround caught blocks, iteratively
+  mi‿li←2↑lb⊔ai ⋄ lis←⟨lb/id,li⟩
+  [nn,nm,ni] ← ⍉¯1⌽[
+    ⟨"endBlock " ⟩∾(lb/¬f)⊸/¨lis
+    ⟨"beginBlock ", ⌽fl/id, ⌽b⊏ai⟩
+    ⟨"beginLoop "⟩∾(lb/¬l)⊸/¨lis
+    ⟨"endLoop "  ⟩∾(lb<l)⊸/¨id‿ai # Will be rotated to place after 𝕩
+  ]
+  alm ← ¬lb⌾(am⊸/)am
+  (ni∾</alm) ⍋⊸⊏○(∾1⊸⌽) (nn{𝕨⊸∾¨𝕩}¨nm)∾<alm/("break"∾4⊸↓)¨⌾(mi⊸⊏)𝕩
+  # TODO check whether that resulted in properly nested blocks
 ;
   𝕩
 }_onFns
