@@ -9,15 +9,15 @@ _onFns ← {
   ((f¬⊸/o)∾/≠¨1↓r) ⍋⊸⊏ ∾r
 }
 
-# Attempt to replace goto{,T,F} with:
+# Attempt to replace goto{,T,F} with two kinds of structure:
 #
-# - beginBlock/endBlock: breaks go to end       (do {...} while (0))
-# - beginLoop /endLoop:  breaks go to beginning (while (1) {...;break;})
-# - break{,T,F}: conditionally jump to beginning/end of a section
+# - beginBlock/endBlock/break{,T,F}     (do {...} while (0))
+# - beginLoop/endLoop/continue{,T,F}    (while (1) {...;break;})
 #
 # Loops and blocks are properly nested, and have named labels.
-# Since breaking "from" a loop goes to the beginning, it's more like a
-# continue statement. Note that no jump happens when endLoop is reached.
+# Jumps only occur on break, which goes to the end of its block, and
+# continue, which goes to the beginning of its loop. The loop exits when
+# endLoop is reached.
 Restructure ⇐ {
   [lm,am] ← ∨` "lbl "‿"goto" ≡⌜ 4↑¨𝕩
   ai ← /am
@@ -38,7 +38,8 @@ Restructure ⇐ {
     ⟨"endLoop "  ⟩∾(lb<l)⊸/¨id‿ai # Will be rotated to place after 𝕩
   ]
   alm ← ¬lb⌾(am⊸/)am
-  (ni∾</alm) ⍋⊸⊏○(∾1⊸⌽) (nn{𝕨⊸∾¨𝕩}¨nm)∾<alm/("break"∾4⊸↓)¨⌾(mi⊸⊏)𝕩
+  br ← "break"‿"continue"⊏˜lb¬⊸/∨`¨⌾(i⊸⊔)lb
+  (ni∾</alm) ⍋⊸⊏○(∾1⊸⌽) (nn{𝕨⊸∾¨𝕩}¨nm)∾<alm/(br∾⟜(4⊸↓)¨⊢)⌾(mi⊸⊏)𝕩
   # TODO check whether that resulted in properly nested blocks
 ;
   𝕩
