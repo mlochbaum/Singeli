@@ -396,10 +396,15 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Extender ← c.extender _node_ (ExtPar‿"="‿Body _seq)
   Extend ← c.extend _node_ ("extend"‿Expr0‿ExtPar _seq)
 
-  Generator ← @_optGet_⟨"=", Result∘1, @⟩ _withParams
-  Define ← c.define _node_ {
-    Get "def" ⋄ e ← Try "extend"
-    ⟨Target, e◶Generator‿Extender⟩_seq 𝕩
+  GenRes ← ⊑⟨"=",Result∘1⟩_seq
+  Value ← @_opt_⟨"=",GenRes, @⟩
+  Generator ← @_opt_⟨"{",GenRes _withParams, Value⟩
+  # Decide how to parse definition value based on what's after def
+  Valuator ← @_optGet_⟨"extend",Extender˙, @_opt_⟨"{",Value˙,"_",Value˙,Generator˙⟩⟩
+  Define ← c.define _node_ {𝕤
+    Get "def"
+    v ← Valuator @
+    ⟨Target, V⟩_seq @
   }
   confName‿confVal ← (⊑¨⋈1⊸⊑¨)configs
   Config ← c.define _node_ {
