@@ -637,6 +637,7 @@ types ← {kname⇐"type"
     ≡○Width, {functions.Emit⟨𝕨, symbols.New "^bitcast", 𝕨, TypeOf 𝕩, 𝕩⟩}
     {!∾⟨"Can't reinterpret type ",𝕩," as different-width type ",𝕨⟩}
   ⟩_cc
+  IsBool ⇐ (tPRIM New 'u'‿1)⊸Equiv
 
   GetWidth ← "Type width must be a natural number"⊘⊣ numbers.GetNat ⊢
   IncWidth ← {
@@ -1407,7 +1408,8 @@ nodes ← {
     "cond"≡𝕨.node ? 𝕨.Eval 𝕩 ;
     n𝕊⟨jv‿label,e⟩:
     c ← n.Eval e
-    { IsTyped c ? jv label.GotoC c ⋄ @
+    { IsTyped c ? "Condition type must be u1" types.IsBool _asrtGotS TypeOf c
+      jv label.GotoC c ⋄ @
     ; "If condition must evaluate to boolean" numbers.GetBool c }
   }
   CondEval ← ⊑∘⊑∘⊢ ≢ CondEvalS  # Return 1 if it might jump
@@ -1434,7 +1436,7 @@ nodes ← {
     Oper ⇐ { cond.Oper operator.CondScope 𝕩 ⋄ {𝕏then⋄𝕏¨else}o.Oper 𝕩 ⋄ operator.nil }
     Eval ⇐ {
       lf ← IfLabel@
-      c ← cond CondEval ⟨0‿lf, e←𝕩⟩
+      c ← cond CondEval program._trace_ pos ⟨0‿lf, e←𝕩⟩
       { ¬c ?
         r ← {Shows⇐!∘"Can't use if-0 statement result as value"⋄kind⇐"error"}
         functions.SetLabel⍟(@⊸≢) lf.label
@@ -1456,7 +1458,7 @@ nodes ← {
       # Latest we can evaluate condition without scope circularity, so do it now
       lf ← { label⇐@ ⋄ GotoC⇐{𝕊:!program._trace_ pos"Dynamic top-level if statement unsupported"} }
       cond.Oper operator.CondScope 𝕩
-      c ← {𝕨 CondEval ⟨0‿lf, 𝕩⟩}ast._runIfCond cond
+      c ← {𝕨 CondEval program._trace_ pos ⟨0‿lf, 𝕩⟩}ast._runIfCond cond
       body ← c ¬⊸⊑ then‿else
       ⟨Scope,Eval⟩ ↩ d ← Defaults "topif"‿{⟨𝕏¨body⟩}
       d.Oper 𝕩
@@ -1464,7 +1466,7 @@ nodes ← {
     }
   }
   While ⇐ {
-    ⟨testFirst,cond,stmt⟩←𝕩
+    ⟨testFirst,cond,stmt⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨𝕏cond,𝕏stmt⟩}
     ⟨node,Dump,Disp,NonLocal,Scope⟩⇐Defaults "while"‿visit
     Oper ⇐ { cond.Oper operator.CondScope 𝕩 ⋄ stmt.Oper 𝕩 ⋄ operator.nil }
@@ -1472,7 +1474,7 @@ nodes ← {
       functions.SetLabel ll ← functions.Label@
       { testFirst ?
         lt ← LazyLabel@
-        { cond CondEval ⟨0‿lt, e⟩ ?
+        { cond CondEval program._trace_ pos ⟨0‿lt, e⟩ ?
           stmt.Eval e
           functions.Goto ll
         ; @ }

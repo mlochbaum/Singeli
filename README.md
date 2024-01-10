@@ -247,7 +247,7 @@ Singeli's built-in control flow statements are `if`-(`else`), and (`do`)-`while`
       c = c + 1
     } while (c < a)
 
-Note that `if` can also be used as a constant-time switch: if the argument is a number, it must be 0 or 1, and compiles only one block, or none if the condition is 0 and there's no `else`.
+The result of a condition has to have the boolean type `u1`, or be a compile-time number with value 0 or 1. The number option allows `if` to be used as a compile-time switch: it won't compile the "if" block if the condition is 0, or the "else" block if it's 1.
 
 In any `if` or `while` condition, the pseudo-operators `and`, `or`, and `not` can be used to make a compound condition. These are implemented by manipulating jumps, never with logic instructions. `and` and `or` are short-circuiting, meaning that they don't evaluate the second part of the condition if the result is determined by the first.
 

@@ -1,5 +1,5 @@
 fn fun(i:i64) : i64 = {
-  if (emit{i64, 'test', i}) { return{1} }
+  if (emit{u1, 'test', i}) { return{1} }
   else { return{2} }
   3
 }
