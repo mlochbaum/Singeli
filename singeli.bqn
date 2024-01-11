@@ -107,11 +107,17 @@ numbers ← {kname⇐"number"
   }⟜LC⎊{Err⟨•CurrentError@,𝕨⟩}
 
   InRange ← {1=⊑0⍋˜-˜´⟜(⌽𝕨)¨𝕩}
-  FmtLarge ← {
-    ⌊⊸≡𝕩 ? (a←f.Abs 𝕩) InRange 2⋆48‿64 ? 𝕩 InRange -⌾⊑2⋆63‿64 ?
-      ((𝕩≢a)/"-")∾"0x"∾da⊏˜⌽ 16‿16 f._repr a ;
-    FmtNum f.From 𝕩
-  }
+  FmtFloat ← ('¯'(⊢+=×'-'-⊣)•Repr){(∞>|)◶⟨"/0"∾˜·𝔽0(<->)⊢,𝔽⟩}
+  MakeFmt ← {𝕊 Abs‿InRange‿ToSmall‿ToLarge: {
+    ⌊⊸≡𝕩 ? (a←Abs 𝕩) InRange 2⋆48‿64 ? 𝕩 InRange -⌾⊑2⋆63‿64 ?
+      ((𝕩≢a)/"-")∾"0x"∾da⊏˜⌽ 16‿16 f._repr ToLarge a ;
+    FmtFloat ToSmall 𝕩
+  }}
+  FmtSmall‿FmtLarge ← MakeFmt¨ ⟨
+    ⟨|,     1=⊑∘⍋˜,  ⊢,   f.To⟩
+    ⟨f.Abs, InRange, f.From, ⊢⟩
+  ⟩
+  Fmt ⇐ FmtSmall
 
   Cast ⇐ {'f'‿l𝕊n:1; q‿l𝕊n: # 1 if valid; error otherwise
     n NN◶⋈‿Unwrap↩ ⋄ a←AsrtGotGen {•Repr+´}
@@ -505,11 +511,10 @@ operator ← {
 # - Classes symbols, types, registers, constants, functions, blocks
 _and_ ← { 𝔽◶⟨0,𝔾⟩ }
 IsTup ← 0=•Type
-FmtNum ← ('¯'(⊢+=×'-'-⊣)•Repr){(∞>|)◶⟨"/0"∾˜·𝔽0(<->)⊢,𝔽⟩}
 
 _tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!∘"Unhandled kind"⟩)˙)∾↑)𝕗)}
 Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
-Show  ← {⟨"tup{"∾"}"∾˜1↓·∾(","∾𝕊)¨, FmtNum, !, {(𝕏˜@).name}, {𝕩.Shows@}⟩_tsel 𝕩}
+Show  ← {⟨"tup{"∾"}"∾˜1↓·∾(","∾𝕊)¨, numbers.Fmt, !, {(𝕏˜@).name}, {𝕩.Shows@}⟩_tsel 𝕩}
 Match ← {𝕨 ⟨≡○≢◶⟨0,∧´𝕊¨⟩, numbers.Match,≡,≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
 IsTyped←∊⟜"register"‿"constant"‿"function"⌾< Kind
 HasType ← IsTyped∘⊣ _and_ ({𝕩.type}⊸Match)
