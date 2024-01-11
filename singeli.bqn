@@ -48,7 +48,7 @@ DispSource ← @⊸≢◶⟨•Out¨∘"(unknown position!)"‿"", {𝕎𝕩}´�
 Err ← { (𝕩≠⊸⥊•Out‿DispSource) {𝕎𝕩}¨ 𝕩 ⋄ •Exit 1 }
 
 AsrtGotGen ← {𝕊 disp: {𝔽𝕩 ? 𝕩 ; !∾⟨𝕎𝕩," (got ",Disp𝕩,")"⟩}}
-_asrtGotR‿_asrtGotS ← AsrtGotGen¨ •Repr‿{Show⎊"bug maybe?"𝕩}
+_asrtGotR‿_asrtGotS ← AsrtGotGen¨ •Repr‿{Show𝕩}
 
 # Parameter checks for builtins (_p1 and _p2 to use BQN monad/dyad)
 _e1 ← {𝔽⊣"Expected one parameter"  1⊸=_asrtGotR ≠} ⋄ _p1←{𝔽⊑_e1}
@@ -514,24 +514,36 @@ IsTup ← 0=•Type
 
 _tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!∘"Unhandled kind"⟩)˙)∾↑)𝕗)}
 Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
-Show  ← {⟨"tup{"∾"}"∾˜1↓·∾(","∾𝕊)¨, numbers.Fmt, !, {(𝕏˜@).name}, {𝕩.Shows@}⟩_tsel 𝕩}
 Match ← {𝕨 ⟨≡○≢◶⟨0,∧´𝕊¨⟩, numbers.Match,≡,≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
 IsTyped←∊⟜"register"‿"constant"‿"function"⌾< Kind
 HasType ← IsTyped∘⊣ _and_ ({𝕩.type}⊸Match)
 TypeOf← {⟨types.Tup 𝕊¨, {𝕩.Type@}⟩_tsel 𝕩}
+Show‿Repr ← {
+  UnEsc ← ⊢-128×(' '+128)⊸= # Non-breaking space to space
+  FmtTup ← "tup{"∾"}"∾˜1↓·∾","⊸∾¨
+  FmtFn ← {(𝕏˜@).name}
+  ReprObj ← {𝕩.Shows@}
+  ObjType ← IsTyped◶0‿{𝕩.fmtType}◶""‿{":"∾Repr TypeOf𝕩}
+  ShowObj ← (ReprObj∾ObjType)⎊("("∾")"∾˜Kind⎊"unknown")
+  EChar ← "(char "∾•Repr∘-⟜@∾", probably bug)"˙
+  _disp_ ← {R←⟨FmtTup {R𝕩}¨, numbers.Fmt, 𝔾, FmtFn, 𝔽⟩_tsel}
+  Show ⇐ UnEsc ShowObj _disp_ EChar
+  Repr ⇐       ReprObj _disp_ !
+}
+ShowMulti ← 2↓·∾·", "⊸∾¨Show¨
 
 types ← {kname⇐"type"
   New ← {k𝕊d:
     kind⇐kname
     typeKind‿dat⇐𝕨‿𝕩
-    T←1↓·∾(","⊸∾⍟(0<≠)Show)¨  # Display type tuple
+    T←1↓·∾(","⊸∾⍟(0<≠)Repr)¨  # Display type tuple
     P←"("∾")"∾˜T              # Function args
     Shows⇐typeKind◶⟨
       "void"               # Void:                     void
       ∾⟜•Repr´             # Primitive:   qual‿len     u8
-      {∾"["‿𝕨‿"]"‿𝕩}○Show´ # Vector:      count‿t      [4]…
-      "*"∾Show             # Pointer:     t            *…
-      P⊸{∾𝕨‿"->"‿𝕩}⟜Show´  # Function:    ⟨q‿r‿s, t⟩   (…,…,…) -> …
+      {∾"["‿𝕨‿"]"‿𝕩}○Repr´ # Vector:      count‿t      [4]…
+      "*"∾Repr             # Pointer:     t            *…
+      P⊸{∾𝕨‿"->"‿𝕩}⟜Repr´  # Function:    ⟨q‿r‿s, t⟩   (…,…,…) -> …
       T                    # Tuple:       q‿r‿s        (…,…,…)
     ⟩∘dat
     Matches⇐{𝕨Is∘⊢◶0‿Equiv𝕩}
@@ -567,11 +579,11 @@ types ← {kname⇐"type"
     Kind←{𝕩.typeKind} ⋄ Dat←{𝕩.dat}
     c ← ⌊‿2⥊𝕗
     k ← ⊏˘c
-    d ← (1⊏˘c) ∾ ((≠⥊c)↓𝕗)»⟨!"Unhandled type "∾Show⟩
+    d ← (1⊏˘c) ∾ ((≠⥊c)↓𝕗)»⟨!"Unhandled type "∾Repr⟩
     (k⊸⊐⌾< ⊢⊘(≠◶⊢‿¯1)○Kind)◶({𝕏○Dat}¨⌾((≠k)⊸↑)d) ⊣ @○ReqTyp
   }
 
-  TypeErr ← {!∾⟨𝕨," (type was ",Show 𝕩,")"⟩}
+  TypeErr ← {!∾⟨𝕨," (type was ",Repr 𝕩,")"⟩}
 
   Quality ← ⟨tPRIM,{symbols.New ⋈⊑𝕩}, "Expected primitive type"⊸TypeErr⟩_cases
   _isQual ← {⟨tPRIM,𝔽⊑,0⟩_cases TypeOf⍟(¬Is)}
@@ -586,7 +598,7 @@ types ← {kname⇐"type"
     tVEC,  ×⟜{Width𝕩}´
     tTUP,  +´{Width𝕩}¨
     tPTR,  ptrWidth
-    {!∾⟨"Can't find width of ",TypeKind𝕩," type ",Show𝕩⟩}
+    {!∾⟨"Can't find width of ",TypeKind𝕩," type ",Repr𝕩⟩}
   ⟩_cases
 
   VCount ← ⟨ tVEC,⊑, 1 ⟩ _cases
@@ -618,7 +630,7 @@ types ← {kname⇐"type"
 
   _asCast ← {
     "Cast" ReqTyp 𝕨
-    Fail ← {!∾⟨"Can't cast ",Kind𝕩," to ",Show𝕨⟩}
+    Fail ← {!∾⟨"Can't cast ",Kind𝕩," to ",Repr𝕨⟩}
     Num ← {t𝕊n:
       ⟨ tPRIM,numbers.Cast⟜n, Fail⟜n ⟩ _cases t
       t constants.New n
@@ -634,7 +646,7 @@ types ← {kname⇐"type"
     𝕨 ⟨Tup˜, Num˜, Fail˜, Fail˜, Obj˜⟩_tsel˜ 𝕩
   }
   _cc ← { Test‿Conv‿Fail _𝕣:
-    (Conv ⊣ Fail○Show⍟(¬Test˜)⟜TypeOf)⍟(¬Equiv⟜TypeOf)_asCast
+    (Conv ⊣ Fail○Repr⍟(¬Test˜)⟜TypeOf)⍟(¬Equiv⟜TypeOf)_asCast
   }
   Cast ⇐ ⟨
     0, !
@@ -710,7 +722,7 @@ registers ← {kname⇐"register"
 constants ← {kname⇐"constant"
   New ⇐ {
     kind⇐kname ⋄ type⇐𝕨 ⋄ value⇐𝕩
-    shows⇐∾"!:"∾¨Show¨𝕩‿𝕨 ⋄ fmtType⇐0 ⋄ Matches⇐≡
+    shows⇐∾"!:"∾¨Repr¨𝕩‿𝕨 ⋄ fmtType⇐0 ⋄ Matches⇐≡
   }
   Static ⇐ {
     kind⇐kname ⋄ type‿handle⇐𝕩
@@ -718,7 +730,7 @@ constants ← {kname⇐"constant"
   }
   Undefined ⇐ {
     kind⇐kname ⋄ type⇐𝕨⊢⊘(types.Ptr⊢)𝕩 ⋄ fmtType⇐0 ⋄ Matches⇐≡
-    shows⇐∾⟨"?",(•Repr𝕨)⊣"",":",Show type⟩
+    shows⇐∾⟨"?",(•Repr𝕨)⊣"",":",Repr type⟩
   }
   Exportable ⇐ (kname‿"function"⊸⊐⌾< Kind)◶{"?:"≢2↑𝕩.shows}‿1‿0
 }
@@ -779,8 +791,8 @@ functions ← {kname⇐"function"
     } _ret_ 0
     Prot⇐{𝕊 showReg:
       ext ← (0<≠)◶⟨⟩‿(⋈·'+'⌾⊑·∾','⊸∾¨) architecture.ListExt arch
-      at ← ∾ args {IsTup𝕨 ? ∾𝕨𝕊¨𝕩 ; ⋈⟨ShowReg𝕨,Show𝕩⟩}⟜types.Unpack¨ atypes
-      1↓∾" "⊸∾¨⟨1↓shows,Show rType⟩∾((<∘•Repr∘≠∾∾)at)∾ext
+      at ← ∾ args {IsTup𝕨 ? ∾𝕨𝕊¨𝕩 ; ⋈⟨ShowReg𝕨,Repr𝕩⟩}⟜types.Unpack¨ atypes
+      1↓∾" "⊸∾¨⟨1↓shows,Repr rType⟩∾((<∘•Repr∘≠∾∾)at)∾ext
     }
   }
   _with_ ⇐ {
@@ -865,9 +877,6 @@ builtins ← {
     (e{k‿o←𝕨⋄∧○(k≡⊢)◶⟨𝕏,O˙⟩}´𝕩){o←𝕨𝔽○Kind𝕩⋄𝕨O𝕩}
   }
   Ty2 ← {𝕏⚇0 _p2}∘Kinds ⊣∾⟜(<·"symbol"⌾⊑⊢´)∘⊢⍟(⊑∊⟜=‿≠)"number"‿"type"⋈¨{𝕏numbers._cmp}⊸⋈
-  TypeSuff ← IsTyped◶0‿{𝕩.fmtType}◶""‿{":"∾Fmt TypeOf𝕩}
-  UnEsc ← ⊢-128×(' '+128)⊸= # Non-breaking space to space
-  Fmt ⇐ 2↓·∾·", "⊸∾¨(UnEsc∘Show∾TypeSuff)⎊("("∾")"∾˜Kind⎊"unknown")¨
   Merge ← {
     0<⌈´=¨𝕩 ? ∾𝕩 ;
     m←"Parameters must include at least one tuple or all be symbols"
@@ -903,10 +912,10 @@ builtins ← {
   Store← { 𝕊 ptr‿i‿v: t←AccessPtr ptr ⋄ functions.Emit ⟨types.void, symbols.New "^store", ptr, GetIndex i, vc←t types.Cast v⟩ ⋄ vc } _e3
 
   names‿values ⇐ <˘∾≍⟨
-    Show¨⊸≍ types.primTypes
+    Repr¨⊸≍ types.primTypes
     ⍉> ⟨
       ⟨"__set",functions.Mut _p2⟩
-      ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"}⊣•Out∘Fmt⟩
+      ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"⋄kind⇐"error"}⊣•Out∘ShowMulti⟩
       ⟨"is",Match _p2⟩, ⟨"hastype",HasType _p2⟩
       ⟨"undefined",Undefined⟩, ⟨"load",Load⟩, ⟨"store",Store⟩
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
@@ -933,7 +942,7 @@ builtins ← {
     ⟩
   ⟩
   _ne ← {𝔽⎊{𝕊:!":"∾•CurrentError@}} # Protect error from ReErr if builtin runs generator
-  ReErr ← {! (':'≠⊑)◶⟨1⊸↓, 𝕩 ∾ (∨`':'⊸=)⊸(∨´∘⊣◶⟨": "⊸∾,/⟩)⟩ •CurrentError@}
+  ReErr ← {! (':'≠⊑)◶⟨1⊸↓, 𝕩 ∾ (∨`':'⊸=>·∨`'('⊸=)⊸(∨´∘⊣◶⟨": "⊸∾,/⟩)⟩ •CurrentError@}
   values {n←𝕨⋄𝕏⎊(ReErr∘n)⊘{name⇐n}}⍟(3=•Type∘⊢)¨˜↩ names
 }
 
@@ -997,7 +1006,7 @@ program ← {
   AddFunction⇐AddConstant⇐Export⇐Require⇐!∘0 ⋄ env⇐trace⇐@
   _with ⇐ {
     fns←⟨⟩ ⋄ AddFunction ↩ { f ← 𝕨 𝕏 ≠fns ⋄ fns∾⟜<↩f ⋄ f }
-    cns←⟨⟩ ⋄ AddConstant ↩ { c ← 𝕨 constants.Static ⟨t←TypeOf𝕩, ≠cns⟩ ⋄ cns∾⟜<↩⟨Show c,t,𝕩⟩ ⋄ c }
+    cns←⟨⟩ ⋄ AddConstant ↩ { c ← 𝕨 constants.Static ⟨t←TypeOf𝕩, ≠cns⟩ ⋄ cns∾⟜<↩⟨Repr c,t,𝕩⟩ ⋄ c }
     exp←⟨⟩ ⋄ Export ↩ { CheckExport 𝕩 ⋄ exp ∾⟜<↩ 𝕨‿𝕩 }
     req←⟨⟩ ⋄ Require ↩ { req ∾⟜<↩ 𝕩 }
     env ↩ DynamicEnv@
@@ -1046,7 +1055,7 @@ program ← {
   }
   J ← 1↓·∾" "⊸∾¨
   DispHeader←{ "require " ∾ "'"(∾∾⊣)𝕩 }
-  DispConstants←{ ∾⟜(<⟨⟩)⍟(0<≠) (J"constant"<⊸∾Show¨⌾(1⊸↓))¨ 𝕩 }
+  DispConstants←{ ∾⟜(<⟨⟩)⍟(0<≠) (J"constant"<⊸∾Repr¨⌾(1⊸↓))¨ 𝕩 }
   DispFunction←{
     ShowReg ← {h←¯1⋄{𝕊:"v"∾•Repr h+↩1}}{𝕩.ShowReg𝕗}
     ProcInstrs ← {
@@ -1057,7 +1066,7 @@ program ← {
       nm (≡◶0‿{1=𝕩.ref}¨˝1‿2⊑¨𝕩⊏˜0‿1+⌜⊢)⊸/↩
       𝕩 ↩ (¬(≠𝕩)↑/⁼1+nm) / (1⌽𝕩) (⊣⌾(2⊸↑)¨⌾(nm⊸⊏)) 𝕩
       # Convert to names, performing register numbering
-      𝕩 ("register"≡Kind)◶Show‿ShowReg¨⌾(1⊸↓)¨↩
+      𝕩 ("register"≡Kind)◶Repr‿ShowReg¨⌾(1⊸↓)¨↩
       # Registers are aliased when possible, leading to no-op new
       # instructions removed here
       {"new"≡⊑𝕩 ? "val"≡2⊑𝕩 ? ≡´1‿4⊏𝕩 ? 0 ; 1}¨⊸/ 𝕩
@@ -1068,7 +1077,7 @@ program ← {
       ⟨"endFn",""⟩
     ⟩
   }
-  DispExport←{ "export " ∾ J (<"'"⊸(∾∾⊣))⊸∾⟜(TypeOf⋈○Show⊢)´ 𝕩 }
+  DispExport←{ "export " ∾ J (<"'"⊸(∾∾⊣))⊸∾⟜(TypeOf⋈○Repr⊢)´ 𝕩 }
 }
 
 nodes ← {
@@ -1241,7 +1250,7 @@ nodes ← {
   }
   _errNoMatch ← {
     •Out (∾⟜": "⍟(0<≠)𝕨)⊢⊘∾"No matching "∾𝕗
-    ! "Parameters: "∾(0<≠)◶⟨"none",builtins.Fmt⟩𝕩
+    ! "Parameters: "∾(0<≠)◶⟨"none",ShowMulti⟩𝕩
   }
   _unmatchedGen ⇐ {
      n _𝕣𝕩: 𝕗 "generator definition"_errNoMatch 𝕩 ;
@@ -1262,7 +1271,7 @@ nodes ← {
         args←res←arches←⟨⟩ ⋄ AN←architecture.SeeNext
         Exec ⇐ {
           args∾↩<𝕨 ⋄ arches∾↩<AN@
-          n ← (128⌊≠)⊸↑ name∾∾('_'∾·∊⟜(dig∾1↓alph)⊸/Show)¨𝕨
+          n ← (128⌊≠)⊸↑ name∾∾('_'∾·∊⟜(dig∾1↓alph)⊸/Repr)¨𝕨
           {Set⇐{res∾↩<𝕩}}‿n result.Eval 𝕩
         }
         _cached ⇐ {
