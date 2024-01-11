@@ -187,16 +187,19 @@ Parse ← {𝕊 tokens‿ShowTrace:
   sep ← ⟨";", ⥊lf⟩
   ! ⊑ (¯1⊏tokens) ∊ sep
 
+  keywords ← "include"‿"config"‿"local"‿"if"‿"else"‿"while"‿"do"‿"match"‿"extend"‿"def"‿"fn"‿"main"‿"oper"‿"in"‿"over"‿"from"‿"to"
+             kInclude ‿kConfig ‿kLocal ‿kIf ‿kElse ‿kWhile ‿kDo ‿kMatch ‿kExtend ‿kDef ‿kFn ‿kMain ‿kOper ‿kIn ‿kOver ‿kFrom ‿kTo ← ↕≠keywords
+
   Asrt ← {𝕨𝕊1:@;
     l←{(c •ns.Get¨ 𝕩) {𝕨⊸⊐⊏𝕩˙}○(∾⟜⟨""⟩) 𝕩} •ns.Keys c
     ShowTrace⟜L´ <˘⍉>DumpStack@
     •Out ""
-    F ← (⥊lf)⊸≡◶•Repr‿"end of line"
+    F ← (⥊lf)⊸≢◶⟨"end of line", =◶⟨"keyword "∾•Repr∘⊑⟜keywords, •Repr⟩⟩
     •Out {∾"Expected "‿𝕨‿" but saw "‿𝕩}⟜F´⍟(1<≡) 𝕨
     •Exit 1
   }
   MakeTokStream ← {
-    i←⊐𝕩 ⋄ u←𝕩/˜i>¯1»⌈`i
+    i←⊐𝕩 ⋄ u←keywords{𝕗⊸⊐⊣⍟(<⟜(≠𝕗))¨⊢}𝕩/˜i>¯1»⌈`i
     ⟨Inc⇐Next,PeekRaw⇐Peek⟩←⟨Pos,Rem,Back⇐Dec⟩⇐MakeStream i
     PeekRaw ↩ PeekRaw ⊣ "File ended unexpectedly" Asrt Rem
     Peek ← ⊑⟜u∘PeekRaw
@@ -207,7 +210,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     first←⊑¨u
     _begin_ ⇐ {t←𝔽 first ⋄ Inc ⊢ (⊑⟜u (⊣ ⊣ 𝕘⊸⋈⊸Asrt) ⊑⟜t)∘PeekRaw}
     GetS ← ⊢ {Inc (((•Repr𝕨)⋈⊑⟜u) Asrt 0˙)⍟(𝕩⊸≢)∘PeekRaw}¨ u⊸⊐
-    _seq ⇐ {a←0=•Type¨𝕗 ⋄ (¬a)/{𝕏@}¨∘(GetS⌾(a⊸/)𝕗) }
+    _seq ⇐ {a←3≠•Type¨𝕗 ⋄ (¬a)/{𝕏@}¨∘(GetS⌾(a⊸/)𝕗) }
     _opt_ ⇐ {@_𝕣_𝕘:
       t‿c ← (1⌾(¯1⊸⊑)2|↕∘≠)⊸⊔ 𝕘
       exp ← "one of "∾∾⟜", "⊸∾´•Repr¨t
@@ -241,19 +244,19 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   _decl_ ← { 𝔽"Declaration" ⋄ Declare 𝔾 𝕩 }
   _exprStmt ← {AsrtStmt _𝕣: @_opt_⟨
-  "if",     { StIf 𝕩 }
-  "while",  { StWhile 𝕩 }
-  "do",     { DoWhile 𝕩 }
-  "match",  { Options 𝕩 }
-  "@",      { For 𝕩 }
-  "extend", { Extend 𝕩 }
-  "def",    { Define 𝕩 } ⊣ AsrtStmt∘"def"
-  "fn",     { DefFun 𝕩 } ⊣ AsrtStmt∘"fn"
-  "main",   { DefMain𝕩 } ⊣ AsrtStmt∘"main"
-  "oper",   { OpDef 𝕩 }  ⊣ AsrtStmt∘"oper"
-  "{",      @_optGet_⟨"=>", c.lambda _node_ (⋈⟜{Block𝕩})
-                      ":",  AsrtStmt _decl_ ⊢           ⟩ {Params𝕩}
-            { AsrtStmt _decl_ ToId⍟(Try":") SimpExpr 𝕩 }
+  kIf,     { StIf 𝕩 }
+  kWhile,  { StWhile 𝕩 }
+  kDo,     { DoWhile 𝕩 }
+  kMatch,  { Options 𝕩 }
+  "@",     { For 𝕩 }
+  kExtend, { Extend 𝕩 }
+  kDef,    { Define 𝕩 } ⊣ AsrtStmt∘"def"
+  kFn,     { DefFun 𝕩 } ⊣ AsrtStmt∘"fn"
+  kMain,   { DefMain𝕩 } ⊣ AsrtStmt∘"main"
+  kOper,   { OpDef 𝕩 }  ⊣ AsrtStmt∘"oper"
+  "{",     @_optGet_⟨"=>", c.lambda _node_ (⋈⟜{Block𝕩})
+                     ":",  AsrtStmt _decl_ ⊢           ⟩ {Params𝕩}
+           { AsrtStmt _decl_ ToId⍟(Try":") SimpExpr 𝕩 }
   ⟩}
   Expr ← (∾⟜" must appear on its own line" Asrt 0˙) _exprStmt
   Stmt ← ⊢ _exprStmt
@@ -284,8 +287,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
   AddParams ← @_opt_⟨"{", {AddParams∘(c.run  _node_ ParCs           ) 𝕩}, ⊢⟩
   AddArgs   ← @_opt_⟨"(", {          (c.call _node_ (⊢⋈"("‿")"_args)) 𝕩}, ⊢⟩
   Callable ← AddParams∘Expr0
-  CanCall ← (¬IsLogic∨´(oc∾"[")=⊏) _test
-  StartsOp ← (IsLogic ∨ ·⊑∊⟜oc _ifASCII∘⊑) _test
+  CanCall ← =◶0‿(¬IsLogic∨´(oc∾"[")=⊏) _test
+  StartsOp ← =◶0‿(IsLogic ∨ ·⊑∊⟜oc _ifASCII∘⊑) _test
   Call ← { c←CanCall @ ⋄ AddArgs⍟c Callable𝕩 }
 
   ExprFromEnd ← {𝕊 endTok:
@@ -317,14 +320,14 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   _if ← {
     TrySeps ← {s←Seps@ ⋄ Back⊸⊢⍟(s>⊢) Rem◶0‿Try 𝕩}
-    "if"‿"("‿Expr‿")"‿𝔽‿(When∘⟨TrySeps∘"else",𝔽⟩)_seq
+    kIf‿"("‿Expr‿")"‿𝔽‿(When∘⟨TrySeps∘kElse,𝔽⟩)_seq
   }
   StIf ← c.if _node_ (Block _if)
-  StWhile ← c.while _node_ (1 ∾   "while"‿"("‿Expr‿")"‿Block _seq)
-  DoWhile ← c.while _node_ (0 ∾⟜⌽ "do"‿Block‿"while"‿"("‿Expr‿")" _seq)
+  StWhile ← c.while _node_ (1 ∾   kWhile‿"("‿Expr‿")"‿Block _seq)
+  DoWhile ← c.while _node_ (0 ∾⟜⌽ kDo‿Block‿kWhile‿"("‿Expr‿")" _seq)
 
   Options ← c.options _node_ {𝕤
-    Get "match"
+    Get kMatch
     a ← @_opt_⟨"(", ⋈"("‿")"_args, ⟨⟩⟩ @
     m ← c.lambda _node_ (Params‿"=>"‿Block _seq) _blockLines @
     a‿m
@@ -339,11 +342,11 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Get "(" ⋄ LFs@
     to← SimpExpr@
     NE← {𝕤⋄ n←⋈∘{NA@≢𝕩⋄𝕩}∘c.PhraseTryName⍟𝕩 to ⋄ to↩SimpExpr@ ⋄ n}
-    {Div"in"? to↩⟨⊑NE 1,to⟩; @}
-    pe← While ⟨Div∘",", Div∘"in"◶⟨⋈,⋈⟜SimpExpr⟩ Name, 0⟩
-    ps← {Div"over"?(<NE 0==to)∾𝕩; OA 0=≠𝕩⋄⟨⟩} pe          # Pointers
-    fr← When ⟨Div"from", SimpExpr⟩                        # Start index
-    i ← {¬Div"to"?TA 0=≠fr⋄⟨⟩; 0<=to?ps∾↩<NE 0⋄⟨⟩; NE 1}  # Index variable
+    {Div kIn? to↩⟨⊑NE 1,to⟩; @}
+    pe← While ⟨Div∘",", Div∘kIn◶⟨⋈,⋈⟜SimpExpr⟩ Name, 0⟩
+    ps← {Div kOver?(<NE 0==to)∾𝕩; OA 0=≠𝕩⋄⟨⟩} pe          # Pointers
+    fr← When ⟨Div kFrom, SimpExpr⟩                        # Start index
+    i ← {¬Div kTo?TA 0=≠fr⋄⟨⟩; 0<=to?ps∾↩<NE 0⋄⟨⟩; NE 1}  # Index variable
     LFs@ ⋄ Get ")"
     b ← Block@
     ⟨f,ps,i,fr,to,b⟩
@@ -388,9 +391,9 @@ Parse ← {𝕊 tokens‿ShowTrace:
     b ← Result Try"="
     ⟨a,r,b⟩
   } _withParams
-  DefFun ← c.define _node_ ("fn"‿IdTarget‿Function  _seq)
+  DefFun ← c.define _node_ (kFn‿IdTarget‿Function _seq)
   DefMain ← c.main _node_ {𝕤
-    Get "main"
+    Get kMain
     a ← @_opt_⟨"(","("‿")" _argsFn_ Name, ⟨⟩⟩ @
     "Main function can have at most two arguments" Asrt 2≥≠a
     RT ← "Main result must be void or i32" AsrtHere ∊⟜"void"‿"i32"⌾<
@@ -401,21 +404,21 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   ExtPar ← "{"‿"}" _argsFn_ Name
   Extender ← c.extender _node_ (ExtPar‿"="‿Body _seq)
-  Extend ← c.extend _node_ ("extend"‿Expr0‿ExtPar _seq)
+  Extend ← c.extend _node_ (kExtend‿Expr0‿ExtPar _seq)
 
   GenRes ← ⊑⟨"=",Result∘1⟩_seq
   Value ← @_opt_⟨"=",GenRes, @⟩
   Generator ← @_opt_⟨"{",GenRes _withParams, Value⟩
   # Decide how to parse definition value based on what's after def
-  Valuator ← @_optGet_⟨"extend",Extender˙, @_opt_⟨"{",Value˙,"_",Value˙,Generator˙⟩⟩
+  Valuator ← @_optGet_⟨kExtend,Extender˙, @_opt_⟨"{",Value˙,"_",Value˙,Generator˙⟩⟩
   Define ← c.define _node_ {𝕤
-    Get "def"
+    Get kDef
     v ← Valuator @
     ⟨Target, V⟩_seq @
   }
   confName‿confVal ← (⊑¨⋈1⊸⊑¨)configs
   Config ← c.define _node_ {
-    Get "config"
+    Get kConfig
     t‿r ← ⟨IdTarget, "=", Result∘1⟩_seq 𝕩
     n ← t.name
     t‿{ (≠confName) > i←confName⊸⊐⌾<n ? ("config "∾n) ast.Build i⊑confVal ; r }
@@ -427,17 +430,17 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ⟩
   Number ← c.number _node_ (∊⟜dig _begin_ "number")
   OpName ← @_opt_⟨"(",ParEx, Name⟩
-  OpDef ← c.opDef _node_ ("oper"‿Oper‿OpName‿OpType‿Number _seq)
+  OpDef ← c.opDef _node_ (kOper‿Oper‿OpName‿OpType‿Number _seq)
 
-  Include ← c.include _node_ ("include"‿Symbol _seq)
+  Include ← c.include _node_ (kInclude‿Symbol _seq)
 
   MultiLine ← {Line𝕩} _blockLines
   TopIf ← c.topif _node_ (∾⌾(¯1⊸⊑) @_opt_⟨"{",MultiLine, ⋈{Line𝕩}⟩ _if)
-  SubLine ← @_opt_⟨"include",Include, "if",TopIf, "config",Config, Stmt⟩
-  LocLine ← @_opt_⟨"if","localizable line"⊸⋈ AsrtHere 0˙, SubLine⟩
+  SubLine ← @_opt_⟨kInclude,Include, kIf,TopIf, kConfig,Config, Stmt⟩
+  LocLine ← @_opt_⟨kIf,"localizable line"‿kIf AsrtHere 0˙, SubLine⟩
   Line ← @_optGet_⟨
-    "local", @_opt_⟨"{",c.body _node_ MultiLine, LocLine⟩
-             {𝕩.NonLocal@⋄𝕩}∘SubLine
+    kLocal, @_opt_⟨"{",c.body _node_ MultiLine, LocLine⟩
+            {𝕩.NonLocal@⋄𝕩}∘SubLine
   ⟩
 
   Program ← c.body _node_ (Line _lines_ Rem)
@@ -726,7 +729,7 @@ constants ← {kname⇐"constant"
   }
   Static ⇐ {
     kind⇐kname ⋄ type‿handle⇐𝕩
-    shows⇐"$c"∾(""⊢"_"∾𝕨)∾˜•Repr handle ⋄ fmtType⇐1 ⋄ Matches⇐≡
+    shows⇐"$c"∾(("_"∾𝕨)⊣"")∾˜•Repr handle ⋄ fmtType⇐1 ⋄ Matches⇐≡
   }
   Undefined ⇐ {
     kind⇐kname ⋄ type⇐𝕨⊢⊘(types.Ptr⊢)𝕩 ⋄ fmtType⇐0 ⋄ Matches⇐≡
