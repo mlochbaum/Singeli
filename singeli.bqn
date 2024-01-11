@@ -187,8 +187,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
   sep ← ⟨";", ⥊lf⟩
   ! ⊑ (¯1⊏tokens) ∊ sep
 
-  keywords ← "include"‿"config"‿"local"‿"if"‿"else"‿"while"‿"do"‿"match"‿"extend"‿"def"‿"fn"‿"main"‿"oper"‿"in"‿"over"‿"from"‿"to"
-             kInclude ‿kConfig ‿kLocal ‿kIf ‿kElse ‿kWhile ‿kDo ‿kMatch ‿kExtend ‿kDef ‿kFn ‿kMain ‿kOper ‿kIn ‿kOver ‿kFrom ‿kTo ← ↕≠keywords
+  keywords ← "include"‿"config"‿"local"‿"if"‿"else"‿"while"‿"do"‿"match"‿"extend"‿"def"‿"fn"‿"main"‿"oper"‿"in"‿"over"‿"from"‿"to"‿"and"‿"or"‿"not"
+             kInclude ‿kConfig ‿kLocal ‿kIf ‿kElse ‿kWhile ‿kDo ‿kMatch ‿kExtend ‿kDef ‿kFn ‿kMain ‿kOper ‿kIn ‿kOver ‿kFrom ‿kTo ‿kAnd ‿kOr ‿kNot ← ↕≠keywords
 
   Asrt ← {𝕨𝕊1:@;
     l←{(c •ns.Get¨ 𝕩) {𝕨⊸⊐⊏𝕩˙}○(∾⟜⟨""⟩) 𝕩} •ns.Keys c
@@ -235,7 +235,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Name ← ∊⟜alph _begin_ "name"
   Oper ← ∊⟜oc _ifASCII _begin_ "operator"
   Symbol ← c.symbol _node_ ('''⊸=_begin_"symbol")
-  IsLogic ← ∊⟜"and"‿"or"‿"not"⌾<
+  IsLogic ← ∊⟜kAnd‿kOr‿kNot
 
   LFs ← {𝕊⍟Try ⟨lf⟩}
   Div ← {LFs@ ⋄ 1∘LFs⍟⊢ Try 𝕩}  # Divider, allowing surrounding newlines
@@ -263,7 +263,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   Vec ← c.run _node_ (c.consts.vec ⋈ "["‿Expr‿"]"‿{Callable𝕩} _seq)
   ParEx ← ⊑ "("‿Expr‿")" _seq
-  EWord ← c.token _node_ (∊⟜('''∾wc∾oc)_ifASCII _begin_ "expression")
+  EWord ← c.token _node_ (⊑⟜keywords⍟(¬=) (IsLogic∨∊⟜('''∾wc∾oc)_ifASCII) _begin_ "expression")
   Expr0 ← @_opt_⟨"[",Vec, "(",ParEx, EWord⟩
 
   _spreadable ← {<∘⊢⍟⊣⟜𝔽∘Try∘"..."}
@@ -287,8 +287,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
   AddParams ← @_opt_⟨"{", {AddParams∘(c.run  _node_ ParCs           ) 𝕩}, ⊢⟩
   AddArgs   ← @_opt_⟨"(", {          (c.call _node_ (⊢⋈"("‿")"_args)) 𝕩}, ⊢⟩
   Callable ← AddParams∘Expr0
-  CanCall ← =◶0‿(¬IsLogic∨´(oc∾"[")=⊏) _test
-  StartsOp ← =◶0‿(IsLogic ∨ ·⊑∊⟜oc _ifASCII∘⊑) _test
+  CanCall ← (¬ =◶⟨IsLogic⌾<, ∨´(oc∾"[")=⊏⟩) _test
+  StartsOp ← =◶⟨IsLogic⌾<, ⊑∘∊⟜oc _ifASCII∘⊑⟩ _test
   Call ← { c←CanCall @ ⋄ AddArgs⍟c Callable𝕩 }
 
   ExprFromEnd ← {𝕊 endTok:
