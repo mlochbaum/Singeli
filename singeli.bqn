@@ -241,10 +241,10 @@ Parse ← {𝕊 tokens‿ShowTrace:
   "match",  { Options 𝕩 }
   "@",      { For 𝕩 }
   "extend", { Extend 𝕩 }
-  "def",    { Define 𝕩 } ⊣ AsrtStmt
-  "fn",     { DefFun 𝕩 } ⊣ AsrtStmt
-  "main",   { DefMain𝕩 } ⊣ AsrtStmt
-  "oper",   { OpDef 𝕩 }  ⊣ AsrtStmt
+  "def",    { Define 𝕩 } ⊣ AsrtStmt∘"def"
+  "fn",     { DefFun 𝕩 } ⊣ AsrtStmt∘"fn"
+  "main",   { DefMain𝕩 } ⊣ AsrtStmt∘"main"
+  "oper",   { OpDef 𝕩 }  ⊣ AsrtStmt∘"oper"
   "{",      @_optGet_⟨"=>", c.lambda _node_ (⋈⟜{Block𝕩})
                       ":",  AsrtStmt _decl_ ⊢           ⟩ {Params𝕩}
             { AsrtStmt _decl_ ToId⍟(Try":") SimpExpr 𝕩 }
