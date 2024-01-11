@@ -41,7 +41,7 @@ Source ← { 𝕨 𝕊 src‿lc: file←𝕨⊣""
       l ← "^"⌾(1⊑¯1⊑⊑) ⌽ "|"⌾(1⊸⊑)¨⊸∾` (1+≠e)↑e
       {∾((-⟜»𝕨)∾≠¯1⊑𝕩)↑¨""<⊸∾𝕩}˝∘⍉∘>¨ l
     }
-    •Out¨ disp Tr○((r=e)⊸/) c
+    •Out¨ ¯1↓⍟(∧´' '=⊑) disp Tr○((r=e)⊸/) c
   }
 }
 DispSource ← @⊸≢◶⟨•Out¨∘"(unknown position!)"‿"", {𝕎𝕩}´⟩
@@ -182,7 +182,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ! ⊑ (¯1⊏tokens) ∊ sep
 
   Asrt ← {𝕨𝕊1:@;
-    l←{(c •ns.Get¨ 𝕩)⊸⊐ ⊏ 𝕩˙} •ns.Keys c
+    l←{(c •ns.Get¨ 𝕩) {𝕨⊸⊐⊏𝕩˙}○(∾⟜⟨""⟩) 𝕩} •ns.Keys c
     ShowTrace⟜L´ <˘⍉>DumpStack@
     •Out ""
     F ← (⥊lf)⊸≡◶•Repr‿"end of line"
@@ -217,6 +217,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   c ← nodes
   ⟨_whileParse_⇐_while_, DumpStack⇐Arr⟩ ← MakeStack@
   _node_ ← {p←Pos@ ⋄ (ShowTrace○⋈⟜""⊢)‿p 𝔽 𝔾_whileParse_⟨p,𝕗⟩ 𝕩}
+  AsrtHere ← {𝕨 Asrt _whileParse_ ⟨Pos@,""⟩ 𝕩}
 
   When  ← {Test‿Cont:       ( ⥊∘< Cont)⍟Test   ⟨⟩  }
   While ← {Test‿Cont‿init: {(𝕊∾⟜<⟜Cont)⍟Test𝕩} Cont¨↕init}
@@ -301,7 +302,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   _lines_ ← { Line _𝕣_ Cont 𝕩:
     Seps @ ⋄ s ← 1
-    SepLine ← {"Expected separator" Asrt s ⋄ l←Line𝕩 ⋄ s↩Seps@ ⋄ l}
+    SepLine ← {"Expected separator" AsrtHere s ⋄ l←Line𝕩 ⋄ s↩Seps@ ⋄ l}
     While ⟨Cont, SepLine, 0⟩
   }
   _blockLines ← { ⊑ ⟨"{", 𝔽 _lines_ (¬Try∘"}")⟩_seq }
@@ -324,7 +325,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   }
 
   For ← c.for _node_ {𝕤
-    OA← "@for: multiple variables must use ""over"""⊸Asrt
+    OA← "@for: multiple variables must use ""over"""⊸AsrtHere
     TA← "@for: ""from"" missing ""to"""⊸Asrt
     NA← "@for: loop variable must be a name"⊸Asrt
     Get "@"
@@ -386,7 +387,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Get "main"
     a ← @_opt_⟨"(","("‿")" _argsFn_ Name, ⟨⟩⟩ @
     "Main function can have at most two arguments" Asrt 2≥≠a
-    RT ← "Main result must be void or i32" Asrt ∊⟜"void"‿"i32"⌾<
+    RT ← "Main result must be void or i32" AsrtHere ∊⟜"void"‿"i32"⌾<
     r ← When ⟨Try":", RT⊸⊢ Name⟩
     b ← Result Try"="
     ⟨a,r,b⟩
@@ -427,7 +428,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   MultiLine ← {Line𝕩} _blockLines
   TopIf ← c.topif _node_ (∾⌾(¯1⊸⊑) @_opt_⟨"{",MultiLine, ⋈{Line𝕩}⟩ _if)
   SubLine ← @_opt_⟨"include",Include, "if",TopIf, "config",Config, Stmt⟩
-  LocLine ← @_opt_⟨"if","localizable line"⊸⋈ Asrt 0˙, SubLine⟩
+  LocLine ← @_opt_⟨"if","localizable line"⊸⋈ AsrtHere 0˙, SubLine⟩
   Line ← @_optGet_⟨
     "local", @_opt_⟨"{",c.body _node_ MultiLine, LocLine⟩
              {𝕩.NonLocal@⋄𝕩}∘SubLine
