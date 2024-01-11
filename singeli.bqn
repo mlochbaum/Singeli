@@ -48,7 +48,7 @@ DispSource ← @⊸≢◶⟨•Out¨∘"(unknown position!)"‿"", {𝕎𝕩}´�
 Err ← { (𝕩≠⊸⥊•Out‿DispSource) {𝕎𝕩}¨ 𝕩 ⋄ •Exit 1 }
 
 AsrtGotGen ← {𝕊 disp: {𝔽𝕩 ? 𝕩 ; !∾⟨𝕎𝕩," (got ",Disp𝕩,")"⟩}}
-_asrtGotR‿_asrtGotS ← AsrtGotGen¨ •Repr‿{Show𝕩}
+_asrtGotR‿_asrtGotS ← AsrtGotGen¨ •Repr‿{Show⎊"bug maybe?"𝕩}
 
 # Parameter checks for builtins (_p1 and _p2 to use BQN monad/dyad)
 _e1 ← {𝔽⊣"Expected one parameter"  1⊸=_asrtGotR ≠} ⋄ _p1←{𝔽⊑_e1}
@@ -740,7 +740,7 @@ functions ← {kname⇐"function"
     arch⇐architecture.init ⋄ labc⇐0
   }
   New ← {𝕤
-    kind⇐kname ⋄ Matches⇐≡ ⋄ type⇐@
+    kind⇐kname ⋄ Matches⇐≡ ⋄ Type⇐!∘"Explicit function result type needed"
     id⇐𝕩 ⋄ shows⇐("$f"∾(•Repr id)∾"_"⊸∾⍟(0<≠)𝕨)⊣"$main"
     arch⇐architecture.NewFunction@ ⋄ SetArch⇐{arch↩𝕩}
     label←¯1 ⋄ slabel←⟨⟩ ⋄ args←atypes←ctypes←⟨⟩ ⋄ rType⇐@
