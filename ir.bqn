@@ -30,6 +30,8 @@ Restructure ⇐ {
   ff ⌊↩ {⌊´𝕨↓𝕩↑ll}¨˝[ff,/fl]⊏+`bl # Surround loops where end is caught
   b ← ↕0                          # Block start
   ff {b∾↩𝕨⌊´𝕩↓b⋄@}¨ ff ⊏ +`fl     # Surround caught blocks, iteratively
+  # Place endBlock and/or beginLoop at the label, endLoop at the last goto,
+  # and beginBlock at the computed location
   mi‿li←2↑lb⊔ai ⋄ lis←⟨lb/id,li⟩
   [nn,nm,ni] ← ⍉¯1⌽[
     ⟨"endBlock " ⟩∾(lb/¬f)⊸/¨lis
@@ -37,10 +39,13 @@ Restructure ⇐ {
     ⟨"beginLoop "⟩∾(lb/¬l)⊸/¨lis
     ⟨"endLoop "  ⟩∾(lb<l)⊸/¨id‿ai # Will be rotated to place after 𝕩
   ]
+  # Check that the inserted begin/end markers will be properly nested
+  add ← ni ⍋⊸⊏○(∾1⊸⌽) (2/¯1‿1)⋈¨¨nm            # Depth change and label
+  ∧´(>○⊑∧≡○(⊢´))´˘ ∘‿2⥊ ((⍋+`-0⊸<)⊑¨)⊸⊏ add ?  # Abort if not nested
+  # Change goto to break/continue and insert begin/end
   alm ← ¬lb⌾(am⊸/)am
-  br ← "break"‿"continue"⊏˜lb¬⊸/∨`¨⌾(i⊸⊔)lb
+  br ← "break"‿"continue"⊏˜lb¬⊸/(i⊏i⍋⊸⊏○(lb⊸/)⊢)⊸≤⊒i
   (ni∾</alm) ⍋⊸⊏○(∾1⊸⌽) (nn{𝕨⊸∾¨𝕩}¨nm)∾<alm/(br∾⟜(4⊸↓)¨⊢)⌾(mi⊸⊏)𝕩
-  # TODO check whether that resulted in properly nested blocks
 ;
   𝕩
 }_onFns
