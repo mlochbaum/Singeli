@@ -1261,7 +1261,7 @@ nodes ← {
   }
   Lambda ⇐ {
     ⟨par,result⟩←𝕩 ⋄ pos←𝕨
-    Visit←{(par.VisitLambda 𝕩)∾⟨𝕏result⟩}
+    Visit←{l←par.VisitLambda 𝕩⋄l∾⟨𝕏result⟩}  # Call par.VisitLambda first
     ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "lambda"‿visit
     Scope⇐{ Visit scopes._defer o.Scope par.ScopeLambda 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value and name, from Define
