@@ -2,11 +2,9 @@
 
 Introductions: [Singeli as interpreter](doc/interpreter.md) | [Singeli as compiler](doc/compiler.md) -> [Purity and Ford write a min filter](doc/minfilter.md)
 
-Singeli is a domain-specific language for building high-performance algorithms (including [SIMD](https://en.wikipedia.org/wiki/SIMD)) with flexible abstractions over code that corresponds to individual instructions. It's implemented in [BQN](https://mlochbaum.github.io/BQN), with a frontend that emits IR and a backend that converts it to C. Other backends like LLVM or machine code are possible—it should be easy to support other CPU architectures but there are no plans to target GPUs.
+Singeli is a domain-specific language for building high-performance algorithms (including [SIMD](https://en.wikipedia.org/wiki/SIMD)) with flexible abstractions over code that corresponds to individual instructions. It's implemented in [BQN](https://mlochbaum.github.io/BQN), with a frontend that emits IR and a backend that converts it to C (the IR is simple, so that other backends like LLVM or machine code could be supported without much work).
 
-It's not a mature project, but Singeli's reached the point where I enjoy using it at least! Debugging your compilation errors is easy since they come with parsing or stack traces (if not it's a bug—please report), and `show{}` prints whatever you want at compile time. At runtime, `lprintf{}` provided by `include 'debug/printf'` prints what you pass to it, and the emitted C code is rather verbose but it embeds source function and variable names you can use to get your bearings. The interactive [Singeli playground](https://github.com/dzaima/singeliPlayground) tool is a nice way to get parts of your code working without the awkward compile-debug loop.
-
-Working with SIMD does take a lot of setup to be nice since every intrinsic used has to be wrapped somehow. Work is in progress on providing standard includes for x86 and ARM with a reasonable interface and good coverage of available instructions.
+With 5k lines in production [in CBQN](https://github.com/dzaima/CBQN/tree/master/src/singeli/src), I think Singeli counts as usable! See also [SingeliSort](https://github.com/mlochbaum/SingeliSort) and [1brc](https://github.com/dzaima/1brc). Backwards-incompatible changes are still made occasionally, and there's always the possibility of bugs in a new-ish language. And SIMD programming takes some setup since every intrinsic used has to be wrapped somehow. [Standard includes](include/) that do this nicely for x86 and ARM are in progress.
 
 To compile input.singeli:
 
@@ -16,7 +14,7 @@ $ singeli input.singeli [-o output.c]
 
 For options see `$ singeli -h` or [this section](#command-line-options). To run `singeli` as an executable, ensure that [CBQN](https://github.com/dzaima/CBQN) is installed as `bqn` in your executable path, or call as `/path/to/bqn singeli …`.
 
-Singeli [is used](https://github.com/dzaima/CBQN/tree/master/src/singeli/src) for many CBQN primitive implementations, particularly for AVX2 support (compile with `o3n`). It's also the implementation language for [SingeliSort](https://github.com/mlochbaum/SingeliSort).
+Debugging compilation errors is easy enough since they come with parsing or stack traces (if not it's a bug—please report), and `show{}` prints whatever you want at compile time. At runtime, `lprintf{}` provided by `include 'debug/printf'` prints what you pass to it, and the emitted C code is rather verbose but it embeds source function and variable names you can use to get your bearings. The interactive [Singeli playground](https://github.com/dzaima/singeliPlayground) tool is a nice way to get parts of your code working without the awkward compile-debug loop.
 
 Early design discussion for Singeli took place at [topanswers.xyz](https://topanswers.xyz/apl?q=1623); now it's in the [BQN forum](https://mlochbaum.github.io/BQN/community/forums.html).
 
