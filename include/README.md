@@ -9,8 +9,8 @@ Standard includes are those built into the compiler. Each can be included with a
   - [`skin/cext`](skin/cext.singeli) Extensions to C-like operators
 - `arch/` Operation generation
   - [`arch/c`](arch/c.singeli) Platform-independent C
-  - `arch/iintrinsic/` Intel intrinsics for x86 extensions
-  - `arch/neon_intrin/` NEON vector intrinsics (ARM)
+  - [`arch/iintrinsic/`](#simd-architecture) Intel intrinsics for x86 extensions
+  - [`arch/neon_intrin/`](#simd-architecture) NEON vector intrinsics (ARM)
 - `clib/` Bindings for C libraries
   - [`clib/malloc`](clib/malloc.singeli) malloc (as `alloc{}`) and free
 - `util/` Utilities
@@ -66,3 +66,37 @@ Additional notes:
 
 - `split{n, tup}`: `n` may be a number, indicating that all groups have that length except that the last may be short. It may also be a list of numbers, which is expected to sum to the length of the tuple and indicates the sequence of group lengths.
 - `replicate{r, tup}`: `r` may be a tuple, where each element indicates the number of times to include the corresponding element of `tup` (for example, if it's boolean the elements in the same position as a 1 are kept and those with a 0 are filtered out). It may also be a plain number, so that every element is copied the same number of times, or a generator `f`, so that element `e` is copied `f{e}` times.
+
+## SIMD architecture
+
+Includes `arch/iintrinsic/basic` and `arch/neon_intrin/basic` are "basic" architecture includes that define arithmetic and a few essential vector operations. Because of x86's haphazard instruction support, the default `arch/iintrinsic/basic` includes multi-instruction implementations of many operations such as comparisons, min, and max. Use `arch/iintrinsic/basic_main` to define only cases that are supported by a single instruction.
+
+All [builtin arithmetic](../README.md#arithmetic) operations are supported when available (`__mod` is the only one that's never provided), in addition to the following (architecture indicated if only one supports it):
+
+| Syntax                     | Arch | Result
+|----------------------------|------|--------
+| `__adds{x, y}`             |      | Saturating add
+| `__subs{x, y}`             |      | Saturating subtract
+| `__sqrt{x}`                |      | Square root
+| `__round{x}`               | x86  | Round to nearest
+| `andnot{x, y}`             |      | `x & ~y`
+| `ornot{x, y}`              | ARM  | `x \| ~y`
+| `andnz{x, y}`              | ARM  | `(x & y) != 0`
+| `copy_sign{x, y}`          | x86  | Absolute value of `x` with sign of `y`
+| `average_int{x, y}`        | x86  | `(x + y + 1) >> 1`
+| `shl_uniform{v, s:[2]u64}` | x86  | Shift each element left by element 0 of `s`
+| `shr_uniform{v, s:[2]u64}` | x86  | Shift each element right by element 0 of `s`
+
+The following non-arithmetic definitions are also defined when possible.
+
+| Syntax                 | Result
+|------------------------|--------
+| `vec_make{V, ...x}`    | A vector of the values `x`
+| `vec_make{V, x}`       | Same, with a tuple parameter
+| `vec_broadcast{V, x}`  | A vector of copies of the value `x`
+| `extract{v:V, ind}`    | The element at position `ind` of vector `v`
+| `insert{v:V, x, ind}`  | Insert `x` to position `ind` of `v`, returning a new vector
+| `load{ptr,ind}`        | Same as builtin
+| `store{ptr,ind,val}`   | Same as builtin
+
+x86 also includes `load_aligned` and `store_aligned` for accesses that assume the pointer has vector alignment.
