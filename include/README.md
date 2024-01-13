@@ -69,7 +69,7 @@ Additional notes:
 
 ## SIMD architecture
 
-Includes `arch/iintrinsic/basic` and `arch/neon_intrin/basic` are "basic" architecture includes that define arithmetic and a few essential vector operations. Because of x86's haphazard instruction support, the default `arch/iintrinsic/basic` includes multi-instruction implementations of many operations such as comparisons, min, and max. Use `arch/iintrinsic/basic_main` to define only cases that are supported by a single instruction.
+Includes `arch/iintrinsic/basic` and `arch/neon_intrin/basic` are "basic" architecture includes that define arithmetic and a few essential vector operations. Because of x86's haphazard instruction support, the default `arch/iintrinsic/basic` includes multi-instruction implementations of many operations such as comparisons, min, and max. Use `arch/iintrinsic/basic_strict` to define only cases that are supported by a single instruction.
 
 All [builtin arithmetic](../README.md#arithmetic) operations are supported when available (`__mod` is the only one that's never provided), in addition to the following (architecture indicated if only one supports it):
 
