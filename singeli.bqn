@@ -307,7 +307,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     t ← When ⟨¬Try"=", Get∘"=" ⊢ TypeExpr⟩
     ⟨n,t,Expr@⟩
   }
-  ToId ← {𝕩.IsDef@⋄𝕩} c.PhraseTryWord
+  ToId ← {"Unexpected "":"""AsrtHere@≢𝕩 ⋄ 𝕩.IsDef@⋄𝕩} c.PhraseTryWord
 
   _lines_ ← { Line _𝕣_ Cont 𝕩:
     Seps @ ⋄ s ← 1
