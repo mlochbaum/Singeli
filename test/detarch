@@ -1,0 +1,40 @@
+#! /usr/bin/env bqn
+# Architecture detection tests
+
+Has ← ∊⟜•args⌾<
+
+⟨FindBitPacker⟩ ← •Import "../detarch.bqn"
+CheckBitPack ← {
+  S ← { ! ¬∨´𝕨↑𝕩 ⋄ 𝕨⌽𝕩 }         # Shift
+  A ← { ! ∧´𝕨(¯1⊸»⊸<∧≥)○/𝕩 ⋄ 𝕨 } # Add-mask
+  ! (0<≠)◶1‿(∧´ 1≥·+´ FindBitPacker (=⊣)◶S‿A¨ ⊢) 𝕩
+}
+run ← (Has "check") ⊑ FindBitPacker‿CheckBitPack
+
+cn ← 7↓¨ cl ← •file.Lines "../data/x86_cpuid.txt"
+ci ← ⊐3↑¨cl ⋄ cr ← (•ParseFloat ·(' '=⊑)⊸↓2↑4⊸↓)¨cl
+
+de ← ⍷ ∾ ' '⊸(⊢⊔˜=-˜+`∘=×≠)¨ •file.Lines "../data/x86_ext.txt"
+arch ← de‿0 •Import "../arch.bqn"
+f ← arch.feats
+f /˜↩ fm ← f∊cn
+# All possible dependency-resolved feature combinations
+combs ← (≍0¨f) (⍷⊢∾∨⎉1)˝ fm‿fm/arch.mat
+{ ∨´a←"-n"⊸≡¨•args ?
+  n ← •ParseFloat ⋈⁼(»a)/•args
+  combs (n (•MakeRand 1).Subset ≠)⊸⊏↩
+;@}
+
+cf ← f⊐cn ⋄ cs ← cr {𝕩⌾(𝕨⊸⊏)32⥊≠f}¨○(ci⊸⊔) cf
+inputs ← <∘{∨´¨⊸/ ⊏⟜(𝕩∾0)¨ cs}˘ combs
+tt←•MonoTime@ ⋄ t ← Run•_timed¨ inputs ⋄ tt-˜↩•MonoTime@
+
+{ Has "bench" ?
+  •Out⍟(Has"check") "(Timings include result check)"
+  Ro ← ⌊0.5⊸+ ⋄ Us ← 1e6⊸× ⋄ Ru ← Ro Us
+  •Out ∾•Repr⍟(0==)¨⟨"Total time: ",Ro⌾Us tt," (",Ru tt÷≠inputs,"μs avg)"⟩
+  •Out "Worst times (μs):"∾∾(' '∾•Repr)¨ Ru (w←10)↑∨t
+  { Has "retime" ?
+  •Out "Retimed:         "∾∾(' '∾•Repr)¨ Ru Run•_timed¨ (w↑⍒t)⊏inputs
+  ;@}
+;@}
