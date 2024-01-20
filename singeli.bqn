@@ -919,7 +919,7 @@ builtins ← {
     ⍉> ⟨
       ⟨"__set",functions.Mut _p2⟩
       ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"⋄kind⇐"error"}⊣•Out∘ShowMulti⟩
-      ⟨"is",Match _p2⟩, ⟨"hastype",HasType _p2⟩
+      ⟨"is",Match _p2⟩, ⟨"hastype",1‿2 _exp_ ((1≠≠)◶⟨IsTyped⊑, HasType´⟩)⟩
       ⟨"undefined",Undefined⟩, ⟨"load",Load⟩, ⟨"store",Store⟩
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
       ⟨"typekind",symbols.New types.TypeKind _p1⟩
