@@ -41,13 +41,14 @@ local {
   def isize = primtype{'i',ptrwidth}
   def ptrdiff{a} = cast{isize, a}
   def ptrdiff{a:T} = promote{ptrwidth, a}
+  def anynum{a} = is{'number',kind{a}}; def anynum{a:T} = is{'primitive',typekind{T}}
 }
 def __pnt{a:T & isptr{T}} = load{a,0}
 
-def __add{a  ,b:P & isptr{P}}  = emit{P, 'op +', ptrdiff{a}, b}
-def __add{a:P,b   & isptr{P}}  = emit{P, 'op +', a, ptrdiff{b}}
-def __sub{a:P,b   & isptr{P}}  = emit{P, 'op -', a, ptrdiff{b}}
-def __sub{a:P,b:P & isptr{P}}  = emit{isize, 'op -', a, b}
+def __add{a  ,b:P & isptr{P} & anynum{a}} = emit{P, 'op +', ptrdiff{a}, b}
+def __add{a:P,b   & isptr{P} & anynum{b}} = emit{P, 'op +', a, ptrdiff{b}}
+def __sub{a:P,b   & isptr{P} & anynum{b}} = emit{P, 'op -', a, ptrdiff{b}}
+def __sub{a:P,b:P & isptr{P}}             = emit{isize, 'op -', a, b}
 
 extend (compare{'op =='}){__eq}
 extend (compare{'op !='}){__ne}
