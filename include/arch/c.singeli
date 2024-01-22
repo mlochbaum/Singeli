@@ -1,18 +1,18 @@
 local {
   local def extend promote{arith} = {
-    def arith{a:T,b & is{'number',kind{b}} & is{'primitive',typekind{T}}} = arith{a , cast{T,b}}
-    def arith{a,b:T & is{'number',kind{a}} & is{'primitive',typekind{T}}} = arith{cast{T,a} , b}
+    def arith{a:T,b if is{'number',kind{b}} and is{'primitive',typekind{T}}} = arith{a , cast{T,b}}
+    def arith{a,b:T if is{'number',kind{a}} and is{'primitive',typekind{T}}} = arith{cast{T,a} , b}
   }
   def arith{op} = { def extend _{arith} = {
-    def arith{a:T,b:T & is{'primitive',typekind{T}}} = emit{T, op, a, b}
+    def arith{a:T,b:T if is{'primitive',typekind{T}}} = emit{T, op, a, b}
     extend promote{arith}
   }}
   def arith1{op} = { def extend _{arith} = {
-    def arith{a:T & is{'primitive',typekind{T}}} = emit{T, op, a}
+    def arith{a:T if is{'primitive',typekind{T}}} = emit{T, op, a}
     arith
   }}
   def sh{op} = { def extend _{arith} = {
-    def arith{a:T,b:I & isint{T} & isint{I}} = emit{T, op, a, b}
+    def arith{a:T,b:I if isint{T} and isint{I}} = emit{T, op, a, b}
     extend promote{arith}
   }}
   def pk{T} = {
@@ -20,7 +20,7 @@ local {
     is{'primitive',k} or is{'pointer',k}
   }
   def compare{op} = { def extend _{arith} = {
-    def arith{a:T,b:T & pk{T}} = emit{u1, op, a, b}
+    def arith{a:T,b:T if pk{T}} = emit{u1, op, a, b}
     extend promote{arith}
   }}
   def logic = arith
@@ -43,12 +43,12 @@ local {
   def ptrdiff{a:T} = promote{ptrwidth, a}
   def anynum{a} = is{'number',kind{a}}; def anynum{a:T} = is{'primitive',typekind{T}}
 }
-def __pnt{a:T & isptr{T}} = load{a,0}
+def __pnt{a:T if isptr{T}} = load{a,0}
 
-def __add{a  ,b:P & isptr{P} & anynum{a}} = emit{P, 'op +', ptrdiff{a}, b}
-def __add{a:P,b   & isptr{P} & anynum{b}} = emit{P, 'op +', a, ptrdiff{b}}
-def __sub{a:P,b   & isptr{P} & anynum{b}} = emit{P, 'op -', a, ptrdiff{b}}
-def __sub{a:P,b:P & isptr{P}}             = emit{isize, 'op -', a, b}
+def __add{a  ,b:P if isptr{P} and anynum{a}} = emit{P, 'op +', ptrdiff{a}, b}
+def __add{a:P,b   if isptr{P} and anynum{b}} = emit{P, 'op +', a, ptrdiff{b}}
+def __sub{a:P,b   if isptr{P} and anynum{b}} = emit{P, 'op -', a, ptrdiff{b}}
+def __sub{a:P,b:P if isptr{P}}               = emit{isize, 'op -', a, b}
 
 extend (compare{'op =='}){__eq}
 extend (compare{'op !='}){__ne}

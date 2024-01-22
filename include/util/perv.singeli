@@ -3,19 +3,19 @@
 local oper \ ({t}=>is{'tuple',kind{t}}) prefix 40
 
 def extend perv1{op} = {
-  def op{a & \a} = each{op, a}
+  def op{a if \a} = each{op, a}
 }
 
 def extend perv2{op} = {
-  def op{a, b & \b} = each{op{a,.}, b}
-  def op{a, b & \a} = each{op{.,b}, a}
-  def op{a, b & \a & \b} = each{op, a, b}
+  def op{a, b if \b} = each{op{a,.}, b}
+  def op{a, b if \a} = each{op{.,b}, a}
+  def op{a, b if \a and \b} = each{op, a, b}
 }
 
 local def anytup = match { {e, ...t} => \e or anytup{...t}; {} => 0 }
 
-def perv{n & is{'number',kind{n}}} = { def extend _{op} = {
-  def op{...t & is{n,tuplen{t}} & anytup{...t}} = {
+def perv{n if is{'number',kind{n}}} = { def extend _{op} = {
+  def op{...t if is{n,tuplen{t}} and anytup{...t}} = {
     def ftup{{e, ...t}} = if (\e) e else ftup{t}
     def l = ftup{t}
     def r{s} = if (\s) s else each{{_}=>s,l}

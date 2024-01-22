@@ -46,7 +46,7 @@ def printf{...vs0} = {
       if (k === 'primitive') {
         def q = quality{T}
         def w = width{T}
-        def u = (w>1) & (q=='u')
+        def u = w>1 and q=='u'
         def spec = {
           if (q=='f') (if (w==32) '%.8g' else '%.17g')
           else merge{

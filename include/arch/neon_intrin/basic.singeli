@@ -25,7 +25,7 @@ local {
 local {
   def can_elt{V,x} = num{x} or hastype{x, eltype{V}}
   def can_make_sub = can_elt
-  def can_make_sub{V,x & 'tuple'==kind{x}} = {
+  def can_make_sub{V,x and 'tuple'==kind{x}} = {
     def all{t} = {
       def l = tuplen{t}
       if (l==1) select{t,0}
@@ -40,54 +40,54 @@ local {
     load{*V~~tmp, 0}
   }
 }
-def vec_make{V, ...x & can_make{V,x}} = mv_sub{V, x}
-def vec_make{V, x & 'tuple'==kind{x} & can_make{V,x}} = mv_sub{V, x}
-def vec_broadcast{V, x & can_make{V,x}} = emit{V, intrin{'vdup', '_n', V}, x}
+def vec_make{V, ...x and can_make{V,x}} = mv_sub{V, x}
+def vec_make{V, x and 'tuple'==kind{x} and can_make{V,x}} = mv_sub{V, x}
+def vec_broadcast{V, x and can_make{V,x}} = emit{V, intrin{'vdup', '_n', V}, x}
 
-def load{a:P, n & va{eltype{P}}} = {
+def load{a:P, n and va{eltype{P}}} = {
   def V = eltype{P}
   emit{V, intrin{'vld1', V}, *eltype{V} ~~ (a+n)}
 }
-def store{a:*V, n, v:V & va{V}} = emit{void, intrin{'vst1', V}, *eltype{V} ~~ (a+n), v}
+def store{a:*V, n, v:V and va{V}} = emit{void, intrin{'vst1', V}, *eltype{V} ~~ (a+n), v}
 
-def extract{x:V,n & va{V} & num{n}} = emit{eltype{V}, intrin{'vget', '_lane', V}, x, n}
-def insert{a:V, x, i & va{V} & num{i} & can_elt{V,x}} = {
+def extract{x:V,n and va{V} and num{n}} = emit{eltype{V}, intrin{'vget', '_lane', V}, x, n}
+def insert{a:V, x, i and va{V} and num{i} and can_elt{V,x}} = {
   emit{V, intrin{'vset', '_lane', V}, cast{eltype{V}, x}, a, i}
 }
 
-def   __or{a:V,b:V & vf{V}} = {def U = uns{V}; V~~ __or{U~~a, U~~b} }
-def  __and{a:V,b:V & vf{V}} = {def U = uns{V}; V~~__and{U~~a, U~~b} }
-def  __xor{a:V,b:V & vf{V}} = {def U = uns{V}; V~~__xor{U~~a, U~~b} }
-def  __add{a:V,b:V & va{V}} = emit{V, intrin{'vadd', V}, a, b}
-def  __sub{a:V,b:V & va{V}} = emit{V, intrin{'vsub', V}, a, b}
-def  __mul{a:V,b:V & va{V}} = emit{V, intrin{'vmul', V}, a, b}
-def  __div{a:V,b:V & vf{V}} = emit{V, intrin{'vdiv', V}, a, b}
-def  __and{a:V,b:V & vi{V}} = emit{V, intrin{'vand', V}, a, b}
-def   __or{a:V,b:V & vi{V}} = emit{V, intrin{'vorr', V}, a, b}
-def  __xor{a:V,b:V & vi{V}} = emit{V, intrin{'veor', V}, a, b}
-def andnot{a:V,b:V & vi{V}} = emit{V, intrin{'vbic', V}, a, b}
-def  ornot{a:V,b:V & vi{V}} = emit{V, intrin{'vorn', V}, a, b}
-def  andnz{a:V,b:V & vi{V}} = emit{V, intrin{'vtst', V}, a, b}
-def  __min{a:V,b:V & va{V}}  = emit{V, intrin{'vmin', V}, a, b}
-def  __max{a:V,b:V & va{V}}  = emit{V, intrin{'vmax', V}, a, b}
-def  __shl{a:V,b:S & vi{V} & S==uns{V}} = emit{V, intrin{'vshl', V}, a, b}
-def __adds{a:V,b:V & vi{V}} = emit{V, intrin{'vqadd', V}, a, b}
-def __subs{a:V,b:V & vi{V}} = emit{V, intrin{'vqsub', V}, a, b}
-def   addp{a:V,b:V & va{V}} = emit{V, intrin{'vpadd', V}, a, b}
+def   __or{a:V,b:V and vf{V}} = {def U = uns{V}; V~~ __or{U~~a, U~~b} }
+def  __and{a:V,b:V and vf{V}} = {def U = uns{V}; V~~__and{U~~a, U~~b} }
+def  __xor{a:V,b:V and vf{V}} = {def U = uns{V}; V~~__xor{U~~a, U~~b} }
+def  __add{a:V,b:V and va{V}} = emit{V, intrin{'vadd', V}, a, b}
+def  __sub{a:V,b:V and va{V}} = emit{V, intrin{'vsub', V}, a, b}
+def  __mul{a:V,b:V and va{V}} = emit{V, intrin{'vmul', V}, a, b}
+def  __div{a:V,b:V and vf{V}} = emit{V, intrin{'vdiv', V}, a, b}
+def  __and{a:V,b:V and vi{V}} = emit{V, intrin{'vand', V}, a, b}
+def   __or{a:V,b:V and vi{V}} = emit{V, intrin{'vorr', V}, a, b}
+def  __xor{a:V,b:V and vi{V}} = emit{V, intrin{'veor', V}, a, b}
+def andnot{a:V,b:V and vi{V}} = emit{V, intrin{'vbic', V}, a, b}
+def  ornot{a:V,b:V and vi{V}} = emit{V, intrin{'vorn', V}, a, b}
+def  andnz{a:V,b:V and vi{V}} = emit{V, intrin{'vtst', V}, a, b}
+def  __min{a:V,b:V and va{V}}  = emit{V, intrin{'vmin', V}, a, b}
+def  __max{a:V,b:V and va{V}}  = emit{V, intrin{'vmax', V}, a, b}
+def  __shl{a:V,b:S and vi{V} and S==uns{V}} = emit{V, intrin{'vshl', V}, a, b}
+def __adds{a:V,b:V and vi{V}} = emit{V, intrin{'vqadd', V}, a, b}
+def __subs{a:V,b:V and vi{V}} = emit{V, intrin{'vqsub', V}, a, b}
+def   addp{a:V,b:V and va{V}} = emit{V, intrin{'vpadd', V}, a, b}
 
-def __shl{a:V, s & vi{V} & num{s} & s>0 & s<ew{V}} = emit{V, intrin{'vshl', '_n', V}, a, s};  def __shl{a:V,s==0 & vi{V}} = a
-def __shr{a:V, s & vi{V} & num{s} & s>0 & s<ew{V}} = emit{V, intrin{'vshr', '_n', V}, a, s};  def __shr{a:V,s==0 & vi{V}} = a
+def __shl{a:V, s and vi{V} and num{s} and s>0 and s<ew{V}} = emit{V, intrin{'vshl', '_n', V}, a, s};  def __shl{a:V,s==0 and vi{V}} = a
+def __shr{a:V, s and vi{V} and num{s} and s>0 and s<ew{V}} = emit{V, intrin{'vshr', '_n', V}, a, s};  def __shr{a:V,s==0 and vi{V}} = a
 
-def __neg{a:V & vs{V}} = emit{V, intrin{'vneg', V}, a}
-def __not{a:V & vu{V}} = { def U=[width{V}/width{u8}]u8; V~~emit{U, intrin{'vmvn', U}, a} }
-def __sqrt {a:V & vf{V}} = emit{V, intrin{'vsqrt', V}, a}
-def __floor{a:V & vf{V}} = emit{V, intrin{'vrndm', V}, a}
-def __ceil {a:V & vf{V}} = emit{V, intrin{'vrndp', V}, a}
-def __abs  {a:V & vs{V}} = emit{V, intrin{'vabs', V}, a}
+def __neg{a:V and vs{V}} = emit{V, intrin{'vneg', V}, a}
+def __not{a:V and vu{V}} = { def U=[width{V}/width{u8}]u8; V~~emit{U, intrin{'vmvn', U}, a} }
+def __sqrt {a:V and vf{V}} = emit{V, intrin{'vsqrt', V}, a}
+def __floor{a:V and vf{V}} = emit{V, intrin{'vrndm', V}, a}
+def __ceil {a:V and vf{V}} = emit{V, intrin{'vrndp', V}, a}
+def __abs  {a:V and vs{V}} = emit{V, intrin{'vabs', V}, a}
 
-def __eq{a:V,b:V & va{V}} = emit{uns{V}, intrin{'vceq', V}, a, b}
-def __ge{a:V,b:V & va{V}} = emit{uns{V}, intrin{'vcge', V}, a, b}
-def __gt{a:V,b:V & va{V}} = emit{uns{V}, intrin{'vcgt', V}, a, b}
-def __lt{a:V,b:V & va{V}} = emit{uns{V}, intrin{'vclt', V}, a, b}
-def __le{a:V,b:V & va{V}} = emit{uns{V}, intrin{'vcle', V}, a, b}
-def __ne{a:V,b:V & va{V}} = ~(a==b)
+def __eq{a:V,b:V and va{V}} = emit{uns{V}, intrin{'vceq', V}, a, b}
+def __ge{a:V,b:V and va{V}} = emit{uns{V}, intrin{'vcge', V}, a, b}
+def __gt{a:V,b:V and va{V}} = emit{uns{V}, intrin{'vcgt', V}, a, b}
+def __lt{a:V,b:V and va{V}} = emit{uns{V}, intrin{'vclt', V}, a, b}
+def __le{a:V,b:V and va{V}} = emit{uns{V}, intrin{'vcle', V}, a, b}
+def __ne{a:V,b:V and va{V}} = ~(a==b)

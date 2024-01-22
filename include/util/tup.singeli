@@ -15,19 +15,19 @@ local {
 def empty{tup} = 0 == $tup
 
 # Constant-time evaluation returning a list
-def collect{vars,begin,end,exec & begin<=end} = {
+def collect{vars,begin,end,exec if begin<=end} = {
   def inds = begin + range{end-begin}
   each{exec{., vars}, inds}
 }
 
 # Integers [0,n)
-def iota{n & knum{n}} = range{n}
+def iota{n if knum{n}} = range{n}
 
 # All indices into tuple t
 def inds{t} = range{$t}
 
 # Tuple of n copies of v
-def copy{n, v & knum{n}} = each{{_}=>v, range{n}}
+def copy{n, v if knum{n}} = each{{_}=>v, range{n}}
 
 # Merge a tuple of tuples
 def join{l} = merge{...l}
@@ -40,7 +40,7 @@ def shiftleft {l, r} = slice{merge{l, r}, - $l}
 def reverse{t} = select{t, ($t-1) - inds{t}}
 
 # Tuple of length n made from t repeated cyclically
-def cycle{n, t & knum{n}} = {
+def cycle{n, t if knum{n}} = {
   def l = $t
   def m = n % l; def e = slice{t, 0, m}
   if (m == n) e
@@ -48,11 +48,11 @@ def cycle{n, t & knum{n}} = {
 }
 
 # Split into groups of length n, possibly less for the last
-def split{n, list & knum{n}} = {
+def split{n, list if knum{n}} = {
   def d = __ceil{($list) / n}
   each{sl{list, ., n}, n*range{d}}
 }
-def split{n, list & ktup{n}} = {
+def split{n, list if ktup{n}} = {
   def start = shiftright{0, scan{+,n}}
   each{sl{list,...}, start, n}
 }
@@ -93,8 +93,8 @@ local def scan_sub{f, get, list} = {
 
 # Copy list elements based on list, constant, or generator (like filter)
 def replicate{reps, list} = join{each{copy, reps, list}}
-def replicate{r, list & knum{r}} = join{each{copy{r,.}, list}}
-def replicate{f, list & kgen{f}} = replicate{each{f,list}, list}
+def replicate{r, list if knum{r}} = join{each{copy{r,.}, list}}
+def replicate{f, list if kgen{f}} = replicate{each{f,list}, list}
 
 # For boolean i, return indices of 1s
 def indices{i} = replicate{i, inds{i}}

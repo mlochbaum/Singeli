@@ -15,7 +15,7 @@ local {
       merge{'ep', if (sgn) 'i' else 'u', fmtnat{width{T}}}
     }
   }
-  def fmt_p{T, w & isint{T} & w>1} = merge{'si', fmtnat{w}}
+  def fmt_p{T, w if isint{T} and w>1} = merge{'si', fmtnat{w}}
   def intrin{name, V, ...s} = {
     def w = width{V}
     def fw = if (w<=128) '' else fmtnat{w}
@@ -45,36 +45,36 @@ local {
 
 # Multi-instruction fills; slowest ones go first
 local def fill = _iintrinsic_use_fill
-def __not{a:V & fill & go{V} & has_arith{V}} = a ^ (V ** ~cast{eltype{V},0})
-def __neg{a:V & fill & go{V} & has_arith{V}} = V**0 - a
-def __min{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a<b); (a&c) | andnot{b,c} }
-def __max{a:V, b:V & fill & go{V} & has_gt{V}} = { c:=V~~(a>b); (a&c) | andnot{b,c} }
-def __max{a:V, b:V & fill & go{V} & has_satur{V} & eu{V}} = __subs{a,b}+b
-def __min{a:V, b:V & fill & go{V} & has_satur{V} & eu{V}} = a-__subs{a,b}
-def __lt{a:V, b:V & fill & go{V}} = b>a
-def __ge{a:V, b:V & fill & go{V}} = b<=a
-def __le{a:V, b:V & fill & go{V}} = ~(a>b)
-def __ne{a:V, b:V & fill & go{V}} = ~(b==a)
-def __gt{a:V, b:V & fill & go{V} & eu{V} & has_gt{sgn{V}}} = {
+def __not{a:V if fill and go{V} and has_arith{V}} = a ^ (V ** ~cast{eltype{V},0})
+def __neg{a:V if fill and go{V} and has_arith{V}} = V**0 - a
+def __min{a:V, b:V if fill and go{V} and has_gt{V}} = { c:=V~~(a<b); (a&c) | andnot{b,c} }
+def __max{a:V, b:V if fill and go{V} and has_gt{V}} = { c:=V~~(a>b); (a&c) | andnot{b,c} }
+def __max{a:V, b:V if fill and go{V} and has_satur{V} and eu{V}} = __subs{a,b}+b
+def __min{a:V, b:V if fill and go{V} and has_satur{V} and eu{V}} = a-__subs{a,b}
+def __lt{a:V, b:V if fill and go{V}} = b>a
+def __ge{a:V, b:V if fill and go{V}} = b<=a
+def __le{a:V, b:V if fill and go{V}} = ~(a>b)
+def __ne{a:V, b:V if fill and go{V}} = ~(b==a)
+def __gt{a:V, b:V if fill and go{V} and eu{V} and has_gt{sgn{V}}} = {
   t:= V**(1<<(ew{V}-1))
   def I = sgn{V}; def s{v} = I~~(t^v)
   s{a} > s{b}
 }
-def __le{a:V, b:V & fill & go{V} & has_minmax{V}} = a==__min{a,b}
-def __gt{a:V, b:V & fill & go{V} & ~has_gt{V} & has_minmax{V}} = ~(a<=b)
-def __eq{a:V, b:V & fill & go{V} & ei{V} & ew{V}==64} = { def H=[4]u32; t := H~~a == H~~b; V~~(t & emit{H, '_mm_shuffle_epi32', t, 4b2301}) }
-def __abs{a:V & fill & go{V} & es{V} & has_rsh{V}} = { s:=a>>31; (s^a) - s }
-def __abs{a:V & fill & go{V} & es{V} & has_minmax{uns{V}}} = { u:=uns{V}~~a; V~~__min{u, -u} }
-def __abs{a:V & fill & go{V} & es{V} & has_minmax{    V }} = __max{a, -a}
-def __abs{a:V & fill & go{V} & has_arith{V} & ef{V}} = a & V~~uns{V}**(1<<(ew{V}-1)-1)
-def __shl{a:V, b:S & fill & go{V} & S<u64 & has_shift{V}} = shl_uniform{a, vec_make{[2]u64, promote{u64,b}, 0}}
-def __shr{a:V, b:S & fill & go{V} & S<u64 & has_rsh  {V}} = shr_uniform{a, vec_make{[2]u64, promote{u64,b}, 0}}
+def __le{a:V, b:V if fill and go{V} and has_minmax{V}} = a==__min{a,b}
+def __gt{a:V, b:V if fill and go{V} and ~has_gt{V} and has_minmax{V}} = ~(a<=b)
+def __eq{a:V, b:V if fill and go{V} and ei{V} and ew{V}==64} = { def H=[4]u32; t := H~~a == H~~b; V~~(t & emit{H, '_mm_shuffle_epi32', t, 4b2301}) }
+def __abs{a:V if fill and go{V} and es{V} and has_rsh{V}} = { s:=a>>31; (s^a) - s }
+def __abs{a:V if fill and go{V} and es{V} and has_minmax{uns{V}}} = { u:=uns{V}~~a; V~~__min{u, -u} }
+def __abs{a:V if fill and go{V} and es{V} and has_minmax{    V }} = __max{a, -a}
+def __abs{a:V if fill and go{V} and has_arith{V} and ef{V}} = a & V~~uns{V}**(1<<(ew{V}-1)-1)
+def __shl{a:V, b:S if fill and go{V} and S<u64 and has_shift{V}} = shl_uniform{a, vec_make{[2]u64, promote{u64,b}, 0}}
+def __shr{a:V, b:S if fill and go{V} and S<u64 and has_rsh  {V}} = shr_uniform{a, vec_make{[2]u64, promote{u64,b}, 0}}
 
 # Building vectors from scalars
 local {
   def can_elt{V,x} = num{x} or hastype{x, eltype{V}}
   def can_make_sub = can_elt
-  def can_make_sub{V,x & 'tuple'==kind{x}} = {
+  def can_make_sub{V,x if 'tuple'==kind{x}} = {
     def all{t} = {
       def l = tuplen{t}
       if (l==1) select{t,0}
@@ -103,27 +103,27 @@ local {
     emit{V, set_intrin{'set',V}, ...select{x, l-1-range{l}}}
   }
 }
-def vec_make{V, ...x & can_make{V,x}} = mv_sub{mvi, V, x}
-def vec_make{V, x & 'tuple'==kind{x} & can_make{V,x}} = mv_sub{mvi, V, x}
-def vec_broadcast{V, x & can_make{V,x}} = mv_sub{mvc, V, tup{x}}
+def vec_make{V, ...x if can_make{V,x}} = mv_sub{mvi, V, x}
+def vec_make{V, x if 'tuple'==kind{x} and can_make{V,x}} = mv_sub{mvi, V, x}
+def vec_broadcast{V, x if can_make{V,x}} = mv_sub{mvc, V, tup{x}}
 
-def load        {p:P, i & gop{P, has_make}} = { def V=eltype{P}; emit{V, intrin_b{'loadu', V}, vec_ptr{V,p+i}} }
-def load_aligned{p:P, i & gop{P, has_make}} = { def V=eltype{P}; emit{V, intrin_b{'load' , V}, vec_ptr{V,p+i}} }
-def store        {p:*V, i, v:V & go{V} & has_make{V}} = emit{void, intrin_b{'storeu', V}, vec_ptr{V,p+i}, v}
-def store_aligned{p:*V, i, v:V & go{V} & has_make{V}} = emit{void, intrin_b{'store' , V}, vec_ptr{V,p+i}, v}
+def load        {p:P, i if gop{P, has_make}} = { def V=eltype{P}; emit{V, intrin_b{'loadu', V}, vec_ptr{V,p+i}} }
+def load_aligned{p:P, i if gop{P, has_make}} = { def V=eltype{P}; emit{V, intrin_b{'load' , V}, vec_ptr{V,p+i}} }
+def store        {p:*V, i, v:V if go{V} and has_make{V}} = emit{void, intrin_b{'storeu', V}, vec_ptr{V,p+i}, v}
+def store_aligned{p:*V, i, v:V if go{V} and has_make{V}} = emit{void, intrin_b{'store' , V}, vec_ptr{V,p+i}, v}
 
-def extract{a:V, i==0 & go{V} & has_extract0{V}} = {
+def extract{a:V, i==0 if go{V} and has_extract0{V}} = {
   def T = eltype{V}
   def nt = if (not isfloat{T}) 'si128_si' else if (width{T}==32) 'ss_f' else 'sd_f'
   def name = merge{'_mm_cvt', nt, fmtnat{width{T}}}
   if ('u'!=quality{T}) emit{T,name,a}
   else { def I=primtype{'i', width{T}}; T~~emit{I,name,[vcount{V}]I~~a} }
 }
-def extract{a:V, i & go{V} & num{i} & has_extract{V}} = {
+def extract{a:V, i if go{V} and num{i} and has_extract{V}} = {
   def e{V,a} = emit{eltype{V}, intrin{'extract',V}, a, i}
   if (es{V}) e{V,a} else { def I=sgn{V}; eltype{V}~~e{I,I~~a} }
 }
-def insert{a:V, x, i & go{V} & num{i} & has_extract{V} & can_elt{V,x}} = {
+def insert{a:V, x, i if go{V} and num{i} and has_extract{V} and can_elt{V,x}} = {
   def m{V,a,x} = emit{V, intrin{'insert',V}, a, x, i}
   def T = eltype{V}
   def tx = cast{T,x}
@@ -134,29 +134,29 @@ def insert{a:V, x, i & go{V} & num{i} & has_extract{V} & can_elt{V,x}} = {
 }
 
 # Single-instruction definitions
-def __and {a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'and'   ,V}, a, b}
-def __or  {a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'or'    ,V}, a, b}
-def __xor {a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'xor'   ,V}, a, b}
-def andnot{a:V, b:V & go{V} & has_arith{V}} = emit{V, intrin_b{'andnot',V}, b, a}
+def __and {a:V, b:V if go{V} and has_arith{V}} = emit{V, intrin_b{'and'   ,V}, a, b}
+def __or  {a:V, b:V if go{V} and has_arith{V}} = emit{V, intrin_b{'or'    ,V}, a, b}
+def __xor {a:V, b:V if go{V} and has_arith{V}} = emit{V, intrin_b{'xor'   ,V}, a, b}
+def andnot{a:V, b:V if go{V} and has_arith{V}} = emit{V, intrin_b{'andnot',V}, b, a}
 
-def __add {a:V, b:V & go{V} & has_arith{V}}  = emit{V, intrin{'add', V,1}, a, b}
-def __sub {a:V, b:V & go{V} & has_arith{V}}  = emit{V, intrin{'sub', V,1}, a, b}
-def __adds{a:V, b:V & go{V} & has_satur{V}}  = emit{V, intrin{'adds',V  }, a, b}
-def __subs{a:V, b:V & go{V} & has_satur{V}}  = emit{V, intrin{'subs',V  }, a, b}
-def __min {a:V, b:V & go{V} & has_minmax{V}} = emit{V, intrin{'min', V  }, a, b}
-def __max {a:V, b:V & go{V} & has_minmax{V}} = emit{V, intrin{'max', V  }, a, b}
-def __mul {a:V, b:V & go{V} & has_mul{V}}    = emit{V, intrin{if (ef{V}) 'mul' else 'mullo', V,1}, a, b}
+def __add {a:V, b:V if go{V} and has_arith{V}}  = emit{V, intrin{'add', V,1}, a, b}
+def __sub {a:V, b:V if go{V} and has_arith{V}}  = emit{V, intrin{'sub', V,1}, a, b}
+def __adds{a:V, b:V if go{V} and has_satur{V}}  = emit{V, intrin{'adds',V  }, a, b}
+def __subs{a:V, b:V if go{V} and has_satur{V}}  = emit{V, intrin{'subs',V  }, a, b}
+def __min {a:V, b:V if go{V} and has_minmax{V}} = emit{V, intrin{'min', V  }, a, b}
+def __max {a:V, b:V if go{V} and has_minmax{V}} = emit{V, intrin{'max', V  }, a, b}
+def __mul {a:V, b:V if go{V} and has_mul{V}}    = emit{V, intrin{if (ef{V}) 'mul' else 'mullo', V,1}, a, b}
 
-def __shl{a:V, b & num{b} & go{V} & has_shift{V}} = emit{V, intrin{'slli',V,1}, a, b}
-def __shr{a:V, b & num{b} & go{V} & has_rsh  {V}} = emit{V, intrin{if (es{V}) 'srai' else 'srli',V,1}, a, b}
-def __shl{a:V, b:U & go{V} & U==uns{V} & has_vshift{V}} = emit{V, intrin{'sllv',V,1}, a, b}
-def __shr{a:V, b:U & go{V} & U==uns{V} & has_vrsh  {V}} = emit{V, intrin{if (es{V}) 'srav' else 'srlv',V,1}, a, b}
-def shl_uniform{a:V, b:[2]u64 & go{V} & has_shift{V}} = emit{V, intrin{'sll',V,1}, a, b}
-def shr_uniform{a:V, b:[2]u64 & go{V} & has_rsh  {V}} = emit{V, intrin{if (es{V}) 'sra' else 'srl',V,1}, a, b}
+def __shl{a:V, b if num{b} and go{V} and has_shift{V}} = emit{V, intrin{'slli',V,1}, a, b}
+def __shr{a:V, b if num{b} and go{V} and has_rsh  {V}} = emit{V, intrin{if (es{V}) 'srai' else 'srli',V,1}, a, b}
+def __shl{a:V, b:U if go{V} and U==uns{V} and has_vshift{V}} = emit{V, intrin{'sllv',V,1}, a, b}
+def __shr{a:V, b:U if go{V} and U==uns{V} and has_vrsh  {V}} = emit{V, intrin{if (es{V}) 'srav' else 'srlv',V,1}, a, b}
+def shl_uniform{a:V, b:[2]u64 if go{V} and has_shift{V}} = emit{V, intrin{'sll',V,1}, a, b}
+def shr_uniform{a:V, b:[2]u64 if go{V} and has_rsh  {V}} = emit{V, intrin{if (es{V}) 'sra' else 'srl',V,1}, a, b}
 
-def __eq{a:V, b:V & go{V} & has_eq{V}} = emit{uns{V}, intrin{'cmpeq',V,1}, b, a}
-def __gt{a:V, b:V & go{V} & has_gt{V}} = emit{uns{V}, intrin{'cmpgt',V  }, a, b}
-def __lt{a:V, b:V & go{V} & has_gt{V}} = emit{uns{V}, intrin{'cmpgt',V  }, b, a}
+def __eq{a:V, b:V if go{V} and has_eq{V}} = emit{uns{V}, intrin{'cmpeq',V,1}, b, a}
+def __gt{a:V, b:V if go{V} and has_gt{V}} = emit{uns{V}, intrin{'cmpgt',V  }, a, b}
+def __lt{a:V, b:V if go{V} and has_gt{V}} = emit{uns{V}, intrin{'cmpgt',V  }, b, a}
 
 local def cmp_flt{V, a, b, name, num} = {
   def c = if (sse{V}) emit{V, intrin{merge{'cmp',name}, V}, a, b}
@@ -165,91 +165,91 @@ local def cmp_flt{V, a, b, name, num} = {
   def U = uns{V}
   emit{U, intrin_b{merge{'cast',fmt_p{eltype{V}}}, U}, c}
 }
-def __eq{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'eq' ,  0}
-def __ne{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'neq',  4}
-def __gt{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'gt' , 30}
-def __ge{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'ge' , 29}
-def __lt{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'lt' , 17}
-def __le{a:V, b:V & go{V} & has_cmp_flt{V}} = cmp_flt{V, a, b, 'le' , 18}
+def __eq{a:V, b:V if go{V} and has_cmp_flt{V}} = cmp_flt{V, a, b, 'eq' ,  0}
+def __ne{a:V, b:V if go{V} and has_cmp_flt{V}} = cmp_flt{V, a, b, 'neq',  4}
+def __gt{a:V, b:V if go{V} and has_cmp_flt{V}} = cmp_flt{V, a, b, 'gt' , 30}
+def __ge{a:V, b:V if go{V} and has_cmp_flt{V}} = cmp_flt{V, a, b, 'ge' , 29}
+def __lt{a:V, b:V if go{V} and has_cmp_flt{V}} = cmp_flt{V, a, b, 'lt' , 17}
+def __le{a:V, b:V if go{V} and has_cmp_flt{V}} = cmp_flt{V, a, b, 'le' , 18}
 
-def __div{a:V, b:V & go{V} & has_float{V}} = emit{V, intrin{'div', V}, a, b}
-def __sqrt {a:V & go{V} & has_float{V}} = emit{V, intrin{'sqrt',  V}, a}
+def __div{a:V, b:V if go{V} and has_float{V}} = emit{V, intrin{'div', V}, a, b}
+def __sqrt {a:V if go{V} and has_float{V}} = emit{V, intrin{'sqrt',  V}, a}
 local def round_flt{V, a, name, num} = {
   if (av5{V}) emit{V, intrin{'roundscale', V}, a, num}
   else        emit{V, intrin{name,         V}, a}
 }
-def __floor{a:V & go{V} & has_round{V}} = round_flt{V, a, 'floor', 9}
-def __ceil {a:V & go{V} & has_round{V}} = round_flt{V, a, 'ceil', 10}
-def __round{a:V & go{V} & has_round{V}} = round_flt{V, a, 'round', 8}
+def __floor{a:V if go{V} and has_round{V}} = round_flt{V, a, 'floor', 9}
+def __ceil {a:V if go{V} and has_round{V}} = round_flt{V, a, 'ceil', 10}
+def __round{a:V if go{V} and has_round{V}} = round_flt{V, a, 'round', 8}
 
-def __abs      {a:V      & go{V} & has_int_op{V,'SSSE3','i',32,64}} = emit{V, intrin{'abs' ,V}, a}
-def copy_sign  {a:V, b:V & go{V} & has_int_op{V,'SSSE3','i',32, 0}} = emit{V, intrin{'sign',V}, a, b}
-def average_int{a:V, b:V & go{V} & has_int_op{V,'SSE2' ,'u',16,16}} = emit{V, intrin{'avg' ,V}, a, b}
+def __abs      {a:V      if go{V} and has_int_op{V,'SSSE3','i',32,64}} = emit{V, intrin{'abs' ,V}, a}
+def copy_sign  {a:V, b:V if go{V} and has_int_op{V,'SSSE3','i',32, 0}} = emit{V, intrin{'sign',V}, a, b}
+def average_int{a:V, b:V if go{V} and has_int_op{V,'SSE2' ,'u',16,16}} = emit{V, intrin{'avg' ,V}, a, b}
 
 local {
   def has_make{_} = 0  # set, load, store
-  def has_make{V==[4]f32 & hasarch{'SSE'}} = 1
-  def has_make{V & hasarch{'SSE2'} & sse{V}} = 1
-  def has_make{V & hasarch{'AVX' } & avx{V}} = 1
-  def has_make{V & hasarch{'AVX512F'} & av5{V}} = 1
+  def has_make{V==[4]f32 if hasarch{'SSE'}} = 1
+  def has_make{V if hasarch{'SSE2'} and sse{V}} = 1
+  def has_make{V if hasarch{'AVX' } and avx{V}} = 1
+  def has_make{V if hasarch{'AVX512F'} and av5{V}} = 1
 
   def has_extract{_} = 0  # extract
-  def has_extract{V & hasarch{'SSE2'  } & sse{V}} = width{eltype{V}}==16
-  def has_extract{V & hasarch{'SSE4.1'} & sse{V}} = 1
-  def has_extract{V & hasarch{'AVX'   } & avx{V} & fill} = width{eltype{V}}>=32
-  def has_extract{V & hasarch{'AVX2'  } & avx{V} & fill} = 1
+  def has_extract{V if hasarch{'SSE2'  } and sse{V}} = width{eltype{V}}==16
+  def has_extract{V if hasarch{'SSE4.1'} and sse{V}} = 1
+  def has_extract{V if hasarch{'AVX'   } and avx{V} and fill} = width{eltype{V}}>=32
+  def has_extract{V if hasarch{'AVX2'  } and avx{V} and fill} = 1
   def has_extract0{_} = 0
-  def has_extract0{V & hasarch{'SSE2'} & sse{V} & ew{V}>=32} = 1
+  def has_extract0{V if hasarch{'SSE2'} and sse{V} and ew{V}>=32} = 1
 
   def has_arith{_} = 0  # add, subtract, and, or, xor, andnot
-  def has_arith{V==[4]f32 & hasarch{'SSE'}} = 1
-  def has_arith{V & hasarch{'SSE2'} & sse{V}} = 1
-  def has_arith{V & hasarch{'AVX'} & avx{V} & ef{V}} = 1
-  def has_arith{V & hasarch{'AVX2'} & avx{V}} = 1
+  def has_arith{V==[4]f32 if hasarch{'SSE'}} = 1
+  def has_arith{V if hasarch{'SSE2'} and sse{V}} = 1
+  def has_arith{V if hasarch{'AVX'} and avx{V} and ef{V}} = 1
+  def has_arith{V if hasarch{'AVX2'} and avx{V}} = 1
   def has_avx512{V} = ew{V}>=32 or hasarch{'AVX512BW'}
-  def has_arith{V & hasarch{'AVX512F'} & av5{V}} = has_avx512{V}
+  def has_arith{V if hasarch{'AVX512F'} and av5{V}} = has_avx512{V}
 
   def has_satur{_} = 0  # saturating add/subtract
-  def has_satur{V & hasarch{'SSE2'} & sse{V}} = ew{V}<=16
-  def has_satur{V & hasarch{'AVX2'} & avx{V}} = ew{V}<=16
-  def has_satur{V & hasarch{'AVX512BW'} & av5{V}} = ew{V}<=16
+  def has_satur{V if hasarch{'SSE2'} and sse{V}} = ew{V}<=16
+  def has_satur{V if hasarch{'AVX2'} and avx{V}} = ew{V}<=16
+  def has_satur{V if hasarch{'AVX512BW'} and av5{V}} = ew{V}<=16
 
   def has_minmax{_} = 0  # min, max
-  def has_minmax{V==[ 4]f32 & hasarch{'SSE' }} = 1
-  def has_minmax{V==[ 2]f64 & hasarch{'SSE2'}} = 1
-  def has_minmax{V==[ 8]i16 & hasarch{'SSE2'}} = 1
-  def has_minmax{V==[16]u8  & hasarch{'SSE2'}} = 1
+  def has_minmax{V==[ 4]f32 if hasarch{'SSE' }} = 1
+  def has_minmax{V==[ 2]f64 if hasarch{'SSE2'}} = 1
+  def has_minmax{V==[ 8]i16 if hasarch{'SSE2'}} = 1
+  def has_minmax{V==[16]u8  if hasarch{'SSE2'}} = 1
   def avx_minmax{T} = isfloat{T} or width{T}<=32
-  def has_minmax{V & hasarch{'SSE4.1'} & sse{V}} = avx_minmax{eltype{V}}
-  def has_minmax{V & hasarch{'AVX'} & avx{V} & ef{V}} = 1
-  def has_minmax{V & hasarch{'AVX2'} & avx{V}} = avx_minmax{eltype{V}}
-  def has_minmax{V & hasarch{'AVX512F'} & av5{V}} = has_avx512{V}
+  def has_minmax{V if hasarch{'SSE4.1'} and sse{V}} = avx_minmax{eltype{V}}
+  def has_minmax{V if hasarch{'AVX'} and avx{V} and ef{V}} = 1
+  def has_minmax{V if hasarch{'AVX2'} and avx{V}} = avx_minmax{eltype{V}}
+  def has_minmax{V if hasarch{'AVX512F'} and av5{V}} = has_avx512{V}
 
   def has_mul{_} = 0  # same-width multiply (mullo for ints)
-  def has_mul{V==[4]f32 & hasarch{'SSE'}} = 1
-  def has_mul{V & hasarch{'SSE2'  } & sse{V} & ef{V}} = 1
-  def has_mul{V & hasarch{'SSE2'  } & sse{V} & ew{V}==16} = 1
-  def has_mul{V & hasarch{'SSE4.1'} & sse{V} & ew{V}==32} = 1
-  def has_mul{V & hasarch{'AVX'   } & avx{V} & ef{V}} = 1
-  def has_mul{V & hasarch{'AVX2'  } & avx{V} & ew{V}<=32 & ew{V}>=16} = 1
-  def has_mul{V & hasarch{'AVX512F'} & av5{V}} = if (ef{V}) 1 else match (ew{V}) {
+  def has_mul{V==[4]f32 if hasarch{'SSE'}} = 1
+  def has_mul{V if hasarch{'SSE2'  } and sse{V} and ef{V}} = 1
+  def has_mul{V if hasarch{'SSE2'  } and sse{V} and ew{V}==16} = 1
+  def has_mul{V if hasarch{'SSE4.1'} and sse{V} and ew{V}==32} = 1
+  def has_mul{V if hasarch{'AVX'   } and avx{V} and ef{V}} = 1
+  def has_mul{V if hasarch{'AVX2'  } and avx{V} and ew{V}<=32 and ew{V}>=16} = 1
+  def has_mul{V if hasarch{'AVX512F'} and av5{V}} = if (ef{V}) 1 else match (ew{V}) {
     {(32)}=>1; {(16)}=>hasarch{'AVX512BW'}; {(64)}=>hasarch{'AVX512DQ'}
   }
 
   def has_shift{_} = 0  # shift by scalar
-  def has_shift{V & hasarch{'SSE2'} & sse{V} & ei{V} & ew{V}>=16} = 1
-  def has_shift{V & hasarch{'AVX2'} & avx{V} & ei{V} & ew{V}>=16} = 1
-  def has_shift{V & hasarch{'AVX512F'} & av5{V} & ei{V} & ew{V}>=16} = has_avx512{V}
+  def has_shift{V if hasarch{'SSE2'} and sse{V} and ei{V} and ew{V}>=16} = 1
+  def has_shift{V if hasarch{'AVX2'} and avx{V} and ei{V} and ew{V}>=16} = 1
+  def has_shift{V if hasarch{'AVX512F'} and av5{V} and ei{V} and ew{V}>=16} = has_avx512{V}
   def has_rsh{V} = (eltype{V}!=i64 or av5{V}) and has_shift{V}
   def has_vshift{_} = 0  # shift by vector
-  def has_vshift{V & hasarch{'AVX2'} & sse_avx{V} & ei{V} & ew{V}>=32} = 1
-  def has_vshift{V & hasarch{'AVX512F'} & av5{V} & ei{V} & ew{V}>=16} = has_avx512{V}
+  def has_vshift{V if hasarch{'AVX2'} and sse_avx{V} and ei{V} and ew{V}>=32} = 1
+  def has_vshift{V if hasarch{'AVX512F'} and av5{V} and ei{V} and ew{V}>=16} = has_avx512{V}
   def has_vrsh{V} = (eltype{V}!=i64 or av5{V}) and has_vshift{V}
 
   def has_eq{_} = 0  # equals, integer only
-  def has_eq{V & hasarch{'SSE2'  } & sse{V}} = width{eltype{V}}<=32
-  def has_eq{V & hasarch{'SSE4.2'} & sse{V}} = 1
-  def has_eq{V & hasarch{'AVX2'  } & avx{V}} = 1
+  def has_eq{V if hasarch{'SSE2'  } and sse{V}} = width{eltype{V}}<=32
+  def has_eq{V if hasarch{'SSE4.2'} and sse{V}} = 1
+  def has_eq{V if hasarch{'AVX2'  } and avx{V}} = 1
   def has_gt{V} = es{V} and has_eq{V}
 
   # float comparisons, div, square root

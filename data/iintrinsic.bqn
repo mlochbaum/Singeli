@@ -98,7 +98,7 @@ sname ∾¨↩ proto (1<≠∘⊢)◶⟨""¨,Disamb⟩¨⌾(id⊸⊔) names
 MakeDef ← {instr 𝕊 prot:
   # Utilities
   Br←"{"∾∾⟜"}" ⋄ A←∾⟜Br ⋄ M←{"is"A∾𝕨‿","‿𝕩}
-  Int←<⊸(≍˘) ⋄ J←∾1↓·⥊Int
+  Int←⥊<⊸(≍˘) ⋄ J←∾1↓Int
   # Test if 𝕩 is of type 𝕨
   IsT ← (∊⟜"bm"⌾<⊑∘⊢)◶M‿{ "intvec"A∾⟨1↓𝕩,",",𝕨⟩ }
   # Type handling and formatting
@@ -112,7 +112,7 @@ MakeDef ← {instr 𝕊 prot:
   imms ← (⊢ ⋈ "num"⊸A¨) if/an
   rt ↩ (≠at)⊸=◶⟨⊑⟜tn, rt⟩ at⊸⊐⌾< rt
   ∾⟨
-    Br ∾ 1↓⥊ ∾ ⟨", "," & "⟩ Int¨ vars ∾¨ imms
+    Br ∾ 1↓ ∾⟜(" if "⌾⊑⍟(0<≠))´ ⟨", "," and "⟩ Int¨ vars ∾¨ imms
     " = emit"
     Br ", "J ⟨rt, "'"(∾∾⊣)instr⟩ ∾ an
   ⟩
@@ -121,7 +121,7 @@ defs ← cpuid ⊔○((⍋cat)⊸⊏) sname {∾"def _"‿𝕨‿𝕩}¨ names M
 •Out 1⌽"
 local {
   def intvec{w,T} = 0
-  def intvec{w,T & is{'vector',typekind{T}} & isint{eltype{T}} & is{w,width{T}}} = 1
+  def intvec{w,T if is{'vector',typekind{T}} and isint{eltype{T}} and is{w,width{T}}} = 1
   def num{T} = is{'number',kind{T}}
 }"
 •Out¨ ∾ 1↓⥊(<2⥊<⟨⟩) ∾˘ ("#"⊸∾¨isaList) <⊸≍˘ defs
