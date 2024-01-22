@@ -436,7 +436,7 @@ We have some vector scan code already, for prefix sums, let me find it… Rollin
     def shuf_64 = shuf_sub{[4]i64, '_mm256_permute4x64_epi64', base{4,.}}
 
     # Left shift by n bytes
-    def shl_lane{x:V, n & width{V}==256} = V~~emit{[32]i8, '_mm256_bslli_epi128', [32]i8~~x, n}
+    def shl_lane{x:V, n if width{V}==256} = V~~emit{[32]i8, '_mm256_bslli_epi128', [32]i8~~x, n}
 
     def blend{m:M, t:T, f:T} = (t & T~~m) | andnot{f, T~~m}
 
@@ -453,7 +453,7 @@ We have some vector scan code already, for prefix sums, let me find it… Rollin
       shuf_64{l, copy{4, 3}}
     }
 
-    fn scan{T, op==(+) & hasarch{'AVX2'}}(dst:*T, src:*T, len:u64) : void = {
+    fn scan{T, op==(+) if hasarch{'AVX2'}}(dst:*T, src:*T, len:u64) : void = {
       def vlen = 256/width{T}
       def V = [vlen]T
       # Shift-like step: log(vlen) of these used in a scan
@@ -638,9 +638,9 @@ Oh, uh, yeah, that works. So I take the plus scan thing and replace the shift wi
 
     def make_scan_idem{T, op} = {
       def shift_ind{k,l} = shiftright{range{k},range{l}}
-      def shift{v:V, k        } = shuf_lane_8 {v, shift_ind{k/8,16}}
-      def shift{v:V, k & k>=32} = shuf_lane_32{v, shift_ind{k/32,4}}
-      def shift{v:V, k & k==128} = {
+      def shift{v:V, k         } = shuf_lane_8 {v, shift_ind{k/8,16}}
+      def shift{v:V, k if k>=32} = shuf_lane_32{v, shift_ind{k/32,4}}
+      def shift{v:V, k if k==128} = {
         def S = [8]i32; def perm = '_mm256_permute2x128_si256'
         V~~emit{S, perm, S~~to_lane_last{v}, v, 16b02}
       }
@@ -656,7 +656,7 @@ And this is the scan\_op version, so we need to combine with the existing values
 Right.
 
     # Assumes op is __min or __max
-    def scan_op{op, dst:*T, src:*T, init:T, len & hasarch{'AVX2'}} = {
+    def scan_op{op, dst:*T, src:*T, init:T, len if hasarch{'AVX2'}} = {
       def vlen = 256/width{T}
       def V = [vlen]T
       def pre = make_scan_idem{T, op}

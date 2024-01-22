@@ -268,7 +268,7 @@ Of course the actual numbers that far along in the sequence are *huge*, but the 
 Here's an extension you can add to `fib2{}` that takes this into account. Now if there's a really huge number you won't hit a recursion limit!
 
       def pisano = 1.5e9  # modulo 1e9
-      def fib2{n & n>=pisano} = fib2{n % pisano}
+      def fib2{n if n>=pisano} = fib2{n % pisano}
 
 This could all be translated into a C loop, but why should I if it's already instant? Maybe it's a fun exercise though—try looking at the bits of the index.
 

@@ -32,11 +32,11 @@ In fact, `+` is also a generator, if it's defined. Singeli operators aren't buil
 
 Generators can be extended with additional definitions. Each definition overrides the previous ones on its domain, which means that applying a generator searches backwards through all definitions visible in the current scope until it finds one that fits. `gen` above applies to any two arguments, but a definition can be narrowed using types and conditions:
 
-    def gen{x:T, n, n, S & 'number'==kind{n} & T<=S} = {
+    def gen{x:T, n, n, S if 'number'==kind{n} and T<=S} = {
       cast{S, x} + n
     }
 
-Here, `x` must be a typed value, and have type `T`, and the two `n` parameters must match. Furthermore, the conditions that follow each `&` must hold. Otherwise, previous definitions are tried and you get an error if there aren't any left. In this context `:` and `&` are syntax, not operators.
+Here, `x` must be a typed value, and have type `T`, and the two `n` parameters must match. And the condition following `if` must hold. Otherwise, previous definitions are tried and you get an error if there aren't any left.
 
 The end goal here is to define functions for use by some other program. Functions are declared with the `fn` keyword and a parenthesis syntax at the top level, possibly with generator-like parameters. Types use `value:type` syntax rather than `type value`.
 
@@ -76,7 +76,7 @@ A generator is essentially a compile-time function, which takes values called pa
 
     # Named generator with two cases
     def min{a, b} = a
-    def min{a, b & b<a} = b
+    def min{a, b if b<a} = b
 
     # Generated function
     fn triple{T}(x:T) = x + x + x
@@ -97,7 +97,7 @@ The parameter list in a generator definition has to give the names of parameters
 * Two parameters with the same name match
 * A `par:typ` parameter must be a typed value with the given type
 * A `par==val` or `(val)` parameter matches the given value
-* Explicit conditions `& cond` must hold (result in `1`)
+* An explicit condition `if cond` must hold (result in `1`)
 
 Each of the values `typ`, `val`, and `cond` can be an expression, which is fully evaluated whenever the condition is reached. Parameter names are all bound before evaluating any conditions, so that a condition can refer to parameter values, even ones that come after it in the source code.
 
@@ -398,13 +398,13 @@ For larger sets of definitions, `local` also allows a block syntax. The contents
 
 The `extend` keyword allows for programmable generator extension, so that the same extension can be applied to multiple generators easily. It's mainly used for more "internal" Singeli definitions like in `arch/c`. In short, this repetitive code:
 
-    def sin{arg & arg<0} = -sin{-arg}
-    def tan{arg & arg<0} = -tan{-arg}
+    def sin{arg if arg<0} = -sin{-arg}
+    def tan{arg if arg<0} = -tan{-arg}
 
 could be rewritten like this:
 
     def extend odd{fn} = {
-      def fn{arg & arg<0} = -fn{-arg}
+      def fn{arg if arg<0} = -fn{-arg}
     }
     extend odd{sin}
     extend odd{tan}

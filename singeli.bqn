@@ -374,7 +374,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
       Param ← <⊸∾´ ⟨Try∘"...", SubParam⟩_seq
       a ← While ⟨"}"_divList, Param, 1⟩ ⋄ err_ex_gather Asrt 1≥+´⊑¨a ⋄ a
     }
-    c ← While ⟨Div∘"&", CondExpr, 0⟩
+    c ← @_optGet_⟨kIf,⋈c.cond _node_ Expr, While ⟨Div∘"&", CondExpr, 0⟩⟩ @
     Get "}"
     a‿c
   }
@@ -1148,7 +1148,7 @@ nodes ← {
     pp_u8 ⇐ "**u8" Make types.pp_u8
   }
   Run ⇐ {
-    𝕨𝕊⟨⟨infix⟩,params⟩: CondNode´ 𝕩;
+    𝕨𝕊⟨⟨infix⟩,params⟩: CondOper´ 𝕩;
     ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨
     spread ← 0=•Type¨params ⋄ params ⊑¨↩
     Sp ← ⊣◶⟨⋈⊢, "Spread input must be tuple" IsTup _asrtGotS ⊢⟩
@@ -1421,14 +1421,14 @@ nodes ← {
       𝕨GotoC𝕩
     }
   }
-  CondNode ← {
+  CondOper ← {
     terms ← 𝕩
     name‿_ev ← 𝕨 ⋄ Eval⇐terms _ev
     Visit←{⟨name,𝕏¨terms⟩}
-    ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "cond"‿visit
+    ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "cond_oper"‿visit
   }
   CondEvalS ← {  # Return 0 or 1 for constant result and @ for unknown
-    "cond"≡𝕨.node ? 𝕨.Eval 𝕩 ;
+    "cond_oper"≡𝕨.node ? 𝕨.Eval 𝕩 ;
     n𝕊⟨jv‿label,e⟩:
     c ← n.Eval e
     { IsTyped c ? "Condition type must be u1" types.IsBool _asrtGotS TypeOf c
@@ -1479,14 +1479,22 @@ nodes ← {
     ⟨node,Dump,Disp,NonLocal⟩⇐Defaults "topif"‿visit ⋄ Scope⇐Eval⇐!
     Oper⇐{
       # Latest we can evaluate condition without scope circularity, so do it now
-      lf ← { label⇐@ ⋄ GotoC⇐{𝕊:!program._trace_ pos"Dynamic top-level if statement unsupported"} }
+      l ← { GotoC ⇐ !∘"Dynamic top-level if statement unsupported" }
       cond.Oper operator.CondScope 𝕩
-      c ← {𝕨 CondEval program._trace_ pos ⟨0‿lf, 𝕩⟩}ast._runIfCond cond
+      c ← {𝕨 CondEval program._trace_ pos ⟨0‿l, 𝕩⟩}ast._runIfCond cond
       body ← c ¬⊸⊑ then‿else
       ⟨Scope,Eval⟩ ↩ d ← Defaults "topif"‿{⟨𝕏¨body⟩}
       d.Oper 𝕩
       operator.nil
     }
+  }
+  Cond ⇐ {
+    cond←𝕩 ⋄ pos←𝕨
+    Visit←{𝕏cond}
+    ⟨node,Dump,Disp,NonLocal,Scope⟩⇐Defaults "cond"‿visit
+    Oper ⇐ { cond.Oper operator.CondScope 𝕩 }
+    l ← { GotoC ⇐ !∘"Generator condition must be a constant" }
+    Eval ⇐ { cond CondEval program._trace_ pos ⟨0‿l, 𝕩⟩ }
   }
   While ⇐ {
     ⟨testFirst,cond,stmt⟩←𝕩 ⋄ pos←𝕨
