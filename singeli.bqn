@@ -374,7 +374,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
       Param ← <⊸∾´ ⟨Try∘"...", SubParam⟩_seq
       a ← While ⟨"}"_divList, Param, 1⟩ ⋄ err_ex_gather Asrt 1≥+´⊑¨a ⋄ a
     }
-    c ← @_optGet_⟨kIf,⋈c.cond _node_ Expr, While ⟨Div∘"&", CondExpr, 0⟩⟩ @
+    c ← @_optGet_⟨kIf,⋈Expr, While ⟨Div∘"&", CondExpr, 0⟩⟩ @
     Get "}"
     a‿c
   }
@@ -501,10 +501,6 @@ operator ← {
     includes←⟨⟩ ⋄ AlreadyIncluded⇐{∊⟜includes⌾<𝕩 ? 1 ; includes∾↩<𝕩⋄0}
   }
   nilScope ⇐ { tabs ⇐ 2⥊{Get⇐nil˙} } # Lookup ⇐ nil˙
-  CondScope ⇐ { 𝕊 par:
-    parent‿tabs‿Add ⇐ par
-    Lookup ⇐ {@≢c←nodes.CondOp𝕩?c; par.Lookup 𝕩}
-  }
 }
 
 
@@ -1148,7 +1144,7 @@ nodes ← {
     pp_u8 ⇐ "**u8" Make types.pp_u8
   }
   Run ⇐ {
-    𝕨𝕊⟨⟨infix⟩,params⟩: CondOper´ 𝕩;
+    𝕨𝕊⟨⟨·⇐evb⟩,params⟩: 𝕨 CondOper 𝕩;
     ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨
     spread ← 0=•Type¨params ⋄ params ⊑¨↩
     Sp ← ⊣◶⟨⋈⊢, "Spread input must be tuple" IsTup _asrtGotS ⊢⟩
@@ -1421,11 +1417,9 @@ nodes ← {
       𝕨GotoC𝕩
     }
   }
-  CondOper ← {
-    terms ← 𝕩
-    name‿_ev ← 𝕨 ⋄ Eval⇐terms _ev
-    Visit←{⟨name,𝕏¨terms⟩}
-    ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "cond_oper"‿visit
+  BoolEval ← {
+    E ← IsTyped◶"Expected boolean"‿"Can't use runtime logic outside if() and while()"
+    e numbers.GetBool 𝕨.Eval 𝕩
   }
   CondEvalS ← {  # Return 0 or 1 for constant result and @ for unknown
     "cond_oper"≡𝕨.node ? 𝕨.Eval 𝕩 ;
@@ -1436,29 +1430,33 @@ nodes ← {
     ; "If condition must evaluate to boolean" numbers.GetBool c }
   }
   CondEval ← ⊑∘⊑∘⊢ ≢ CondEvalS  # Return 1 if it might jump
-  CAccum ← {𝕊id: {
-    ⟨jv‿label,e⟩←𝕩
-    l ← LazyLabel@
-    i ← (⊑𝕗) CondEvalS ⟨¬id,l⟩⌾⊑⍟(id=jv) 𝕩
-    c ← (1⊑𝕗) CondEvalS⟜𝕩⍟((¬id)≢⊢) i
-    functions.SetLabel⍟(@⊸≢) l.label
-    i⍟(id⊸≡) c
-  }}
-  condNodes ← ⟨
-    { name⇐"not" ⋄ infix⇐0 ⋄ _ev ⇐ { ¬⍟(@⊸≢) (⊑𝕗) CondEvalS ¬⌾(⊑⊑)𝕩 } }
-    { name⇐"and" ⋄ infix⇐1 ⋄ ev ⇐ CAccum 1 }
-    { name⇐"or"  ⋄ infix⇐1 ⋄ ev ⇐ CAccum 0 }
-  ⟩
-  CO ← {𝕊n: bind⇐¯∞⋄R⇐⊢⋄null‿left⇐n.infix⌽{V⇐n˙ ⋄ T⇐¯∞<{𝕩.bind}}‿@}
-  condOp ⇐ ({𝕩.name}¨ {𝕨⊸⊐⌾< =⟜(≠𝕨)◶⟨⊑⟜𝕩,@⟩ ⊢} CO¨) condNodes
+  CondOper ← { pos 𝕊 ⟨name‿_evb‿_evc, terms⟩: # Node created for and/or/not
+    Eval⇐{ev←(=𝕩)⊑evb‿evc ⋄ terms _ev program._trace_ pos 𝕩}
+    Visit←{⟨name,𝕏¨terms⟩}
+    ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "cond_oper"‿visit
+  }
+  AddConds ⇐ {
+    ev_not ← {¬(⊑𝕗) BoolEval 𝕩}‿{=𝕩? ¬⍟(@⊸≢) (⊑𝕗) CondEvalS ¬⌾(⊑⊑)𝕩}
+    CAccum ← {𝕊id: {∨´⌾(id⊸≠) BoolEval⟜𝕩¨ 𝕗}‿{
+      𝔽_𝕣 ⟨jv‿label,e⟩:
+      l ← LazyLabel@
+      i ← (⊑𝕗) CondEvalS ⟨¬id,l⟩⌾⊑⍟(id=jv) 𝕩
+      c ← (1⊑𝕗) CondEvalS⟜𝕩⍟((¬id)≢⊢) i
+      functions.SetLabel⍟(@⊸≢) l.label
+      i⍟(id⊸≡) c
+    }}
+    @ 𝕩.Add⟜{𝕊t‿n‿e: t‿n‿{name⇐n⋄evb‿evc⇐e}‿¯∞}¨ ⟨
+      'p'‿"not"‿ev_not
+      'l'‿"and"‿(CAccum 1)
+      'l'‿"or" ‿(CAccum 0)
+    ⟩
+  }
   If ⇐ {
     ⟨cond,then,else⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨𝕏cond,𝕏then,𝕏¨else⟩}
-    ⟨node,Dump,Disp,NonLocal,Scope⟩⇐Defaults "if"‿visit
-    IfLabel←LazyLabel
-    Oper ⇐ { cond.Oper operator.CondScope 𝕩 ⋄ {𝕏then⋄𝕏¨else}o.Oper 𝕩 ⋄ operator.nil }
+    ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "if"‿visit
     Eval ⇐ {
-      lf ← IfLabel@
+      lf ← LazyLabel@
       c ← cond CondEval program._trace_ pos ⟨0‿lf, e←𝕩⟩
       { ¬c ?
         r ← {Shows⇐!∘"Can't use if-0 statement result as value"⋄kind⇐"error"}
@@ -1479,28 +1477,18 @@ nodes ← {
     ⟨node,Dump,Disp,NonLocal⟩⇐Defaults "topif"‿visit ⋄ Scope⇐Eval⇐!
     Oper⇐{
       # Latest we can evaluate condition without scope circularity, so do it now
-      l ← { GotoC ⇐ !∘"Dynamic top-level if statement unsupported" }
-      cond.Oper operator.CondScope 𝕩
-      c ← {𝕨 CondEval program._trace_ pos ⟨0‿l, 𝕩⟩}ast._runIfCond cond
+      cond.Oper 𝕩
+      c ← {𝕨 BoolEval program._trace_ pos 𝕩}ast._runIfCond cond
       body ← c ¬⊸⊑ then‿else
       ⟨Scope,Eval⟩ ↩ d ← Defaults "topif"‿{⟨𝕏¨body⟩}
       d.Oper 𝕩
       operator.nil
     }
   }
-  Cond ⇐ {
-    cond←𝕩 ⋄ pos←𝕨
-    Visit←{𝕏cond}
-    ⟨node,Dump,Disp,NonLocal,Scope⟩⇐Defaults "cond"‿visit
-    Oper ⇐ { cond.Oper operator.CondScope 𝕩 }
-    l ← { GotoC ⇐ !∘"Generator condition must be a constant" }
-    Eval ⇐ { cond CondEval program._trace_ pos ⟨0‿l, 𝕩⟩ }
-  }
   While ⇐ {
     ⟨testFirst,cond,stmt⟩←𝕩 ⋄ pos←𝕨
     Visit←{⟨𝕏cond,𝕏stmt⟩}
-    ⟨node,Dump,Disp,NonLocal,Scope⟩⇐Defaults "while"‿visit
-    Oper ⇐ { cond.Oper operator.CondScope 𝕩 ⋄ stmt.Oper 𝕩 ⋄ operator.nil }
+    ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "while"‿visit
     Eval ⇐ { 𝕊 e:
       functions.SetLabel ll ← functions.Label@
       { testFirst ?
@@ -1577,6 +1565,7 @@ ast ← {
   baseScope ← builtins.names scopes.New scopes.Init@
   baseEnv   ← builtins.values env.Fixed @
   baseOper  ← operator.NewScope operator.nilScope
+  nodes.AddConds baseOper
   @ baseOper.Add 'r'‿"="‿(nodes.Word⟜"__set")‿¯∞
   Build ⇐ Parse∘Tokenize
   Compile ⇐ {
