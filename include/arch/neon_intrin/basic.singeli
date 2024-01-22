@@ -4,11 +4,11 @@ local {
   def num{x} = 'number'==kind{x}
 
   def ew{V} = width{eltype{V}}
-  def va{V} = if ('vector'==typekind{V}) __or{...tup{64,128}==width{V}} else 0
-  def vi{V} = if (va{V}) isint{eltype{V}} else 0
-  def vs{V} = if (va{V}) __or{...tup{'i','f'}==quality{eltype{V}}} else 0
-  def vu{V} = if (va{V}) 'u'==quality{eltype{V}} else 0
-  def vf{V} = if (va{V}) isfloat{eltype{V}} else 0
+  def va{V} = 'vector'==typekind{V} and __or{...tup{64,128}==width{V}}
+  def vi{V} = va{V} and isint{eltype{V}}
+  def vs{V} = va{V} and __or{...tup{'i','f'}==quality{eltype{V}}}
+  def vu{V} = va{V} and 'u'==quality{eltype{V}}
+  def vf{V} = va{V} and isfloat{eltype{V}}
 
   def change_qual{V,q} = [vcount{V}]primtype{q, ew{V}}
   def uns = change_qual{.,'u'}
@@ -23,7 +23,7 @@ local {
 
 # Building vectors from scalars
 local {
-  def can_elt{V,x} = if (num{x}) 1 else hastype{x, eltype{V}}
+  def can_elt{V,x} = num{x} or hastype{x, eltype{V}}
   def can_make_sub = can_elt
   def can_make_sub{V,x & 'tuple'==kind{x}} = {
     def all{t} = {
@@ -31,9 +31,9 @@ local {
       if (l==1) select{t,0}
       else { def h=l>>1; all{slice{t,0,-h} & slice{t,h}} }
     }
-    if (vcount{V}==tuplen{x}) all{each{can_elt{V,.}, x}} else 0
+    vcount{V}==tuplen{x} and all{each{can_elt{V,.}, x}}
   }
-  def can_make{V,x} = if (va{V}) can_make_sub{V,x} else 0
+  def can_make{V,x} = va{V} and can_make_sub{V,x}
   def mv_sub{V, x} = {
     def T = eltype{V}
     tmp:*T = each{cast{T,.}, x}

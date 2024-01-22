@@ -17,7 +17,7 @@ local {
   }}
   def pk{T} = {
     def k=typekind{T}
-    if (is{'primitive',k} or is{'pointer',k}) 1; else 0
+    is{'primitive',k} or is{'pointer',k}
   }
   def compare{op} = { def extend _{arith} = {
     def arith{a:T,b:T & pk{T}} = emit{u1, op, a, b}

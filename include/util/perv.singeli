@@ -12,8 +12,7 @@ def extend perv2{op} = {
   def op{a, b & \a & \b} = each{op, a, b}
 }
 
-local def anytup{e, ...t} = if (\e) 1 else anytup{...t}
-local def anytup{} = 0
+local def anytup = match { {e, ...t} => \e or anytup{...t}; {} => 0 }
 
 def perv{n & is{'number',kind{n}}} = { def extend _{op} = {
   def op{...t & is{n,tuplen{t}} & anytup{...t}} = {

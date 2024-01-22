@@ -39,8 +39,8 @@ local {
   def uns = change_qual{.,'u'}
   def sgn = change_qual{.,'i'}
 
-  def go{V} = if ('vector'==typekind{V}) u1!=eltype{V} else 0
-  def gop{P, test} = if ('pointer'==typekind{P}) go{eltype{P}} else 0
+  def go{V} = 'vector'==typekind{V} and u1!=eltype{V}
+  def gop{P, test} = 'pointer'==typekind{P} and go{eltype{P}}
 }
 
 # Multi-instruction fills; slowest ones go first
@@ -72,7 +72,7 @@ def __shr{a:V, b:S & fill & go{V} & S<u64 & has_rsh  {V}} = shr_uniform{a, vec_m
 
 # Building vectors from scalars
 local {
-  def can_elt{V,x} = if (num{x}) 1 else hastype{x, eltype{V}}
+  def can_elt{V,x} = num{x} or hastype{x, eltype{V}}
   def can_make_sub = can_elt
   def can_make_sub{V,x & 'tuple'==kind{x}} = {
     def all{t} = {
@@ -80,9 +80,9 @@ local {
       if (l==1) select{t,0}
       else { def h=l>>1; all{slice{t,0,-h} & slice{t,h}} }
     }
-    if (vcount{V}==tuplen{x}) all{each{can_elt{V,.}, x}} else 0
+    vcount{V}==tuplen{x} and all{each{can_elt{V,.}, x}}
   }
-  def can_make{V,x} = if (go{V} and has_make{V}) can_make_sub{V,x} else 0
+  def can_make{V,x} = go{V} and has_make{V} and can_make_sub{V,x}
   def mv_sub{m, V, x} = {
     def T = eltype{V}
     if ('u'!=quality{T}) {
@@ -206,7 +206,7 @@ local {
   def has_arith{V & hasarch{'SSE2'} & sse{V}} = 1
   def has_arith{V & hasarch{'AVX'} & avx{V} & ef{V}} = 1
   def has_arith{V & hasarch{'AVX2'} & avx{V}} = 1
-  def has_avx512{V} = if (ew{V}>=32) 1 else hasarch{'AVX512BW'}
+  def has_avx512{V} = ew{V}>=32 or hasarch{'AVX512BW'}
   def has_arith{V & hasarch{'AVX512F'} & av5{V}} = has_avx512{V}
 
   def has_satur{_} = 0  # saturating add/subtract
@@ -219,7 +219,7 @@ local {
   def has_minmax{V==[ 2]f64 & hasarch{'SSE2'}} = 1
   def has_minmax{V==[ 8]i16 & hasarch{'SSE2'}} = 1
   def has_minmax{V==[16]u8  & hasarch{'SSE2'}} = 1
-  def avx_minmax{T} = if (isfloat{T}) 1 else width{T}<=32
+  def avx_minmax{T} = isfloat{T} or width{T}<=32
   def has_minmax{V & hasarch{'SSE4.1'} & sse{V}} = avx_minmax{eltype{V}}
   def has_minmax{V & hasarch{'AVX'} & avx{V} & ef{V}} = 1
   def has_minmax{V & hasarch{'AVX2'} & avx{V}} = avx_minmax{eltype{V}}
@@ -240,30 +240,29 @@ local {
   def has_shift{V & hasarch{'SSE2'} & sse{V} & ei{V} & ew{V}>=16} = 1
   def has_shift{V & hasarch{'AVX2'} & avx{V} & ei{V} & ew{V}>=16} = 1
   def has_shift{V & hasarch{'AVX512F'} & av5{V} & ei{V} & ew{V}>=16} = has_avx512{V}
-  def has_rsh{V} = if (eltype{V}!=i64 or av5{V}) has_shift{V} else 0
+  def has_rsh{V} = (eltype{V}!=i64 or av5{V}) and has_shift{V}
   def has_vshift{_} = 0  # shift by vector
   def has_vshift{V & hasarch{'AVX2'} & sse_avx{V} & ei{V} & ew{V}>=32} = 1
   def has_vshift{V & hasarch{'AVX512F'} & av5{V} & ei{V} & ew{V}>=16} = has_avx512{V}
-  def has_vrsh{V} = if (eltype{V}!=i64 or av5{V}) has_vshift{V} else 0
+  def has_vrsh{V} = (eltype{V}!=i64 or av5{V}) and has_vshift{V}
 
   def has_eq{_} = 0  # equals, integer only
   def has_eq{V & hasarch{'SSE2'  } & sse{V}} = width{eltype{V}}<=32
   def has_eq{V & hasarch{'SSE4.2'} & sse{V}} = 1
   def has_eq{V & hasarch{'AVX2'  } & avx{V}} = 1
-  def has_gt{V} = if (es{V}) has_eq{V} else 0
+  def has_gt{V} = es{V} and has_eq{V}
 
   # float comparisons, div, square root
-  def has_float{V} = if (ef{V}) has_arith{V} else 0
-  def has_cmp_flt{V} = if (sse_avx{V}) has_float{V} else 0
+  def has_float{V} = ef{V} and has_arith{V}
+  def has_cmp_flt{V} = sse_avx{V} and has_float{V}
   # floor, ceiling, round
-  def has_round{V} = if (hasarch{'SSE4.1'}) has_float{V} else 0
+  def has_round{V} = hasarch{'SSE4.1'} and has_float{V}
 
   # abs, sign, avg
   def has_int_op{V, arch_s, q, w, w512} = {
-    def check_el{T,w} = if (width{T}<=w) q==quality{T} else 0
+    def check_el{T,w} = width{T}<=w and q==quality{T}
     def c{w} = check_el{eltype{V},w}
     if (sse_avx{V} and hasarch{if (sse{V}) arch_s else 'AVX2'}) c{w}
-    else if (hasarch{'AVX512F'} and av5{V} and has_avx512{V} and q==quality{eltype{V}}) c{w512}
-    else 0
+    else hasarch{'AVX512F'} and av5{V} and has_avx512{V} and q==quality{eltype{V}} and c{w512}
   }
 }
