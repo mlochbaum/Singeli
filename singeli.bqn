@@ -1437,7 +1437,7 @@ nodes ← {
   }
   AddConds ⇐ {
     ev_not ← {¬(⊑𝕗) BoolEval 𝕩}‿{=𝕩? ¬⍟(@⊸≢) (⊑𝕗) CondEvalS ¬⌾(⊑⊑)𝕩}
-    CAccum ← {𝕊id: {∨´⌾(id⊸≠) BoolEval⟜𝕩¨ 𝕗}‿{
+    CAccum ← {𝕊id: {E←BoolEval⟜𝕩 ⋄ (E 1⊑𝕗˙)⍟(id⊸≡) E ⊑𝕗}‿{
       𝔽_𝕣 ⟨jv‿label,e⟩:
       l ← LazyLabel@
       i ← (⊑𝕗) CondEvalS ⟨¬id,l⟩⌾⊑⍟(id=jv) 𝕩
