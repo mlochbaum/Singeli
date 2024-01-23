@@ -366,14 +366,41 @@ Is equivalent to this sequence, except that it doesn't define `temp`.
 
 Note the reverse order: in `match`, the first matching case will be used. The matched values (`(x, y)` above) can also be left out to create an anonymous generator. `match (x, y) {…}` behaves identically to `(match {…}){x, y}`.
 
-## Including files
+## Extend
+
+The `extend` keyword allows for programmable generator extension, so that the same extension can be applied to multiple generators easily. It's mainly used for more "internal" Singeli definitions like in `arch/c`. In short, this repetitive code:
+
+    def sin{arg if arg<0} = -sin{-arg}
+    def tan{arg if arg<0} = -tan{-arg}
+
+could be rewritten like this:
+
+    def extend odd{fn} = {
+      def fn{arg if arg<0} = -fn{-arg}
+    }
+    extend odd{sin}
+    extend odd{tan}
+
+The `def extend` statement creates a special kind of generator that can only be called by an `extend` statement. This statement (which can appear at the top level or anywhere else) looks like a generator call, but the parameters, `sin` and `tan` above, all have to be names—the `extend` mechanism allows the call to modify their values. The generator (`odd` above) can be any expression, but needs parentheses in most cases if it's compound. This means additional information can be passed in with `extend (gen{args}){g0, g1}`, where `gen` is an ordinary generator whose body returns a generator defined with `def extend`.
+
+## The top level
+
+Top-level code is the statements that make up a file, `local` block, or body of a top-level `if`/`else` statement. Statements that could be used within a `def` or similar block context can also be used here, but there are some added features as well.
+
+A different distinction prevents some features from being used at the top level. This is that code to be evaluated at runtime has to appear inside a function. This can be the [main function](#main), if the intent is to build a stand-alone executable. Also, a variable declared outside a function is constant and can't be modified with `=`. However, if it's a pointer to an array, it can be used in load and store instructions as usual.
+
+### Including files
 
 The `include` statement can be used at the top level of a program. It evaluates the specified file as though it were part of the current one. The filename is a symbol, which loads from a relative path if it starts with `.` and from Singeli's built-in scripts (kept in the [include/](include/) source folder) otherwise. The [option](#command-line-options) `-l` can be used to specify additional paths as well.
 
     include 'arch/c'    # Built-in library
     include './things'  # Relative path
 
-As a result, an included file's definitions affect the file that includes it, any files that include *that* file, and other files included after that one. These far reaching consequences might not be wanted for all definitions, so the `local` keyword restricts a top-level definition to apply only to the current file, and not anything else that includes it.
+As a result, an included file's definitions affect the file that includes it, any files that include *that* file, and other files included after that one.
+
+### Local
+
+The far reaching consequences of file including might not be wanted for all definitions, so the `local` keyword restricts a top-level definition to apply only to the current file, and not anything else that includes it.
 
     local def fn{a,b} = b              # Local generator
     local b:u8 = 3                     # Local typed constant
@@ -394,22 +421,28 @@ For larger sets of definitions, `local` also allows a block syntax. The contents
       def s = t + 1
     }
 
-## Extend
+### Top-level if
 
-The `extend` keyword allows for programmable generator extension, so that the same extension can be applied to multiple generators easily. It's mainly used for more "internal" Singeli definitions like in `arch/c`. In short, this repetitive code:
+When they appear at the top level of a file (outside any `def` or `fn` statements), `if` statements follow the same basic syntax but have very different evaluation rules. This is quite a mess, and hopefully a better solution will be found eventually; for now, try to avoid these!
 
-    def sin{arg if arg<0} = -sin{-arg}
-    def tan{arg if arg<0} = -tan{-arg}
+The condition of a top-level `if` statement is evaluated in a special scope that only has access to built-in Singeli definitions, so that for example `if (hasarch{'SSSE3'})` will work but not `if (debug)` where `debug` has been defined previously. This is because the body of the if statement doesn't have its own scope, but instead its definitions and operator declarations affect the scope it appears in—since the result of the `if` statement isn't used, this is the only way for the body to affect anything. But if the condition could read from that scope, there's a circular dependency that can lead to paradoxes.
 
-could be rewritten like this:
+### Main
 
-    def extend odd{fn} = {
-      def fn{arg if arg<0} = -fn{-arg}
+In order to build stand-alone Singeli programs, a `main` block defines code that will be run when the program is invoked. A full version might look like this:
+
+    main(argc, argv) : i32 = {
+      # Here argc:i32 and argv:**u8
     }
-    extend odd{sin}
-    extend odd{tan}
 
-The `def extend` statement creates a special kind of generator that can only be called by an `extend` statement. This statement (which can appear at the top level or anywhere else) looks like a generator call, but the parameters, `sin` and `tan` above, all have to be names—the `extend` mechanism allows the call to modify their values. The generator (`odd` above) can be any expression, but needs parentheses in most cases if it's compound. This means additional information can be passed in with `extend (gen{args}){g0, g1}`, where `gen` is an ordinary generator whose body returns a generator defined with `def extend`.
+The two arguments `argc` and `argv` are the number of command-line arguments and their values, as in C. Only their names can be specified; they'll implicitly be given the types `i32` and `**u8`. Fewer names can be given (a single one will have type `i32`), and parentheses are optional if there are no arguments. The result type can be either `i32` or `void`, and will be inferred as in a typical function if omitted. This means `main` can be as simple as single expression:
+
+    include 'debug/printf'
+    main = lprintf{'Hello'}
+
+### Config
+
+The `config` statement allows compile-time configuration to be passed in as an argument to the build process. It has the same syntax as `def` except that the defined value must be a single name and not destructured. So `config var = 4` ordinarily gives `var` the value `4`. But if the argument `-c var='conf'` is passed when building, it'll be defined as `'conf'` instead. The command-line argument can be any code and behaves as though it was written in the definition instead, which means it can access local operators and definitions.
 
 ## Built-in generators
 
