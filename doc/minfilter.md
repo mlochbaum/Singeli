@@ -116,7 +116,7 @@ Here, I wrote up a little prototype!
       def segments = split{k - 1, list}
       def left_part = join{each{scanr{op, .}, slice{segments, 0, -1}}}
       def right_part = join{each{scan{op, .}, slice{segments, 1}}}
-      op{slice{left_part, 0, tuplen{right_part}}, right_part}
+      op{slice{left_part, 0, length{right_part}}, right_part}
     }
 
 ASCII art, very fancy. What's the rest, some sort of pseudocode thing written like Singeli macros?
@@ -183,7 +183,7 @@ I probably still have the file I used for this one, one sec… this looks like i
       def iter = 1e4
       src := alloc{i32, len}; @for (src over len) src = rand{}
       dst := alloc{i32, len}
-      def test{k} = @for (filt in fns over tuplen{fndat}) {
+      def test{k} = @for (filt in fns over length{fndat}) {
         t := clock()
         @for (iter) filt(dst, src, len, k)
         d := clock() - t
@@ -208,7 +208,7 @@ Larger width has smaller results, works for a sanity check. Inlining gets kind o
 Works for me! Oh, how about another quick test! Let's put this in main…
 
       def dat = tup{1,5,2,9,9,2,3,4,5,1,0,1,2,6}
-      def l = tuplen{dat}
+      def l = length{dat}
       def T = f32; def k = 4
       x:*T = dat
       y := undefined{T, l}
@@ -427,7 +427,7 @@ We have some vector scan code already, for prefix sums, let me find it… Rollin
 
     # Lane crossing permutes shuf_32 and shuf_64 are much slower
     # e.g. 3-cycle versus 1-cycle latency
-    def base{b,l} = if (0==tuplen{l}) 0 else select{l,0}+b*base{b,slice{l,1}}
+    def base{b,l} = if (0==length{l}) 0 else select{l,0}+b*base{b,slice{l,1}}
     def shuf_sub{I, intrin, make}{v:V, t} = V~~emit{I, intrin, I~~v, make{t}}
     def shuf_vec{I, intrin} = shuf_sub{I, intrin, vec_make{I,.}}
     def shuf_lane_8{v, t} = shuf_vec{[32]i8, '_mm256_shuffle_epi8'}{v, merge{t,t}}
@@ -609,7 +609,7 @@ Okay I tweaked the prefix generator a little and here's an interpreted min scan!
     include 'util/tup'
     include 'skin/c'
     def prefix_byshift{op, sh} = {
-      def pre{v, k} = if (k < tuplen{v}) pre{op{v, sh{v,k}}, 2*k} else v
+      def pre{v, k} = if (k < length{v}) pre{op{v, sh{v,k}}, 2*k} else v
       {v} => pre{v, 1}
     }
     def shift{v,k} = shiftright{slice{v,0,k}, v}
@@ -632,7 +632,7 @@ Hold on, we don't have instructions for any of this. The shuffle instructions ta
 Okay sure!
 
     def shift_ind{k,l} = shiftright{range{k},range{l}}
-    def shift{v,k} = select{v, shift_ind{k,tuplen{v}}}
+    def shift{v,k} = select{v, shift_ind{k,length{v}}}
 
 Oh, uh, yeah, that works. So I take the plus scan thing and replace the shift with a shuffle? May as well do a dedicated 32-bit one too, probably not any faster but it won't waste a register. Then for the last step… maybe not the most elegant way but using the un-permuted vector instead of zeros works.
 

@@ -888,6 +888,7 @@ builtins ← {
     err ← ∾" " Il "Expected" <⊸∾ ("or" Il num) ∾⟜< "parameters"
     𝔾⊣ err ({𝕎∨𝕏}´{𝕏⊸=}¨𝕗)_asrtGotR ≠
   }
+  Length ← (≠ "Parameter must be a tuple or symbol"⊸symbols.From⍟(¬=))_p1
   Slice ← 2‿3 _exp_ {
     s←¬=l←⊑𝕩
     l "First parameter must be a tuple or symbol"⊸symbols.From⍟s↩
@@ -921,7 +922,7 @@ builtins ← {
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
       ⟨"typekind",symbols.New types.TypeKind _p1⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",numbers.GetInt⊸⊑⚇0‿∞ _p2⟩, ⟨"tuplen",≠_p1⟩
-                 ⟨"select",numbers.GetInt⊸⊑⚇0‿∞˜_p2⟩
+                 ⟨"select",numbers.GetInt⊸⊑⚇0‿∞˜_p2⟩, ⟨"length",Length⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.GetNat _p1⟩
       ⟨"symchars",(symbols.New∘⋈¨"Expected symbol"⊸symbols.From)_p1⟩
       ⟨"fmtnat",symbols.New∘•Repr numbers.GetNat _p1⟩

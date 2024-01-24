@@ -15,7 +15,7 @@ def extend perv2{op} = {
 local def anytup = match { {e, ...t} => \e or anytup{...t}; {} => 0 }
 
 def perv{n if is{'number',kind{n}}} = { def extend _{op} = {
-  def op{...t if is{n,tuplen{t}} and anytup{...t}} = {
+  def op{...t if is{n,length{t}} and anytup{...t}} = {
     def ftup{{e, ...t}} = if (\e) e else ftup{t}
     def l = ftup{t}
     def r{s} = if (\s) s else each{{_}=>s,l}

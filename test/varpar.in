@@ -1,5 +1,5 @@
-def g1{...x} = tuplen{x}
-def g4{a, b, ...c, d} = __sub{tuplen{c},d}
+def g1{...x} = length{x}
+def g4{a, b, ...c, d} = __sub{length{c},d}
 
 fn fun(x:u8) : u8 = {
   x = g1{0,1,2,3}

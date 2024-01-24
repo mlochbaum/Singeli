@@ -25,7 +25,7 @@ def printf{...vs0} = {
   def lit1{s} = tup{lit{s}}
   
   def listfmt{hex, open, close, vs} = {
-    if (tuplen{vs}==0) {
+    if (length{vs}==0) {
       lit{merge{open, close}}
     } else {
       def f = each{runfmt{hex, .}, vs}
@@ -38,7 +38,7 @@ def printf{...vs0} = {
     if (ksym{x}) {
       lit1{x}
     } else if (ktup{x}) {
-      if (tuplen{x}==2 and (x!0)==='x') runfmt{1, x!1}
+      if (length{x}==2 and (x!0)==='x') runfmt{1, x!1}
       else listfmt{hex, '{', '}', x}
     } else if (kreg{x} or kcon{x}) {
       def T = type{x}

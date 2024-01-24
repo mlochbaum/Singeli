@@ -2,7 +2,7 @@
 
 local {
   include 'skin/cop'
-  oper $ tuplen prefix 30
+  oper $ length prefix 30
   oper > tail   prefix 50
   def __pnt{t} = select{t, 0}
   def tail{tup} = slice{tup, 1}

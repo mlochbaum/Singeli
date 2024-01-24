@@ -11,7 +11,7 @@ local {
     if (isfloat{T}) {
       if (width{T}==32) 'ps' else 'pd'
     } else {
-      def sgn = if (tuplen{s}==1) select{s,0} else issigned{T}
+      def sgn = if (length{s}==1) select{s,0} else issigned{T}
       merge{'ep', if (sgn) 'i' else 'u', fmtnat{width{T}}}
     }
   }
@@ -76,11 +76,11 @@ local {
   def can_make_sub = can_elt
   def can_make_sub{V,x if 'tuple'==kind{x}} = {
     def all{t} = {
-      def l = tuplen{t}
+      def l = length{t}
       if (l==1) select{t,0}
       else { def h=l>>1; all{slice{t,0,-h} & slice{t,h}} }
     }
-    vcount{V}==tuplen{x} and all{each{can_elt{V,.}, x}}
+    vcount{V}==length{x} and all{each{can_elt{V,.}, x}}
   }
   def can_make{V,x} = go{V} and has_make{V} and can_make_sub{V,x}
   def mv_sub{m, V, x} = {
@@ -99,7 +99,7 @@ local {
   def mvi{V,x} = if (not (V==[2]i64 or av5{V})) {
     emit{V, set_intrin{'setr',V}, ...x}
   } else {
-    def l=tuplen{x}
+    def l=length{x}
     emit{V, set_intrin{'set',V}, ...select{x, l-1-range{l}}}
   }
 }

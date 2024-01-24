@@ -27,11 +27,11 @@ local {
   def can_make_sub = can_elt
   def can_make_sub{V,x and 'tuple'==kind{x}} = {
     def all{t} = {
-      def l = tuplen{t}
+      def l = length{t}
       if (l==1) select{t,0}
       else { def h=l>>1; all{slice{t,0,-h} & slice{t,h}} }
     }
-    vcount{V}==tuplen{x} and all{each{can_elt{V,.}, x}}
+    vcount{V}==length{x} and all{each{can_elt{V,.}, x}}
   }
   def can_make{V,x} = va{V} and can_make_sub{V,x}
   def mv_sub{V, x} = {

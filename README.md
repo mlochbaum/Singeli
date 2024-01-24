@@ -540,7 +540,7 @@ The program's environment used by `withenv` and `getenv` associates symbols (`na
 | `tup{elems…}`          | Create a tuple of the parameters
 | `range{len}`           | The tuple 0, 1,… len-1
 | `merge{tups…}`         | Concatenate elements from multiple tuples into one tuple
-| `tuplen{tuple}`        | Return the length of a tuple
+| `length{tuple}`        | Return the length of a tuple or symbol
 | `select{tuple,ind}`    | Select the `ind`th element (0-indexed) from the tuple
 | `slice{tup,start,end}` | Take slice from `start` to (optional) `end`, like Javascript
 | `apply{gen,tuple}`     | `gen{...tuple}`
