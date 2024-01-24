@@ -385,7 +385,7 @@ The `def extend` statement creates a special kind of generator that can only be 
 
 ## The top level
 
-Top-level code is the statements that make up a file, `local` block, or body of a top-level `if`/`else` statement. Statements that could be used within a `def` or similar block context can also be used here, but there are some added features as well.
+Top-level code is the statements that make up a file, `local` block, or body of an `if_inline`/`else` statement. Statements that could be used within a `def` or similar block context can also be used here, but there are some added features as well.
 
 A different distinction prevents some features from being used at the top level. This is that code to be evaluated at runtime has to appear inside a function. This can be the [main function](#main), if the intent is to build a stand-alone executable. Also, a variable declared outside a function is constant and can't be modified with `=`. However, if it's a pointer to an array, it can be used in load and store instructions as usual.
 
@@ -421,11 +421,13 @@ For larger sets of definitions, `local` also allows a block syntax. The contents
       def s = t + 1
     }
 
-### Top-level if
+### if\_inline
 
-When they appear at the top level of a file (outside any `def` or `fn` statements), `if` statements follow the same basic syntax but have very different evaluation rules. This is quite a mess, and hopefully a better solution will be found eventually; for now, try to avoid these!
+Top-level `if` statements act as `if_inline` currently; they will be changed to act as normal `if` soon.
 
-The condition of a top-level `if` statement is evaluated in a special scope that only has access to built-in Singeli definitions, so that for example `if (hasarch{'SSSE3'})` will work but not `if (debug)` where `debug` has been defined previously. This is because the body of the if statement doesn't have its own scope, but instead its definitions and operator declarations affect the scope it appears in—since the result of the `if` statement isn't used, this is the only way for the body to affect anything. But if the condition could read from that scope, there's a circular dependency that can lead to paradoxes.
+An `if_inline` statement is allowed at the top level, and follows the same basic syntax as `if` but has very different evaluation rules. This system is quite a mess, and hopefully a better solution will be found eventually; for now, try to avoid these!
+
+The condition of an `if_inline` statement is evaluated in a special scope that only has access to built-in Singeli definitions, so that for example `if_inline (hasarch{'SSSE3'})` will work but not `if_inline (debug)` where `debug` has been defined previously. This is because the body of the statement doesn't have its own scope, but instead its definitions and operator declarations affect the scope it appears in—since the result of the `if_inline` statement isn't used, this is the only way for the body to define things. But if the condition could read from that scope, there's a circular dependency that can lead to paradoxes.
 
 ### Main
 

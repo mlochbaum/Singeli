@@ -187,8 +187,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
   sep ← ⟨";", ⥊lf⟩
   ! ⊑ (¯1⊏tokens) ∊ sep
 
-  keywords ← "include"‿"config"‿"local"‿"if"‿"else"‿"while"‿"do"‿"match"‿"extend"‿"def"‿"fn"‿"main"‿"oper"‿"in"‿"over"‿"from"‿"to"‿"and"‿"or"‿"not"
-             kInclude ‿kConfig ‿kLocal ‿kIf ‿kElse ‿kWhile ‿kDo ‿kMatch ‿kExtend ‿kDef ‿kFn ‿kMain ‿kOper ‿kIn ‿kOver ‿kFrom ‿kTo ‿kAnd ‿kOr ‿kNot ← ↕≠keywords
+  keywords ← "include"‿"config"‿"local"‿"if"‿"if_inline"‿"else"‿"while"‿"do"‿"match"‿"extend"‿"def"‿"fn"‿"main"‿"oper"‿"in"‿"over"‿"from"‿"to"‿"and"‿"or"‿"not"
+             kInclude ‿kConfig ‿kLocal ‿kIf ‿kIf_inline ‿kElse ‿kWhile ‿kDo ‿kMatch ‿kExtend ‿kDef ‿kFn ‿kMain ‿kOper ‿kIn ‿kOver ‿kFrom ‿kTo ‿kAnd ‿kOr ‿kNot ← ↕≠keywords
 
   Asrt ← {𝕨𝕊1:@;
     l←{(c •ns.Get¨ 𝕩) {𝕨⊸⊐⊏𝕩˙}○(∾⟜⟨""⟩) 𝕩} •ns.Keys c
@@ -318,9 +318,10 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Body ← Stmt _blockLines
   Block ← @_opt_⟨"{",c.body _node_ Body, Expr⟩
 
+  AnyIf ← ⟨kIf, kIf_inline⟩_anyTry
   _if ← {
     TrySeps ← {s←Seps@ ⋄ Back⊸⊢⍟(s>⊢) Rem◶0‿Try 𝕩}
-    kIf‿"("‿Expr‿")"‿𝔽‿(When∘⟨TrySeps∘kElse,𝔽⟩)_seq
+    1↓ AnyIf‿"("‿Expr‿")"‿𝔽‿(When∘⟨TrySeps∘kElse,𝔽⟩)_seq
   }
   StIf ← c.if _node_ (Block _if)
   StWhile ← c.while _node_ (1 ∾   kWhile‿"("‿Expr‿")"‿Block _seq)
@@ -436,8 +437,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   MultiLine ← {Line𝕩} _blockLines
   TopIf ← c.topif _node_ (∾⌾(¯1⊸⊑) @_opt_⟨"{",MultiLine, ⋈{Line𝕩}⟩ _if)
-  SubLine ← @_opt_⟨kInclude,Include, kIf,TopIf, kConfig,Config, Stmt⟩
-  LocLine ← @_opt_⟨kIf,"localizable line"‿kIf AsrtHere 0˙, SubLine⟩
+  SubLine ← @_opt_⟨kInclude,Include, kIf,TopIf, kIf_inline,TopIf, kConfig,Config, Stmt⟩
+  LocLine ← @_opt_⟨kIf_inline,"localizable line"‿kIf_inline AsrtHere 0˙, kIf,StIf, SubLine⟩
   Line ← @_optGet_⟨
     kLocal, @_opt_⟨"{",c.body _node_ MultiLine, LocLine⟩
             {𝕩.NonLocal@⋄𝕩}∘SubLine
