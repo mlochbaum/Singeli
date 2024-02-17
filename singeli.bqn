@@ -371,7 +371,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Get "{"
     LFs@
     a ← {
-      ∊⟜"}"‿"&"⌾<_test@ ? 0⥊<↕4 ;
+      ∊⟜"}"‿"&"‿kIf⌾<_test@ ? 0⥊<↕4 ;
       Param ← <⊸∾´ ⟨Try∘"...", SubParam⟩_seq
       a ← While ⟨"}"_divList, Param, 1⟩ ⋄ err_ex_gather Asrt 1≥+´⊑¨a ⋄ a
     }
