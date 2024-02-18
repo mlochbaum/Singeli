@@ -79,7 +79,7 @@ def __shl{a:V, s if vi{V} and num{s} and s>0 and s<ew{V}} = emit{V, intrin{'vshl
 def __shr{a:V, s if vi{V} and num{s} and s>0 and s<ew{V}} = emit{V, intrin{'vshr', '_n', V}, a, s};  def __shr{a:V,s==0 and vi{V}} = a
 
 def __neg{a:V if vs{V}} = emit{V, intrin{'vneg', V}, a}
-def __not{a:V if vu{V}} = { def U=[width{V}/width{u8}]u8; V~~emit{U, intrin{'vmvn', U}, a} }
+def __not{a:V if vu{V}} = { def U=[width{V}/width{u8}]u8; V~~emit{U, intrin{'vmvn', U}, U~~a} }
 def __sqrt {a:V if vf{V}} = emit{V, intrin{'vsqrt', V}, a}
 def __floor{a:V if vf{V}} = emit{V, intrin{'vrndm', V}, a}
 def __ceil {a:V if vf{V}} = emit{V, intrin{'vrndp', V}, a}
