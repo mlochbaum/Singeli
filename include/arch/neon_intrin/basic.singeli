@@ -12,6 +12,7 @@ local {
 
   def change_qual{V,q} = [vcount{V}]primtype{q, ew{V}}
   def uns = change_qual{.,'u'}
+  def sgn = change_qual{.,'i'}
 
   def intrin{name, ...s, V} = {
     def T = eltype{V}
@@ -70,7 +71,7 @@ def  ornot{a:V,b:V if vi{V}} = emit{V, intrin{'vorn', V}, a, b}
 def  andnz{a:V,b:V if vi{V}} = emit{V, intrin{'vtst', V}, a, b}
 def  __min{a:V,b:V if va{V}}  = emit{V, intrin{'vmin', V}, a, b}
 def  __max{a:V,b:V if va{V}}  = emit{V, intrin{'vmax', V}, a, b}
-def  __shl{a:V,b:S if vi{V} and S==uns{V}} = emit{V, intrin{'vshl', V}, a, b}
+def  __shl{a:V,b:S if vi{V} and S==uns{V}} = emit{V, intrin{'vshl', V}, a, sgn{S}~~b}
 def __adds{a:V,b:V if vi{V}} = emit{V, intrin{'vqadd', V}, a, b}
 def __subs{a:V,b:V if vi{V}} = emit{V, intrin{'vqsub', V}, a, b}
 def   addp{a:V,b:V if va{V}} = emit{V, intrin{'vpadd', V}, a, b}
