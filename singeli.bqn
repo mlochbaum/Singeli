@@ -878,7 +878,7 @@ builtins ← {
   }
   Ty2 ← {𝕏⚇0 _p2}∘Kinds ⊣∾⟜(<·"symbol"⌾⊑⊢´)∘⊢⍟(⊑∊⟜=‿≠)"number"‿"type"⋈¨{𝕏numbers._cmp}⊸⋈
   Merge ← {
-    0<⌈´=¨𝕩 ? ∾𝕩 ;
+    0<(0=≠𝕩)⌈´=¨𝕩 ? ∾𝕩 ;
     m←"Parameters must include at least one tuple or all be symbols"
     symbols.New ∾ m⊸symbols.From¨𝕩
   }
