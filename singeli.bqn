@@ -191,8 +191,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
              kInclude ‿kConfig ‿kLocal ‿kIf ‿kIf_inline ‿kElse ‿kWhile ‿kDo ‿kMatch ‿kExtend ‿kDef ‿kFn ‿kMain ‿kOper ‿kIn ‿kOver ‿kFrom ‿kTo ‿kAnd ‿kOr ‿kNot ← ↕≠keywords
 
   Asrt ← {𝕨𝕊1:@;
-    l←{(c •ns.Get¨ 𝕩) {𝕨⊸⊐⊏𝕩˙}○(∾⟜⟨""⟩) 𝕩} •ns.Keys c
-    ShowTrace⟜L´ <˘⍉>DumpStack@
+    [v, k] ← (<"") ∾˘´ {𝕩⊸•ns.Get¨⊸≍ •ns.Keys 𝕩}¨ c‿tc
+    ShowTrace⟜(v⊸⊐ ⊏ k˙)´ <˘⍉>DumpStack@
     •Out ""
     F ← (⥊lf)⊸≢◶⟨"end of line", =◶⟨"keyword "∾•Repr∘⊑⟜keywords, •Repr⟩⟩
     •Out {∾"Expected "‿𝕨‿" but saw "‿𝕩}⟜F´⍟(1<≡) 𝕨
@@ -223,7 +223,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   ⟨Get,Try,Rem,Pos,Back,_test,_begin_,_seq,_opt_,_optGet_,_anyTry,_any⟩ ← MakeTokStream tokens
 
   # Node creation and error tracking
-  c ← nodes
+  c ← nodes ⋄ tc ← targetNodes
   ⟨_whileParse_⇐_while_, DumpStack⇐Arr⟩ ← MakeStack@
   _node_ ← {p←Pos@ ⋄ (ShowTrace○⋈⟜""⊢)‿p 𝔽 𝔾_whileParse_⟨p,𝕗⟩ 𝕩}
   AsrtHere ← {𝕨 Asrt _whileParse_ ⟨Pos@,""⟩ 𝕩}
@@ -360,25 +360,39 @@ Parse ← {𝕊 tokens‿ShowTrace:
          ⋈∘Expr "Missing = before body?"Asrt⊢
   ⟩)
 
-  TargetPlus ← {𝕤
-    n ← Target@
-    e ← When ⟨     Try  "==", CondExpr⟩
-    t ← When ⟨(≠e)◶Try‿0 ":", CondExpr⟩
-    n‿e‿t
-  }
-  SubParam ← @_opt_⟨"(", {(c.NewId"_")‿𝕩‿⟨⟩}∘ParEx, TargetPlus⟩
-  Params ← c.params _node_ {𝕤
+  TargetList ← tc.list _node_ {𝕤
     Get "{"
     LFs@
     a ← {
-      ∊⟜"}"‿"&"‿kIf⌾<_test@ ? 0⥊<↕4 ;
-      Param ← <⊸∾´ ⟨Try∘"...", SubParam⟩_seq
+      ∊⟜"}"‿"&"‿kIf⌾<_test@ ? 0⥊<↕2 ;
+      Param ← ⟨Try∘"...", TargetElem⟩_seq
       a ← While ⟨"}"_divList, Param, 1⟩ ⋄ err_ex_gather Asrt 1≥+´⊑¨a ⋄ a
     }
     c ← @_optGet_⟨kIf,⋈Expr, While ⟨Div∘"&", CondExpr, 0⟩⟩ @
     Get "}"
     a‿c
   }
+  # Only destructure names not of primitive types
+  # Matches old behavior but doesn't allow type destructuring
+  notTypeVar ← types.primTypes≠⊸↑builtins.names
+  TypeTarget ← c.PhraseTryName⊸(∊⟜(⟨@⟩∾notTypeVar)⌾<∘⊣◶⟨tc.Name⊣, tc.Constant⊢⟩)∘CondExpr
+  # Note, == and : bind tighter [] and * than since it's more useful
+  TargetWord ← tc.name _node_ Name
+  TargetEq   ← tc.equals _node_ (⋈⟜CondExpr  )⍟(Try∘"==") ∘ TargetWord
+  TargetPlus ← tc.typed  _node_ (⋈⟜TypeTarget)⍟(Try∘":" ) ∘ TargetEq
+  TargetElem ← @_opt_⟨
+    "(", tc.constant _node_ ParEx
+    "[", tc.vector _node_ {"["‿TargetElem‿"]"‿TargetElem _seq 𝕩}
+    "{", TargetList
+    =◶⟨0, ∧´'*'⊸=⟩_test◶⟨  # Multiple *s group as one token
+      TargetPlus
+      tc.pointer _node_ {𝕤
+        a ← '*'⊸=_begin_"" @
+        tc.pointer⍟(1-˜≠a) TargetElem@
+      }
+    ⟩
+  ⟩
+  Params ← c.target _node_ TargetList
   _withParams ← {
     Rec ← @_opt_⟨"{",c.lambda _node_ (Params‿{Rec𝕩} _seq), 𝔽⟩
   }
@@ -603,6 +617,8 @@ types ← {kname⇐"type"
 
   VCount ← ⟨ tVEC,⊑, 1 ⟩ _cases
   VType ← ⟨ tVEC,1⊸⊑, tPTR,⊢ ⟩ _cases
+  vecDecompParams ⇐ ⟨Is _and_ {tVEC≡𝕩.typeKind}, {𝕩.dat}⟩
+  ptrDecompParams ⇐ ⟨Is _and_ {tPTR≡𝕩.typeKind}, {𝕩.dat}⟩
 
   FnCast ⇐ {
     args‿ret ← ⟨tFUN,⊢, "Calling non-function"⊸TypeErr⟩_cases 𝕨
@@ -1183,70 +1199,34 @@ nodes ← {
   }
   PhraseTryWord ⇐ {"phrase"≡𝕩.node}◶@‿{𝕩.ToWord@}
   PhraseTryName ⇐ {𝕩.name}⍟(@⊸≢)PhraseTryWord
-  notTypeVar ← types.primTypes≠⊸↑builtins.names
-  Params ⇐ {
-    ⟨paramsPlus,condExprs⟩ ← 𝕩 ⋄ pos←𝕨
-    pgather‿params‿pmatch‿ptype ← <˘⍉>paramsPlus
-    pmult ← {"params"≡𝕩.node}¨ params
-    _flatWith ← {¬∨´𝕗? ⊢; n←𝕗∨1»𝕗⋄∾(n/𝕗)⊑∘⊢⍟⊣¨(¯1+`n)⊔⊢}
-    names ← pmult _flatWith {𝕩.name}¨ params
-    tname ← (¬∘∊⟜(⟨@⟩∾notTypeVar)⊸/ PhraseTryName¨)¨ ptype
-    iTyp←/≠¨tname
-    Flatten ← (pmult∾0¨iTyp) _flatWith
-    name ⇐ names∾∾tname
-    keep ← (∊∧0⊸≤) iPar ← 1-˜ 1↓⊐⟨"_"⟩∾name
-    uPar ← keep / name
-    ns ← pos⊸NewId¨ uPar
-    # conds is a list of Fn‿node to be evaluated as par Fn node.Eval e
-    mconds ← HasType‿Match⋈¨¨(tname≠⊸↓¨ptype)≍pmatch
-    subconds ← <∘∾˘⍉(pmult⊣◶⟨⟩‿{𝕩.conds}¨params)∾mconds
-    GB ← "Generator condition must evaluate to boolean" numbers.GetBool ⊢
-    GIF ← (∨`⊸+pgather){n←≠𝕗⋄k←𝕩⊑𝕗⋄{k≤1?(𝕩-k×n)⊸⊑;𝕩↓(𝕩¬n)↓⊢}𝕩}
-    conds ⇐ (((/≠¨)GIF⊸{𝕎⊸𝕏}⌾⊑⍟(gb˙⊸≢)¨∾) subconds) ∾ gb ⋈¨ condExprs
-    cexpr ← 1⊑¨conds
-    Visit←{⟨𝕏¨ns,𝕏¨cexpr⟩}
+  Target ⇐ {
+    pos←𝕨
+    names‿eqs‿conds‿ProcE‿ProcT ← pos targetNodes.GetProcs 𝕩
+    ns ← pos⊸NewId¨ names
+    exprs ← eqs ∾ conds
+    Visit←{⟨𝕏¨ns,𝕏¨exprs⟩}
     ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "params"‿visit
-    VisitLambda ⇐ {⟨params∾⟜(∾""<⊸∾":"⊸∾¨)¨tname,𝕏¨cexpr⟩}
-    ScopeLambda ⇐ {uPar scopes.New 𝕩}
-    AllEq ← ∧´⊏Match¨1⊸↓
-    MakeProc ← ⊢˙ {@‿1‿N𝕊𝕩:𝕏⍟(0<=)N; # Special-case nesting
-                   e‿F‿N𝕊𝕩:e‿F𝕊⊑⟨𝕏N⟩; e‿1𝕊𝕩:𝕏; e‿F𝕊𝕩:f◶⟨<e,𝕏⟩}´ ⊢
-    proc ← MakeProc procs ← ⟨
-      ⟨"lengths don't match"⟩∾(+´¬)⊸{
-        ¬∨´𝕩 ? ⟨𝕨=≠⟩ ;
-        ⟨𝕨≤≠, (0‿𝕨-˜⋈⁼/𝕩)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)⟩
-      } pgather
-      ⟨"type is required"⟩∾{
-        ¬∨´𝕩 ? ⟨1⟩ ;
-        ⟨∧´·IsTyped¨𝕩⊸/, ⊢∾·{𝕩.type}¨iTyp⊸⊏⟩
-      } ≠¨ptype
-      ⟨@,1⟩∾{
-        0=≠𝕩 ? ⟨⟩ ;
-        F ← {∨´0=r←=¨𝕨 ? <∾⟜", "⊸∾´⊑¨r¬⊸/𝕨 ; Flatten 𝕩}
-        ⟨𝕩⊸⊏⊸F params {𝕨.ProcParamSub𝕩}¨⌾(𝕩⊸⊏) ⊢⟩
-      } /pmult
-      ⟨"values given the same name don't match"⟩∾keep {
-        ∧´𝕨 ? ⟨1⟩ ;
-        ∧´𝕨∨𝕩<0 ? ⟨1, 𝕨⊸/⟩ ;
-        ⟨{𝕎∧𝕏}´{AllEq𝕩⊸⊏}¨(1<≠¨)⊸/⊔𝕩, 𝕨⊸/⟩
-      } iPar
-    ⟩
-    procParamSub ⇐ MakeProc ⟨"expected tuple",IsTup⟩ <⊸∾ ¯1↓procs
+    VisitLambda ⇐ {⟨names,𝕏¨exprs⟩}
+    ScopeLambda ⇐ {names scopes.New 𝕩}
+    GB ← "Generator condition must evaluate to boolean" numbers.GetBool ⊢
     GetTry ⇐ {𝕊 e:
       Try ⇐ {
         0==𝕩 ? @ ; # Error from static checking
-        t ← {⊢} {f‿n𝕊𝕩:f⟜n.Eval◶@‿𝕏}´ conds
-        𝕨 T 𝕩 env.Fixed e
-      }⟜Proc
+        v‿q ← 𝕩
+        ts ← (q {𝕩˙⊸Match}⊸⋈¨ eqs) ∾ GB˙⊸⋈¨conds
+        t ← {⊢} {f‿n𝕊𝕩:f⟜n.Eval◶@‿𝕏}´ ts
+        𝕨 T v env.Fixed e
+      }⟜ProcT
     }
-    Eval⇐{ val‿decl 𝕊 e:
-      A ← ! program._trace_ pos
-      "Destructuring non-tuple" A IsTup val
-      A∘("Destructuring: "∾⊑)⍟(0==) p←Proc val
-      ns {𝕩‿decl 𝕨.Eval e}¨ p
-      {f‿n: "Destructuring condition failed" A val F n.Eval e}¨ conds
+    CC ← "Destructuring condition failed" ! GB
+    Eval ⇐ { val‿decl 𝕊 e:
+      v‿q ← ProcE val
+      ns {𝕩‿decl 𝕨.Eval e}¨ v
+      CQ ← {𝕨 Match 𝕩.Eval e? @ ; ! program._trace_ 𝕩.pos "Destructuring match check failed" }
+      q CQ¨ eqs
+      { CC program._trace_ 𝕩.pos 𝕩.Eval e }¨ conds
     }
-    RunEval ⇐ {𝕏 <params}
+    RunEval ⇐ {𝕏 <ns}
     DefEval ⇐ { f‿ValEval 𝕊 e: ⟨RunEval valEval,0⟩ Eval e }
   }
   _errNoMatch ← {
@@ -1538,6 +1518,71 @@ nodes ← {
       lsv←(pos var.Get {𝕎𝕩}⟜𝕩)¨ ls
       For ⟨E¨ptrv, E from, E to, blocks.New ind‿ptrn‿body‿lsv‿𝕩⟩
     }
+  }
+}
+
+targetNodes ← {
+  failedMatch ← {⇐}
+  Name ⇐ Constant ⇐ {
+    # If constant, "assign" to node to evaluate and compare and cond-time
+    targs ⇐ ⟨𝕩⟩
+    conds ⇐ ⟨⟩
+    ProcE ⇐ ProcT ⇐ ⋈
+  }
+  Merge ← { 𝕨 𝕊 targets:
+    tn‿tc‿te‿tt ← {𝕏¨targets}¨ {𝕩.targs}‿{𝕩.conds}‿{𝕩.ProcE}‿{𝕩.ProcT}
+    targs‿conds ⇐ ∾¨ tn‿tc
+    conds ∾↩ 𝕨⊣⟨⟩
+    ProcE ⇐ ∾ te {𝕎𝕩}¨ ⊢
+    ProcT ⇐ {∨´failedMatch≡¨𝕩 ? failedMatch ; ∾ 𝕩} tt {𝕎𝕩}¨ ⊢
+  }
+  AddTransform ← { tr 𝕊 t:
+    targs‿conds‿ProcE‿ProcT ⇐ t
+    ProcE‿ProcT {𝕏∘Tr}¨↩
+  }
+  _addCheck ← { pos err‿Check _𝕣 target:
+    targs‿conds ⇐ target
+    Fail ← {𝕊: ! program._trace_ pos "Destructuring: "∾err}
+    ProcE ⇐ Check◶⟨Fail,         target.ProcE⟩
+    ProcT ⇐ Check◶⟨failedMatch˙, target.ProcT⟩
+  }
+  _single ← { e‿C‿Tr _𝕣: ⊣ e‿C _addCheck tr˙ AddTransform ⊢ }
+  _multi ← { 𝕗_single⟜Merge }
+  Equals  ⇐ { 𝕨 Same 𝕨⊸Constant¨⌾(1⊸↓) 𝕩 }
+  Same    ⇐ { ({2=𝕩?⋈˜;𝕩⥊<}≠𝕩) AddTransform Merge 𝕩 }
+  Typed   ⇐ ⟨"type is required", IsTyped, ⋈⟜{𝕩.type}⟩_multi
+  Vector  ⇐ (⟨ "vector type required"⟩∾types.vecDecompParams)_multi
+  Pointer ⇐ (⟨"pointer type required"⟩∾types.ptrDecompParams)_single
+  List ⇐ {
+    ⟨ps, conds⟩ ← 𝕩 ⋄ [gather,params] ← ⍉>ps ⋄ pos←𝕨
+    n ← +´ ¬ gather  # Minimum length
+    addLenCheck ← {
+      n=≠gather ? ⟨"length doesn't match", n=≠⟩_addCheck
+    ;
+      G ← (0‿n-˜⋈⁼/gather)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)
+      ⟨"length too short", n≤≠, G⟩_single
+    }
+    pos ⟨"tuple required", IsTup⟩ _addCheck pos AddLenCheck conds Merge params
+  }
+  # Get functions for evaluating regular node from target node
+  GetProcs ⇐ { pos 𝕊 target:
+    # An individual target might be a name, _, or a node
+    # (which is evaluated and required to match the corresponding value)
+    ⟨targs⟩ ← target
+    typ ← (0==¨targs) - "_"⊸≡¨targs
+    ns‿eqs ← 2↑typ⊔targs ⋄ eqs⇐ ⋄ names⇐⍷ns
+    tr ← {𝕎⋈𝕏}´ {∧´𝕩? ⊢ ; ∨´𝕩? 𝕩⊸/ ; 0⊸↑}¨ 0‿1 = <targs (1-˜∊∘⊣)⌾((0=typ)⊸/) typ
+    AllEq ← ∧´⊏Match¨1⊸↓
+    TrE ← Tr ⋄ ChT ← failedMatch˙⊸≢
+    { names≡ns ? @ ;
+      c ← {𝕎∧𝕏}´{AllEq𝕩⊸⊏}¨(1<≠¨)⊸/(⊐ns)⊔/0=typ
+      Fail ← {𝕊: ! program._trace_ pos "Destructuring: values given the same name don't match"}
+      TrE ↩ C◶⟨Fail, TrE⟩
+      ChT ↩ ChT◶0‿C
+    }
+    conds‿ProcE‿ProcT ⇐ target
+    ProcE ↩ TrE∘ProcE
+    ProcT ↩ ChT◶⟨@,Tr⟩∘ProcT
   }
 }
 
