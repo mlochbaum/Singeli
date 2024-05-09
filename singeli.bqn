@@ -372,25 +372,29 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Get "}"
     a‿c
   }
-  # Only destructure names not of primitive types
-  # Matches old behavior but doesn't allow type destructuring
-  notTypeVar ← types.primTypes≠⊸↑builtins.names
-  TypeTarget ← c.PhraseTryName⊸(∊⟜(⟨@⟩∾notTypeVar)⌾<∘⊣◶⟨tc.Name⊣, tc.Constant⊢⟩)∘CondExpr
-  # Note, == and : bind tighter [] and * than since it's more useful
-  TargetWord ← tc.name _node_ Name
-  TargetEq   ← tc.equals _node_ (⋈⟜CondExpr  )⍟(Try∘"==") ∘ TargetWord
-  TargetPlus ← tc.typed  _node_ (⋈⟜TypeTarget)⍟(Try∘":" ) ∘ TargetEq
-  TargetElem ← @_opt_⟨
+  # Target operations * : = == are all right-associative
+  TargetElem ←  =◶⟨0, ∧´'*'⊸=⟩_test◶⟨  # Multiple *s group as one token
+    { FinishTarget TargetAtom 𝕩 }
+    tc.pointer _node_ {𝕤
+      a ← '*'⊸=_begin_"" @
+      tc.pointer⍟(1-˜≠a) TargetElem@
+    }
+  ⟩
+  TargetAtom ← @_opt_⟨
     "(", tc.constant _node_ ParEx
     "[", tc.vector _node_ {"["‿TargetElem‿"]"‿TargetElem _seq 𝕩}
     "{", TargetList
-    =◶⟨0, ∧´'*'⊸=⟩_test◶⟨  # Multiple *s group as one token
-      TargetPlus
-      tc.pointer _node_ {𝕤
-        a ← '*'⊸=_begin_"" @
-        tc.pointer⍟(1-˜≠a) TargetElem@
-      }
-    ⟩
+    tc.name _node_ Name
+  ⟩
+  TypeTarget ← ∊⟜(types.primTypes≠⊸↑builtins.names)⌾<_test◶⟨
+    TargetElem
+    tc.constant _node_ CondExpr ⊣ •Out∘"Primitive type for constant matching is deprecated; add parentheses"
+  ⟩
+  FinishTarget ← @_optGet_⟨
+    ":",  tc.typed  _node_ (⋈⟜TypeTarget)
+    "=",  tc.same   _node_ (⋈⟜TargetElem)
+    "==", tc.equals _node_ (⋈⟜CondExpr)
+    ⊢
   ⟩
   Params ← c.target _node_ TargetList
   _withParams ← {
