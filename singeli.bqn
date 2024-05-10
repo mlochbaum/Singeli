@@ -384,7 +384,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     "(", tc.constant _node_ ParEx
     "[", tc.vector _node_ {"["‿TargetElem‿"]"‿TargetElem _seq 𝕩}
     "{", TargetList
-    tc.name _node_ Name
+    =◶⟨0, ⊑⊏∊(dig∾''')˙⟩_test◶⟨tc.name _node_ Name, tc.constant _node_ EWord⟩
   ⟩
   TypeTarget ← ∊⟜(types.primTypes≠⊸↑builtins.names)⌾<_test◶⟨
     TargetElem

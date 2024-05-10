@@ -1,5 +1,5 @@
 def g{x,y}                = emit{f64, 'g2', x, y}
-def g{g,('sym')}          = emit{f64, 'g2s', g}
+def g{g,'sym'}            = emit{f64, 'g2s', g}
 def g{a, a}               = g{a}
 def g{b==tup{a}, a}       = g{__add{10,a}}
 def g{x}                  = emit{f64, 'g1', x}
