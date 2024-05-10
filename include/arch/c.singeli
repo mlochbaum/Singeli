@@ -62,7 +62,7 @@ extend (logic{'op |'}){__or }
 extend (logic{'op ^'}){__xor}
 
 extend (logic1{'~'}){__not}
-def __not{a:u1} = emit{u1, '!', a}
+def __not{a:(u1)} = emit{u1, '!', a}
 
 extend (sh{'op <<'}){__shl}
 extend (sh{'op >>'}){__shr}

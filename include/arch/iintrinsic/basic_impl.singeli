@@ -151,8 +151,8 @@ def __shl{a:V, b if num{b} and go{V} and has_shift{V}} = emit{V, intrin{'slli',V
 def __shr{a:V, b if num{b} and go{V} and has_rsh  {V}} = emit{V, intrin{if (es{V}) 'srai' else 'srli',V,1}, a, b}
 def __shl{a:V, b:U if go{V} and U==uns{V} and has_vshift{V}} = emit{V, intrin{'sllv',V,1}, a, b}
 def __shr{a:V, b:U if go{V} and U==uns{V} and has_vrsh  {V}} = emit{V, intrin{if (es{V}) 'srav' else 'srlv',V,1}, a, b}
-def shl_uniform{a:V, b:[2]u64 if go{V} and has_shift{V}} = emit{V, intrin{'sll',V,1}, a, b}
-def shr_uniform{a:V, b:[2]u64 if go{V} and has_rsh  {V}} = emit{V, intrin{if (es{V}) 'sra' else 'srl',V,1}, a, b}
+def shl_uniform{a:V, b:([2]u64) if go{V} and has_shift{V}} = emit{V, intrin{'sll',V,1}, a, b}
+def shr_uniform{a:V, b:([2]u64) if go{V} and has_rsh  {V}} = emit{V, intrin{if (es{V}) 'sra' else 'srl',V,1}, a, b}
 
 def __eq{a:V, b:V if go{V} and has_eq{V}} = emit{uns{V}, intrin{'cmpeq',V,1}, b, a}
 def __gt{a:V, b:V if go{V} and has_gt{V}} = emit{uns{V}, intrin{'cmpgt',V  }, a, b}
