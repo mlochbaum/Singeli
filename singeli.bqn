@@ -1274,7 +1274,7 @@ nodes ← {
       A ← ! program._trace_ pos
       "Wrong number of parameters in extension" A names≡○≠𝕩
       "Generator defined with extend must be called with extend" A ∧´ ("var"≡Kind)¨ 𝕩
-      ¯1⊑result {𝕨.Eval𝕩}¨ <𝕩 env.Alias e
+      (0<≠)◶⟨emptyBody,⊢´⟩ result {𝕨.Eval𝕩}¨ <𝕩 env.Alias e
     }⊘{𝕊: {name⇐𝕩} "(extender)"⍟(0=≠) (1⊑𝕨)⊣""}}
   }
   Extend ⇐ {
