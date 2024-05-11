@@ -606,6 +606,12 @@ types ← {kname⇐"type"
   Unpack ⇐ ⟨tTUP,{Unpack¨𝕩},⊢⟩_cases
   Ungather ⇐ ⟨tTUP,⊢,"Gathered argument must have a tuple type"⊸TypeErr⟩_cases
   Deref ⇐ { Is 𝕩 ? tPTR=𝕩.typeKind ? 𝕩.dat ; "Expected pointer" TypeErr 𝕩 }
+  TupFrom ⇐ { Is _and_ (tTUP≡{𝕩.typeKind}) _asrtGotS⟜(𝕩˙) 𝕨 ⋄ 𝕩.dat }
+  Merge ⇐ {
+    l ← (tTUP≡{𝕩.typeKind})◶<‿TupFrom¨ 𝕩  # Assume 𝕩 all types
+    "Type parameters must include a tuple type" ! 0<⌈´=¨l
+    Tup ∾ l
+  }
 
   Width ← ⟨
     tPRIM, 1⊸⊑
@@ -895,7 +901,8 @@ builtins ← {
   Ty2 ← {𝕏⚇0 _p2}∘Kinds ⊣∾⟜(<·"symbol"⌾⊑⊢´)∘⊢⍟(⊑∊⟜=‿≠)"number"‿"type"⋈¨{𝕏numbers._cmp}⊸⋈
   Merge ← {
     0<(0=≠𝕩)⌈´=¨𝕩 ? ∾𝕩 ;
-    m←"Parameters must include at least one tuple or all be symbols"
+    ∧´("type"≡Kind)¨𝕩 ? types.Merge 𝕩 ;
+    m←"Parameters must include a tuple, or be all types or all symbols"
     symbols.New ∾ m⊸symbols.From¨𝕩
   }
   _exp_ ← {
@@ -904,12 +911,22 @@ builtins ← {
     err ← ∾" " Il "Expected" <⊸∾ ("or" Il num) ∾⟜< "parameters"
     𝔾⊣ err ({𝕎∨𝕏}´{𝕏⊸=}¨𝕗)_asrtGotR ≠
   }
-  Length ← (≠ "Parameter must be a tuple or symbol"⊸symbols.From⍟(¬=))_p1
-  Slice ← 2‿3 _exp_ {
-    s←¬=l←⊑𝕩
-    l "First parameter must be a tuple or symbol"⊸symbols.From⍟s↩
-    i←l≠⊸(0⌈⊣⌊+⍟(0⊸>)¨)numbers.GetInt¨1↓𝕩 ⋄ symbols.New⍟s (⊑i)↓(1↓i)↑´˜l
+  AsTup ← { # Returns tuple and a function to go back to original kind
+    IsTup 𝕩 ? 𝕩‿⊢ ;
+    "type" ≡ Kind 𝕩 ? ⟨𝕨 types.TupFrom 𝕩, types.Tup⟩ ;
+    ⟨𝕨 symbols.From 𝕩, symbols.New⟩
   }
+  Length ← (≠∘⊑ "Parameter must be a tuple or symbol"⊸AsTup)_p1
+  Slice ← 2‿3 _exp_ {
+    l‿Ret ← "First parameter must be a tuple or symbol" AsTup ⊑𝕩
+    i←l≠⊸(0⌈⊣⌊+⍟(0⊸>)¨)numbers.GetInt¨1↓𝕩 ⋄ Ret (⊑i)↓(1↓i)↑´˜l
+  }
+  Select ← { arg 𝕊 ind:
+    l‿Wrap ← "First parameter must be a tuple or symbol" AsTup arg
+    sm ← "Indices must be a flat tuple when selecting from a symbol"
+    { arg≢l ? "symbol"≡Kind arg ? sm (1=≡)_asrtGotS ind ; @}
+    (numbers.GetInt⊑l˙){IsTup 𝕩? Wrap 𝕊¨𝕩 ; 𝔽𝕩} ind
+  }_p2
   Undefined ← 1‿2 _exp_ {
     "First parameter must be a type" ("type"≡Kind)_asrtGotS ⊑𝕩
     constants.Undefined{(1<≠)◶⟨𝔽⊑,𝔽˜⟜numbers.GetNat´⟩} 𝕩
@@ -938,7 +955,7 @@ builtins ← {
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
       ⟨"typekind",symbols.New types.TypeKind _p1⟩
       ⟨"tup",⊢⟩, ⟨"tupsel",numbers.GetInt⊸⊑⚇0‿∞ _p2⟩, ⟨"tuplen",≠_p1⟩
-                 ⟨"select",numbers.GetInt⊸⊑⚇0‿∞˜_p2⟩, ⟨"length",Length⟩
+                 ⟨"select",Select⟩, ⟨"length",Length⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.GetNat _p1⟩
       ⟨"symchars",(symbols.New∘⋈¨"Expected symbol"⊸symbols.From)_p1⟩
       ⟨"fmtnat",symbols.New∘•Repr numbers.GetNat _p1⟩
