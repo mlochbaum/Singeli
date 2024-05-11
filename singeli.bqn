@@ -539,7 +539,9 @@ Show‿Repr ← {
   FmtFn ← {(𝕏˜@).name}
   ReprObj ← {𝕩.Shows@}
   ObjType ← IsTyped◶0‿{𝕩.fmtType}◶""‿{":"∾Repr TypeOf𝕩}
-  ShowObj ← (ReprObj∾ObjType)⎊("("∾")"∾˜Kind⎊"unknown")
+  _ko ← {𝔽≡{𝕩.kind}}
+  ShowSub ← "type"_ko◶ReprObj‿{𝕩.TypeShow@}∾ObjType
+  ShowObj ← ShowSub⎊("error"_ko⎊0◶("("∾")"∾˜Kind⎊"unknown")‿ReprObj)
   EChar ← "(char "∾•Repr∘-⟜@∾", probably bug)"˙
   _disp_ ← {R←⟨FmtTup {R𝕩}¨, numbers.Fmt, 𝔾, FmtFn, 𝔽⟩_tsel}
   Show ⇐ UnEsc ShowObj _disp_ EChar
@@ -551,22 +553,27 @@ types ← {kname⇐"type"
   New ← {k𝕊d:
     kind⇐kname
     typeKind‿dat⇐𝕨‿𝕩
-    T←1↓·∾(","⊸∾⍟(0<≠)Repr)¨  # Display type tuple
-    P←"("∾")"∾˜T              # Function args
-    Shows⇐typeKind◶⟨
-      "void"               # Void:                     void
-      ∾⟜•Repr´             # Primitive:   qual‿len     u8
-      {∾"["‿𝕨‿"]"‿𝕩}○Repr´ # Vector:      count‿t      [4]…
-      "*"∾Repr             # Pointer:     t            *…
-      P⊸{∾𝕨‿"->"‿𝕩}⟜Repr´  # Function:    ⟨q‿r‿s, t⟩   (…,…,…) -> …
-      T                    # Tuple:       q‿r‿s        (…,…,…)
-    ⟩∘dat
+    Shows‿TypeShow⇐{𝕏∘dat}¨typeKind⊑dispfns
     Matches⇐{𝕨Is∘⊢◶0‿Equiv𝕩}
   }
   tVOID‿tPRIM‿tVEC‿tPTR‿tFUN‿tTUP ← ↕6
   TypeKind⇐{
     ReqTyp 𝕩
     𝕩.typeKind⊑"void"‿"primitive"‿"vector"‿"pointer"‿"function"‿"tuple"
+  }
+  dispfns ← {
+    _v ← {{∾"["‿𝕨‿"]"‿𝕩}○𝔽´}             # Vector
+    _t ← {1↓·∾(","⊸∾⍟(0<≠)𝔽)¨}           # Type tuple, bare
+    _tt← {"tuptype{"∾"}"∾˜𝔽_t}           # and for display
+    _f ← {("("∾")"∾˜𝔽_t)⊸{∾𝕨‿"->"‿𝕩}⟜𝔽´} # Function args
+    {Repr‿Show{d←𝕩⋄𝕨_d}⍟(4=•Type∘⊢)¨𝕩}¨ ⟨
+      <"void"    # Void:                     void
+      ∾⟜•Repr´   # Primitive:   qual‿len     u8
+      _v         # Vector:      count‿t      [4]…
+      {"*"∾𝔽}    # Pointer:     t            *…
+      _f         # Function:    ⟨q‿r‿s, t⟩   (…,…,…) -> …
+      _t‿_tt     # Tuple:       q‿r‿s        …,…,…   /  tuptype{…,…,…}
+    ⟩
   }
   IsVoid ⇐ {tVOID≡𝕩.typeKind}
 
@@ -586,7 +593,7 @@ types ← {kname⇐"type"
     tVEC New ⟨l,t⟩
   }
   Ptr ⇐ { 𝕊t: "Pointer" ReqTyp t ⋄ tPTR New t}
-  Tup ⇐ { 𝕊t: !IsTup t ⋄ !∧´Is¨ t ⋄ tTUP New t}
+  Tup ⇐ { 𝕊t: !IsTup t ⋄ ReqTyp¨ t ⋄ tTUP New t}
   Fun ⇐ tFUN New ⋈
   _get⇐ {IsTup 𝕩 ? Tup 𝕊¨𝕩 ; 𝕗 ReqTyp 𝕩}
 
@@ -608,6 +615,7 @@ types ← {kname⇐"type"
   Ungather ⇐ ⟨tTUP,⊢,"Gathered argument must have a tuple type"⊸TypeErr⟩_cases
   Deref ⇐ { Is 𝕩 ? tPTR=𝕩.typeKind ? 𝕩.dat ; "Expected pointer" TypeErr 𝕩 }
   TupFrom ⇐ { Is _and_ (tTUP≡{𝕩.typeKind}) _asrtGotS⟜(𝕩˙) 𝕨 ⋄ 𝕩.dat }
+  TupTry ⇐ { Is 𝕩 ? tTUP≡𝕩.typeKind ? 𝕩.dat ; 𝕩 }
   Merge ⇐ {
     l ← (tTUP≡{𝕩.typeKind})◶<‿TupFrom¨ 𝕩  # Assume 𝕩 all types
     "Type parameters must include a tuple type" ! 0<⌈´=¨l
@@ -954,7 +962,7 @@ builtins ← {
       ⟨"is",Match _p2⟩, ⟨"hastype",1‿2 _exp_ ((1≠≠)◶⟨IsTyped⊑, HasType´⟩)⟩
       ⟨"undefined",Undefined⟩, ⟨"load",Load⟩, ⟨"store",Store⟩
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
-      ⟨"typekind",symbols.New types.TypeKind _p1⟩
+      ⟨"typekind",symbols.New types.TypeKind _p1⟩, ⟨"tuptype",types.Tup⟩
       ⟨"tup",⊢⟩, ⟨"select",Select⟩, ⟨"length",Length⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.GetNat _p1⟩
       ⟨"symchars",(symbols.New∘⋈¨"Expected symbol"⊸symbols.From)_p1⟩
@@ -1583,7 +1591,8 @@ targetNodes ← {
       G ← (0‿n-˜⋈⁼/gather)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)
       ⟨"length too short", n≤≠, G⟩_single
     }
-    pos ⟨"tuple required", IsTup⟩ _addCheck pos AddLenCheck conds Merge params
+    t ← pos AddLenCheck conds Merge params
+    types.tupTry AddTransform pos ⟨"tuple required", IsTup⟩ _addCheck t
   }
   # Get functions for evaluating regular node from target node
   GetProcs ⇐ { pos 𝕊 target:
