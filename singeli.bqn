@@ -995,8 +995,9 @@ var ← {
     }
   }
 }
+GenUnhandled ← !∘"Unhandled case"
 scopes ← {
-  noLambda ← var.Fixed {!∘"Unhandled case"}
+  noLambda ← var.Fixed genUnhandled
   null←{Get⇐{Err⟨"Undefined name: "∾𝕩,𝕨⟩} ⋄ GetLam⇐noLambda˙}
   New⇐{
     p←@¨n←𝕨⊣⟨⟩ ⋄ Names⇐{𝕤⋄n}
@@ -1264,7 +1265,7 @@ nodes ← {
     Scope⇐{ Visit scopes._defer o.Scope par.ScopeLambda 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value and name, from Define
       name ← (1⊑𝕨)⊣""
-      next ← ({𝕩.Get pos}⊑𝕨) ⊣ {name _unmatchedGen}
+      next ← ({𝕩.Get pos}⊑𝕨) ⊣⍟(genUnhandled˙≢⊣) {name _unmatchedGen}
       ⟨Try⟩←par.GetTry e
       Exec‿_cached ← { result.node≢"function"?
         Exec ⇐ result.Eval∘⊢ ⋄ _cached ⇐ {𝔽}
