@@ -368,7 +368,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
       Param ← ⟨Try∘"...", TargetElem⟩_seq
       a ← While ⟨"}"_divList, Param, 1⟩ ⋄ err_ex_gather Asrt 1≥+´⊑¨a ⋄ a
     }
-    c ← @_optGet_⟨kIf,⋈Expr, While ⟨Div∘"&", CondExpr, 0⟩⟩ @
+    c ← @_optGet_⟨kIf,⋈Expr, While ⟨Div∘"&", CondExpr⊣•Out∘"Conditions with & are deprecated; use if/and", 0⟩⟩ @
     Get "}"
     a‿c
   }
@@ -451,7 +451,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   MultiLine ← {Line𝕩} _blockLines
   TopIf ← c.topif _node_ (∾⌾(¯1⊸⊑) @_opt_⟨"{",MultiLine, ⋈{Line𝕩}⟩ _if)
-  SubLine ← @_opt_⟨kInclude,Include, kIf,TopIf, kIf_inline,TopIf, kConfig,Config, Stmt⟩
+  SubLine ← @_opt_⟨kIf,TopIf⊣•Out∘"Top-level if is deprecated as it now means if_inline but will be a normal if; change to if_inline or parenthesize"
+                   kInclude,Include, kIf_inline,TopIf, kConfig,Config, Stmt⟩
   LocLine ← @_opt_⟨kIf_inline,"localizable line"‿kIf_inline AsrtHere 0˙, kIf,StIf, SubLine⟩
   Line ← @_optGet_⟨
     kLocal, @_opt_⟨"{",c.body _node_ MultiLine, LocLine⟩
@@ -954,8 +955,7 @@ builtins ← {
       ⟨"undefined",Undefined⟩, ⟨"load",Load⟩, ⟨"store",Store⟩
       ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
       ⟨"typekind",symbols.New types.TypeKind _p1⟩
-      ⟨"tup",⊢⟩, ⟨"tupsel",numbers.GetInt⊸⊑⚇0‿∞ _p2⟩, ⟨"tuplen",≠_p1⟩
-                 ⟨"select",Select⟩, ⟨"length",Length⟩
+      ⟨"tup",⊢⟩, ⟨"select",Select⟩, ⟨"length",Length⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.GetNat _p1⟩
       ⟨"symchars",(symbols.New∘⋈¨"Expected symbol"⊸symbols.From)_p1⟩
       ⟨"fmtnat",symbols.New∘•Repr numbers.GetNat _p1⟩
@@ -966,6 +966,9 @@ builtins ← {
       ⟨"witharch",architecture.With⟩
       ⟨"withenv",{e←program.env⋄e.Push 2↑𝕩⋄r←⟨⟩{𝕎_ne𝕩}˜2⊑𝕩⋄e.Pop@⋄r}_e3⟩
       ⟨"getenv",{program.env.Get 𝕩}_p1⟩
+      # Deprecated
+      ⟨"tupsel",numbers.GetInt⊸⊑⚇0‿∞ _p2 ⊣ •Out∘"tupsel{} is deprecated; use select{}"⟩
+      ⟨"tuplen",≠_p1 ⊣ •Out∘"tuplen{} is deprecated; use length{}"⟩
     ⟩
     functions.builtins
     numbers.builtins
