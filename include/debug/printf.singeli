@@ -6,7 +6,6 @@ local {
   include 'skin/cext'
   include 'util/kind'
   include 'util/tup'
-  oper ! select infix left 50
 }
 
 require{'stdio.h', 'inttypes.h'}
@@ -16,72 +15,66 @@ def lprintf{...vs} = printf{...vs, '\n'}
 def printf{...vs0} = {
   def nsym = ~each{ksym, vs0}
   def vs = join{each{
-    {a,b}=>if (b) tup{' ', a} else tup{a},
+    {a,b} => if (b) tup{' ', a} else tup{a},
     vs0, nsym & shiftright{0, nsym}
   }}
 
-  def empty = tup{}
-  def lit{s} = tup{s, empty}
+  def lit{s} = tup{s, tup{}}
   def lit1{s} = tup{lit{s}}
-  
+
   def listfmt{hex, open, close, vs} = {
-    if (length{vs}==0) {
-      lit{merge{open, close}}
-    } else {
-      def f = each{runfmt{hex, .}, vs}
-      def d = each{lit1, tup{open, ', ', close}}
-      merge{...each{merge, d ! (0 != inds{f}), f}, d ! 2}
-    }
+    def f = each{runfmt{hex, .}, vs}
+    def d = each{lit1, tup{open, ', ', close}}
+    merge{...each{merge, select{d, 0 != inds{f}}, f}, select{d,2}}
   }
-  
-  def runfmt{hex, x} = {
-    if (ksym{x}) {
-      lit1{x}
-    } else if (ktup{x}) {
-      if (length{x}==2 and (x!0)==='x') runfmt{1, x!1}
-      else listfmt{hex, '{', '}', x}
-    } else if (kreg{x} or kcon{x}) {
-      def T = type{x}
-      def k = typekind{T}
-      if (k === 'primitive') {
-        def q = quality{T}
-        def w = width{T}
-        def u = w>1 and q=='u'
-        def spec = {
-          if (q=='f') (if (w==32) '%.8g' else '%.17g')
-          else merge{
-            if (hex) '0x' else '',
-            '%',
-            if (w==64) '"SCN' else '',
-            if (hex) 'x' else if (u) 'u' else 'd',
-            if (w==64) '64"' else ''
-          }
+  def listfmt{hex, open, close, {}} = lit{merge{open, close}}
+
+  def runfmt{hex, x} = match(x) {
+    {_ if ksym{x}} => lit1{x}
+    {{'x0', y}} => runfmt{2, y}
+    {{'x', y}} => runfmt{1, y}
+    {{}} => lit1{'{}'}
+    {{...vs}} => listfmt{hex, '{', '}', x}
+    {_:*E} => tup{tup{'%p', tup{x}}}
+
+    {_:[l]E} => {
+      tmp:*E = undefined{E, l}
+      *[l]E~~tmp <- x
+      listfmt{hex, '[', ']', each{load{tmp,.}, range{l}}}
+    }
+
+    {_:T if typekind{T}=='primitive'} => {
+      def q = quality{T}
+      def w = width{T}
+      def u = w>1 and q=='u'
+      def spec = {
+        if (q=='f') (if (w==32) '%.8g' else '%.17g')
+        else merge{
+          if (hex!=0) '0x' else '',
+          '%',
+          if (hex==2) merge{'0', fmtnat{w/4}} else '',
+          if (w==64) '"SCN' else '',
+          if (hex!=0) 'x' else if (u) 'u' else 'd',
+          if (w==64) '64"' else ''
         }
-        tup{tup{spec, tup{x}}}
-      } else if (k === 'vector') {
-        def E = eltype{T}
-        def l = vcount{T}
-        tmp:*E = copy{l, 0}
-        *T~~tmp <- x
-        listfmt{hex, '[', ']', each{load{tmp,.}, range{l}}}
-      } else if (k === 'pointer') {
-        tup{tup{'%p', tup{x}}}
-      } else {
-        lit1{merge{'(unhandled typekind:', k, ')'}}
       }
-    } else if (knum{x}) {
+      tup{tup{spec, tup{if (q=='i' and hex!=0) reinterpret{primtype{'u', w}, x} else x}}}
+    }
+
+    {_ if knum{x}} => {
       if ((x>>0) == x) {
         if      (x >= -(1<<63) and x < 1<<63) runfmt{hex, i64~~x}
         else if (x >= 0        and x < 1<<64) runfmt{hex, u64~~x}
-        else runfmt{hex, f64~~x}
+        else lit1{fmtnat{x}}
       } else runfmt{hex, f64~~x}
-    } else {
-      lit1{'(unknown type)'}
     }
+
+    {_:T} => lit1{merge{'(unhandled typekind: ', typekind{x}, ')'}}
+    {_} => lit1{merge{'(unhandled kind: ', kind{x}, ')'}}
   }
-  
+
   def fs = flip{join{each{runfmt{0,.}, vs}}}
-  def es = each{join, fs}
-  
-  emit{void, 'printf', merge{'"', es!0, '"'}, ... es!1}
+  def {strs, args} = each{join, fs}
+
+  emit{void, 'printf', merge{'"', strs, '"'}, ...args}
 }
