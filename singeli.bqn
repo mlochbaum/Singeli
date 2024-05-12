@@ -549,6 +549,7 @@ Show‿Repr ← {
   Repr ⇐       ReprObj _disp_ !
 }
 ShowMulti ← 2↓·∾·", "⊸∾¨Show¨
+_genNamed_ ← {N←{n↩𝕩}∘{name⇐𝕩}∘𝔾⋄𝔽⊘{𝕨N𝕩}}
 
 types ← {kname⇐"type"
   New ← {k𝕊d:
@@ -987,14 +988,14 @@ builtins ← {
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.GetNat _p1⟩
       ⟨"symchars",(Sym∘⋈¨SymP)_p1⟩
       ⟨"fmtnat",Sym∘•Repr numbers.GetNat _p1⟩
-      ⟨"bind",⊑RG0⊸{(𝕎_ne𝕩⊸∾)⊘{name⇐"(partially-applied generator)"}}1⊸↓_v1⟩
+      ⟨"bind",⊑RG0⊸{(𝕎_ne𝕩⊸∾)_genNamed_({∾⟨Repr𝕨,"{",ShowMulti𝕩,", ...}"⟩}´∘𝕨‿𝕩)}1⊸↓_v1⟩
       ⟨"each",⊑{𝕎¨_ne<˘⍉>𝕩}1⊸↓_v2⟩, ⟨"apply",RG0⊸{𝕎_ne𝕩}⟜RL1 _p2⟩
       ⟨"export",{𝕨 ReqSym⊸program.Export⚇0 𝕩}_p2⟩
       ⟨"require",{program.Require∘ReqSym⚇0 𝕩}⟩
       ⟨"witharch",architecture.With⟩
       ⟨"withenv",{e←program.env⋄e.Push 2↑𝕩⋄r←⟨⟩{𝕎_ne𝕩}˜RGL 2⊑𝕩⋄e.Pop@⋄r}_e3⟩
       ⟨"getenv",{program.env.Get 𝕩}_p1⟩
-      ⟨"memoize",({𝕊f: F (MemoMap@)._memoize⊘{name⇐"memoize{"∾(Repr f)∾"}"}} RGP)_p1⟩
+      ⟨"memoize",({𝕏 (MemoMap@)._memoize _genNamed_ ({"memoize{"∾(Repr 𝕩)∾"}"}𝕩˙)} RGP)_p1⟩
       # Deprecated
       ⟨"tupsel",numbers.GetInt⊸⊑⚇0‿∞ _p2 ⊣ •Out∘"tupsel{} is deprecated; use select{}"⟩
       ⟨"tuplen",≠_p1 ⊣ •Out∘"tuplen{} is deprecated; use length{}"⟩
@@ -1218,21 +1219,25 @@ nodes ← {
     Sp ← ⊣◶⟨⋈⊢, "Spread input must be tuple" IsTup _asrtGotS ⊢⟩
     # Partial parameters .
     realpar ← params /˜¬ pp ← @⊸≡¨params
-    em ← {¬∨´pp? {𝔽};
+    em ← {¬∨´pp? {_𝕣_:𝔽};
       Proc ← (pp/spread){
         ¬∨´𝕗 ? ((⍋⍋pp)⊏∾) ⊣ (𝕘!(≠𝕗)=≠∘⊢) ;
         c ← +´pp∧»∨`ps←pp∧spread
         i ← (⋈⁼/ps)(↑⋈↓)(⊢-≠×(c-˜≠)⊸≤)⍋⍋ps¬⊸/pp
         (∾0‿2‿1⊏(i⊏¨<∘∾)∾⟜<(c-˜0⋈¯1+´pp)↓´˜⊢) ⊣ (𝕘!c≤≠∘⊢)
       }"Partial and given parameter counts don't match"
-      {(𝔽 𝕩⊸Proc)⊘{name⇐"(partially-applied generator)"}}
+      Name ← {
+        p ← (Show¨ 𝕩) Proc (pp/spread)⊏"."‿"..."
+        ∾∾ ⟨Repr𝕨,"{"⟩‿(1↓⥊(<", ")≍˘p)‿⟨"}"⟩
+      }
+      {(𝔽 𝕩⊸Proc)_genNamed_(Name´∘𝕘‿𝕩)}
     }
     DeSpread ← (pp<spread){∨´𝕗? ∾𝕗Sp¨⊢; ⊢}
     Visit←{⟨𝕏caller,𝕏¨realpar⟩}
     ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "run"‿visit
     Oper ⇐ {𝕤⋄ pos operator.Run ⟨⊑Visit o.Oper 𝕩, params⟩}
     Eval ⇐ {
-      (3=•Type𝕨)◶⟨!∘"Running non-generator", 𝕎∘DeSpread⟩ program._trace_ pos _em 𝕩
+      (3=•Type𝕨)◶⟨!∘"Running non-generator", 𝕎∘DeSpread⟩ program._trace_ pos _em_𝕨 𝕩
     }´ d.Eval
   }
   Call ⇐ { 𝕨 Run ⟨consts.call , <⊸∾´𝕩⟩ }
