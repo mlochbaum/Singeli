@@ -915,17 +915,7 @@ MemoMap ← {𝕤
 }
 
 builtins ← {
-  Kinds ← {
-    E ← "Unhandled type" ! 0˙
-    (e{k‿o←𝕨⋄∧○(k≡⊢)◶⟨𝕏,O˙⟩}´𝕩){o←𝕨𝔽○Kind𝕩⋄𝕨O𝕩}
-  }
-  Ty2 ← {𝕏⚇0 _p2}∘Kinds ⊣∾⟜(<·"symbol"⌾⊑⊢´)∘⊢⍟(⊑∊⟜=‿≠)"number"‿"type"⋈¨{𝕏numbers._cmp}⊸⋈
-  Merge ← {
-    0<(0=≠𝕩)⌈´=¨𝕩 ? ∾𝕩 ;
-    ∧´("type"≡Kind)¨𝕩 ? types.Merge 𝕩 ;
-    m←"Parameters must include a tuple, or be all types or all symbols"
-    symbols.New ∾ m⊸symbols.From¨𝕩
-  }
+  # Parameter checking
   _exp_ ← {
     Il ← 1↓·⥊<⊸(≍˘)
     num ← 𝕗⊏"zero"‿"one"‿"two"‿"three"
@@ -937,21 +927,39 @@ builtins ← {
     "type" ≡ Kind 𝕩 ? ⟨𝕨 types.TupFrom 𝕩, types.Tup⟩ ;
     ⟨𝕨 symbols.From 𝕩, symbols.New⟩
   }
-  Length ← (≠∘⊑ "Parameter must be a tuple or symbol"⊸AsTup)_p1
+  MustBe ← ∾⟜"arameter must be a "⊸∾
+  _req_ ← {(𝕩 MustBe 𝕘) 𝔽 _asrtGotS ⊢}
+  AsTupP‿AsTup0 ← {(𝕩 MustBe "tuple or symbol")⊸AsTup}¨ "P"‿"First p"
+  ⟨RT0⟩ ← ("type"≡Kind)_req_"type"¨ ⟨"First p"⟩
+  RGP‿RG0‿RGL ← IsGen _req_"generator"¨ "P"‿"First p"‿"Last p"
+  ⟨RL1⟩ ← IsTup _req_"tuple"¨ ⟨"Second p"⟩
+  ⟨Sym⇐New,FromSym⇐From⟩ ← symbols
+  SymP ← ("P" MustBe "symbol")⊸FromSym
+  ReqSym ← "Expected symbol"⊸FromSym
+
+  Kinds ← {
+    E ← "Unhandled type" ! 0˙
+    (e{k‿o←𝕨⋄∧○(k≡⊢)◶⟨𝕏,O˙⟩}´𝕩){o←𝕨𝔽○Kind𝕩⋄𝕨O𝕩}
+  }
+  Ty2 ← {𝕏⚇0 _p2}∘Kinds ⊣∾⟜(<·"symbol"⌾⊑⊢´)∘⊢⍟(⊑∊⟜=‿≠)"number"‿"type"⋈¨{𝕏numbers._cmp}⊸⋈
+  Merge ← {
+    0<(0=≠𝕩)⌈´=¨𝕩 ? ∾𝕩 ;
+    ∧´("type"≡Kind)¨𝕩 ? types.Merge 𝕩 ;
+    m←"Parameters must include a tuple, or be all types or all symbols"
+    Sym ∾ m⊸FromSym¨𝕩
+  }
   Slice ← 2‿3 _exp_ {
-    l‿Ret ← "First parameter must be a tuple or symbol" AsTup ⊑𝕩
+    l‿Ret ← AsTup0 ⊑𝕩
     i←l≠⊸(0⌈⊣⌊+⍟(0⊸>)¨)numbers.GetInt¨1↓𝕩 ⋄ Ret (⊑i)↓(1↓i)↑´˜l
   }
   Select ← { arg 𝕊 ind:
-    l‿Wrap ← "First parameter must be a tuple or symbol" AsTup arg
+    l‿Wrap ← AsTup0 arg
     sm ← "Indices must be a flat tuple when selecting from a symbol"
     { arg≢l ? "symbol"≡Kind arg ? sm (1=≡)_asrtGotS ind ; @}
     (numbers.GetInt⊑l˙){IsTup 𝕩? Wrap 𝕊¨𝕩 ; 𝔽𝕩} ind
   }_p2
-  Undefined ← 1‿2 _exp_ {
-    "First parameter must be a type" ("type"≡Kind)_asrtGotS ⊑𝕩
-    constants.Undefined{(1<≠)◶⟨𝔽⊑,𝔽˜⟜numbers.GetNat´⟩} 𝕩
-  }
+  UD ← constants.Undefined{(1<≠)◶⟨𝔽⊑,𝔽˜⟜numbers.GetNat´⟩}
+  Undefined ← 1‿2 _exp_ (UD ⊣ RT0∘⊑)
   # Load/store
   AccessPtr ← {
     t ← types.Deref TypeOf 𝕩
@@ -963,9 +971,8 @@ builtins ← {
     IsTyped𝕩 ? types.IsInt 𝕩 ? 𝕩 ;
     "Index must be numeric" 0 _asrtGotS 𝕩
   }
-  Load ← { 𝕊 ptr‿i  : functions.Emit ⟨AccessPtr ptr, symbols.New "^load",  ptr, GetIndex i⟩ } _e2
-  Store← { 𝕊 ptr‿i‿v: t←AccessPtr ptr ⋄ functions.Emit ⟨types.void, symbols.New "^store", ptr, GetIndex i, vc←t types.Cast v⟩ ⋄ vc } _e3
-  _reqGen ← {(𝕗∾" must be a generator") IsGen _asrtGotS ⊢}
+  Load ← { 𝕊 ptr‿i  : functions.Emit ⟨AccessPtr ptr, Sym "^load",  ptr, GetIndex i⟩ } _e2
+  Store← { 𝕊 ptr‿i‿v: t←AccessPtr ptr ⋄ functions.Emit ⟨types.void, Sym "^store", ptr, GetIndex i, vc←t types.Cast v⟩ ⋄ vc } _e3
 
   names‿values ⇐ <˘∾≍⟨
     Repr¨⊸≍ types.primTypes
@@ -974,20 +981,20 @@ builtins ← {
       ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"⋄kind⇐"error"}⊣•Out∘ShowMulti⟩
       ⟨"is",Match _p2⟩, ⟨"hastype",1‿2 _exp_ ((1≠≠)◶⟨IsTyped⊑, HasType´⟩)⟩
       ⟨"undefined",Undefined⟩, ⟨"load",Load⟩, ⟨"store",Store⟩
-      ⟨"type",TypeOf _p1⟩, ⟨"kind",symbols.New Kind _p1⟩
-      ⟨"typekind",symbols.New types.TypeKind _p1⟩, ⟨"tuptype",types.Tup⟩
-      ⟨"tup",⊢⟩, ⟨"select",Select⟩, ⟨"length",Length⟩
+      ⟨"type",TypeOf _p1⟩, ⟨"kind",Sym Kind _p1⟩
+      ⟨"typekind",Sym types.TypeKind _p1⟩, ⟨"tuptype",types.Tup⟩
+      ⟨"tup",⊢⟩, ⟨"select",Select⟩, ⟨"length",(≠⊑∘AsTupP)_p1⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.GetNat _p1⟩
-      ⟨"symchars",(symbols.New∘⋈¨"Expected symbol"⊸symbols.From)_p1⟩
-      ⟨"fmtnat",symbols.New∘•Repr numbers.GetNat _p1⟩
-      ⟨"bind",⊑{𝕎_ne𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨_ne<˘⍉>𝕩}1⊸↓_v2⟩
-      ⟨"apply",{"Second parameter must be a tuple"IsTup _asrtGotS 𝕩⋄𝕎_ne𝕩}_p2⟩
-      ⟨"export",{𝕨 symbols.From⊸program.Export⚇0 𝕩}_p2⟩
-      ⟨"require",{program.Require∘symbols.From⚇0 𝕩}⟩
+      ⟨"symchars",(Sym∘⋈¨SymP)_p1⟩
+      ⟨"fmtnat",Sym∘•Repr numbers.GetNat _p1⟩
+      ⟨"bind",⊑RG0⊸{𝕎_ne𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨_ne<˘⍉>𝕩}1⊸↓_v2⟩
+      ⟨"apply",RG0⊸{𝕎_ne𝕩}⟜RL1 _p2⟩
+      ⟨"export",{𝕨 ReqSym⊸program.Export⚇0 𝕩}_p2⟩
+      ⟨"require",{program.Require∘ReqSym⚇0 𝕩}⟩
       ⟨"witharch",architecture.With⟩
-      ⟨"withenv",{e←program.env⋄e.Push 2↑𝕩⋄r←⟨⟩{𝕎_ne𝕩}˜2⊑𝕩⋄e.Pop@⋄r}_e3⟩
+      ⟨"withenv",{e←program.env⋄e.Push 2↑𝕩⋄r←⟨⟩{𝕎_ne𝕩}˜RGL 2⊑𝕩⋄e.Pop@⋄r}_e3⟩
       ⟨"getenv",{program.env.Get 𝕩}_p1⟩
-      ⟨"memoize",({𝕏 (MemoMap@)._memoize} "Parameter"_reqGen)_p1⟩
+      ⟨"memoize",({𝕏 (MemoMap@)._memoize} RGP)_p1⟩
       # Deprecated
       ⟨"tupsel",numbers.GetInt⊸⊑⚇0‿∞ _p2 ⊣ •Out∘"tupsel{} is deprecated; use select{}"⟩
       ⟨"tuplen",≠_p1 ⊣ •Out∘"tuplen{} is deprecated; use length{}"⟩
