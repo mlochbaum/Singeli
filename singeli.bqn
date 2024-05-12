@@ -537,7 +537,7 @@ TypeOf← {⟨types.Tup 𝕊¨, {𝕩.Type@}⟩_tsel 𝕩}
 Show‿Repr ← {
   UnEsc ← ⊢-128×(' '+128)⊸= # Non-breaking space to space
   FmtTup ← "tup{"∾"}"∾˜1↓·∾","⊸∾¨
-  FmtFn ← {(𝕏˜@).name}
+  FmtFn ← {(𝕏˜@).name}⎊"(generator)"
   ReprObj ← {𝕩.Shows@}
   ObjType ← IsTyped◶0‿{𝕩.fmtType}◶""‿{":"∾Repr TypeOf𝕩}
   _ko ← {𝔽≡{𝕩.kind}}
@@ -987,14 +987,14 @@ builtins ← {
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.GetNat _p1⟩
       ⟨"symchars",(Sym∘⋈¨SymP)_p1⟩
       ⟨"fmtnat",Sym∘•Repr numbers.GetNat _p1⟩
-      ⟨"bind",⊑RG0⊸{𝕎_ne𝕩⊸∾}1⊸↓_v1⟩, ⟨"each",⊑{𝕎¨_ne<˘⍉>𝕩}1⊸↓_v2⟩
-      ⟨"apply",RG0⊸{𝕎_ne𝕩}⟜RL1 _p2⟩
+      ⟨"bind",⊑RG0⊸{(𝕎_ne𝕩⊸∾)⊘{name⇐"(partially-applied generator)"}}1⊸↓_v1⟩
+      ⟨"each",⊑{𝕎¨_ne<˘⍉>𝕩}1⊸↓_v2⟩, ⟨"apply",RG0⊸{𝕎_ne𝕩}⟜RL1 _p2⟩
       ⟨"export",{𝕨 ReqSym⊸program.Export⚇0 𝕩}_p2⟩
       ⟨"require",{program.Require∘ReqSym⚇0 𝕩}⟩
       ⟨"witharch",architecture.With⟩
       ⟨"withenv",{e←program.env⋄e.Push 2↑𝕩⋄r←⟨⟩{𝕎_ne𝕩}˜RGL 2⊑𝕩⋄e.Pop@⋄r}_e3⟩
       ⟨"getenv",{program.env.Get 𝕩}_p1⟩
-      ⟨"memoize",({𝕏 (MemoMap@)._memoize} RGP)_p1⟩
+      ⟨"memoize",({𝕊f: F (MemoMap@)._memoize⊘{name⇐"memoize{"∾(Repr f)∾"}"}} RGP)_p1⟩
       # Deprecated
       ⟨"tupsel",numbers.GetInt⊸⊑⚇0‿∞ _p2 ⊣ •Out∘"tupsel{} is deprecated; use select{}"⟩
       ⟨"tuplen",≠_p1 ⊣ •Out∘"tuplen{} is deprecated; use length{}"⟩
@@ -1225,7 +1225,7 @@ nodes ← {
         i ← (⋈⁼/ps)(↑⋈↓)(⊢-≠×(c-˜≠)⊸≤)⍋⍋ps¬⊸/pp
         (∾0‿2‿1⊏(i⊏¨<∘∾)∾⟜<(c-˜0⋈¯1+´pp)↓´˜⊢) ⊣ (𝕘!c≤≠∘⊢)
       }"Partial and given parameter counts don't match"
-      {𝔽 𝕩⊸Proc}
+      {(𝔽 𝕩⊸Proc)⊘{name⇐"(partially-applied generator)"}}
     }
     DeSpread ← (pp<spread){∨´𝕗? ∾𝕗Sp¨⊢; ⊢}
     Visit←{⟨𝕏caller,𝕏¨realpar⟩}
