@@ -526,6 +526,7 @@ operator ← {
 # - Classes symbols, types, registers, constants, functions, blocks
 _and_ ← { 𝔽◶⟨0,𝔾⟩ }
 IsTup ← 0=•Type
+IsGen ← 3=•Type
 
 _tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!∘"Unhandled kind"⟩)˙)∾↑)𝕗)}
 Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
@@ -902,6 +903,17 @@ blocks ← {
   }
 }
 
+MemoMap ← {𝕤
+  args←res←arches←⟨⟩ ⋄ AN←architecture.SeeNext
+  SetArgs ⇐ { args∾↩<𝕩 ⋄ arches∾↩<AN@ ⋄ 𝕩 }
+  SetRes ⇐ { res∾↩<𝕩 ⋄ 𝕩 }
+  _cached ⇐ {
+    i ← (𝕩⊸((=○≠)◶⟨0,∧´Match¨⟩)¨args) ∧ arches≡¨<AN@
+    ∨´i ? (⊑/i)⊑res ; 𝔽𝕩
+  }
+  _memoize ⇐ { SetRes∘𝔽∘SetArgs _cached }
+}
+
 builtins ← {
   Kinds ← {
     E ← "Unhandled type" ! 0˙
@@ -953,6 +965,7 @@ builtins ← {
   }
   Load ← { 𝕊 ptr‿i  : functions.Emit ⟨AccessPtr ptr, symbols.New "^load",  ptr, GetIndex i⟩ } _e2
   Store← { 𝕊 ptr‿i‿v: t←AccessPtr ptr ⋄ functions.Emit ⟨types.void, symbols.New "^store", ptr, GetIndex i, vc←t types.Cast v⟩ ⋄ vc } _e3
+  _reqGen ← {(𝕗∾" must be a generator") IsGen _asrtGotS ⊢}
 
   names‿values ⇐ <˘∾≍⟨
     Repr¨⊸≍ types.primTypes
@@ -974,6 +987,7 @@ builtins ← {
       ⟨"witharch",architecture.With⟩
       ⟨"withenv",{e←program.env⋄e.Push 2↑𝕩⋄r←⟨⟩{𝕎_ne𝕩}˜2⊑𝕩⋄e.Pop@⋄r}_e3⟩
       ⟨"getenv",{program.env.Get 𝕩}_p1⟩
+      ⟨"memoize",({𝕏 (MemoMap@)._memoize} "Parameter"_reqGen)_p1⟩
       # Deprecated
       ⟨"tupsel",numbers.GetInt⊸⊑⚇0‿∞ _p2 ⊣ •Out∘"tupsel{} is deprecated; use select{}"⟩
       ⟨"tuplen",≠_p1 ⊣ •Out∘"tuplen{} is deprecated; use length{}"⟩
@@ -1278,15 +1292,11 @@ nodes ← {
       Exec‿_cached ← { result.node≢"function"?
         Exec ⇐ result.Eval∘⊢ ⋄ _cached ⇐ {𝔽}
       ;
-        args←res←arches←⟨⟩ ⋄ AN←architecture.SeeNext
+        SetArgs‿SetRes‿_cached ← MemoMap@ ⋄ cached⇐
         Exec ⇐ {
-          args∾↩<𝕨 ⋄ arches∾↩<AN@
+          SetArgs 𝕨
           n ← (128⌊≠)⊸↑ name∾∾('_'∾·∊⟜(dig∾1↓alph)⊸/Repr)¨𝕨
-          {Set⇐{res∾↩<𝕩}}‿n result.Eval 𝕩
-        }
-        _cached ⇐ {
-          i ← (𝕩⊸((=○≠)◶⟨0,∧´Match¨⟩)¨args) ∧ arches≡¨<AN@
-          ∨´i ? (⊑/i)⊑res ; 𝔽𝕩
+          {Set⇐SetRes}‿n result.Eval 𝕩
         }
       }
       {

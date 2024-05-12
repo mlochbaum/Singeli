@@ -530,6 +530,7 @@ Casting generators convert untyped constants to typed, or convert between types,
 | `bind{gen,param…}`        | `gen{param…, ...}`
 | `withenv{name,value,gen}` | `gen` but with environment `name` set to `value` during evaluation
 | `getenv{name}`            | Value for `name` in environment
+| `memoize{gen}`            | `gen` but return a saved result if parameters match a previous call
 
 The program's environment used by `withenv` and `getenv` associates symbols (`name` in the table) with values. It's a form of dynamic scoping, in that associations are created and freed according to the generator call stack.
 
