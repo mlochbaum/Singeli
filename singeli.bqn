@@ -373,16 +373,17 @@ Parse ← {𝕊 tokens‿ShowTrace:
     a‿c
   }
   # Target operations * : = == are all right-associative
-  TargetElem ←  =◶⟨0, ∧´'*'⊸=⟩_test◶⟨  # Multiple *s group as one token
-    { FinishTarget TargetAtom 𝕩 }
+  # 𝕩≡0 indicates = should not be parsed
+  TargetElem ← =◶⟨0, ∧´'*'⊸=⟩_test◶⟨  # Multiple *s group as one token
+    { (𝕩≡0)◶FinishTarget‿FinishDefTarget TargetAtom 𝕩 }
     tc.pointer _node_ {𝕤
       a ← '*'⊸=_begin_"" @
-      tc.pointer⍟(1-˜≠a) TargetElem@
+      tc.pointer⍟(1-˜≠a) TargetElem 𝕩
     }
   ⟩
   TargetAtom ← @_opt_⟨
     "(", tc.constant _node_ ParEx
-    "[", tc.vector _node_ {"["‿TargetElem‿"]"‿TargetElem _seq 𝕩}
+    "[", tc.vector _node_ {"["‿TargetElem‿"]"‿(TargetElem∘𝕩) _seq @}
     "{", TargetList
     =◶⟨0, ⊑⊏∊(dig∾''')˙⟩_test◶⟨tc.name _node_ Name, tc.constant _node_ EWord⟩
   ⟩
@@ -396,12 +397,13 @@ Parse ← {𝕊 tokens‿ShowTrace:
     "==", tc.equals _node_ (⋈⟜CondExpr)
     ⊢
   ⟩
+  FinishDefTarget ← @_optGet_⟨":", tc.typed _node_ (⊢⋈TypeTarget∘0),  ⊢⟩
   Params ← c.target _node_ TargetList
   _withParams ← {
     Rec ← @_opt_⟨"{",c.lambda _node_ (Params‿{Rec𝕩} _seq), 𝔽⟩
   }
   IdTarget ← c.newId _node_ Name
-  Target ← @_opt_⟨"{",Params, IdTarget⟩
+  Target ← c.target _node_ (TargetElem∘0)
 
   Arg ← c.arg _node_ ((Try∘"...")‿Name‿":"‿SimpExpr _seq)
   Function ← c.function _node_ {𝕤
@@ -1258,7 +1260,7 @@ nodes ← {
   }
   PhraseTryWord ⇐ {"phrase"≡𝕩.node}◶@‿{𝕩.ToWord@}
   PhraseTryName ⇐ {𝕩.name}⍟(@⊸≢)PhraseTryWord
-  Target ⇐ {
+  Target ⇐ {𝕨𝕊⟨1⇐isName⟩:0;1}◶{𝕨 NewId ⊑𝕩.targs}‿{
     pos←𝕨
     names‿eqs‿conds‿ProcE‿ProcT ← pos targetNodes.GetProcs 𝕩
     ns ← pos⊸NewId¨ names
@@ -1580,6 +1582,7 @@ targetNodes ← {
   failedMatch ← {⇐}
   Name ⇐ Constant ⇐ {
     # If constant, "assign" to node to evaluate and compare and cond-time
+    isName ⇐ =𝕩
     targs ⇐ ⟨𝕩⟩
     conds ⇐ ⟨⟩
     ProcE ⇐ ProcT ⇐ ⋈
