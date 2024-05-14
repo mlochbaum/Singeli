@@ -98,7 +98,7 @@ Real built-in vector support would apparently harsh Singeli's minimalist vibe, s
 To make use of my `[16]i8`s instead of leaving them to sit around and look pretty I need some definitions, which will compile to C intrinsics. There are two libraries for these right now. arch/iintrinsic/basic is a curated set of "nice" operations like load, store, and arithmetic, and arch/iintrinsic/misc is a dump of the rest (iintrinsic is "intel intrinsics", which is the target the same way C is for arch/c). I only need one macro from misc, so I'm just going to copy it over.
 
     include 'arch/iintrinsic/basic'
-    def shuffle{a:T, b:T if T==[16]i8} = emit{T, '_mm_shuffle_epi8', a, b}
+    def shuffle{a:T==[16]i8, b:T} = emit{T, '_mm_shuffle_epi8', a, b}
 
 Looks like `#define`, but these `def` macros are smart: you can check compile-time conditions to decide whether it applies. If not it'll try the previous definition if any, meaning it's an overload. `shuffle` doesn't overload anything, so just errors if `a` and `b` don't have type `T` which is `[16]i8`. On the other hand, there's something we do want to overload:
 
@@ -133,7 +133,7 @@ And another cast `<~` in there. The three casts skin/cext defines are `~~` for r
 So now we can put together a function that works on any length. Language-wise there's nothing new here unless you consider an `if` statement to be a surprise. But there's a trick for handling when the two vector pointers meet in the middle. If there's one vector or less between them, we have the code for that. If there are two vectors or less, we could reverse one full and one partial vector, but that's ugly. Instead we're going to reverse two overlapping full vectors. This actually doesn't take any changes other than the loop bound. The main loop was going to read the two vectors and then write two reversed ones anyway, so the writes don't interfere with the reads.
 
     include 'arch/iintrinsic/basic'
-    def shuffle{a:T, b:T if T==[16]i8} = emit{T, '_mm_shuffle_epi8', a, b}
+    def shuffle{a:T==[16]i8, b:T} = emit{T, '_mm_shuffle_epi8', a, b}
     fn reverse{T==i8 if hasarch{'SSSE3'}}(arr:*T, len:u64) : void = {
       def V = [16]T
       f := vec_make{V, range{16}}
@@ -175,7 +175,7 @@ Now the hard part, which is to make this work on other types. For a lot of simpl
     include 'arch/iintrinsic/basic'
     oper &~ andnot infix none 35
     def blend{m:M, t:T, f:T} = (t & T~~m) | (f &~ T~~m)
-    def shuffle{a:T, b:T if T==[16]i8} = emit{T, '_mm_shuffle_epi8', a, b}
+    def shuffle{a:T==[16]i8, b:T} = emit{T, '_mm_shuffle_epi8', a, b}
 
     fn reverse{T if hasarch{'SSSE3'}}(arr:*T, len:u64) : void = {
       def b = width{T} / 8  # width of T in bytes

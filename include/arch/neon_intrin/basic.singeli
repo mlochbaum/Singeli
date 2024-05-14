@@ -10,12 +10,11 @@ local {
   def vu{V} = va{V} and 'u'==quality{eltype{V}}
   def vf{V} = va{V} and isfloat{eltype{V}}
 
-  def change_qual{V,q} = [vcount{V}]primtype{q, ew{V}}
+  def change_qual{[k]T,q} = [k]primtype{q, width{T}}
   def uns = change_qual{.,'u'}
   def sgn = change_qual{.,'i'}
 
-  def intrin{name, ...s, V} = {
-    def T = eltype{V}
+  def intrin{name, ...s, V=[_]T} = {
     def q = quality{T}
     def w = if (128==width{V}) 'q' else ''
     merge{name, w, ...s, '_', if (q=='i') 's' else q, fmtnat{width{T}}}
@@ -24,31 +23,27 @@ local {
 
 # Building vectors from scalars
 local {
-  def can_elt{V,x} = num{x} or hastype{x, eltype{V}}
+  def can_elt = match { {[_]T, x:T} => 1; {_,x} => num{x} }
   def can_make_sub = can_elt
-  def can_make_sub{V,x if 'tuple'==kind{x}} = {
+  def can_make_sub{V=[k]_, {...x}} = {
     def all{t} = {
       def l = length{t}
       if (l==1) select{t,0}
       else { def h=l>>1; all{slice{t,0,-h} & slice{t,h}} }
     }
-    vcount{V}==length{x} and all{each{can_elt{V,.}, x}}
+    k==length{x} and all{each{can_elt{V,.}, x}}
   }
   def can_make{V,x} = va{V} and can_make_sub{V,x}
-  def mv_sub{V, x} = {
-    def T = eltype{V}
+  def mv_sub{V=[_]T, x} = {
     tmp:*T = each{cast{T,.}, x}
     load{*V~~tmp, 0}
   }
 }
-def vec_make{V, ...x if can_make{V,x}} = mv_sub{V, x}
-def vec_make{V, x if 'tuple'==kind{x} and can_make{V,x}} = mv_sub{V, x}
+def vec_make{V,  ...x  if can_make{V,x}} = mv_sub{V, x}
+def vec_make{V, {...x} if can_make{V,x}} = mv_sub{V, x}
 def vec_broadcast{V, x if can_make{V,x}} = emit{V, intrin{'vdup', '_n', V}, x}
 
-def load{a:P, n if va{eltype{P}}} = {
-  def V = eltype{P}
-  emit{V, intrin{'vld1', V}, *eltype{V} ~~ (a+n)}
-}
+def load {a:*V, n      if va{V}} = emit{V   , intrin{'vld1', V}, *eltype{V} ~~ (a+n)}
 def store{a:*V, n, v:V if va{V}} = emit{void, intrin{'vst1', V}, *eltype{V} ~~ (a+n), v}
 
 def extract{x:V,n if va{V} and num{n}} = emit{eltype{V}, intrin{'vget', '_lane', V}, x, n}
@@ -76,8 +71,8 @@ def __adds{a:V,b:V if vi{V}} = emit{V, intrin{'vqadd', V}, a, b}
 def __subs{a:V,b:V if vi{V}} = emit{V, intrin{'vqsub', V}, a, b}
 def   addp{a:V,b:V if va{V}} = emit{V, intrin{'vpadd', V}, a, b}
 
-def __shl{a:V, s if vi{V} and num{s} and s>0 and s<ew{V}} = emit{V, intrin{'vshl', '_n', V}, a, s};  def __shl{a:V,s==0 and vi{V}} = a
-def __shr{a:V, s if vi{V} and num{s} and s>0 and s<ew{V}} = emit{V, intrin{'vshr', '_n', V}, a, s};  def __shr{a:V,s==0 and vi{V}} = a
+def __shl{a:V, s if vi{V} and num{s} and s>0 and s<ew{V}} = emit{V, intrin{'vshl', '_n', V}, a, s};  def __shl{a:V,0 if vi{V}} = a
+def __shr{a:V, s if vi{V} and num{s} and s>0 and s<ew{V}} = emit{V, intrin{'vshr', '_n', V}, a, s};  def __shr{a:V,0 if vi{V}} = a
 
 def __neg{a:V if vs{V}} = emit{V, intrin{'vneg', V}, a}
 def __not{a:V if vu{V}} = { def U=[width{V}/width{u8}]u8; V~~emit{U, intrin{'vmvn', U}, U~~a} }
