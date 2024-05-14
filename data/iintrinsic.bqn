@@ -102,20 +102,19 @@ MakeDef ← {instr 𝕊 prot:
   # Type handling and formatting
   pn‿pt ← <˘⍉> prot
   an←1↓pn ⋄ ! ∊⟜""‿"dst"‿"k"⌾< ⊑pn
-  pt ("__pnt" A 1⊸↓)⍟(∊⟜"*&"⌾<⊑)¨↩
-  rt‿at ← (⊑⋈1⊸↓) pt
-  vf ← ¬ if ← "IMM"⊸≡¨ at
-  tn ← ⥊¨'T'-⊐vf/at
-  Ty ← { # Make type tests, returning ⟨typed parameters, conditions⟩
-    u←∊𝕩 ⋄ e←¬i←(∊⟜"bm"⌾<⊑∘⊢)¨u/𝕩 # e for ==, i for intvec
-    p ← 𝕩∾⟜"=="⊸∾˜¨⌾(e/u/⊢)𝕨∾⟜":"⊸∾¨tn
-    ⟨p, tn {"intvec"A∾⟨1↓𝕩,",",𝕨⟩}¨○(i/u/⊢) 𝕩⟩
-  }
-  vars ← an Ty○(vf⊸/) at
-  imms ← (⊢ ⋈ "num"⊸A¨) if/an
-  rt ↩ (≠at)⊸=◶⟨⊑⟜tn, rt⟩ at⊸⊐⌾< rt
+  pp ← "*&"∊˜⊑¨pt
+  rt‿at ← (⊑⋈1⊸↓) pp↓¨pt
+  ri ← "void"⊸≢◶⟨≠at, at⊸⊐⌾<⟩ rt
+  iv ← "bm"∊˜⊑¨at ⋄ vf ← "IMM"⊸≢¨ at
+  c‿i ← iv(<⋈∧)vf∧∊at # c for type constant, i for intvec
+  uf ← vf ∧ (ri=↕∘≠)⊸∨ iv ∨ ¬(∊∧∊⌾⌽)at # Which types are named
+  tn ← uf⥊¨'T'- 1-˜1↓⊐0∾uf×1+⊐at
+  vt ← at (0<≠∘⊣)◶⟨"("∾")"∾˜⊢,∾⟜"=="⊸∾⟩¨˜⌾(c/⊢) tn
+  par ← an ∾¨ vf":"⊸∾⍟⊣¨ (1↓pp)"*"⊸∾⍟⊣¨ vt
+  conds ← (tn {"intvec"A∾⟨1↓𝕩,",",𝕨⟩}¨○(i/⊢) at) ∾ "num"⊸A¨ vf¬⊸/an
+  rt ↩ "__pnt"⊸A⍟(⊑pp) (≠at)⊸=◶⟨⊑⟜tn, rt⟩ ri
   ∾⟨
-    Br ∾ 1↓ ∾⟜(" if "⌾⊑⍟(0<≠))´ ⟨", "," and "⟩ Int¨ vars ∾¨ imms
+    Br ∾ 1↓ (", " Int par) ∾ " if "⌾⊑⍟(0<≠) " and " Int conds
     " = emit"
     Br ", "J ⟨rt, "'"(∾∾⊣)instr⟩ ∾ an
   ⟩
