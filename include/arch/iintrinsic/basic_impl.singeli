@@ -117,7 +117,7 @@ def extract{a:V=[k]T, i==0 if go{V} and has_extract0{V}} = {
   else { def I=primtype{'i', width{T}}; T~~emit{I,name,[k]I~~a} }
 }
 def extract{a:V=[_]T, i if go{V} and num{i} and has_extract{V}} = {
-  def e{V,a} = emit{T, intrin{'extract',V}, a, i}
+  def e{U=[_]S,a} = emit{S, intrin{'extract',U}, a, i}
   if (es{V}) e{V,a} else { def I=sgn{V}; T~~e{I,I~~a} }
 }
 def insert{a:V=[_]T, x, i if go{V} and num{i} and has_extract{V} and can_elt{V,x}} = {
