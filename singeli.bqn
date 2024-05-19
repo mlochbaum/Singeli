@@ -277,9 +277,10 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Get 1⊑𝕗
     a
   }
+  NoPar ← (sep∾","‿"}")_any
   ParC ← {𝕤 # Parameter in call
     s ← Try "..."
-    p ← s◶⟨Try∘".", (sep∾","‿"}")_any⟩ @  # Partial application
+    p ← s◶⟨Try∘".", NoPar⟩ @  # Partial application
     <⍟s Expr⍟(¬p) @
   }
   err_ex_gather ← "At most one variable-length parameter allowed"
