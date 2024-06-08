@@ -1427,8 +1427,7 @@ nodes ← {
   Include ⇐ {
     # Top-level if statements resolve in operator pass; expand then
     ⟨filename⟩ ← 𝕩 ⋄ pos←𝕨
-    rp ← {⟨R⇐RealPath⟩:R; (¬·»⊸∨'.'⊸=∧·(»∧«)'/'⊸=)⊸/} •file
-    file ← RP pos files.Resolve symbols.From filename.Eval@
+    file ← •file.RealPath pos files.Resolve symbols.From filename.Eval@
     N←NL←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}⋄NL↩{𝕩.NonLocal@⋄𝕩}}
     ⟨node,Dump,Disp⟩⇐Defaults "include"‿{⟨file⟩} ⋄ Scope⇐Eval⇐!
     Oper ⇐ {𝕤
@@ -1649,7 +1648,7 @@ targetNodes ← {
 files ← {
   path←@ ⋄ log←⟨⟩
   Load ← {
-    path ↩ (∨`⌾⌽'/'⊸=)⊸/ 𝕩
+    path ↩ •file.Parent 𝕩
     𝕩 ast.Build •file.Chars 𝕩
   }
   lib ← ('/'∾˜⍟(≠⟜(¯1⊸⊑))⍟(0<≠∘⊢)⌾⊑¨libpaths)∾<⟨"","include/"⟩
