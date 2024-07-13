@@ -66,8 +66,8 @@ def __abs{a:V if fill and go{V} and es{V} and has_rsh{V}} = { s:=a>>31; (s^a) - 
 def __abs{a:V if fill and go{V} and es{V} and has_minmax{uns{V}}} = { u:=uns{V}~~a; V~~__min{u, -u} }
 def __abs{a:V if fill and go{V} and es{V} and has_minmax{    V }} = __max{a, -a}
 def __abs{a:V if fill and go{V} and has_arith{V} and ef{V}} = a & V~~uns{V}**(1<<(ew{V}-1)-1)
-def __shl{a:V, b:S if fill and go{V} and S<u64 and has_shift{V}} = shl_uniform{a, vec_make{[2]u64, promote{u64,b}, 0}}
-def __shr{a:V, b:S if fill and go{V} and S<u64 and has_rsh  {V}} = shr_uniform{a, vec_make{[2]u64, promote{u64,b}, 0}}
+def __shl{a:V, b:S if fill and go{V} and S<=u64 and has_shift{V}} = shl_uniform{a, vec_make{[2]u64, promote{u64,b}, 0}}
+def __shr{a:V, b:S if fill and go{V} and S<=u64 and has_rsh  {V}} = shr_uniform{a, vec_make{[2]u64, promote{u64,b}, 0}}
 
 # Building vectors from scalars
 local {
