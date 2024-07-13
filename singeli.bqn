@@ -624,6 +624,8 @@ types ← {kname⇐"type"
   Ungather ⇐ ⟨tTUP,⊢,"Gathered argument must have a tuple type"⊸TypeErr⟩_cases
   Deref ⇐ { Is 𝕩 ? tPTR=𝕩.typeKind ? 𝕩.dat ; "Expected pointer" TypeErr 𝕩 }
   TupFrom ⇐ { Is _and_ (tTUP≡{𝕩.typeKind}) _asrtGotS⟜(𝕩˙) 𝕨 ⋄ 𝕩.dat }
+  UnFun   ⇐ { m←"Expected function type"
+            m Is _and_ (tFUN≡{𝕩.typeKind}) _asrtGotS 𝕩 ⋄ ∾⟜<´ 𝕩.dat }
   TupTry ⇐ { Is 𝕩 ? tTUP≡𝕩.typeKind ? 𝕩.dat ; 𝕩 }
   Merge ⇐ {
     l ← (tTUP≡{𝕩.typeKind})◶<‿TupFrom¨ 𝕩  # Assume 𝕩 all types
@@ -991,6 +993,7 @@ builtins ← {
       ⟨"undefined",Undefined⟩, ⟨"load",Load⟩, ⟨"store",Store⟩
       ⟨"type",TypeOf _p1⟩, ⟨"kind",Sym Kind _p1⟩
       ⟨"typekind",Sym types.TypeKind _p1⟩, ⟨"tuptype",types.Tup⟩
+      ⟨"fntype",(¯1⊸(↓ types.Fun ⊑)⊣types.ReqTyp¨)_v1⟩, ⟨"unfntype",types.UnFun _p1⟩
       ⟨"tup",⊢⟩, ⟨"select",Select⟩, ⟨"length",(≠⊑∘AsTupP)_p1⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.GetNat _p1⟩
       ⟨"symchars",(Sym∘⋈¨SymP)_p1⟩
