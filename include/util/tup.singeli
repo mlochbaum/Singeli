@@ -80,16 +80,20 @@ def fold{f, init, list} = {
 }
 def fold{f, list} = fold{f, *list, >list}
 
-# Inclusive left scan
-def scan{f, init, list} = scan_sub{f, f{init, .}, list}
-def scan{f, list}       = scan_sub{f, {e} => e, list}
-local def scan_sub{f, get, list} = {
-  if (empty{list}) list
-  else {
-    def r = get{*list}
-    merge{tup{r}, scan{f, r, >list}}
+# Low-stack inclusive+exclusive scan implementation
+local def scan_full = match {
+  {f, init, {}}  => tup{init}
+  {f, init, {x}} => tup{init, f{init, x}}
+  {f, init, list} => {
+    def m = length{list} >> 1
+    def l = scan_full{f, init, slice{list, 0, m}}
+    merge{l, scan{f, select{l, -1}, slice{list, m}}}
   }
 }
+# Inclusive left scan
+def scan{f, init, list} = slice{scan_full{f, init, list}, 1}
+def scan{f, {}} = tup{}
+def scan{f, {h, ...t}} = scan_full{f, h, t}
 
 # Copy list elements based on list, constant, or generator (like filter)
 def replicate{reps, list} = join{each{copy, reps, list}}
