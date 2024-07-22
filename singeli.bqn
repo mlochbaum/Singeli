@@ -968,6 +968,10 @@ builtins ← {
     { arg≢l ? "symbol"≡Kind arg ? sm (1=≡)_asrtGotS ind ; @}
     (numbers.GetInt⊑l˙){IsTup 𝕩? Wrap 𝕊¨𝕩 ; 𝔽𝕩} ind
   }_p2
+  FindMatches ← {
+    ("Parameters must be tuples" IsTup _asrtGotS ⊢)¨ 𝕩‿𝕨
+    <∘/˘ 𝕩Match⌜𝕨
+  }_p2
   UD ← constants.Undefined{(1<≠)◶⟨𝔽⊑,𝔽˜⟜numbers.GetNat´⟩}
   Undefined ← 1‿2 _exp_ (UD ⊣ RT0∘⊑)
   # Load/store
@@ -996,6 +1000,7 @@ builtins ← {
       ⟨"fntype",(¯1⊸(↓ types.Fun ⊑)⊣types.ReqTyp¨)_v1⟩, ⟨"unfntype",types.UnFun _p1⟩
       ⟨"tup",⊢⟩, ⟨"select",Select⟩, ⟨"length",(≠⊑∘AsTupP)_p1⟩
       ⟨"merge",Merge⟩, ⟨"slice",Slice⟩, ⟨"range",↕numbers.GetNat _p1⟩
+      ⟨"findmatches", FindMatches⟩
       ⟨"symchars",(Sym∘⋈¨SymP)_p1⟩
       ⟨"fmtnat",Sym∘•Repr numbers.GetNat _p1⟩
       ⟨"bind",⊑RG0⊸{(𝕎_ne𝕩⊸∾)_genNamed_({∾⟨Repr𝕨,"{",ShowMulti𝕩,", ...}"⟩}´∘𝕨‿𝕩)}1⊸↓_v1⟩

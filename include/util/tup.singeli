@@ -102,3 +102,40 @@ def replicate{f, list if kgen{f}} = replicate{each{f,list}, list}
 
 # For boolean i, return indices of 1s
 def indices{i} = replicate{i, inds{i}}
+
+# Return indices of groups of equal values
+def group_inds = findmatches
+def group_inds{values, len if knum{len}} = findmatches{values, range{len}}
+def group_inds{{...vs} if fold{&, each{knum, vs}}} = {
+  group_inds{vs, 1 + fold{__max, vs}}
+}
+def group{{...vs}, ...g, {...data} if $vs == $data} = {
+  select{data, group_inds{vs, ...g}}
+}
+
+# Search functions
+local def proc_find{out, f, i} = each{out, findmatches{f, i}}
+def find_index{sfor, sin, ...default if $default <= 1} = proc_find{
+  {is} => match (is, default) { {{i}, _} => i; {{}, {d}} => d },
+  sfor, sin
+}
+def index_of{sfor, sin} = { # Index of first match
+  def n = $sfor
+  proc_find{match { {{i, ..._}} => i; {_} => n }, sfor, sin}
+}
+def contained_in = proc_find{{i} => 0 < $i, ...}
+# Self-search
+local def index_self{list} = proc_find{select{., 0}, list, list}
+local def umask_from_ind{i} = i == iota{$i}
+local def cls_from_umask_ind{u, i} = select{scan{+, -1, u}, i}
+def unique_mask{list} = umask_from_ind{index_self{list}}
+def unique{list} = replicate{unique_mask{list}, list}
+def classify{list} = {
+  def i = index_self{list}
+  cls_from_umask_ind{umask_from_ind{i}, i}
+}
+def unique_classify{list} = {
+  def i = index_self{list}
+  def u = umask_from_ind{i}
+  tup{replicate{u, list}, cls_from_umask_ind{u, i}}
+}
