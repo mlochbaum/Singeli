@@ -63,7 +63,7 @@ numbers ← {kname⇐"number"
   Is ← kname≡{Kind𝕩}
   Wrap ← {
     kind⇐kname⋄value⇐𝕩⋄Matches⇐Match⋄Shows⇐FmtLarge∘𝕩
-    Matchable ⇐ {𝕊:matchable↩⟨1,(0≠⊢´)◶⊑‿<value⟩} # Matches as hi or <hi‿lo
+    Matchable ⇐ {𝕊:matchable↩(0≠⊢´)◶⊑‿<value} # Matches as hi or <hi‿lo
   }
   Unwrap ← {
     6=•Type𝕩 ? kname≡𝕩.kind ? 𝕩.value ;
@@ -541,6 +541,8 @@ IsGen ← 3=•Type
 _tsel ← {•Type∘⊣◶(¯1((↓»(6⥊⟨!∘"Unhandled kind"⟩)˙)∾↑)𝕗)}
 Kind  ← ⟨"tuple","number",@,"generator",{𝕩.kind}⟩_tsel
 Match ← {𝕨 ⟨≡○≢◶⟨0,∧´𝕊¨⟩, numbers.Match,≡,≡, {𝕨𝕨.Matches𝕩}⟩_tsel 𝕩}
+# p Matches q if and only if p ≡○GetMatchable q
+GetMatchable ← ⟨{GetMatchable¨ 𝕩}, ⊢,!,⊢, {⟨M⇐Matchable⟩:M@; !{≡}≡𝕩.matches⋄𝕩}⟩_tsel
 IsTyped←∊⟜"register"‿"constant"‿"function"⌾< Kind
 HasType ← IsTyped∘⊣ _and_ ({𝕩.type}⊸Match)
 TypeOf← {⟨types.Tup 𝕊¨, {𝕩.Type@}⟩_tsel 𝕩}
@@ -561,20 +563,13 @@ Show‿Repr ← {
 ShowMulti ← 2↓·∾·", "⊸∾¨Show¨
 _genNamed_ ← {N←{n↩𝕩}∘{name⇐𝕩}∘𝔾⋄𝔽⊘{𝕨N𝕩}}
 
-# Return b‿val, where b is boolean, such that:
-# - If p Matches q, then p ≡○GetMatchable q
-# - If p ≡○(1⊑GetMatchable) q and ⊑GetMatchable p is 1, then p Matches q
-GetMatchable ← ⟨
-  {∧´⊸⋈˝⍉> GetMatchable¨ 𝕩}, 1⊸⋈, !, 1⊸⋈
-  {⟨M⇐Matchable⟩:M@; {≡}≡𝕩.matches?1‿𝕩; 0⋈Repr𝕩}
-⟩_tsel
-
 types ← {kname⇐"type"
   New ← {k𝕊d:
     kind⇐kname
     typeKind‿dat⇐𝕨‿𝕩
     Shows‿TypeShow⇐{𝕏∘dat}¨typeKind⊑dispfns
     Matches⇐{𝕨Is∘⊢◶0‿Equiv𝕩}
+    Matchable⇐{𝕊:matchable↩<⟨'t',TypeShow@⟩}
   }
   tVOID‿tPRIM‿tVEC‿tPTR‿tFUN‿tTUP ← ↕6
   TypeKind⇐{
@@ -798,7 +793,7 @@ symbols ← {kname⇐"symbol"
   Enc ← "'"(∾∾⊣)⊢+128×' '⊸= # Space to non-breaking space
   New ⇐ {
     kind⇐kname ⋄ symstr⇐𝕩 ⋄ Shows⇐Enc∘symstr
-    Matches⇐M ⋄ Matchable⇐{𝕊:matchable↩⟨1,<symstr⟩}
+    Matches⇐M ⋄ Matchable⇐{𝕊:matchable↩<symstr}
   }
 }
 
@@ -984,10 +979,9 @@ builtins ← {
   }_p2
   FindMatches ← {
     ("Parameters must be tuples" IsTup _asrtGotS ⊢)¨ 𝕩‿𝕨
-    [·,wm]‿[xb,xm] ← (⍉∘> GetMatchable¨)¨ 𝕨‿𝕩
-    wc ← ⊐wm ⋄ wu ← ((⊢>¯1»⌈`)wc)/wm
-    i ← (wu⊐xm) ⊏ (1+≠)⊸↑⊔wc ⋄ wo←𝕨
-    (xb⋈¨𝕩) {0‿m𝕊i:(m Match¨ ⊏⟜wo)⊸/i; 𝕩}¨ i
+    w‿x ← GetMatchable¨¨ 𝕨‿𝕩
+    wc ← ⊐w ⋄ wu ← ((⊢>¯1»⌈`)wc)/w
+    (wu⊐x) ⊏ (1+≠)⊸↑⊔wc
   }_p2
   UD ← constants.Undefined{(1<≠)◶⟨𝔽⊑,𝔽˜⟜numbers.GetNat´⟩}
   Undefined ← 1‿2 _exp_ (UD ⊣ RT0∘⊑)
