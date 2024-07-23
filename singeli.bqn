@@ -61,7 +61,10 @@ numbers ← {kname⇐"number"
   f ← •Import "float2.bqn"
   NN ← 1≠•Type  # Not native number
   Is ← kname≡{Kind𝕩}
-  Wrap ← {kind⇐kname⋄value⇐𝕩⋄Matches⇐Match⋄Shows⇐FmtLarge∘𝕩}
+  Wrap ← {
+    kind⇐kname⋄value⇐𝕩⋄Matches⇐Match⋄Shows⇐FmtLarge∘𝕩
+    Matchable ⇐ {𝕊:matchable↩⟨1,(0≠⊢´)◶⊑‿<value⟩} # Matches as hi or <hi‿lo
+  }
   Unwrap ← {
     6=•Type𝕩 ? kname≡𝕩.kind ? 𝕩.value ;
     (𝕨⊣"Expected constant number") 0 _asrtGotS 𝕩
@@ -558,6 +561,14 @@ Show‿Repr ← {
 ShowMulti ← 2↓·∾·", "⊸∾¨Show¨
 _genNamed_ ← {N←{n↩𝕩}∘{name⇐𝕩}∘𝔾⋄𝔽⊘{𝕨N𝕩}}
 
+# Return b‿val, where b is boolean, such that:
+# - If p Matches q, then p ≡○GetMatchable q
+# - If p ≡○(1⊑GetMatchable) q and ⊑GetMatchable p is 1, then p Matches q
+GetMatchable ← ⟨
+  {∧´⊸⋈˝⍉> GetMatchable¨ 𝕩}, 1⊸⋈, !, 1⊸⋈
+  {⟨M⇐Matchable⟩:M@; {≡}≡𝕩.matches?1‿𝕩; 0⋈Repr𝕩}
+⟩_tsel
+
 types ← {kname⇐"type"
   New ← {k𝕊d:
     kind⇐kname
@@ -785,7 +796,10 @@ symbols ← {kname⇐"symbol"
   From ⇐ {Is _asrtGotS⟜(𝕩˙) 𝕨 ⋄ 𝕩.symstr}
   M ← Is∘⊢_and_(≡○From)
   Enc ← "'"(∾∾⊣)⊢+128×' '⊸= # Space to non-breaking space
-  New ⇐ { kind⇐kname ⋄ symstr⇐𝕩 ⋄ Shows⇐Enc∘symstr ⋄ Matches⇐M }
+  New ⇐ {
+    kind⇐kname ⋄ symstr⇐𝕩 ⋄ Shows⇐Enc∘symstr
+    Matches⇐M ⋄ Matchable⇐{𝕊:matchable↩⟨1,<symstr⟩}
+  }
 }
 
 functions ← {kname⇐"function"
@@ -970,7 +984,10 @@ builtins ← {
   }_p2
   FindMatches ← {
     ("Parameters must be tuples" IsTup _asrtGotS ⊢)¨ 𝕩‿𝕨
-    <∘/˘ 𝕩Match⌜𝕨
+    [·,wm]‿[xb,xm] ← (⍉∘> GetMatchable¨)¨ 𝕨‿𝕩
+    wc ← ⊐wm ⋄ wu ← ((⊢>¯1»⌈`)wc)/wm
+    i ← (wu⊐xm) ⊏ (1+≠)⊸↑⊔wc ⋄ wo←𝕨
+    (xb⋈¨𝕩) {0‿m𝕊i:(m Match¨ ⊏⟜wo)⊸/i; 𝕩}¨ i
   }_p2
   UD ← constants.Undefined{(1<≠)◶⟨𝔽⊑,𝔽˜⟜numbers.GetNat´⟩}
   Undefined ← 1‿2 _exp_ (UD ⊣ RT0∘⊑)
