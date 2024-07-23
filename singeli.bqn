@@ -922,13 +922,20 @@ blocks ← {
   }
 }
 
+hashMap ← •BQN∘⊣⎊⊢´ "•HashMap"‿{
+  keys 𝕊 vals:
+  Set ⇐ { keys∾↩<𝕨 ⋄ vals∾↩<𝕩 }
+  Get ⇐ { i←keys⊸⊐⌾<𝕩 ⋄ i<≠keys? i⊑vals ; 𝕨 }
+}
 MemoMap ← {𝕤
-  args←res←arches←⟨⟩ ⋄ AN←architecture.SeeNext
-  SetArgs ⇐ { args∾↩<𝕩 ⋄ arches∾↩<AN@ ⋄ 𝕩 }
-  SetRes ⇐ { res∾↩<𝕩 ⋄ 𝕩 }
+  AN←architecture.SeeNext
+  resmap ← HashMap˜⟨⟩ ⋄ arg ← @
+  ArgKey ← { ⟨GetMatchable 𝕩, AN@⟩ }
+  SetArgs ⇐ { arg ↩ ArgKey 𝕩 ⋄ 𝕩 }
+  SetRes ⇐ { arg resmap.Set 𝕩 ⋄ 𝕩 }
   _cached ⇐ {
-    i ← (𝕩⊸((=○≠)◶⟨0,∧´Match¨⟩)¨args) ∧ arches≡¨<AN@
-    ∨´i ? (⊑/i)⊑res ; 𝔽𝕩
+    r ← (none←{⇐}) resmap.Get ArgKey 𝕩
+    none ≢ r ? r ; 𝔽𝕩
   }
   _memoize ⇐ { SetRes∘𝔽∘SetArgs _cached }
 }
