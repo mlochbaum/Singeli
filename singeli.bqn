@@ -929,15 +929,14 @@ hashMap ← •BQN∘⊣⎊⊢´ "•HashMap"‿{
 }
 MemoMap ← {𝕤
   AN←architecture.SeeNext
-  resmap ← HashMap˜⟨⟩ ⋄ arg ← @
-  ArgKey ← { ⟨GetMatchable 𝕩, AN@⟩ }
-  SetArgs ⇐ { arg ↩ ArgKey 𝕩 ⋄ 𝕩 }
-  SetRes ⇐ { arg resmap.Set 𝕩 ⋄ 𝕩 }
+  resmap ← HashMap˜⟨⟩
+  MemoArg ⇐ { ⟨GetMatchable 𝕩, AN@⟩ }
+  SetRes ⇐ { 𝕨 resmap.Set 𝕩 ⋄ 𝕩 }
   _cached ⇐ {
-    r ← (none←{⇐}) resmap.Get ArgKey 𝕩
+    r ← (none←{⇐}) resmap.Get MemoArg 𝕩
     none ≢ r ? r ; 𝔽𝕩
   }
-  _memoize ⇐ { SetRes∘𝔽∘SetArgs _cached }
+  _memoize ⇐ { (𝔽 SetRes˜ MemoArg) _cached }
 }
 
 builtins ← {
@@ -1337,11 +1336,11 @@ nodes ← {
       Exec‿_cached ← { result.node≢"function"?
         Exec ⇐ result.Eval∘⊢ ⋄ _cached ⇐ {𝔽}
       ;
-        SetArgs‿SetRes‿_cached ← MemoMap@ ⋄ cached⇐
+        MemoArg‿SetRes‿_cached ← MemoMap@ ⋄ cached⇐
         Exec ⇐ {
-          SetArgs 𝕨
+          MSet ← (MemoArg 𝕨)⊸SetRes
           n ← (128⌊≠)⊸↑ name∾∾('_'∾·∊⟜(dig∾1↓alph)⊸/Repr)¨𝕨
-          {Set⇐SetRes}‿n result.Eval 𝕩
+          {Set⇐MSet}‿n result.Eval 𝕩
         }
       }
       {
