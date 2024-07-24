@@ -103,30 +103,52 @@ def replicate{f, list if kgen{f}} = replicate{each{f,list}, list}
 # For boolean i, return indices of 1s
 def indices{i} = replicate{i, inds{i}}
 
-# Return indices of groups of equal values
+# Search functions that return a single number
+local def proc_find{out, f, i} = each{out, findmatches{f, i}}
+# Index of only match, erroring if there are multiple
+# If there are none, return the default if given and error otherwise
+def find_index{sfor, sin, ...default if $default <= 1} = proc_find{
+  {is} => match (is, default) { {{i}, _} => i; {{}, {d}} => d },
+  sfor, sin
+}
+# Index of first match
+def index_of{sfor, sin} = {
+  def n = $sfor
+  proc_find{match { {{i, ..._}} => i; {_} => n }, sfor, sin}
+}
+# Whether each element is found; how many times it's found
+def contained_in = proc_find{{i} => 0 < $i, ...}
+def count_matches = proc_find{length, ...}
+
+# Grouping: gather indices or data values based on how a grouping
+# argument matches the domain
+# For group, domain can be a list of keys, a length, or omitted to infer length
+# For key, the domain is the unique elements of the grouping argument in order
+# group_inds: gather inds{values}
 def group_inds = findmatches
 def group_inds{values, len if knum{len}} = findmatches{values, range{len}}
 def group_inds{{...vs} if fold{&, each{knum, vs}}} = {
   group_inds{vs, 1 + fold{__max, vs}}
 }
+# group: gather data
 def group{{...vs}, ...g, {...data} if $vs == $data} = {
   select{data, group_inds{vs, ...g}}
 }
+# key: gather indices or data
+def key{{...keys}} = {
+  def i = findmatches{keys, keys}
+  replicate{inds{i} == each{select{., 0}, i}, i}
+}
+def key{{...keys}, {...values} if $keys == $values} = select{key{keys}, values}
+# Add a generator for the first argument to apply to each result
+def extend resgen{gr} = {
+  def gr{gen, ...args if kgen{gen}} = each{gen, gr{...args}}
+}
+extend resgen{group_inds}; extend resgen{group}; extend resgen{key}
 
-# Search functions
-local def proc_find{out, f, i} = each{out, findmatches{f, i}}
-def find_index{sfor, sin, ...default if $default <= 1} = proc_find{
-  {is} => match (is, default) { {{i}, _} => i; {{}, {d}} => d },
-  sfor, sin
-}
-def index_of{sfor, sin} = { # Index of first match
-  def n = $sfor
-  proc_find{match { {{i, ..._}} => i; {_} => n }, sfor, sin}
-}
-def contained_in = proc_find{{i} => 0 < $i, ...}
 # Self-search
 local def index_self{list} = proc_find{select{., 0}, list, list}
-local def umask_from_ind{i} = i == iota{$i}
+local def umask_from_ind{i} = i == inds{i}
 local def cls_from_umask_ind{u, i} = select{scan{+, -1, u}, i}
 def unique_mask{list} = umask_from_ind{index_self{list}}
 def unique{list} = replicate{unique_mask{list}, list}
@@ -138,4 +160,9 @@ def unique_classify{list} = {
   def i = index_self{list}
   def u = umask_from_ind{i}
   tup{replicate{u, list}, cls_from_umask_ind{u, i}}
+}
+def occurrence_count{list} = {
+  def g = key{list}
+  def c = join{each{inds, g}}
+  group{{{i}}=>i, join{g}, c}
 }
