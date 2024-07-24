@@ -10,9 +10,10 @@ local {
 
 require{'stdio.h', 'inttypes.h'}
 
-def lprintf{...vs} = printf{...vs, '\n'}
+def lprintf{...vs} = printf_impl{...vs, '\n'}
+def printf{...vs} = printf_impl{...vs, ''}
 
-def printf{...vs0} = {
+def printf_impl{...vs0} = {
   def nsym = ~each{ksym, vs0}
   def vs = join{each{
     {a,b} => if (b) tup{' ', a} else tup{a},
@@ -69,7 +70,13 @@ def printf{...vs0} = {
       } else runfmt{hex, f64~~x}
     }
 
-    {_:T} => lit1{merge{'(unhandled typekind: ', typekind{x}, ')'}}
+    {T if kind{T}=='type'} => match(typekind{T}) {
+      {'primitive'} => lit1{merge{quality{T}, fmtnat{width{T}}}}
+      {'vector'} => join{flip{tup{lit1{merge{'[', fmtnat{vcount{T}}, ']'}}, runfmt{hex, eltype{T}}}}}
+      {_} => lit1{merge{'(unhandled type typekind: ', typekind{x}, ')'}}
+    }
+
+    {_:T} => lit1{merge{'(unhandled value typekind: ', typekind{x}, ')'}}
     {_} => lit1{merge{'(unhandled kind: ', kind{x}, ')'}}
   }
 
@@ -77,4 +84,5 @@ def printf{...vs0} = {
   def {strs, args} = each{join, fs}
 
   emit{void, 'printf', merge{'"', strs, '"'}, ...args}
+  match(vs0) { {{r, _}} => r; {_} => {} }
 }
