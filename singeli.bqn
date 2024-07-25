@@ -961,6 +961,7 @@ builtins ← {
   ⟨Sym⇐New,FromSym⇐From⟩ ← symbols
   SymP ← ("P" MustBe "symbol")⊸FromSym
   ReqSym ← "Expected symbol"⊸FromSym
+  RTT ← ("Parameters other than the first must be tuples" IsTup _asrtGotS ⊢)¨
 
   Kinds ← {
     E ← "Unhandled type" ! 0˙
@@ -1021,7 +1022,7 @@ builtins ← {
       ⟨"symchars",(Sym∘⋈¨SymP)_p1⟩
       ⟨"fmtnat",Sym∘•Repr numbers.GetNat _p1⟩
       ⟨"bind",⊑RG0⊸{(𝕎_ne𝕩⊸∾)_genNamed_({∾⟨Repr𝕨,"{",ShowMulti𝕩,", ...}"⟩}´∘𝕨‿𝕩)}1⊸↓_v1⟩
-      ⟨"each",⊑{𝕎¨_ne<˘⍉>𝕩}1⊸↓_v2⟩, ⟨"apply",RG0⊸{𝕎_ne𝕩}⟜RL1 _p2⟩
+      ⟨"each",⊑{RTT𝕩⋄𝕎¨_ne<˘⍉>𝕩}1⊸↓_v2⟩, ⟨"apply",RG0⊸{𝕎_ne𝕩}⟜RL1 _p2⟩
       ⟨"export",{𝕨 ReqSym⊸program.Export⚇0 𝕩}_p2⟩
       ⟨"require",{program.Require∘ReqSym⚇0 𝕩}⟩
       ⟨"witharch",architecture.With⟩
