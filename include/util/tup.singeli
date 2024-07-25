@@ -57,8 +57,8 @@ def split{n, list if ktup{n}} = {
   each{sl{list,...}, start, n}
 }
 
-# Transpose tuple of tuples, assuming each has the same length
-def flip{tup} = table{{i,t}=>select{t,i}, inds{*tup}, tup}
+# Transpose tuple of same-length tuples
+def flip{tab} = each{tup, ...tab}
 
 # Function table mapping over all combinations
 def table{f, ...tups} = {

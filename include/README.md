@@ -54,7 +54,7 @@ File [util/tup.singeli](util/tup.singeli).
 | `reverse{tup}`           | Elements in reverse order
 | `cycle{num, tup}`        | Repeat tuple cyclically to the given length
 | `split{num, tup}`        | Split tuple into groups of the given length or less
-| `flip{tups}`             | Transpose tuple of tuples, assuming each has the same length
+| `flip{tups}`             | Transpose tuple of same-length tuples
 | `table{f, ...tups}`      | Function table mapping over all combinations
 | `flat_table{f, ...tups}` | Function table flattened into a single list
 | `fold{gen, any?, tup}`   | Left fold, with or without initial element
