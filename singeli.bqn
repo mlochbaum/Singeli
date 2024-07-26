@@ -478,12 +478,16 @@ operator ← {
   Parse ⇐ {
   ⟨op⟩ 𝕊 ⟨v⟩: v⊣´{𝕩.V v.pos}¨@⊸≢¨⊸/op.left‿op.null ;
   ops 𝕊 val:
-    Peek‿Next‿Rem ← MakeStream ops {null‿left‿bind‿R⇐𝕨 ⋄ value⇐𝕩}¨ val
+    Peek‿Next‿Rem ← st ← MakeStream ops {null‿left‿bind‿R⇐𝕨 ⋄ value⇐𝕩}¨ val
     E ← {𝕊test: {𝕊∘{𝕩 LeD Next@}⍟(Test Peek)⍟Rem 𝕩} NuD Rem◶Mis‿Next@ }
     Run ← nodes.Run ⋄ P ← {𝕩.value.pos}
     NuD ← { 𝕩.null ≢⟜@◶{𝕩.value}‿{pos←P𝕩 ⋄ pos Run ⟨𝕩.R 𝕨.V pos, ⟨E 𝕨.t⟩⟩} 𝕩 }
-    LeD ← { pos←P𝕩 ⋄ Unk⍟(@≡l←𝕩.left)pos ⋄ pos Run ⟨𝕩.R l.V pos, ⟨𝕨, E l.t⟩⟩ }
-    Unk ← { Err "Unknown infix operator"‿𝕩 }
+    LeD ← { @≢l←𝕩.left ? pos←P𝕩 ⋄ pos Run ⟨𝕩.R l.V pos, ⟨𝕨, E l.t⟩⟩ ; Unk 𝕩.value }
+    IsOp ← {"cond_oper"≡𝕩.node?1; "word"≡𝕩.node?∊⟜oc⌾<⊑𝕩.name?1; 0}
+    Unk ← {
+      ¬IsOp 𝕩 ? st.Dec⍟2@ ⋄ Err "Unknown prefix operator"‿(Next@).value.pos ;
+      Rem@ ? Err "Unknown infix operator"‿𝕩.pos ; Mis@
+    }
     Mis ← {𝕊: Err "Missing right operand"‿(¯1⊑val).pos }
     E 1
   }
@@ -1497,7 +1501,7 @@ nodes ← {
   CondEval ← ⊑∘⊑∘⊢ ≢ CondEvalS  # Return 1 if it might jump
   CondOper ← { pos 𝕊 ⟨name‿_evb‿_evc, terms⟩: # Node created for and/or/not
     Eval⇐{ev←(=𝕩)⊑evb‿evc ⋄ terms _ev program._trace_ pos 𝕩}
-    Visit←{⟨name,𝕏¨terms⟩}
+    Visit←{⟨name,𝕏¨terms⟩} ⋄ pos⇐
     ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "cond_oper"‿visit
   }
   AddConds ⇐ {
