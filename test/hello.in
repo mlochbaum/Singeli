@@ -1,4 +1,4 @@
 include 'debug/printf'
-main {
+main : void {
   lprintf{'Hello, World!'}
 }
