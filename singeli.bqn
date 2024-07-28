@@ -1293,7 +1293,7 @@ nodes ← {
   PhraseTryName ⇐ {𝕩.name}⍟(@⊸≢)PhraseTryWord
   Target ⇐ {𝕨𝕊⟨1⇐isName⟩:0;1}◶{𝕨 NewId ⊑𝕩.targs}‿{
     pos←𝕨
-    names‿eqs‿conds‿ProcE‿ProcT ← pos targetNodes.GetProcs 𝕩
+    names‿eqs‿conds‿ProcE ← target ⇐ pos targetNodes.GetProcs 𝕩
     ns ← pos⊸NewId¨ names
     exprs ← eqs ∾ conds
     Visit←{⟨𝕏¨ns,𝕏¨exprs⟩}
@@ -1301,15 +1301,12 @@ nodes ← {
     VisitLambda ⇐ {⟨names,𝕏¨exprs⟩}
     ScopeLambda ⇐ {names scopes.New 𝕩}
     GB ← "Generator condition must evaluate to boolean" numbers.GetBool ⊢
-    GetTry ⇐ {𝕊 e:
-      Try ⇐ {
-        0==𝕩 ? @ ; # Error from static checking
-        v‿q ← 𝕩
-        ts ← (q {𝕩˙⊸Match}⊸⋈¨ eqs) ∾ GB˙⊸⋈¨conds
-        t ← {⊢} {f‿n𝕊𝕩:f⟜n.Eval◶@‿𝕏}´ ts
-        𝕨 T v env.Fixed e
-      }⟜ProcT
-    }
+    GetTry ⇐ {𝕊 e: {
+      v‿q ← 𝕩
+      ts ← (q {𝕩˙⊸Match}⊸⋈¨ eqs) ∾ GB˙⊸⋈¨conds
+      t ← {⊢} {f‿n𝕊𝕩:f⟜n.Eval◶@‿𝕏}´ ts
+      𝕨 T v env.Fixed e
+    }}
     CC ← "Destructuring condition failed" ! GB
     Eval ⇐ { val‿decl 𝕊 e:
       v‿q ← ProcE val
@@ -1321,13 +1318,13 @@ nodes ← {
     RunEval ⇐ {𝕏 <ns}
     DefEval ⇐ { f‿ValEval 𝕊 e: ⟨RunEval valEval,0⟩ Eval e }
   }
-  _errNoMatch ← {
+  _errNoMatch ⇐ {
     •Out (∾⟜": "⍟(0<≠)𝕨)⊢⊘∾"No matching "∾𝕗
     ! "Parameters: "∾(0<≠)◶⟨"none",ShowMulti⟩𝕩
   }
   _unmatchedGen ⇐ {
      n _𝕣𝕩: 𝕗 "generator definition"_errNoMatch 𝕩 ;
-    𝕨n _𝕣𝕩: {name⇐n}
+    𝕨n _𝕣𝕩: {name⇐n⋄depth⇐0⋄targs⇐⟨⟩⋄Base⇐GenUnhandled}
   }
   Lambda ⇐ {
     ⟨par,result⟩←𝕩 ⋄ pos←𝕨
@@ -1336,8 +1333,9 @@ nodes ← {
     Scope⇐{ Visit scopes._defer o.Scope par.ScopeLambda 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value and name, from Define
       name ← (1⊑𝕨)⊣""
-      next ← ({𝕩.Get pos}⊑𝕨) ⊣⍟(genUnhandled˙≢⊣) {name _unmatchedGen}
-      ⟨Try⟩←par.GetTry e
+      depth←1 ⋄ nextTargs←⟨⟩ ⋄ Base←GenUnhandled
+      SetBase ← {𝕨𝕊⟨d⇐depth,t⇐targs,b⇐base⟩: depth↩1+d ⋄ nextTargs↩t ⋄ base↩b ; base↩𝕨}
+      SetBase⟜{𝕏˜@}⍟(genUnhandled˙≢⊢) {𝕩.Get pos} ⊑𝕨
       Exec‿_cached ← { result.node≢"function"?
         Exec ⇐ result.Eval∘⊢ ⋄ _cached ⇐ {𝔽}
       ;
@@ -1348,9 +1346,13 @@ nodes ← {
           {Set⇐MSet}‿n result.Eval 𝕩
         }
       }
-      {
-        𝕩 @⊸≢◶⟨Next⊣, Exec⟩ Try 𝕩
-      }_cached⊘{𝕊: {name⇐𝕩} "(generator)"⍟(0=≠) name}
+      targs ← ⟨par.target, par.GetTry e, Exec⟩‿nextTargs # Push to linked list
+      info ← {name⇐"(generator)"⍟(0=≠)name ⋄ depth⇐depth⋄targs⇐targs⋄base⇐base}
+      Gen ← {
+        gen ↩ base targetNodes.CombineParams ⊑¨ 1⊸⊑⍟(↕depth) targs
+        Gen 𝕩
+      }
+      {Gen𝕩} _cached⊘info
     }
   }
   Extender ⇐ {
@@ -1580,7 +1582,9 @@ nodes ← {
     Visit←{⟨𝕏¨gens⟩}
     ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "function"‿visit
     Eval ⇐ { 𝕊 e:
-      {"option"_errNoMatch} {𝕩‿"(options)" 𝕨.Eval e}⟜{Get⇐𝕩˙}´ gens
+      n ← "(options)"
+      Init ← "option"_errNoMatch ⊘ {name⇐n}
+      init {𝕩‿n 𝕨.Eval e}⟜{Get⇐𝕩˙}´ gens
     }
   }
   Options ⇐ { (𝕨Run⋈⟜⊑˜)⍟(≠⊣)⟜(𝕨OptPlain⊢)´ 𝕩 }
@@ -1672,6 +1676,11 @@ targetNodes ← {
     conds‿ProcE‿ProcT ⇐ target
     ProcE ↩ TrE∘ProcE
     ProcT ↩ ChT◶⟨@,Tr⟩∘ProcT
+  }
+  CombineParams ⇐ { base 𝕊 cases: # Each case is target‿condition‿evaluate
+    NoBase ← {𝕊: ("generator definition ("∾" tried)"∾˜•Repr≠cases)nodes._errNoMatch}
+    base NoBase⍟(genUnhandled˙⊸≡)↩
+    base {t‿c‿e𝕊n: ⊢ @⊸≢◶⟨N⊣, @⊸≢◶⟨N⊣,E⟩⟜C⟩ t.ProcT}´ cases
   }
 }
 
