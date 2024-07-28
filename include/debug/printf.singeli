@@ -35,7 +35,7 @@ def printf_impl{...vs0} = {
     {{'x0', y}} => runfmt{2, y}
     {{'x', y}} => runfmt{1, y}
     {{}} => lit1{'{}'}
-    {{...vs}} => listfmt{hex, '{', '}', x}
+    {{...vs}} => listfmt{hex, '{', '}', vs}
     {_:*E} => tup{tup{'%p', tup{x}}}
 
     {_:[l]E} => {
