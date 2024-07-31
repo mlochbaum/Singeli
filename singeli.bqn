@@ -1615,28 +1615,27 @@ nodes ← {
 targetNodes ← {
   failedMatch ← {⇐}
   Name ⇐ Constant ⇐ {
-    # If constant, "assign" to node to evaluate and compare and cond-time
+    # If constant, "assign" to node to evaluate and compare at cond-time
     isName ⇐ =𝕩
     targs ⇐ ⟨𝕩⟩
     conds ⇐ ⟨⟩
-    ProcE ⇐ ProcT ⇐ ⋈
+    GetProc ⇐ ⋈˙
   }
   Merge ← { 𝕨 𝕊 targets:
-    tn‿tc‿te‿tt ← {𝕏¨targets}¨ {𝕩.targs}‿{𝕩.conds}‿{𝕩.ProcE}‿{𝕩.ProcT}
+    tn‿tc‿tg ← {𝕏¨targets}¨ {𝕩.targs}‿{𝕩.conds}‿{𝕩.GetProc}
     targs‿conds ⇐ ∾¨ tn‿tc
     conds ∾↩ 𝕨⊣⟨⟩
-    ProcE ⇐ ∾ te {𝕎𝕩}¨ ⊢
-    ProcT ⇐ {∨´failedMatch≡¨𝕩 ? failedMatch ; ∾ 𝕩} tt {𝕎𝕩}¨ ⊢
+    MF ← {∨´failedMatch≡¨𝕩 ? failedMatch ; ∾ 𝕩}
+    GetProc ⇐ {r𝕊e: (r⊑∾‿MF) {𝕎 𝕩 {𝕎𝕩}¨ ⊢} {r𝕏e}¨tg}
   }
   AddTransform ← { tr 𝕊 t:
-    targs‿conds‿ProcE‿ProcT ⇐ t
-    ProcE‿ProcT {𝕏∘Tr}¨↩
+    targs‿conds ⇐ t
+    GetProc ⇐ {𝕏∘Tr} t.GetProc
   }
   _addCheck ← { pos err‿Check _𝕣 target:
     targs‿conds ⇐ target
-    Fail ← {𝕊: ! program._trace_ pos "Destructuring: "∾err}
-    ProcE ⇐ Check◶⟨Fail,         target.ProcE⟩
-    ProcT ⇐ Check◶⟨failedMatch˙, target.ProcT⟩
+    GetFail ← {𝕊e: {𝕊: ! program._trace_ pos E err} }
+    GetProc ⇐ {r𝕊e: Check◶⟨GetFail⍟(¬r) e, r target.GetProc e⟩ }
   }
   _single ← { e‿C‿Tr _𝕣: ⊣ e‿C _addCheck tr˙ AddTransform ⊢ }
   _multi ← { 𝕗_single⟜Merge }
@@ -1666,20 +1665,28 @@ targetNodes ← {
     ns‿eqs ← 2↑typ⊔targs ⋄ eqs⇐ ⋄ names⇐⍷ns
     tr ← {𝕎⋈𝕏}´ {∧´𝕩? ⊢ ; ∨´𝕩? 𝕩⊸/ ; 0⊸↑}¨ 0‿1 = <targs (1-˜∊∘⊣)⌾((0=typ)⊸/) typ
     AllEq ← ∧´⊏Match¨1⊸↓
-    TrE ← Tr ⋄ ChT ← failedMatch˙⊸≢
+    TrE ← Tr˙ ⋄ ChT ← failedMatch˙⊸≢
     { names≡ns ? @ ;
       c ← {𝕎∧𝕏}´{AllEq𝕩⊸⊏}¨(1<≠¨)⊸/(⊐ns)⊔/0=typ
-      Fail ← {𝕊: ! program._trace_ pos "Destructuring: values given the same name don't match"}
-      TrE ↩ C◶⟨Fail, TrE⟩
+      me ← "values given the same name don't match"
+      TrE ↩ TrE⊸{t𝕊e: C◶⟨{𝕊: ! program._trace_ pos E me}, T⟩}
       ChT ↩ ChT◶0‿C
     }
-    conds‿ProcE‿ProcT ⇐ target
-    ProcE ↩ TrE∘ProcE
-    ProcT ↩ ChT◶⟨@,Tr⟩∘ProcT
+    ⟨conds⟩ ⇐ target
+    GetProc ⇐ {r𝕊e: (r◶⟨TrE,ChT◶⟨@,Tr⟩˙⟩e) {𝕎𝕏} r target.GetProc e}
+    procE ⇐ 0 GetProc {"Destructuring: "⊸∾}
+    procT ⇐ 1 GetProc {failedMatch˙}
   }
-  CombineParams ⇐ { base 𝕊 cases: # Each case is target‿condition‿evaluate
-    NoBase ← {𝕊: ("generator definition ("∾" tried)"∾˜•Repr≠cases)nodes._errNoMatch}
-    base NoBase⍟(genUnhandled˙⊸≡)↩
+  # Each case is target‿condition‿evaluate
+  CombineParams ⇐ { base 𝕊 cases: genUnhandled ≢ base?
+    # Error message comes from Base so just run everything
+    base {t‿c‿e𝕊n: ⊢ @⊸≢◶⟨N⊣, @⊸≢◶⟨N⊣,E⟩⟜C⟩ t.ProcT}´ cases
+  ; ·𝕊 ⟨t‿c‿e⟩:
+    Base ← "generator definition (failed condition)"nodes._errNoMatch
+    procE ← 0 t.GetProc {"Generator destructuring: "⊸∾}
+    ⊢ E Base∘⊣⍟(@⊸≡)⟜(C∘ProcE)
+  ; ·𝕊 cases:
+    Base ← ("generator definition ("∾" tried)"∾˜•Repr≠cases)nodes._errNoMatch
     base {t‿c‿e𝕊n: ⊢ @⊸≢◶⟨N⊣, @⊸≢◶⟨N⊣,E⟩⟜C⟩ t.ProcT}´ cases
   }
 }
