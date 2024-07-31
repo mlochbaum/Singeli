@@ -936,8 +936,9 @@ MemoMap ← {𝕤
   resmap ← HashMap˜⟨⟩
   MemoArg ⇐ { ⟨GetMatchable 𝕩, AN@⟩ }
   SetRes ⇐ { 𝕨 resmap.Set 𝕩 ⋄ 𝕩 }
+  GetCached ⇐ resmap.Get⟜MemoArg
   _cached ⇐ {
-    r ← (none←{⇐}) resmap.Get MemoArg 𝕩
+    r ← (none←{⇐}) GetCached 𝕩
     none ≢ r ? r ; 𝔽𝕩
   }
   _memoize ⇐ { (𝔽 SetRes˜ MemoArg) _cached }
@@ -1336,11 +1337,12 @@ nodes ← {
       depth←1 ⋄ nextTargs←⟨⟩ ⋄ Base←GenUnhandled
       SetBase ← {𝕨𝕊⟨d⇐depth,t⇐targs,b⇐base⟩: depth↩1+d ⋄ nextTargs↩t ⋄ base↩b ; base↩𝕨}
       SetBase⟜{𝕏˜@}⍟(genUnhandled˙≢⊢) {𝕩.Get pos} ⊑𝕨
-      Exec‿_cached ← { result.node≢"function"?
-        Exec ⇐ result.Eval∘⊢ ⋄ _cached ⇐ {𝔽}
+      ⟨Exec⟩ ← { result.node≢"function"?
+        Exec ⇐ result.Eval∘⊢
       ;
-        MemoArg‿SetRes‿_cached ← MemoMap@ ⋄ cached⇐
+        GetCached‿MemoArg‿SetRes ← MemoMap@
         Exec ⇐ {
+          r ← (none←{⇐}) GetCached 𝕨 ⋄ none ≢ r ? r ;
           MSet ← (MemoArg 𝕨)⊸SetRes
           n ← (128⌊≠)⊸↑ name∾∾('_'∾·∊⟜(dig∾1↓alph)⊸/Repr)¨𝕨
           {Set⇐MSet}‿n result.Eval 𝕩
@@ -1352,7 +1354,7 @@ nodes ← {
         gen ↩ base targetNodes.CombineParams ⊑¨ 1⊸⊑⍟(↕depth) targs
         Gen 𝕩
       }
-      {Gen𝕩} _cached⊘info
+      {Gen𝕩}⊘info
     }
   }
   Extender ⇐ {
