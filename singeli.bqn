@@ -57,6 +57,10 @@ _e3 ← {𝔽⊣"Expected three parameters" 3⊸=_asrtGotR ≠}
 _v1 ← {𝔽⊣"Expected at least one parameter"  1⊸≤_asrtGotR ≠}
 _v2 ← {𝔽⊣"Expected at least two parameters" 2⊸≤_asrtGotR ≠}
 
+# Error messages for generator matching
+ErrParams ← { •Out 𝕨 ⋄ ! "Parameters: "∾(0<≠)◶⟨"none",ShowMulti⟩ 𝕩 }
+_errNoMatch ← { ((∾⟜": "⍟(0<≠)𝕨)⊢⊘∾"No matching "∾𝕗) ErrParams 𝕩 }
+
 numbers ← {kname⇐"number"
   f ← •Import "float2.bqn"
   NN ← 1≠•Type  # Not native number
@@ -1319,10 +1323,6 @@ nodes ← {
     RunEval ⇐ {𝕏 <ns}
     DefEval ⇐ { f‿ValEval 𝕊 e: ⟨RunEval valEval,0⟩ Eval e }
   }
-  _errNoMatch ⇐ {
-    •Out (∾⟜": "⍟(0<≠)𝕨)⊢⊘∾"No matching "∾𝕗
-    ! "Parameters: "∾(0<≠)◶⟨"none",ShowMulti⟩𝕩
-  }
   _unmatchedGen ⇐ {
      n _𝕣𝕩: 𝕗 "generator definition"_errNoMatch 𝕩 ;
     𝕨n _𝕣𝕩: {name⇐n⋄depth⇐0⋄targs⇐⟨⟩⋄Base⇐GenUnhandled}
@@ -1636,7 +1636,7 @@ targetNodes ← {
   }
   _addCheck ← { pos err‿Check _𝕣 target:
     targs‿conds ⇐ target
-    GetFail ← {𝕊e: {𝕊: ! program._trace_ pos E err} }
+    GetFail ← {𝕊e: { (E err) 0 _asrtGotS program._trace_ pos 𝕩 } }
     GetProc ⇐ {r𝕊e: Check◶⟨GetFail⍟(¬r) e, r target.GetProc e⟩ }
   }
   _single ← { e‿C‿Tr _𝕣: ⊣ e‿C _addCheck tr˙ AddTransform ⊢ }
@@ -1650,10 +1650,10 @@ targetNodes ← {
     ⟨ps, conds⟩ ← 𝕩 ⋄ [gather,params] ← ⍉>ps ⋄ pos←𝕨
     n ← +´ ¬ gather  # Minimum length
     addLenCheck ← {
-      n=≠gather ? ⟨"length doesn't match", n=≠⟩_addCheck
+      n=≠gather ? ⟨∾⟨"length ",•Repr n," required"⟩, n=≠⟩_addCheck
     ;
       G ← (0‿n-˜⋈⁼/gather)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)
-      ⟨"length too short", n≤≠, G⟩_single
+      ⟨∾⟨"length ",•Repr n," or more required"⟩, n≤≠, G⟩_single
     }
     t ← pos AddLenCheck conds Merge params
     types.tupTry AddTransform pos ⟨"tuple required", IsTup⟩ _addCheck t
@@ -1669,9 +1669,17 @@ targetNodes ← {
     AllEq ← ∧´⊏Match¨1⊸↓
     TrE ← Tr˙ ⋄ ChT ← failedMatch˙⊸≢
     { names≡ns ? @ ;
-      c ← {𝕎∧𝕏}´{AllEq𝕩⊸⊏}¨(1<≠¨)⊸/(⊐ns)⊔/0=typ
-      me ← "values given the same name don't match"
-      TrE ↩ TrE⊸{t𝕊e: C◶⟨{𝕊: ! program._trace_ pos E me}, T⟩}
+      ci ← (1<≠¨)⊸/(⊐ns)⊔/0=typ  # Index sets to check
+      c ← {𝕎∧𝕏}´{AllEq𝕩⊸⊏}¨ci
+      TrE ↩ TrE⊸{t𝕊e:
+        Err ← {
+          •Out m ← E "values given the same name don't match"
+          fail ← ¬AllEq¨ sels ← ⊏⟜𝕩¨ ci
+          errs ← ci {∾⟨"For ",ns⊑˜⊑𝕨," got: ",ShowMulti𝕩⟩}¨○(fail⊸/) sels
+          •Out¨ ¯1↓errs ⋄ ! program._trace_ pos ¯1⊑errs
+        }
+        C◶Err‿T
+      }
       ChT ↩ ChT◶0‿C
     }
     ⟨conds⟩ ⇐ target
@@ -1684,11 +1692,11 @@ targetNodes ← {
     # Error message comes from Base so just run everything
     base {t‿c‿e𝕊n: ⊢ @⊸≢◶⟨N⊣, @⊸≢◶⟨N⊣,E⟩⟜C⟩ t.ProcT}´ cases
   ; ·𝕊 ⟨t‿c‿e⟩:
-    Base ← "generator definition (failed condition)"nodes._errNoMatch
+    Base ← "generator definition (failed condition)"_errNoMatch
     procE ← 0 t.GetProc {"Generator destructuring: "⊸∾}
     ⊢ E Base∘⊣⍟(@⊸≡)⟜(C∘ProcE)
   ; ·𝕊 cases:
-    Base ← ("generator definition ("∾" tried)"∾˜•Repr≠cases)nodes._errNoMatch
+    Base ← ("generator definition ("∾" tried)"∾˜•Repr≠cases)_errNoMatch
     base {t‿c‿e𝕊n: ⊢ @⊸≢◶⟨N⊣, @⊸≢◶⟨N⊣,E⟩⟜C⟩ t.ProcT}´ cases
   }
 }
