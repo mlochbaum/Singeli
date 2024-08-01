@@ -1298,7 +1298,8 @@ nodes ← {
   PhraseTryName ⇐ {𝕩.name}⍟(@⊸≢)PhraseTryWord
   Target ⇐ {𝕨𝕊⟨1⇐isName⟩:0;1}◶{𝕨 NewId ⊑𝕩.targs}‿{
     pos←𝕨
-    names‿eqs‿conds‿ProcE ← target ⇐ pos targetNodes.GetProcs 𝕩
+    names‿eqs‿conds ← target ⇐ pos targetNodes.GetProcs 𝕩
+    ProcE ← { ProcE ↩ "Destructuring: "⊸∾ target._proc ⋄ ProcE 𝕩 }
     ns ← pos⊸NewId¨ names
     exprs ← eqs ∾ conds
     Visit←{⟨𝕏¨ns,𝕏¨exprs⟩}
@@ -1683,21 +1684,20 @@ targetNodes ← {
       ChT ↩ ChT◶0‿C
     }
     ⟨conds⟩ ⇐ target
-    GetProc ⇐ {r𝕊e: (r◶⟨TrE,ChT◶⟨@,Tr⟩˙⟩e) {𝕎𝕏} r target.GetProc e}
-    procE ⇐ 0 GetProc {"Destructuring: "⊸∾}
-    procT ⇐ 1 GetProc {failedMatch˙}
+    GetProc ← { r𝕊e: (r◶⟨TrE,ChT◶⟨@,Tr⟩˙⟩e) {𝕎𝕏} r target.GetProc e }
+    _proc ⇐ { 𝕗≡@? 1 GetProc failedMatch ; 0 GetProc 𝕗 }
   }
   # Each case is target‿condition‿evaluate
   CombineParams ⇐ { base 𝕊 cases: genUnhandled ≢ base?
     # Error message comes from Base so just run everything
-    base {t‿c‿e𝕊n: ⊢ @⊸≢◶⟨N⊣, @⊸≢◶⟨N⊣,E⟩⟜C⟩ t.ProcT}´ cases
+    base {t‿c‿e𝕊n: ⊢ @⊸≢◶⟨N⊣, @⊸≢◶⟨N⊣,E⟩⟜C⟩ @t._proc}´ cases
   ; ·𝕊 ⟨t‿c‿e⟩:
     Base ← "generator definition (failed condition)"_errNoMatch
-    procE ← 0 t.GetProc {"Generator destructuring: "⊸∾}
+    ProcE ← "Generator destructuring: "⊸∾ t._proc
     ⊢ E Base∘⊣⍟(@⊸≡)⟜(C∘ProcE)
   ; ·𝕊 cases:
     Base ← ("generator definition ("∾" tried)"∾˜•Repr≠cases)_errNoMatch
-    base {t‿c‿e𝕊n: ⊢ @⊸≢◶⟨N⊣, @⊸≢◶⟨N⊣,E⟩⟜C⟩ t.ProcT}´ cases
+    base 𝕊 cases
   }
 }
 
