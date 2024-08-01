@@ -399,13 +399,16 @@ Parse ← {𝕊 tokens‿ShowTrace:
     TargetElem
     tc.constant _node_ CondExpr ⊣ •Out∘"Primitive type for constant matching is deprecated; add parentheses"
   ⟩
-  FinishTarget ← @_optGet_⟨
-    ":",  tc.typed  _node_ (⋈⟜TypeTarget)
-    "=",  tc.same   _node_ (⋈⟜TargetElem)
-    "==", tc.equals _node_ (⋈⟜CondExpr)
-    ⊢
+  _tAdd_ ← {@_opt_(⟨⊢⟩∾˜⥊{s‿n‿P: ⟨s, n _node_ (⋈⟜P ⊣ Get∘s)⟩}˘∘‿3⥊𝕘)}
+  FinishTarget    ← @_tAdd_⟨kIf, tc.conds,     Expr⟩ @_tAdd_⟨
+    ":",  tc.typed,  TypeTarget
+    "=",  tc.same,   TargetElem
+    "==", tc.equals, CondExpr
   ⟩
-  FinishDefTarget ← @_optGet_⟨":", tc.typed _node_ (⊢⋈TypeTarget∘0),  ⊢⟩
+  # Can't handle = or expressions containing it; don't allow == out of caution
+  FinishDefTarget ← @_tAdd_⟨kIf, tc.conds, TypeExpr⟩ @_tAdd_⟨
+    ":",  tc.typed,  TypeTarget∘0
+  ⟩
   Params ← c.target _node_ TargetList
   _withParams ← {
     Rec ← @_opt_⟨"{",c.lambda _node_ (Params‿{Rec𝕩} _seq), 𝔽⟩
@@ -1627,7 +1630,6 @@ targetNodes ← {
   Merge ← { 𝕨 𝕊 targets:
     tn‿tc‿tg ← {𝕏¨targets}¨ {𝕩.targs}‿{𝕩.conds}‿{𝕩.GetProc}
     targs‿conds ⇐ ∾¨ tn‿tc
-    conds ∾↩ 𝕨⊣⟨⟩
     MF ← {∨´failedMatch≡¨𝕩 ? failedMatch ; ∾ 𝕩}
     GetProc ⇐ {r𝕊e: (r⊑∾‿MF) {𝕎 𝕩 {𝕎𝕩}¨ ⊢} {r𝕏e}¨tg}
   }
@@ -1647,8 +1649,9 @@ targetNodes ← {
   Typed   ⇐ ⟨"type is required", IsTyped, ⋈⟜{𝕩.type}⟩_multi
   Vector  ⇐ (⟨ "vector type required"⟩∾types.vecDecompParams)_multi
   Pointer ⇐ (⟨"pointer type required"⟩∾types.ptrDecompParams)_single
+  Conds ⇐ { par‿cond ← 𝕩 ⋄ targs‿conds‿GetProc ⇐ par ⋄ conds∾↩<cond }
   List ⇐ {
-    ⟨ps, conds⟩ ← 𝕩 ⋄ [gather,params] ← ⍉>ps ⋄ pos←𝕨
+    ⟨ps, andConds⟩ ← 𝕩 ⋄ [gather,params] ← ⍉>ps ⋄ pos←𝕨
     n ← +´ ¬ gather  # Minimum length
     addLenCheck ← {
       n=≠gather ? ⟨∾⟨"length ",•Repr n," required"⟩, n=≠⟩_addCheck
@@ -1656,7 +1659,7 @@ targetNodes ← {
       G ← (0‿n-˜⋈⁼/gather)⊸(∾0‿2‿1⊏↑¨⟜<∾⟜<·<↓´˜)
       ⟨∾⟨"length ",•Repr n," or more required"⟩, n≤≠, G⟩_single
     }
-    t ← pos AddLenCheck conds Merge params
+    t ← pos AddLenCheck andConds Conds∘⋈˜´˜ Merge params
     types.tupTry AddTransform pos ⟨"tuple required", IsTup⟩ _addCheck t
   }
   # Get functions for evaluating regular node from target node
