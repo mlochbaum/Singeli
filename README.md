@@ -89,25 +89,16 @@ A named generator is a statement rather than an expression: `def name{params} = 
 
 A function can also have generator parameters. This case is discussed in the section on [functions](#functions).
 
-### Conditions
+### Parameter matching
 
-The parameter list in a generator definition has to give the names of parameters, but it can also include some other constraints on them:
+A generator definition is only used when its specified parameter list matches those given, allowing multiple definitions to be effective. In addition to the names, the parameter list can include implicit and explicit constraints, such as:
 
 * The number of parameters
-* Two parameters with the same name match
-* A `par:typ` parameter must be a typed value with the given type
-* A `par==val` or `(val)` parameter matches the given value
+* Two parameters with the same name must match
+* A `par:typ` parameter must be a typed value
 * An explicit condition `if cond` must hold (result in `1`)
 
-Each of the values `typ`, `val`, and `cond` can be an expression, which is fully evaluated whenever the condition is reached. Parameter names are all bound before evaluating any conditions, so that a condition can refer to parameter values, even ones that come after it in the source code.
-
-The value `typ` can also be a name, which functions something like an extra parameter: the underlying parameter must be typed and the name is set to its type (like any parameter, this value is accessible to conditions). Built-in type names such as `i16` and `f64` can't be used here, but other names will be shadowed. If you have an alias like `def size = u64`, parenthesize it to use it as a value, as in `par:(size)`.
-
-Here it's also useful to know that the name `_` is not assigned, and instead serves as a sink for an unused value. While `def g{a,a}` would error when called with two different parameters, `def g{_,_}` wouldn't.
-
-### Gathered parameters
-
-Up to one parameter slot can be variable-length if marked with a leading `...`. This "gathered" parameter corresponds to any number (0 or more) of inputs, and its value is the tuple of those values. For example `def tup{...t} = t` returns the tuple of all parameters, replicating the functionality of the builtin `tup`.
+The full system of [matching and destructuring](#matching) is described under `def`. The overall parameter list is matched in the same way as a tuple. This also means that (at most) one parameter slot can be variable-length if marked with a leading `...`. This "gathered" parameter corresponds to any number of inputs, and it's defined as the tuple of those values. For example, `def tup{...t} = t` is a possible implementation of the builtin `tup`, which returns the tuple of all parameters.
 
 ### Spread syntax
 
@@ -144,6 +135,40 @@ Symbols are Unicode strings, written as a literal using single quotes: `'symbol'
 Constants consist of a value and a type. They appear when a value such as a number is cast, for example by creating a variable `v:f64 = 6` or with an explicit `cast{f64, 6}`. For programming, constants work like registers (variables), so there's never any need to consider them specifically. Just cast a compile-time value if you need it to have a particular type—say, when calling a function that could take several different types.
 
 Labels are for `goto{}` and related builtins described [here](#program).
+
+## Definition
+
+The `def` statement, with syntax `def target = value`, makes compile-time definitions. A value defined this way is constant in its scope (following the rules of lexical scoping), with the exception that if it's a generator it can still be extended by generator definition statements (`def target{params} = ...`). More precisely, the definition remains constant at compile time. If it's a [register](#registers), it will always refer to the same register, but the register can be mutable at runtime, allowing its value to be freely changed to another of the same type. Every copy of a mutable register made with `def` will reflect these changes, and assignments to it change the value.
+
+### Matching
+
+The target of a definition can be a plain name, but other forms are allowed for destructuring tuples and types, and adding conditions. Some of these are more useful for generator parameters than `def`, and in fact the operators `=` and `==` aren't allowed at the top level of a `def` target.
+
+These are the simple targets:
+* A name such as `param` matching any value
+* `_` matching any value but not assigning it a name
+* A numeric or symbol literal matching only that value
+* `(expr)`, where expression `expr` must match the parameter when evaluated
+
+And these are the compound targets:
+* `a=b` matching targets `a` and `b` independently
+* `a==b` equivalent to `a=(b)`
+* `a:T` matching a typed value `a` with type `T`
+* `*T` matching a pointer type
+* `[k]T` matching a vector type
+* `{a,b,...}` matching a tuple or tuple type
+
+Each operator (`=`, `==`, `:`, `*`, `[k]`) is right-associative, that is, the left-hand side can only be a simple target or tuple while the right-hand side extends to the end of the expression. For example, `a:P=*V=[k]T` groups as `a:(P=(*(V=[k]T)))`, to match a variable `a` whose type is `P`, `*V`, and `*[k]T`.
+
+Furthermore, any target may be followed by a condition such as `if a < 5`. Here `if` has to come after any operators, but it can appear in any component of a tuple matcher, or in the bracketed part `[k]` of a vector type matcher.
+
+A tuple contains zero or more targets (and also can have an `if` condition inside even if there are no targets), and only matches a tuple or tuple type with the same length. However, it can also contain one "gathered" variable-length slot, indicated with a leading `...`, that matches zero or more values—so that the total number of values allowed is the number of non-gathered targets, or more. These values are treated as a tuple. So the target `{...a}` is identical to `a`, except that it requires the matched value to be a tuple, and if it happens to be a tuple type it will be converted to a tuple of types.
+
+A final implicit condition is that any name that appears more than once has to be assigned to matching values, so `{a,a}` matches `tup{3,3}` but not `tup{3,4}`. This doesn't apply to the placeholder `_`, so `{_,_}` matches either tuple.
+
+Parenthesized expressions and conditions can freely use names from anywhere else in the target. This is accomplished by evaluating them after all other matching requirements are checked and names are defined. So `{a if show{b>a}, b, b}` is a perfectly fine target, and the `show` is only shown in cases where both `b` values match. The location of the `if` condition doesn't affect its meaning at all, except that the relative ordering of conditions controls what order they're evaluated in.
+
+Note that the type in `a:T` is also a target! A target such as `a:[8]i16` will assign to _both_ `a` and `i16`. To specify the exact type, use parentheses like `a:([8]i16)`.
 
 ## Operators
 
