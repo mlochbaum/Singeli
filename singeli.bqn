@@ -634,7 +634,7 @@ types ← {kname⇐"type"
   TypeErr ← {!∾⟨𝕨," (type was ",Repr 𝕩,")"⟩}
 
   Quality ← ⟨tPRIM,{symbols.New ⋈⊑𝕩}, "Expected primitive type"⊸TypeErr⟩_cases
-  _isQual ← {⟨tPRIM,𝔽⊑,0⟩_cases TypeOf⍟(¬Is)}
+  _isQual ← {⟨tPRIM,𝔽⊑,0⟩_cases TypeOf⍟IsTyped⍟(¬Is)}
   IsInt ⇐ ⊑∘∊⟜"iu"_isQual
 
   Unpack ⇐ ⟨tTUP,{Unpack¨𝕩},⊢⟩_cases
