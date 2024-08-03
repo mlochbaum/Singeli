@@ -237,9 +237,9 @@ If `n` is a power of two that's all fine, but how do we use this to get any Fibo
 
 Let's say `double{fib2{n}}` gives us `fib2{2*n}`. Then it's actually pretty easy to define what we want to do with recursion!
 - If it's even, write as `2*k`, so it's `double{fib2{k}}`
-- If it's odd, write as `2*k+1, so it's `next{double{fib2{k}}}`
+- If it's odd, write as `2*k+1`, so it's `next{double{fib2{k}}}`
 
-In both cases, `k` is half of the number we want to get, rounded down. We can write that as `n >> 1`, although `__floor{n/2}` works too! And `n` is odd if `n%2` is `1`. Lastly, we use the base case 0 from before—sometimes with exponential things you have to define 1 too, but when rounding down `1 >> 0` is `0` so it's not needed! Also I wrote `(0)` instead of `n==0` just to show another way to write it.
+In both cases, `k` is half of the number we want to get, rounded down. We can write that as `n >> 1`, although `__floor{n/2}` works too! And `n` is odd if `n%2` is `1`. Lastly, we use the base case 0 from before—sometimes with exponential things you have to define 1 too, but when rounding down `1 >> 0` is `0` so it's not needed! Also I wrote `0` instead of `n==0` just to show another way to write it.
 
     include 'skin/c'
     include 'util/tup'
@@ -251,7 +251,7 @@ In both cases, `k` is half of the number we want to get, rounded down. We can wr
         def g = double{fib2{n >> 1}}
         (if (n%2) next{g} else g) % 1e9
       }
-      def fib2{(0)} = iota{2}
+      def fib2{0} = iota{2}
       select{fib2{n}, 0}
     }
 
@@ -431,7 +431,7 @@ to this:
 
 Wait, I need `include 'arch/iintrinsic/basic'` to use `vec_make`! I'm using the file for x86 here because that's what my computer is, but there's `arch/neon_intrin/basic` for ARM too. It has the `vec_make` function to make a register with type `[4]u32` from four `u32` parameters, and it also defines basic arithmetic and logic for us which is good because we're going to need them!
 
-But it doesn't have anything to store every part of the register to a different place, like `each{store{., i, .}, d, f0}` does! And I mean, a CPU can do this, it's called a scatter instruction, but it's not really good to use. Because of the way memory architecture works it's just a bunch of requests piled into one instruction.
+But it doesn't have anything to store every part of the register to a different place, like `each{store{., i, .}, d, f0}` does! And I mean, some CPUs can do this, it's called a scatter instruction, but it's not really good to use. Because of the way memory architecture works it's just a bunch of requests piled into one instruction.
 
 The only way to get the most out of a store instruction is to store four values all next to each other—but the way we compute them only ever gives us four that are separated! It's not as bad as it sounds though. What we do is keep four vectors *of* four values each, and then—remember `flip`? Well there's no `flip` instruction but there's a sequence of instructions for it, and also it turns out there's a weird macro thing for exactly the one we need!
 
