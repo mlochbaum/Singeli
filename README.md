@@ -535,6 +535,9 @@ Possible `kind` results are `number`, `constant`, `symbol`, `tuple`, `generator`
 | `primtype{q, w}` | The primitive type with quality `q` and width `w`
 | `__pnt{t}`       | Pointer type with element `t`
 | `__vec{n,t}`     | Vector type with element `t` and length `n`; equivalent to `[n]t`
+| `tuptype{t…}`    | Tuple type with the given element types
+| `fntype{t…, res}`| Function type with the given argument types and result type `res`
+| `unfntype{ft}`   | Decompose a function type, giving `fntype` parameters as a tuple
 
 Possible `typekind` results are `void`, `primitive`, `vector`, `pointer`, `function`, and `tuple`.
 
@@ -573,6 +576,7 @@ The program's environment used by `withenv` and `getenv` associates symbols (`na
 | `each{gen,tuple…}`     | Map a generator over the given tuples
 | `symchars{symbol}`     | Return the characters of a symbol, as a tuple of symbols
 | `fmtnat{num}`          | Format natural number as symbol
+| `findmatches{i, f}`    | Return a tuple with, for each element of `f`, the indices of all matching elements in `i`
 
 Generators `merge{}` and `slice{}` also work if applied to symbols instead of tuples.
 
