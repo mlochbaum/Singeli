@@ -128,13 +128,29 @@ A generator is one kind of value—that is, something that's first-class at comp
 
 The simplest are discussed in this section, and others have dedicated sections below.
 
-Numbers are floating-point, with enough precision to represent both double-precision floats and 64-bit integers (signed or unsigned) exactly. Specifically, they're implemented as pairs of doubles, giving about 105 bits of precision over the same exponent range as a double. A number can be written in scientific notation like `45` or `1.3e-12`, in hex like `0xf3cc0`, or in an arbitrary base with the base preceding `b`, like `2b110101` or `32b0jbm1` (digits like hex, extending past `f`). Numbers are case-insensitive and can contain underscores, which will be removed.
+Numbers are floating-point, with enough precision to represent both double-precision floats and 64-bit integers (signed or unsigned) exactly. Specifically, they're implemented as pairs of doubles, giving about 105 bits of precision over the same exponent range as a double. Numeric literal syntax, which supports scientific notation and arbitrary bases up to 36, is described [below](#numeric-literals).
 
 Symbols are Unicode strings, written as a literal using single quotes: `'symbol'`. They're used with the `emit{}` generator to emit instructions, and in `export{}` to identify the function name that should be exposed.
 
 Constants consist of a value and a type. They appear when a value such as a number is cast, for example by creating a variable `v:f64 = 6` or with an explicit `cast{f64, 6}`. For programming, constants work like registers (variables), so there's never any need to consider them specifically. Just cast a compile-time value if you need it to have a particular type—say, when calling a function that could take several different types.
 
 Labels are for `goto{}` and related builtins described [here](#program).
+
+### Numeric literals
+
+    number     = repeat* ( scientific | base )
+    scientific = digit+ ( "." digit+ )? "e" "-"? digit+
+    base       = ( "0x" | digit+ "b" ) ( digit | letter )+
+    repeat     = digit+ ( "r" | "d" | "w" )
+
+A number in Singeli starts with a digit but can contain letters, the decimal dot `.`, and an internal `-` as well; an initial `-` is not parsed as part of the number, but as a separate operator. Letters in numeric literals are case-insensitive and can contain underscores, which are ignored. Typical scientific notation such as `45` or `1.3e-12` is supported.
+
+Integer hex literals can be written with `x` like `0xf3cc0`, but `b` can be used for a more general base. A decimal number between 2 and 36 before `b` gives the base, like `2b110101` or `32b0jbm1`. As with hex, digit `9` is followed by `a`.
+
+An additional prefix allows repetition of digits to be specified. This repeats the mantissa digits, including leading 0s, as written, maintaining the base and exponent. The lowest-order digit always retains its position relative to the decimal point. Multiple prefixes can be specified as a form of documentation; they must have the same meaning.
+- `r`: repeat the full sequence of digits, `3r12` means `121212`
+- `d`: repeat up to the specified number, `5r123` means `23123` (starts at lowest-order digit)
+- `w`: repeat up to specified bit width, `10w0x4f` means `0x34f` (base must be a power of 2)
 
 ## Definition
 

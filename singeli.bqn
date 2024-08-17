@@ -88,6 +88,7 @@ numbers ← {kname⇐"number"
   Read ⇐ {
     (≠𝕩)>s←⌊´𝕩⊐"bx" ? # Base n with 0x9abc or 31bNUMBER
       b ← ('b'=s⊑𝕩)◶⟨16⊣"x can only appear in 0x in a number"!"0"⊸≡,Nat⟩ s↑𝕩
+      "Invalid base (min 2)" ! 2≤b
       (!"Invalid base (max "∾•Repr∾")"˙)⍟(b⊸>) ≠da
       d ← b 𝕎 (b↑da) (≠∘⊣(⊢⊣"Invalid digits"!∧´∘>)⊐) (1+s)↓𝕩
       E ← b⊸×⊸+˜´⌽∘⊢
@@ -107,8 +108,11 @@ numbers ← {kname⇐"number"
       n ← Nat¨ ¯1↓1↓p   # Parsed counts
       wfm←"Repetition with w requires the base to be a power of two"
       _wf←{b n _𝕣 𝕩: wfm!⌊⊸=l←2⋆⁼b ⋄ (l|n) 2⊸⋆⊸|⌾⊑⍟(≠⟜0) (⌈n÷l) Re 𝕩 }
-      mm←"Digit repetition prefixes don't agree"
-      ((1<≠)◶⊑‿{(⊑⊣mm!⊣`⊸≡)𝕩{𝕨𝕩{𝕨𝕏𝕗}¨𝕗}} n{𝕎𝕩}¨˜f⊏˜c⊐⊑p) 𝔽 ⊢´p
+      rep←{∧´0=n ? "0" ; # 𝔽 assumes >0 digits
+        mm←"Digit repetition prefixes don't agree"
+        (1<≠)◶⊑‿{(⊑⊣mm!⊣`⊸≡)𝕩{𝕨𝕩{𝕨𝕏𝕗}¨𝕗}} n{𝕎𝕩}¨˜f⊏˜c⊐⊑p
+      }
+      rep 𝔽 ⊢´p
     ;
       {⊢} 𝔽 𝕩
   }⟜LC⎊{Err⟨•CurrentError@,𝕨⟩}
