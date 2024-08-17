@@ -101,3 +101,42 @@ The following non-arithmetic definitions are also defined when possible.
 | `store{ptr,ind,val}`   | Same as builtin
 
 x86 also includes `load_aligned` and `store_aligned` for accesses that assume the pointer has vector alignment.
+
+### x86 SIMD arithmetic support
+
+The following table shows when arithmetic support was added to x86 for various vector types. For integers, only signed types (`i16`) are shown but unsigned equivalents (`u16`) are supported at the same time. AVX-512F does have the ability to create and perform conversions on 8-bit and 16-bit types, but doesn't support any arithmetic specific to them.
+
+| Extension | `u`/`i8` | `u`/`i16` | `u`/`i32` | `u`/`i64` |     `f32` |    `f64` |
+|-----------|---------:|----------:|----------:|----------:|----------:|---------:|
+| SSE       |          |           |           |           |  `[4]f32` |          |
+| SSE2      | `[16]i8` |  `[8]i16` |  `[4]i32` |  `[2]i64` |           | `[2]f64` |
+| AVX       |          |           |           |           |  `[8]f32` | `[4]f64` |
+| AVX2      | `[32]i8` | `[16]i16` |  `[8]i32` |  `[4]i64` |           |          |
+| AVX-512F  |          |           | `[16]i32` |  `[8]i64` | `[16]f32` | `[8]f64` |
+| AVX-512BW | `[64]i8` | `[32]i16` |           |           |           |          |
+
+The next table shows integer instruction availability in x86. Each entry shows the first extension to include the instructions on a given element type. Multi-instruction fills are not shown. Instructions introduced by SSE extensions are all available in AVX2, except `extract`, and those in AVX2 are all in AVX-512F or AVX-512BW (depending on type support as shown above), except `copy_sign`. AVX2 instructions are also supported on 128-bit vectors, and AVX-512 instructions are supported on 128-bit and 256-bit vectors if AVX-512VL is available. But `arch/iintrinsic/basic` doesn't correctly support these extensions right now.
+
+| Functions                     | `i8`   | `i16`  | `i32`  | `i64`   | `u8`   | `u16`  | `u32`  | `u64`
+|-------------------------------|--------|--------|--------|---------|--------|--------|--------|-------
+| `&` `\|` `^` `andnot` `+` `-` | SSE2   | SSE2   | SSE2   | SSE2    | SSE2   | SSE2   | SSE2   | SSE2
+| `__min` `__max`               | SSE4.2 | SSE2   | SSE4.2 | A512F   | SSE2   | SSE4.2 | SSE4.2 | A512F
+| `==`                          | SSE2   | SSE2   | SSE2   | SSE4.1  | SSE2   | SSE2   | SSE2   | SSE4.1
+| `>` `<`                       | SSE2   | SSE2   | SSE2   | SSE4.2  |        |        |        |
+| `__adds` `__subs`             | SSE2   | SSE2   |        |         | SSE2   | SSE2   |        |
+| `<<` `shl_uniform`            |        | SSE2   | SSE2   | SSE2    |        | SSE2   | SSE2   | SSE2
+| `>>` `shr_uniform`            |        | SSE2   | SSE2   | A512F   |        | SSE2   | SSE2   | SSE2
+| `<<`                          |        | A512F  | AVX2   | AVX2    |        | A512F  | AVX2   | AVX2
+| `>>`                          |        | A512F  | AVX2   | A512F   |        | A512F  | AVX2   | AVX2
+| `*`                           |        | SSE2   | SSE4.1 | A512DQ  |        | SSE2   | SSE4.1 | A512DQ
+| `__abs`                       | SSSE3  | SSSE3  | SSSE3  | A512F   |        |        |        |
+| `copy_sign` (no 512-bit)      | SSSE3  | SSSE3  | SSSE3  |         |        |        |        |
+| `average_int`                 |        |        |        |         |        | SSE2   | SSE2   |
+| `extract` (no ≥256-bit)       | SSE4.1 | SSE2   | SSE4.1 | SSE4.1  | SSE4.1 | SSE2   | SSE4.1 | SSE4.1
+
+Floating-point instruction availability is much simpler: all instructions are available on supported types, with the exception of `__floor`, `__ceil`, and `__round`, which weren't added until SSE4.1.
+
+| Functions                                                                                  | `f32`  | `f64`
+|--------------------------------------------------------------------------------------------|--------|-------
+| `&` `\|` `^` `andnot` `+` `-` `*` `__min` `__max` `==` `>` `<` `!=` `>=` `<=` `/` `__sqrt` | SSE    | SSE2
+| `__floor` `__ceil` `__round`                                                               | SSE4.1 | SSE4.1
