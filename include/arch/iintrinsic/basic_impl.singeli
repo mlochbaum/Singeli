@@ -244,9 +244,10 @@ local {
 
   def has_eq{_} = 0  # equals, integer only
   def has_eq{V if hasarch{'SSE2'  } and sse{V}} = ew{V}<=32
-  def has_eq{V if hasarch{'SSE4.2'} and sse{V}} = 1
+  def has_eq{V if hasarch{'SSE4.1'} and sse{V}} = 1
   def has_eq{V if hasarch{'AVX2'  } and avx{V}} = 1
   def has_gt{V} = es{V} and has_eq{V}
+  def has_gt{([2]i64)} = hasarch{'SSE4.2'}
 
   # float comparisons, div, square root
   def has_float{V} = ef{V} and has_arith{V}
