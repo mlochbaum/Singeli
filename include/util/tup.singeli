@@ -95,6 +95,10 @@ def scan{f, init, list} = slice{scan_full{f, init, list}, 1}
 def scan{f, {}} = tup{}
 def scan{f, {h, ...t}} = scan_full{f, h, t}
 
+# Extend to multiple list inputs, if initialized
+def fold{f, i, ...ls={_, _, ..._}} = fold{{a, t} => f{a, ...t}, i, flip{ls}}
+def scan{f, i, ...ls={_, _, ..._}} = scan{{a, t} => f{a, ...t}, i, flip{ls}}
+
 # Copy list elements based on list, constant, or generator (like filter)
 def replicate{reps, list} = join{each{copy, reps, list}}
 def replicate{r, list if knum{r}} = join{each{copy{r,.}, list}}

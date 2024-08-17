@@ -57,14 +57,15 @@ File [util/tup.singeli](util/tup.singeli).
 | `flip{tups}`             | Transpose tuple of same-length tuples
 | `table{f, ...tups}`      | Function table mapping over all combinations
 | `flat_table{f, ...tups}` | Function table flattened into a single list
-| `fold{gen, any?, tup}`   | Left fold, with or without initial element
-| `scan{gen, any?, tup}`   | Inclusive left scan
+| `fold{gen, any?, tup+}`  | Left fold, with or without initial element
+| `scan{gen, any?, tup+}`  | Inclusive left scan
 | `replicate{r, tup}`      | Tuple with each input element copied the given number of times
 | `indices{tup}`           | Indices of elements of `tup`, repeated that many times
 
 Additional notes:
 
 - `split{n, tup}`: `n` may be a number, indicating that all groups have that length except that the last may be short. It may also be a list of numbers, which is expected to sum to the length of the tuple and indicates the sequence of group lengths.
+- `fold{gen, any?, tup+}` and `fold{gen, any?, tup+}`: if the initialized `any` is given, `tup` indicates any number of tuple arguments, and `gen` will be always called with one parameter from each one.
 - `replicate{r, tup}`: `r` may be a tuple, where each element indicates the number of times to include the corresponding element of `tup` (for example, if it's boolean the elements in the same position as a 1 are kept and those with a 0 are filtered out). It may also be a plain number, so that every element is copied the same number of times, or a generator `f`, so that element `e` is copied `f{e}` times.
 
 ## SIMD architecture
