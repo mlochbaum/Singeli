@@ -1,0 +1,134 @@
+local {
+  include 'skin/cop'
+  include 'util/kind'
+  oper ~~ reinterpret infix right 55
+  def base{b,{}} = 0; def base{b,{h,...t}} = h + b*base{b,t}
+
+  def all = match {
+    {{t}} => t
+    {t} => { def h=length{t}>>1; all{slice{t,0,-h} & slice{t,h}} }
+  }
+
+  # Only need to cast if element type class changes
+  def class{T} = if (isfloat{T}) T else i8  # i8 represents any int
+
+  def fmt_p{T} = {
+    if (isfloat{T}) {
+      if (width{T}==32) 'ps' else 'pd'
+    } else {
+      merge{'epi', fmtnat{width{T}}} # No unsigned instructions here
+    }
+  }
+  def intrin_g{get_typ}{name, V} = {
+    def w = width{V}
+    def fw = if (w<=128) '' else fmtnat{w}
+    merge{'_mm', fw, '_', name, '_', get_typ{V}}
+  }
+  def intrin = intrin_g{{[_]T} => fmt_p{T}}
+  def intrin_b = intrin_g{{V=[_]T} => {
+    if (isint{T}) fmtnat{width{V}} else fmt_p{T}
+  }}
+}
+
+local def vec_shuffle_impl{T, sel_n, val:V, ind} = {
+  def w = width{T}
+  def wv= width{V}
+  def sel_width = sel_n * w
+  def ind_width = length{ind} * w
+  def 0 = wv % ind_width
+  def shuf_sub{I, name, sel_n, n, fmt, ind} = {
+    def exp{i} = if (n <= length{i}) i else exp{merge{i, i}}
+    def off{i} = i + (range{length{i}} & -sel_n)
+    emit{V, intrin{name, [wv/width{I}]I}, val, fmt{off{exp{ind}}}}
+  }
+  def shuf{name, n, fmt} = shuf_sub{T, name, sel_n, n, fmt, ind}
+  def shuf{name, E, n, fmt} = {
+    def e = w / width{E}
+    def wi = if (e == 1) ind else merge{...each{+{.,range{e}}, e*ind}}
+    shuf_sub{E, name, e*sel_n, n, fmt, wi}
+  }
+  match () {
+    {if ind_width == 256} => match () {
+      {if hasarch{'AVX'} and sel_width <= 128 and isfloat{T}} => {
+        def U = [256/w]primtype{'u', w}
+        shuf{'permutevar', 128 / w, {i} => vec_make{U, (w/32)*i}}
+      }
+      {if hasarch{'AVX2'}} => match (w) {
+        {32} => shuf{'permutevar8x32', 8, vec_make{[8]u32, .}}
+        {64} => shuf{'permute4x64', 4, base{4, .}}
+      }
+    }
+    {if w >= 32} => {
+      def n = 128 / w
+      shuf{if (isint{T}) 'shuffle' else 'permute', n, base{n, .}}
+    }
+    {if hasarch{'SSSE3'}} => {
+      shuf{'shuffle', i8, 16, vec_make{[wv/8]i8, .}}
+    }
+    {if w == 16 and wv == 64} => {
+      shuf{'shuffle', 4, base{4, .}}
+    }
+  }
+}
+
+# For convenience, allow indices to be written directly without tup
+def vec_shuffle{val, ...inds if 1 < length{inds}} = vec_shuffle{val, inds}
+def vec_shuffle{spec if knum{spec} or ktyp{spec}, val, ...inds if 1 < length{inds}} = vec_shuffle{spec, val, inds}
+
+def vec_shuffle{...spec, val:V=[_]vT, {...inds}} = {
+  # inds doesn't have the element type so it comes from spec or val
+  def T = match (...spec) {
+    {[_]T} => T; {T if ktyp{T}} => T
+    {n if knum{n}} => vT; {} => vT
+  }
+  # sel_n is the number of indices in a selection unit
+  # It can be specified by spec as a number or length of vector type
+  # and/or by the length of each list in nested inds
+  def spec_n = match (...spec) {
+    {[k]_} => tup{k}; {k if knum{k}} => tup{k}; {..._} => tup{}
+  }
+  def {ind_n, ind} = match (inds) {
+    {{{...t}, ..._}} => {
+      def l = length{t}
+      def 1 = all{l == each{length, inds}}
+      tup{tup{l}, merge{...inds}}
+    }
+    {_} => {
+      each{{s} => { def 0 = length{inds} % s }, spec_n}
+      tup{tup{}, inds}
+    }
+  }
+  def sel_n = match(...spec_n, ...ind_n) {  # Shuffle unit from spec and nested indices must match
+    {n,n} => n; {n} => n; {} => length{ind}
+  }
+  def 1 = all{ind < sel_n}
+  # Cast if necessary and call shuffle
+  def shuf = vec_shuffle_impl{T, sel_n, ., ind}
+  if (class{T} == class{vT}) shuf{val}
+  else                  V ~~ shuf{[width{V}/width{T}]T ~~ val}
+}
+
+def vec_shuffle{...spec, val:V=[vk]vT, ind:[ik]I if isint{I}} = {
+  # Selection type and size can be set by spec, or come from ind
+  # But element quality comes from val if possible
+  def wi = width{I}
+  def ty{} = if (wi < 32) I else primtype{quality{vT}, wi}
+  def {sel_n, T} = match (...spec) {
+    {[n]T}         => tup{ n,T}
+    {T if ktyp{T}} => tup{ik,T}
+    {n if knum{n}} => tup{ n,ty{}}
+    {}             => tup{ik,ty{}}
+  }
+  def 1 = wi == width{T}
+  def 0 = ik % sel_n
+  def name = match (sel_n, width{T}) {
+    {16, 8 if hasarch{'SSSE3'} if I == i8} => 'shuffle'
+    {4, 32 if hasarch{'AVX'} and isfloat{T}} => 'permutevar'
+    # no 2, 64: permutevar_pd scales indices!
+    {8, 32 if hasarch{'AVX2'}} => 'permutevar8x32'
+  }
+  def S = [width{V}/width{T}]T
+  def shuf = emit{., intrin{name, S}, ., ind}
+  if (class{T} == class{vT}) shuf{V, val}
+  else                  V ~~ shuf{S, S ~~ val}
+}
