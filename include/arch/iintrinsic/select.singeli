@@ -9,9 +9,6 @@ local {
     {t} => { def h=length{t}>>1; all{slice{t,0,-h} & slice{t,h}} }
   }
 
-  # Only need to cast if element type class changes
-  def class{T} = if (isfloat{T}) T else i8  # i8 represents any int
-
   def fmt_p{T} = {
     if (isfloat{T}) {
       if (width{T}==32) 'ps' else 'pd'
@@ -28,54 +25,92 @@ local {
   def intrin_b = intrin_g{{V=[_]T} => {
     if (isint{T}) fmtnat{width{V}} else fmt_p{T}
   }}
+
+  # Only need to cast if element type class changes
+  def class{T} = if (isfloat{T}) T else i8  # i8 represents any int
+  def call_cast{gen, T, V=[_]E, ...vs} = {
+    if (class{E} == class{T}) gen{...vs}
+    else V~~gen{...each{~~{[width{V}/width{T}]T, .}, vs}}
+  }
 }
 
-local def vec_shuffle_impl{T, sel_n, val:V, ind} = {
+# 16-bit shuffles on half-words don't quite fit vec_shuffle
+local def vec_shuffle16_impl{suff, vec:V, ind} = {
+  emit{V, intrin{merge{'shuffle', suff}, [width{V}/16]i16}, vec, base{4, ind}}
+}
+local def has_sh16{w} = (w==128 and hasarch{'SSE2'}) or (w==256 and hasarch{'AVX2'})
+local def vec_shuffle_part{part}{vec:V=[_]_, {...ind} if has_sh16{width{V}} and length{ind}==4 and all{(ind>=0) & (ind<4)}} = {
+  call_cast{vec_shuffle16_impl{part, ., ind}, i16, V, vec}
+}
+def vec_shuffle16_lo = vec_shuffle_part{'lo'}
+def vec_shuffle16_hi = vec_shuffle_part{'hi'}
+
+# General implementation for constant indices
+local def vec_shuffle_impl{T, sel_n, val={_:V, ..._}, ind} = {
+  def pos = all{ind >= 0}
   def w = width{T}
   def wv= width{V}
   def sel_width = sel_n * w
   def ind_width = length{ind} * w
   def 0 = wv % ind_width
-  def shuf_sub{I, name, sel_n, n, fmt, ind} = {
+  # Index expansion and instruction calls
+  def get_ind{sel_n, n, ind} = {
     def exp{i} = if (n <= length{i}) i else exp{merge{i, i}}
     def off{i} = i + (range{length{i}} & -sel_n)
-    emit{V, intrin{name, [wv/width{I}]I}, val, fmt{off{exp{ind}}}}
+    off{exp{ind}}
   }
-  def shuf{name, n, fmt} = shuf_sub{T, name, sel_n, n, fmt, ind}
+  def shuf_sub{I, name, ind, val} = {
+    emit{V, intrin{name, [wv/width{I}]I}, ...val, ind}
+  }
+  def shuf{name, n, fmt} = shuf_sub{T, name, fmt{get_ind{sel_n, n, ind}}, val}
   def shuf{name, E, n, fmt} = {
     def e = w / width{E}
     def wi = if (e == 1) ind else merge{...each{+{.,range{e}}, e*ind}}
-    shuf_sub{E, name, e*sel_n, n, fmt, wi}
+    shuf_sub{E, name, fmt{get_ind{e*sel_n, n, wi}}, val}
   }
-  match () {
-    {if ind_width == 256} => match () {
-      {if hasarch{'AVX'} and sel_width <= 128 and isfloat{T}} => {
-        def U = [256/w]primtype{'u', w}
-        shuf{'permutevar', 128 / w, {i} => vec_make{U, (w/32)*i}}
-      }
-      {if hasarch{'AVX2'}} => match (w) {
-        {32} => shuf{'permutevar8x32', 8, vec_make{[8]u32, .}}
-        {64} => shuf{'permute4x64', 4, base{4, .}}
-      }
+  def shuf_base{...a, n   } = shuf{...a, n, base{n, .}}
+  def shuf_make{...a, n, T} = shuf{...a, n, vec_make{[n]T, .}}
+  # Arch-specific cases
+  if (2 == length{val}) {
+    def 1 = isfloat{T} and wv >= 128 and ind_width <= 128
+    shuf_base{'shuffle', 128 / w}
+  } else if (wv < 128) {
+    def 1 = wv == 64 and isint{T} and w >= 16 and pos
+    shuf_base{'shuffle', 4}
+  } else if (sel_width == 256) {
+    def 1 = hasarch{'AVX2'} and pos
+    match (w) {
+      {32} => shuf_make{'permutevar8x32', 8, u32}
+      {64} => shuf_base{'permute4x64', 4}
     }
-    {if w >= 32} => {
+  } else if (isfloat{T}) {
+    if (ind_width == 256) {
+      def 1 = hasarch{'AVX'} and pos
+      def n = 256 / w
+      def U = [n]primtype{'u', w}
+      shuf{'permutevar', n, {i} => vec_make{U, (w/32)*i}}
+    } else {
       def n = 128 / w
-      shuf{if (isint{T}) 'shuffle' else 'permute', n, base{n, .}}
+      if (hasarch{'AVX'}) shuf_base{'permute', n}
+      else shuf_sub{T, 'shuffle', base{n, get_ind{sel_n, n, ind}}, merge{val,val}}
     }
-    {if hasarch{'SSSE3'}} => {
-      shuf{'shuffle', i8, 16, vec_make{[wv/8]i8, .}}
-    }
-    {if w == 16 and wv == 64} => {
-      shuf{'shuffle', 4, base{4, .}}
+  } else { # isint{T}
+    def 1 = hasarch{'SSE2'}
+    match () {
+      {if w >= 32 and pos}  => shuf_base{'shuffle', i32, 4}
+      {if hasarch{'SSSE3'}} => shuf_make{'shuffle', i8, wv/8, i8}
+      {if w >= 16 and sel_width <= 64 and pos} => {
+        def io = get_ind{w/16 * sel_n, 4, ind}
+        def i = io - (range{length{io}} & -4) # Avoid passing offset indices to shufflehi
+        def fi{v, s, ...bnd} = vec_shuffle16_impl{s, v, slice{i, ...bnd}}
+        fi{fi{...val, 'lo',0,4}, 'hi',-4}
+      }
     }
   }
 }
 
-# For convenience, allow indices to be written directly without tup
-def vec_shuffle{val, ...inds if 1 < length{inds}} = vec_shuffle{val, inds}
-def vec_shuffle{spec if knum{spec} or ktyp{spec}, val, ...inds if 1 < length{inds}} = vec_shuffle{spec, val, inds}
-
-def vec_shuffle{...spec, val:V=[_]vT, {...inds}} = {
+# Process parameters
+local def vec_shuffle_proc{...spec, V=[_]vT, vals, {...inds}} = {
   # inds doesn't have the element type so it comes from spec or val
   def T = match (...spec) {
     {[_]T} => T; {T if ktyp{T}} => T
@@ -102,12 +137,18 @@ def vec_shuffle{...spec, val:V=[_]vT, {...inds}} = {
     {n,n} => n; {n} => n; {} => length{ind}
   }
   def 1 = all{ind < sel_n}
-  # Cast if necessary and call shuffle
-  def shuf = vec_shuffle_impl{T, sel_n, ., ind}
-  if (class{T} == class{vT}) shuf{val}
-  else                  V ~~ shuf{[width{V}/width{T}]T ~~ val}
+  def shuf{...v} = vec_shuffle_impl{T, sel_n, v, ind}
+  call_cast{shuf, T, V, ...vals}
 }
 
+# For convenience, allow indices to be written directly without tup
+def vec_shuffle{val, ...inds if 1 < length{inds}} = vec_shuffle{val, inds}
+def vec_shuffle{spec if knum{spec} or ktyp{spec}, val, ...inds if 1 < length{inds}} = vec_shuffle{spec, val, inds}
+# Main definitions
+def vec_shuffle{...spec, val:    V=[_]_      , {...inds}} = vec_shuffle_proc{...spec, V, tup{val}, inds}
+def vec_shuffle{...spec, vals={_:V=[_]_, _:V}, {...inds}} = vec_shuffle_proc{...spec, V, vals,     inds}
+
+# Variable indices: not many cases to support
 def vec_shuffle{...spec, val:V=[vk]vT, ind:[ik]I if isint{I}} = {
   # Selection type and size can be set by spec, or come from ind
   # But element quality comes from val if possible
@@ -122,7 +163,7 @@ def vec_shuffle{...spec, val:V=[vk]vT, ind:[ik]I if isint{I}} = {
   def 1 = wi == width{T}
   def 0 = ik % sel_n
   def name = match (sel_n, width{T}) {
-    {16, 8 if hasarch{'SSSE3'} if I == i8} => 'shuffle'
+    {16, 8 if hasarch{'SSSE3'}} => 'shuffle'
     {4, 32 if hasarch{'AVX'} and isfloat{T}} => 'permutevar'
     # no 2, 64: permutevar_pd scales indices!
     {8, 32 if hasarch{'AVX2'}} => 'permutevar8x32'
