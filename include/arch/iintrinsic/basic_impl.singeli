@@ -11,7 +11,7 @@ local {
     if (isfloat{T}) {
       if (width{T}==32) 'ps' else 'pd'
     } else {
-      def sgn = if (length{s}==1) select{s,0} else issigned{T}
+      def sgn = match (s) { {{e}} => e; {_} => issigned{T} }
       merge{'ep', if (sgn) 'i' else 'u', fmtnat{width{T}}}
     }
   }
@@ -22,7 +22,7 @@ local {
     merge{'_mm', fw, '_', name, '_', fmt_p{T, ...s}}
   }
   def intrin_b{name, V} = intrin{name, V, width{V}}
-  def set_intrin{name, V} = merge{intrin{name,V,1}, if (eltype{V}==i64 and not av5{V}) 'x' else ''}
+  def set_intrin_post{V=[_]T} = if (T==i64 and not av5{V}) 'x' else ''
   def vec_ptr{p:*V=[_]T} = if (isfloat{T}) *T~~p else p
 
   def sse{V} = 128==width{V}
@@ -74,10 +74,9 @@ local {
   def can_elt = match { {[_]T, x:T} => 1; {_,x} => num{x} }
   def can_make_sub = can_elt
   def can_make_sub{V=[k]_, {...x}} = {
-    def all{t} = {
-      def l = length{t}
-      if (l==1) select{t,0}
-      else { def h=l>>1; all{slice{t,0,-h} & slice{t,h}} }
+    def all = match {
+      {{t}} => t
+      {t} => { def h=length{t}>>1; all{slice{t,0,-h} & slice{t,h}} }
     }
     k==length{x} and all{each{can_elt{V,.}, x}}
   }
@@ -93,12 +92,13 @@ local {
       V~~m{[k]I, each{ic, x}}
     }
   }
-  def mvc{V,x} = emit{V, set_intrin{'set1',V}, ...x}
+  def seti{name, V, x} = emit{V, merge{intrin{name,V,1}, set_intrin_post{V}}, ...x}
+  def mvc = seti{'set1', ...}
   def mvi{V,x} = if (not (V==[2]i64 or av5{V})) {
-    emit{V, set_intrin{'setr',V}, ...x}
+    seti{'setr', V, x}
   } else {
-    def l=length{x}
-    emit{V, set_intrin{'set',V}, ...select{x, l-1-range{l}}}
+    def l = length{x}
+    seti{'set', V, select{x, l-1-range{l}}}
   }
 }
 def vec_make{V, ...x if can_make{V,x}} = mv_sub{mvi, V, x}
