@@ -126,8 +126,8 @@ The next table shows integer instruction availability in x86. Each entry shows t
 | `__adds` `__subs`             | SSE2   | SSE2   |        |         | SSE2   | SSE2   |        |
 | `<<` `shl_uniform`            |        | SSE2   | SSE2   | SSE2    |        | SSE2   | SSE2   | SSE2
 | `>>` `shr_uniform`            |        | SSE2   | SSE2   | A512F   |        | SSE2   | SSE2   | SSE2
-| `<<`                          |        | A512F  | AVX2   | AVX2    |        | A512F  | AVX2   | AVX2
-| `>>`                          |        | A512F  | AVX2   | A512F   |        | A512F  | AVX2   | AVX2
+| `<<` (element-wise)           |        | A512F  | AVX2   | AVX2    |        | A512F  | AVX2   | AVX2
+| `>>` (element-wise)           |        | A512F  | AVX2   | A512F   |        | A512F  | AVX2   | AVX2
 | `*`                           |        | SSE2   | SSE4.1 | A512DQ  |        | SSE2   | SSE4.1 | A512DQ
 | `__abs`                       | SSSE3  | SSSE3  | SSSE3  | A512F   |        |        |        |
 | `copy_sign` (no 512-bit)      | SSSE3  | SSSE3  | SSSE3  |         |        |        |        |

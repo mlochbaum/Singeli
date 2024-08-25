@@ -72,7 +72,7 @@ cpuid ↩ isaList ⊐ ⊑¨cpuid
 _seg ← {(𝔽·+`'_'⊸=)⊸/}
 GetSname ← 3⊸=_seg⊸(∾˜)⍟("_mask"⊸≡)⟜(2⊸=_seg)
 # Exclude intrinsics covered by basic.singeli
-excl ← E˜∘=⟜' '⊸⊔"setr set set1 loadu load storeu store extract insert and or xor andnot add sub adds subs min max mullo mul slli srai srli sll sra srl sllv srav srlv cmpeq cmpgt cmp cmpneq cmpge cmplt cmple div sqrt floor ceil round abs sign avg"
+excl ← E˜∘=⟜' '⊸⊔"setr set set1 loadu load storeu store extract insert and or xor andnot add sub adds subs min max mullo mul slli srai srli sll sra srl sllv srav srlv cmpeq cmpgt cmp cmpneq cmpge cmplt cmple div sqrt floor ceil round abs sign avg shuffle shufflehi shufflelo permute permutevar permute2f128 permute2x128 permute4x64 permute8x32 permutevar8x32"
 incl ← E˜∘=⟜' '⊸⊔"_mm_cmp_pd _mm_cmp_ps _mm256_set_m128 _mm256_set_m128d _mm256_set_m128i _mm256_setr_m128 _mm256_setr_m128d _mm256_setr_m128i _mm_slli_si128 _mm_srli_si128 _mm256_slli_si256 _mm256_srli_si256 _mm_mul_epu32 _mm_mul_epi32 _mm256_mul_epi32 _mm256_mul_epu32"
 filter ← ∧´ ⟨
   (names∊incl) ∨ ¬((1↓GetSname)¨ names)∊excl

@@ -80,9 +80,7 @@ def __storer{mem_addr:*(f32), a:([4]f32)} = emit{void, '_mm_storer_ps', mem_addr
 def __TRANSPOSE4{row0:T==[4]f32, row1:T, row2:T, row3:T} = emit{void, '_MM_TRANSPOSE4_PS', row0, row1, row2, row3}
 def __pextrw{a:([4]u16), imm8 if num{imm8}} = emit{i32, '_m_pextrw', a, imm8}
 def __pinsrw{a:T==[4]u16, i:(i32), imm8 if num{imm8}} = emit{T, '_m_pinsrw', a, i, imm8}
-def __shuffle{a:T==[4]i16, imm8 if num{imm8}} = emit{T, '_mm_shuffle_pi16', a, imm8}
 def __pshufw{a:T==[4]u16, imm8 if num{imm8}} = emit{T, '_m_pshufw', a, imm8}
-def __shuffle{a:T==[4]f32, b:T, imm8 if num{imm8}} = emit{T, '_mm_shuffle_ps', a, b, imm8}
 def __unpackhi{a:T==[4]f32, b:T} = emit{T, '_mm_unpackhi_ps', a, b}
 def __unpacklo{a:T==[4]f32, b:T} = emit{T, '_mm_unpacklo_ps', a, b}
 
@@ -159,9 +157,6 @@ def __store1{mem_addr:*(f64), a:([2]f64)} = emit{void, '_mm_store1_pd', mem_addr
 def __storer{mem_addr:*(f64), a:([2]f64)} = emit{void, '_mm_storer_pd', mem_addr, a}
 def __storeh{mem_addr:*(f64), a:([2]f64)} = emit{void, '_mm_storeh_pd', mem_addr, a}
 def __storel{mem_addr:*(f64), a:([2]f64)} = emit{void, '_mm_storel_pd', mem_addr, a}
-def __shuffle{a:T==[4]i32, imm8 if num{imm8}} = emit{T, '_mm_shuffle_epi32', a, imm8}
-def __shufflehi{a:T==[8]i16, imm8 if num{imm8}} = emit{T, '_mm_shufflehi_epi16', a, imm8}
-def __shufflelo{a:T==[8]i16, imm8 if num{imm8}} = emit{T, '_mm_shufflelo_epi16', a, imm8}
 def __unpackhi{a:T==[16]i8, b:T} = emit{T, '_mm_unpackhi_epi8', a, b}
 def __unpackhi{a:T==[8]i16, b:T} = emit{T, '_mm_unpackhi_epi16', a, b}
 def __unpackhi{a:T==[4]i32, b:T} = emit{T, '_mm_unpackhi_epi32', a, b}
@@ -172,7 +167,6 @@ def __unpacklo{a:T==[4]i32, b:T} = emit{T, '_mm_unpacklo_epi32', a, b}
 def __unpacklo{a:T==[2]i64, b:T} = emit{T, '_mm_unpacklo_epi64', a, b}
 def __unpackhi{a:T==[2]f64, b:T} = emit{T, '_mm_unpackhi_pd', a, b}
 def __unpacklo{a:T==[2]f64, b:T} = emit{T, '_mm_unpacklo_pd', a, b}
-def __shuffle{a:T==[2]f64, b:T, imm8 if num{imm8}} = emit{T, '_mm_shuffle_pd', a, b, imm8}
 
 
 #SSE3
@@ -207,8 +201,6 @@ def __mulhrs{a:T==[8]i16, b:T} = emit{T, '_mm_mulhrs_epi16', a, b}
 def __mulhrs{a:T==[4]i16, b:T} = emit{T, '_mm_mulhrs_pi16', a, b}
 def __alignr{a:T==[16]i8, b:T, imm8 if num{imm8}} = emit{T, '_mm_alignr_epi8', a, b, imm8}
 def __alignr{a:T==[8]i8, b:T, imm8 if num{imm8}} = emit{T, '_mm_alignr_pi8', a, b, imm8}
-def __shuffle{a:T==[16]i8, b:T} = emit{T, '_mm_shuffle_epi8', a, b}
-def __shuffle{a:T==[8]i8, b:T} = emit{T, '_mm_shuffle_pi8', a, b}
 
 
 #SSE4.1
@@ -346,21 +338,8 @@ def __blend{a:T==[4]f64, b:T, imm8 if num{imm8}} = emit{T, '_mm256_blend_pd', a,
 def __blend{a:T==[8]f32, b:T, imm8 if num{imm8}} = emit{T, '_mm256_blend_ps', a, b, imm8}
 def __blendv{a:T==[4]f64, b:T, mask:S if intvec{256,S}} = emit{T, '_mm256_blendv_pd', a, b, mask}
 def __blendv{a:T==[8]f32, b:T, mask:S if intvec{256,S}} = emit{T, '_mm256_blendv_ps', a, b, mask}
-def __shuffle{a:T==[4]f64, b:T, imm8 if num{imm8}} = emit{T, '_mm256_shuffle_pd', a, b, imm8}
-def __shuffle{a:T==[8]f32, b:T, imm8 if num{imm8}} = emit{T, '_mm256_shuffle_ps', a, b, imm8}
 def __extractf128{a:([8]f32), imm8 if num{imm8}} = emit{[4]f32, '_mm256_extractf128_ps', a, imm8}
 def __extractf128{a:([4]f64), imm8 if num{imm8}} = emit{[2]f64, '_mm256_extractf128_pd', a, imm8}
-def __permutevar{a:T==[8]f32, b:([8]u32)} = emit{T, '_mm256_permutevar_ps', a, b}
-def __permutevar{a:T==[4]f32, b:([4]u32)} = emit{T, '_mm_permutevar_ps', a, b}
-def __permute{a:T==[8]f32, imm8 if num{imm8}} = emit{T, '_mm256_permute_ps', a, imm8}
-def __permute{a:T==[4]f32, imm8 if num{imm8}} = emit{T, '_mm_permute_ps', a, imm8}
-def __permutevar{a:T==[4]f64, b:([4]u64)} = emit{T, '_mm256_permutevar_pd', a, b}
-def __permutevar{a:T==[2]f64, b:([2]u64)} = emit{T, '_mm_permutevar_pd', a, b}
-def __permute{a:T==[4]f64, imm8 if num{imm8}} = emit{T, '_mm256_permute_pd', a, imm8}
-def __permute{a:T==[2]f64, imm8 if num{imm8}} = emit{T, '_mm_permute_pd', a, imm8}
-def __permute2f128{a:T==[8]f32, b:T, imm8 if num{imm8}} = emit{T, '_mm256_permute2f128_ps', a, b, imm8}
-def __permute2f128{a:T==[4]f64, b:T, imm8 if num{imm8}} = emit{T, '_mm256_permute2f128_pd', a, b, imm8}
-def __permute2f128{a:T, b:T, imm8 if intvec{256,T} and num{imm8}} = emit{T, '_mm256_permute2f128_si256', a, b, imm8}
 def __insertf128{a:T==[8]f32, b:([4]f32), imm8 if num{imm8}} = emit{T, '_mm256_insertf128_ps', a, b, imm8}
 def __insertf128{a:T==[4]f64, b:([2]f64), imm8 if num{imm8}} = emit{T, '_mm256_insertf128_pd', a, b, imm8}
 def __insertf128{a:T, b:S, imm8 if intvec{256,T} and intvec{128,S} and num{imm8}} = emit{T, '_mm256_insertf128_si256', a, b, imm8}
@@ -467,15 +446,6 @@ def __broadcastss_8f32{a:([4]f32)} = emit{[8]f32, '_mm256_broadcastss_ps', a}
 def __broadcastw_8i16{a:T==[8]i16} = emit{T, '_mm_broadcastw_epi16', a}
 def __broadcastw_16i16{a:([8]i16)} = emit{[16]i16, '_mm256_broadcastw_epi16', a}
 def __inserti128{a:T, b:S, imm8 if intvec{256,T} and intvec{128,S} and num{imm8}} = emit{T, '_mm256_inserti128_si256', a, b, imm8}
-def __permute2x128{a:T, b:T, imm8 if intvec{256,T} and num{imm8}} = emit{T, '_mm256_permute2x128_si256', a, b, imm8}
-def __permute4x64{a:T==[4]i64, imm8 if num{imm8}} = emit{T, '_mm256_permute4x64_epi64', a, imm8}
-def __permute4x64{a:T==[4]f64, imm8 if num{imm8}} = emit{T, '_mm256_permute4x64_pd', a, imm8}
-def __permutevar8x32{a:T==[8]i32, idx:T} = emit{T, '_mm256_permutevar8x32_epi32', a, idx}
-def __permutevar8x32{a:T==[8]f32, idx:([8]u32)} = emit{T, '_mm256_permutevar8x32_ps', a, idx}
-def __shuffle{a:T==[8]i32, imm8 if num{imm8}} = emit{T, '_mm256_shuffle_epi32', a, imm8}
-def __shuffle{a:T==[32]i8, b:T} = emit{T, '_mm256_shuffle_epi8', a, b}
-def __shufflehi{a:T==[16]i16, imm8 if num{imm8}} = emit{T, '_mm256_shufflehi_epi16', a, imm8}
-def __shufflelo{a:T==[16]i16, imm8 if num{imm8}} = emit{T, '_mm256_shufflelo_epi16', a, imm8}
 def __unpackhi{a:T==[32]i8, b:T} = emit{T, '_mm256_unpackhi_epi8', a, b}
 def __unpackhi{a:T==[16]i16, b:T} = emit{T, '_mm256_unpackhi_epi16', a, b}
 def __unpackhi{a:T==[8]i32, b:T} = emit{T, '_mm256_unpackhi_epi32', a, b}

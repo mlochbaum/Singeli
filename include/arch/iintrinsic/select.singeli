@@ -23,7 +23,7 @@ local {
   }
   def intrin = intrin_g{{[_]T} => fmt_p{T}}
   def intrin_b = intrin_g{{V=[_]T} => {
-    if (isint{T}) fmtnat{width{V}} else fmt_p{T}
+    if (isint{T}) merge{'si',fmtnat{width{V}}} else fmt_p{T}
   }}
 
   # Only need to cast if element type class changes
@@ -172,4 +172,19 @@ def vec_shuffle{...spec, val:V=[vk]vT, ind:[ik]I if isint{I}} = {
   def shuf = emit{., intrin{name, S}, ., ind}
   if (class{T} == class{vT}) shuf{V, val}
   else                  V ~~ shuf{S, S ~~ val}
+}
+
+# Next-to-last index bit is used, so index has to be multiplied by 2
+def vec_shuffle_64_scaled{val:V=[k](f64), ind:[k]I if isint{I} and width{I}==64 and hasarch{'AVX'}} = {
+  emit{V, intrin{'permutevar_pd', V}, val, ind}
+}
+def vec_shuffle_64_scaled{val:V=[_]T, ind if T != f64} = {
+  V ~~ vec_shuffle_64_scaled{[width{V}/64]f64~~val, ind}
+}
+
+# Selects as 4 unified lanes
+def vec_select{v={a:V=[_]T, b:V}, ind={_,_} if 256==width{V} and hasarch{'AVX'} and all{(ind>=0) & (ind<4)}} = {
+  def q = if (isint{T} and hasarch{'AVX2'}) 'x' else 'f'
+  def name = merge{'permute2', q, '128'}
+  emit{V, intrin_b{name, V}, a, b, base{16, ind}}
 }
