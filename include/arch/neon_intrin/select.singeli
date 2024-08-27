@@ -1,0 +1,66 @@
+local {
+  include 'skin/cop'
+  include 'util/kind'
+  oper ~~ reinterpret infix right 55
+
+  def all = match {
+    {{t}} => t
+    {t} => { def h=length{t}>>1; all{slice{t,0,-h} & slice{t,h}} }
+  }
+}
+
+# For convenience, allow indices to be written directly without tup
+def vec_shuffle{val, ...inds if 1 < length{inds}} = vec_shuffle{val, inds}
+def vec_shuffle{spec if knum{spec} or ktyp{spec}, val, ...inds if 1 < length{inds}} = vec_shuffle{spec, val, inds}
+
+# Constant indices
+def vec_shuffle{...spec, val:V=[_]vT, {...inds}} = {
+  # inds doesn't have the element type so it comes from spec or val
+  def T = match (...spec) {
+    {[_]T} => T; {T if ktyp{T}} => T
+    {n if knum{n}} => vT; {} => vT
+  }
+  # sel_n is the number of indices in a selection unit
+  # It can be specified by spec as a number or length of vector type
+  # and/or by the length of each list in nested inds
+  def spec_n = match (...spec) {
+    {[k]_} => tup{k}; {k if knum{k}} => tup{k}; {..._} => tup{}
+  }
+  def {ind_n, ind} = match (inds) {
+    {{{...t}, ..._}} => {
+      def l = length{t}
+      def 1 = all{l == each{length, inds}}
+      tup{tup{l}, merge{...inds}}
+    }
+    {_} => {
+      each{{s} => { def 0 = length{inds} % s }, spec_n}
+      tup{tup{}, inds}
+    }
+  }
+  def sel_n = match(...spec_n, ...ind_n) {  # Shuffle unit from spec and nested indices must match
+    {n,n} => n; {n} => n; {} => length{ind}
+  }
+  def 1 = all{ind < sel_n}
+
+  def {I, s} = if (V == [16]i8) tup{V,'s'} else tup{[16]u8,'u'}
+  def name = merge{'vqtbl1q_',s,'8'}
+
+  def e = width{T} / 8
+  def wi = if (e == 1) ind else merge{...each{+{.,range{e}}, e*ind}}
+  def exp{i} = if (16 <= length{i}) i else exp{merge{i, i}}
+  def off{i} = i + (range{length{i}} & -e*sel_n)
+  def shuf = emit{I, name, ., vec_make{[16]u8, off{exp{__max{wi,-1}%256}}}}
+  if (V == I) shuf{val} else V~~shuf{I~~val}
+}
+
+# Variable indices
+def vec_shuffle{...spec, val:V=[_]vT, ind:[16]I} = {
+  def T = match (...spec) {
+    {[16]T} => T; {T if ktyp{T}} => T; {16} => vT; {} => vT
+  }
+  def 8 = width{T}
+  def S = [16]T
+  def name = merge{'vqtbl1q_', if (issigned{T}) 's' else 'u', '8'}
+  def shuf = emit{S, name, ., [16]u8~~ind}
+  if (V == S) shuf{val} else V~~shuf{S~~val}
+}
