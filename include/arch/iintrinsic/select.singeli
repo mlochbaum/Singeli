@@ -183,8 +183,95 @@ def vec_shuffle_64_scaled{val:V=[_]T, ind if T != f64} = {
 }
 
 # Selects as 4 unified lanes
-def vec_select{v={a:V=[_]T, b:V}, ind={_,_} if 256==width{V} and hasarch{'AVX'} and all{(ind>=0) & (ind<4)}} = {
+def vec_select{128, v={a:V=[_]T, b:V}, ind={_,_} if 256==width{V} and hasarch{'AVX'} and all{(ind>=0) & (ind<4)}} = {
   def q = if (isint{T} and hasarch{'AVX2'}) 'x' else 'f'
   def name = merge{'permute2', q, '128'}
   emit{V, intrin_b{name, V}, a, b, base{16, ind}}
+}
+
+
+# Zip
+local def has_zip{V=[_]T} = {
+  hasarch{match (width{V}) {
+    {128} => if (T==f32) 'SSE' else 'SSE2'
+    {256} => if (isfloat{T}) 'AVX' else 'AVX2'
+    {512} => if (width{T}>=32) 'AVX512F' else 'AVX512BW'
+  }}
+}
+def zip128{a:V=[_]_, b:V, half if has_zip{V}} = {
+  def name = merge{'unpack', match (half) { {0}=>'lo'; {1}=>'hi' }}
+  emit{V, intrin{name, V}, a, b}
+}
+def zip{a:V=[_]_, b:V, half if width{V}==128} = zip128{a, b, half}
+
+
+# Shift/align as a list of elements
+# Directions left and right are opposite to instruction l and r!
+local {
+  def has_sh{w, sse} = hasarch{match (w) { {128}=>sse; {256}=>'AVX2'; {512}=>'AVX512BW' }}
+  def has_sh{V=[_]T, sse} = isint{T} and has_sh{width{V}, sse}
+  # Shift left or right based on sign
+  def sh_128{dir, x:V=[_]T, n if has_sh{V,'SSE2'} and knum{n} and isint{T}} = {
+    def wv = width{V}; def S = [width{V}/8]u8
+    def name = merge{'bs', if (dir*n < 0) 'l' else 'r', 'li'}
+    def suff = if (wv == 128) 'si128' else 'epi128'
+    def nb = __min{16, __abs{n}*(width{T}/8)}  # Shift in bytes
+    def sh = emit{V, intrin_g{{_} => suff}{name, S}, ..., nb}
+    call_cast{sh, T, S, x}
+  }
+  # Merge-shift, with mod_n to pick direction
+  def mshl_128{mod_n, a:V=[k]T, b:V, n if has_sh{V,'SSSE3'} and knum{n} and 0<=n and n<=k*128/width{V}} = {
+    def S = [width{V}/8]u8
+    def sh = emit{V, intrin{'alignr', S}, ..., mod_n{n*(width{T}/8)}}
+    call_cast{sh, T, S, b, a}
+  }
+}
+def vec_shift_left_128  = sh_128{ 1, ...}
+def vec_shift_right_128 = sh_128{-1, ...}
+def vec_merge_shift_left_128  = mshl_128{{n} => n, ...}
+def vec_merge_shift_right_128 = mshl_128{{n} => 16 - n, ...}
+
+def vec_shift_left {x:V, n if width{V}==128} = vec_shift_left_128 {x,n}
+def vec_shift_right{x:V, n if width{V}==128} = vec_shift_right_128{x,n}
+def vec_merge_shift_left {a:V, b:V, n if width{V}==128} = vec_merge_shift_left_128 {a,b,n}
+def vec_merge_shift_right{a:V, b:V, n if width{V}==128} = vec_merge_shift_right_128{a,b,n}
+
+
+# Blend
+# x86 vector blends use the top bit of the mask
+# But blend_hom is more general so blend_top is defined as a restriction
+local {
+  def has_blend{V=[_]T} = match (width{V}) {
+    {128} => hasarch{'SSE4.1'}
+    {256} => hasarch{if (isfloat{T}) 'AVX' else 'AVX2'}
+    {_} => 0
+  }
+  def has_blendv{V, M} = width{V}==width{M} and has_blend{V}
+}
+def blend_hom{f:V=[k]T, t:V, m:M=[k]_ if has_blendv{V,M}} = {
+  def name = intrin{'blendv', if (isfloat{T}) V else [width{V}/8]i8}
+  call_cast{emit{V, name, f, t, ...}, T, M, m}
+}
+def blend_top{f:V=[k]T, t:V, m:M=[k]_ if has_blendv{V,M} and (isfloat{T} or width{T}==8)} = {
+  blend_hom{f, t, m}
+}
+
+# Blend with immediate
+def all_bool{m} = all{each{knum, m}} and all{(m==0) | (m==1)}
+def blend_units{f, t, ...m if all_bool{m}} = blend_units{f, t, m}
+def blend_units{f:V=[k]T, t:V, {...m} if has_blend{V} and width{T}>=16 and 0 == __min{8,k} % length{m} and all_bool{m}} = {
+  def E = {
+    if (isfloat{T}) T
+    else if (width{T}>=32 and hasarch{'AVX2'}) i32
+    else i16
+  }
+  def l = __min{8,k}
+  def exp{i} = if (l <= length{i}) i else exp{merge{i, i}}
+  def c = width{T} / width{E}  # Copy each bit of m c times
+  def b = 1 << c
+  emit{V, intrin{'blend', [k*c]E}, f, t, base{b, exp{m}*(b-1)}}
+}
+def blend{f, t, ...m if all_bool{m}} = blend{f, t, m}
+def blend{f:V=[k]T, t:V, {...m} if has_blend{V} and k<=8 and length{m}==k} = {
+  blend_units{f, t, m}
 }
