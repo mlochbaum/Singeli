@@ -6,7 +6,7 @@ ToUpper ← ((-´"Aa")×'a'⊸≤∧≤⟜'z')⊸+
 TSort ← {{𝕊⍟(𝕩<○≠⊢)⟜(𝕩∾·/𝕨⊸<)𝕨∨∧´∘⊏⟜𝕨¨p}⟜/0¨p←𝕩} # Topological sort
 
 MakeArch ← {
-  name‿width‿VecType ⇐ extfile‿header ← 𝕩
+  name‿width‿VecType‿StripDefines ⇐ extfile‿header ← 𝕩
   Headers ⇐ {(𝕩>0)/⟨header⟩}
   # d is a list of extension dependency chains
   u ← ⍷∾ d ← ' ' Spl¨ •file.Lines ∾"data/"‿extfile‿"_ext.txt"
@@ -37,6 +37,7 @@ arches ← MakeArch¨ ⟨
         ⟨5-˜2⋆⁼l, ∾⟨"__m", •Repr l, {l=64?"";¬f?"i";(64=w)/"d"}⟩⟩;
       !"Nested vector type unsupported in x86"
     }
+    StripDefines ⇐ { u ← "__" ⋄ (¯2↓2↓⊢)¨ ((u≡2⊸↑)∧u≡¯2⊸↑)¨⊸/ 𝕩 }
   }
   {
     name ⇐ "AARCH64"
@@ -48,6 +49,7 @@ arches ← MakeArch¨ ⟨
         1 ⋈ ∾⟨{f?"float"; (u/"u")∾"int"}, •Repr w, "x", •Repr v, "_t"⟩;
       !"Nested vector type not yet supported in ARM"
     }
+    StripDefines ⇐ { l←≠pre←"__ARM_FEATURE_" ⋄ l↓¨(pre≡l⊸↑)¨⊸/ 𝕩 }
   }
   {
     name ⇐ "RV64"
@@ -64,6 +66,7 @@ arches ← MakeArch¨ ⟨
         1 ⋈ ∾⟨"v", {f?"float"; (u/"u")∾"int"}, •Repr w, "m", mf/"f", •Repr ÷⍟mf lmul, "_t"⟩;
       !"Only two levels of vector nesting supported in RISC-V"
     }
+    StripDefines ⇐ { "RVV"¨ "__riscv_v"⊸≡¨⊸/ 𝕩 }
   }
 ⟩
 
@@ -114,4 +117,11 @@ FeatInd ⇐ { # 𝕨 is 0 to allow features outside current architecture
 # For external tools, return base architecture as C compiler flags
 GetCFlags ⇐ {𝕊:
   "-m"⊸∾¨ ((-´"aA")×'A'⊸≤∧≤⟜'Z')⊸+ (baseArch ∧ (arch.name)⊸≢¨)⊸/ feats
+}
+# Get extension list from a list of C defines as returned by cc -dM -E
+ParseCDefines ⇐ { 𝕊 lines:
+  pre ← "#define "
+  ! ∧´ pre⊸(⊣≡≠⊸↑)¨ lines
+  names ← (∧`' '⊸≠)⊸/¨ (≠pre)⊸↓¨ lines
+  ∊⟜feats⊸/ ((-´"._")×'_'⊸=)⊸+ arch.StripDefines names
 }
