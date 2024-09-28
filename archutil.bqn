@@ -106,6 +106,9 @@ ParseCDefines ⇐ { 𝕊 lines:
   pre ← "#define "
   ! ∧´ pre⊸(⊣≡≠⊸↑)¨ lines
   names ← (∧`' '⊸≠)⊸/¨ (≠pre)⊸↓¨ lines
-  arch ← ⊑ ({𝕩.mainDefine}¨ ∊ names˙)⊸/ arches
+  as ← ({𝕩.mainDefine}¨ ∊ names˙)⊸/ arches
+  0 < ≠as?
+  arch ← ⊑ as
   ⟨arch.name⟩ ∾ ∊⟜arch.feats⊸/ ((-´"._")×'_'⊸=)⊸+ arch.StripDefines names
+  ; ⟨"NONE"⟩
 }
