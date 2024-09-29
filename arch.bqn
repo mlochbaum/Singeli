@@ -1,29 +1,43 @@
-# CPU feature processing
+# CPU architecture namespace, based on provided feature set argfeats
 argfeats‿infer ← ⋈⟜0⍟(0=≠) •args
 
-arches‿allfeats‿archfeats‿MakeArch‿ReadNative‿ToUpper ← •Import "archutil.bqn"
+arches‿ReadDeps‿ReadNative‿ToUpper ← •Import "archutil.bqn"
 
-MaybeNat ← "NATIVE"⊸≡¨ (¬⊸/∾ReadNative)⍟((0=≠)⊸(∨´)⊣) ⊢
+# Process feature flags and detect architecture family
+allfeats ← ∾ archfeats ← {𝕩.feats}¨ arches
+AllNat ← ∊⟜allfeats⊸/ ReadNative
+MaybeNat ← "NATIVE"⊸≡¨ (¬⊸/∾AllNat)⍟((0=≠)⊸(∨´)⊣) ⊢
 arg ← ⟨"NONE"⟩⊸≢◶⟨⟩‿MaybeNat ToUpper argfeats
 all ← "ALL"⊸≡¨ arg
 !∘(∾"Unknown features:"<⊸∾' '∾¨/⟜arg)⍟(∨´) ¬all∨arg∊allfeats
 "Incompatible features" ! ∨´ supp ← (all¬⊸/arg)⊸(∧´∊)¨ archfeats
-arch ← infer MakeArch ⊑ supp / arches
+archDesc ← ⊑ supp / arches
+width‿VecType‿header ⇐ ⟨aname⇐name⟩ ← archDesc
 
-⟨width, VecType, Headers, feats⟩ ⇐ arch
-mat ⇐ arch.GetMat@
-
+# Parse dependencies for the chosen architecture
+⟨feats, mat⟩ ⇐ {
+  TSort ← {{𝕊⍟(𝕩<○≠⊢)⟜(𝕩∾·/𝕨⊸<)𝕨∨∧´∘⊏⟜𝕨¨p}⟜/0¨p←𝕩} # Topological sort
+  # d is a list of extension dependency chains
+  u ← ⍷∾ d ← ReadDeps archDesc.ExtFile infer
+  u ⊏˜↩ TSort ∾¨ (⊢⊔○∾(¯1↓↑)¨) (<u)⊐¨d
+  # Unique feature flags including arch name
+  feats ⇐ ⟨aname⟩ ∾ u
+  # Make a dependency matrix: i‿j⊑m is 1 iff feature i depends on j
+  m ← (≥⌜˜↕∘≠)⊸×∨´×⌜˜¨(<u)∊¨d # Dependencies from file
+  m ∨˝∘∧⎉1‿∞˜⍟(⌈2⋆⁼≠)↩        # Transitive closure
+  mat ⇐ 1 ∾˘ 0¨∘⊏⊸∾ m         # Plus base architecture
+}
 baseArch ⇐ ∨˝∘∧⟜mat (∨´all)◶⟨∊⟜arg,1¨⟩ feats
 
 FeatInd ⇐ { # 𝕨 is 0 to allow features outside current architecture
   i ← feats ⊐ 𝕩
   m ← (i=≠feats)/○⥊𝕩
   !∘(∾"Unknown architecture features:"<⊸∾' '∾¨/⟜m)⍟(∨´) ¬m∊allfeats
-  !∘(1↓·∾' '∾¨⟨"Features not in",arch.name,"architecture:"⟩∾⊢)⍟(0<≠)⍟𝕨 m
+  !∘(1↓·∾' '∾¨⟨"Features not in",aname,"architecture:"⟩∾⊢)⍟(0<≠)⍟𝕨 m
   i
 }
 
 # For external tools, return base architecture as C compiler flags
 GetCFlags ⇐ {𝕊:
-  "-m"⊸∾¨ ((-´"aA")×'A'⊸≤∧≤⟜'Z')⊸+ (baseArch ∧ (arch.name)⊸≢¨)⊸/ feats
+  "-m"⊸∾¨ ((-´"aA")×'A'⊸≤∧≤⟜'Z')⊸+ (baseArch ∧ (aname)⊸≢¨)⊸/ feats
 }

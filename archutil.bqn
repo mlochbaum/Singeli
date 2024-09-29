@@ -2,27 +2,10 @@
 
 Spl ← (⊢-˜+`×¬)∘=⊔⊢
 ToUpper ⇐ ((-´"Aa")×'a'⊸≤∧≤⟜'z')⊸+
-TSort ← {{𝕊⍟(𝕩<○≠⊢)⟜(𝕩∾·/𝕨⊸<)𝕨∨∧´∘⊏⟜𝕨¨p}⟜/0¨p←𝕩} # Topological sort
+UtoDot ← ((-´"._")×'_'⊸=)⊸+
 
-ReadDeps ← { ' ' Spl¨ •file.Lines ∾"data/"‿𝕩‿"_ext.txt" }
+ReadDeps ⇐ { ' ' Spl¨ •file.Lines ∾"data/"‿𝕩‿"_ext.txt" }
 ReadFeats ← { ⟨𝕨⟩ ∾ ⍷∾ ReadDeps 𝕩 }
-
-MakeArch ⇐ {
-  name‿width‿VecType ⇐ ExtFile‿header ← 𝕩
-  infer ← 𝕨⊣0
-  Headers ⇐ {(𝕩>0)/⟨header⟩}
-  # d is a list of extension dependency chains
-  u ← ⍷∾ d ← ReadDeps ExtFile infer
-  u ⊏˜↩ TSort ∾¨ (⊢⊔○∾(¯1↓↑)¨) (<u)⊐¨d
-  # Unique feature flags including arch name
-  feats ⇐ ⟨name⟩ ∾ u
-  # Make a dependency matrix: i‿j⊑m is 1 iff feature i depends on j
-  GetMat ⇐ {𝕊:
-    m ← (≥⌜˜↕∘≠)⊸×∨´×⌜˜¨(<u)∊¨d # Dependencies from file
-    m ∨˝∘∧⎉1‿∞˜⍟(⌈2⋆⁼≠)↩        # Transitive closure
-    1 ∾˘ 0¨∘⊏⊸∾ m               # Plus base architecture
-  }
-}
 
 arches ⇐ ⟨
   {
@@ -77,8 +60,7 @@ arches ⇐ ⟨
   }
 ⟩
 
-allfeats ⇐ ∾ archfeats ⇐ {𝕩.feats}¨ arches
-
+# Attempt to get the CPU's native architecture from OS resources
 ReadNative ⇐ {𝕊:
   f ← {
     c ← 1⊑ •SH "cat"‿"/proc/cpuinfo"
@@ -97,8 +79,7 @@ ReadNative ⇐ {𝕊:
   }
   f ↩ ∾ (' ' Spl 2↓(∨`':'⊸=)⊸/)¨ f
   f ↩ "PNI"‿"BMI1"‿"PCLMULQDQ"‿"AVX1.0"⊸⊐⊸(⊣◶⟨"SSE3",¯1⊸↓,¯3⊸↓,¯3⊸↓,⊢⟩¨) f
-  f ↩ '_'⊸≠⊸/⍟("AVX512"(⊣≡≠⊸↑)⊢)¨ f
-  ∊⟜allfeats⊸/ ((-´"._")×'_'⊸=)⊸+ f
+  UtoDot '_'⊸≠⊸/⍟("AVX512"(⊣≡≠⊸↑)⊢)¨ f
 }
 
 # Get extension list from a list of C defines as returned by cc -dM -E
@@ -107,8 +88,5 @@ ParseCDefines ⇐ { 𝕊 lines:
   ! ∧´ pre⊸(⊣≡≠⊸↑)¨ lines
   names ← (∧`' '⊸≠)⊸/¨ (≠pre)⊸↓¨ lines
   as ← ({𝕩.mainDefine}¨ ∊ names˙)⊸/ arches
-  0 < ≠as?
-  arch ← ⊑ as
-  ⟨arch.name⟩ ∾ ∊⟜arch.feats⊸/ ((-´"._")×'_'⊸=)⊸+ arch.StripDefines names
-  ; ⟨"NONE"⟩
+  {⟨a⟩: ⟨a.name⟩ ∾ ∊⟜a.feats⊸/ UtoDot a.StripDefines names; ⟨"NONE"⟩} as
 }

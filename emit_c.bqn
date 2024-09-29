@@ -3,7 +3,7 @@ cpp‿cpu‿prefix ← ∾⟜"_"⌾(2⊸⊑) •args
 types ← {
   ub←uv←um←0 ⋄ req←⟨⟩ ⋄ init ⇐ {ub↩uv↩um↩0⋄req↩⟨⟩}
   Require ⇐ {𝕊: req∾↩<𝕩}
-  Headers ⇐ {𝕊: ⍷ req ∾˜ (1‿ub‿um/⟨"stdint.h","stdbool.h","math.h"⟩)∾cpu.Headers uv}
+  Headers ⇐ {𝕊: ⍷ req ∾˜ 1‿ub‿um‿(uv>0)/⟨"stdint.h","stdbool.h","math.h",cpu.header⟩}
   Type ⇐ { 𝕨𝕊bType‿w‿am‿ptrs:
     u‿f ← bType = "uf"
     (" "∾𝕨) ⊢⊘(∾˜) (ptrs/"*") ∾˜ {
