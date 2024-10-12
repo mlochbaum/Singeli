@@ -56,7 +56,7 @@ local def vec_shuffle_impl{T, sel_n, val={_:V, ..._}, ind} = {
   # Index expansion and instruction calls
   def get_ind{sel_n, n, ind} = {
     def exp{i} = if (n <= length{i}) i else exp{merge{i, i}}
-    def off{i} = i + (range{length{i}} & -sel_n)
+    def off{i} = i + (range{length{i}} & -sel_n) * (i >= 0)
     off{exp{ind}}
   }
   def shuf_sub{I, name, ind, val} = {
@@ -72,7 +72,7 @@ local def vec_shuffle_impl{T, sel_n, val={_:V, ..._}, ind} = {
   def shuf_make{...a, n, T} = shuf{...a, n, vec_make{[n]T, .}}
   # Arch-specific cases
   if (2 == length{val}) {
-    def 1 = isfloat{T} and wv >= 128 and ind_width <= 128
+    def 1 = isfloat{T} and wv >= 128 and ind_width <= 128 and pos
     shuf_base{'shuffle', 128 / w}
   } else if (wv < 128) {
     def 1 = wv == 64 and isint{T} and w >= 16 and pos
