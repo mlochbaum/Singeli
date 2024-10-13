@@ -7,6 +7,16 @@ local {
     {{t}} => t
     {t} => { def h=length{t}>>1; all{slice{t,0,-h} & slice{t,h}} }
   }
+  def emit_intrin{V=[_]T, name, ...args} = {
+    def intrin = merge{
+      name,
+      match (width{V}) { {128}=>'q'; {64}=>'' },
+      '_',
+      match (quality{T}) { {'i'}=>'s'; {q}=>q },
+      fmtnat{width{T}}
+    }
+    emit{V, intrin, ...args}
+  }
 }
 
 # For convenience, allow indices to be written directly without tup
@@ -42,14 +52,14 @@ def vec_shuffle{...spec, val:V=[_]vT, {...inds}} = {
   }
   def 1 = all{ind < sel_n}
 
-  def {I, s} = if (V == [16]i8) tup{V,'s'} else tup{[16]u8,'u'}
-  def name = merge{'vqtbl1q_',s,'8'}
-
   def e = width{T} / 8
   def wi = if (e == 1) ind else merge{...each{+{.,range{e}}, e*ind}}
   def exp{i} = if (16 <= length{i}) i else exp{merge{i, i}}
   def off{i} = i + (range{length{i}} & -e*sel_n)
-  def shuf = emit{I, name, ., vec_make{[16]u8, off{exp{__max{wi,-1}%256}}}}
+  def vind = vec_make{[16]u8, off{exp{__max{wi,-1}%256}}}
+
+  def I = if (V == [16]i8) V else [16]u8
+  def shuf = emit_intrin{I, 'vqtbl1', ., vind}
   if (V == I) shuf{val} else V~~shuf{I~~val}
 }
 
@@ -60,7 +70,33 @@ def vec_shuffle{...spec, val:V=[_]vT, ind:[16]I} = {
   }
   def 8 = width{T}
   def S = [16]T
-  def name = merge{'vqtbl1q_', if (issigned{T}) 's' else 'u', '8'}
-  def shuf = emit{S, name, ., [16]u8~~ind}
+  def shuf = emit_intrin{S, 'vqtbl1', ., [16]u8~~ind}
   if (V == S) shuf{val} else V~~shuf{S~~val}
 }
+
+
+# Shifts
+def vec_merge_shift_right{a:V=[_]_, b:V, n if knum{n}} = emit_intrin{V, 'vext', a, b, n}
+def vec_merge_shift_left {a:V=[k]_, b:V, n} = vec_merge_shift_right{a, b, k - n}
+def vec_shift_left {x:V=[_]_, n} = vec_merge_shift_left {x, V**0, n}
+def vec_shift_right{x:V=[_]_, n} = vec_merge_shift_right{x, V**0, n}
+
+def zip{a:V=[_]_, b:V, half} = {
+  def name = merge{'vzip', match (half) { {0}=>'1'; {1}=>'2' }}
+  emit_intrin{V, name, a, b}
+}
+def reverse_units{n, x:V=[l]T if knum{n} and 1<n and n<l and l%n == 0} = {
+  emit_intrin{V, merge{'vrev', fmtnat{n*width{T}}}, x}
+}
+# NEON supports bitwise blending only
+def blend_bit{f:V=[k]T, t:V, m:M=[k]_ if width{V}==width{M}} = {
+  emit_intrin{V, 'vbsl', m, t, f}
+}
+def blend_hom{f:V=[k]T, t:V, m:M=[k]_} = blend_bit{f, t, m}
+
+# For x86 compatibility
+def vec_shift_left_128  = vec_shift_left
+def vec_shift_right_128 = vec_shift_right
+def vec_merge_shift_left_128  = vec_merge_shift_left
+def vec_merge_shift_right_128 = vec_merge_shift_right
+def zip128 = zip

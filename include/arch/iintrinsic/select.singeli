@@ -189,6 +189,11 @@ def vec_select{128, v={a:V=[_]T, b:V}, ind={_,_} if 256==width{V} and hasarch{'A
   emit{V, intrin_b{name, V}, a, b, base{16, ind}}
 }
 
+# Reverse-units for compatibility with NEON
+def reverse_units{n, x:[l]_ if knum{n} and n>1 and l%n == 0} = {
+  vec_shuffle{x, n-1 - range{n}}
+}
+
 
 # Zip
 local def has_zip{V=[_]T} = {
