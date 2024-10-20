@@ -28,10 +28,12 @@ local {
 
   # Only need to cast if element type class changes
   def class{T} = if (isfloat{T}) T else i8  # i8 represents any int
-  def call_cast{gen, T, V=[_]E, ...vs} = {
+  def call_cast_sub{do_uncast, gen, T, V=[_]E, ...vs} = {
+    def uncast{v} = if (do_uncast) V~~v else v
     if (class{E} == class{T}) gen{...vs}
-    else V~~gen{...each{~~{[width{V}/width{T}]T, .}, vs}}
+    else uncast{gen{...each{~~{[width{V}/width{T}]T, .}, vs}}}
   }
+  def call_cast = call_cast_sub{1, ...}
 }
 
 # 16-bit shuffles on half-words don't quite fit vec_shuffle
@@ -255,7 +257,7 @@ local {
 }
 def blend_hom{f:V=[k]T, t:V, m:M=[k]_ if has_blendv{V,M}} = {
   def name = intrin{'blendv', if (isfloat{T}) V else [width{V}/8]i8}
-  call_cast{emit{V, name, f, t, ...}, T, M, m}
+  call_cast_sub{0, emit{V, name, f, t, ...}, T, M, m}
 }
 def blend_top{f:V=[k]T, t:V, m:M=[k]_ if has_blendv{V,M} and (isfloat{T} or width{T}==8)} = {
   blend_hom{f, t, m}
