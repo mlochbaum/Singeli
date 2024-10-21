@@ -184,6 +184,16 @@ def vec_shuffle_64_scaled{val:V=[_]T, ind if T != f64} = {
   V ~~ vec_shuffle_64_scaled{[width{V}/64]f64~~val, ind}
 }
 
+def vec_select{...spec, v:V=[_]vT, ind} = {
+  def T = match (...spec) {
+    {} => vT; {T if ktyp{T}} => T
+    {w if knum{w} and w<=64} => primtype{if (w<32 and isfloat{vT}) 'u' else quality{vT}, w}
+  }
+  def w = width{T}
+  def k = width{V} / w
+  def 1 = match (ind) { {{...t}} => length{t}==k; {i:[(k)]I} => isint{I} }
+  vec_shuffle{T, v, ind}
+}
 # Selects as 4 unified lanes
 def vec_select{128, v={a:V=[_]T, b:V}, ind={_,_} if 256==width{V} and hasarch{'AVX'} and all{(ind>=0) & (ind<4)}} = {
   def q = if (isint{T} and hasarch{'AVX2'}) 'x' else 'f'

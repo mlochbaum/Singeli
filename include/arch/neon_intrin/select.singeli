@@ -19,11 +19,39 @@ local {
   }
 }
 
+local def vqtbl{...TS, vals={v0:V, ..._}, ind} = {
+  def S = match (...TS) {
+    {T if width{T}==8} => [16]T
+    {} => if (V == [16]i8) V else [16]u8
+  }
+  def l = length{vals}
+  def name = merge{if (l>1) 'unpacked_' else '', 'vqtbl', fmtnat{l}}
+  def shuf = emit_intrin{S, name, ..., [16]u8~~ind}
+  if (V == S) shuf{...vals} else V~~shuf{...each{~~{S,.}, vals}}
+}
+
+# Start with constant-index cases
+local def widen_norm_ind{ind, e} = {
+  def wi = if (e == 1) ind else merge{...each{+{.,range{e}}, e*ind}}
+  __max{wi,-1} % 256
+}
+
 # For convenience, allow indices to be written directly without tup
+def vec_select {val, ...inds if 1 < length{inds}} = vec_select {val, inds}
 def vec_shuffle{val, ...inds if 1 < length{inds}} = vec_shuffle{val, inds}
+def vec_select {spec if knum{spec} or ktyp{spec}, val, ...inds if 1 < length{inds}} = vec_select {spec, val, inds}
 def vec_shuffle{spec if knum{spec} or ktyp{spec}, val, ...inds if 1 < length{inds}} = vec_shuffle{spec, val, inds}
 
-# Constant indices
+def vec_select{...spec, val:V=[_]vT, {...ind} if all{each{knum,ind}}} = {
+  def w = match (...spec) {
+    {n if knum{n}} => n; {T if ktyp{T}} => width{T}; {} => width{vT}
+  }
+  def 1 = w >= 8
+  def {n,n} = tup{width{V}/w, length{ind}}
+  def 1 = all{ind < n}
+  vqtbl{tup{val}, vec_make{[16]u8, widen_norm_ind{ind, w / 8}}}
+}
+
 def vec_shuffle{...spec, val:V=[_]vT, {...inds}} = {
   # inds doesn't have the element type so it comes from spec or val
   def T = match (...spec) {
@@ -53,25 +81,29 @@ def vec_shuffle{...spec, val:V=[_]vT, {...inds}} = {
   def 1 = all{ind < sel_n}
 
   def e = width{T} / 8
-  def wi = if (e == 1) ind else merge{...each{+{.,range{e}}, e*ind}}
   def exp{i} = if (16 <= length{i}) i else exp{merge{i, i}}
   def off{i} = i + (range{length{i}} & -e*sel_n)
-  def vind = vec_make{[16]u8, off{exp{__max{wi,-1}%256}}}
-
-  def I = if (V == [16]i8) V else [16]u8
-  def shuf = emit_intrin{I, 'vqtbl1', ., vind}
-  if (V == I) shuf{val} else V~~shuf{I~~val}
+  def vind = vec_make{[16]u8, off{exp{widen_norm_ind{ind, e}}}}
+  vqtbl{tup{val}, vind}
 }
 
 # Variable indices
+def check_select{spec, vals, V} = {
+  def l = length{vals}
+  def v = l==1 or (l<=4 and all{V == each{type,vals}})
+  v and (match (...spec) { {}=>1; {8}=>1; {T} => ktyp{T} })
+}
+def vec_select{...spec, vals={v0:V=[_]vT, ..._}, ind:[16]I if check_select{spec, vals, V}} = {
+  def T = match (...spec) { {T if ktyp{T}} => T; {..._} => vT }
+  vqtbl{T, vals, ind}
+}
+def vec_select{...spec, val:V=[_]_,  ind:[16]I} = vec_select{...spec, tup{val}, ind}
+
 def vec_shuffle{...spec, val:V=[_]vT, ind:[16]I} = {
   def T = match (...spec) {
     {[16]T} => T; {T if ktyp{T}} => T; {16} => vT; {} => vT
   }
-  def 8 = width{T}
-  def S = [16]T
-  def shuf = emit_intrin{S, 'vqtbl1', ., [16]u8~~ind}
-  if (V == S) shuf{val} else V~~shuf{S~~val}
+  vqtbl{T, tup{val}, ind}
 }
 
 
