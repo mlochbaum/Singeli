@@ -108,8 +108,8 @@ def vec_shuffle{...spec, val:V=[_]vT, ind:[16]I} = {
 
 
 # Shifts
-def vec_merge_shift_right{a:V=[_]_, b:V, n if knum{n}} = emit_intrin{V, 'vext', a, b, n}
-def vec_merge_shift_left {a:V=[k]_, b:V, n} = vec_merge_shift_right{a, b, k - n}
+def vec_merge_shift_left {a:V=[_]_, b:V, n if knum{n}} = emit_intrin{V, 'vext', b, a, n}
+def vec_merge_shift_right{a:V=[k]_, b:V, n} = vec_merge_shift_left{a, b, k - n}
 def vec_shift_left {x:V=[_]_, n} = vec_merge_shift_left {x, V**0, n}
 def vec_shift_right{x:V=[_]_, n} = vec_merge_shift_right{x, V**0, n}
 
