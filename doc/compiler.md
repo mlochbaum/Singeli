@@ -3,7 +3,7 @@
 Using Singeli for your next project? Yeah, it's all right. The Rustacean numbskulls haven't gotten to it yet, so it's C-like and actually useful. Well, there's some functional mumbo-jumbo buried in there, but it stays out of the way most of the time.
 
     include 'debug/printf'
-    main {
+    main : void {
       lprintf{'Hello, World!'}  # Print with newline
     }
 
