@@ -86,8 +86,9 @@ local def vec_shuffle_impl{T, sel_n, val={_:V, ..._}, ind} = {
       {64} => shuf_base{'permute4x64', 4}
     }
   } else if (isfloat{T}) {
+    def 1 = pos  # Zeroing unsupported for float selection
     if (ind_width == 256) {
-      def 1 = hasarch{'AVX'} and pos
+      def 1 = hasarch{'AVX'}
       if (sel_width == 128 and w == 64) {
         shuf{'permute', 2, {t} => base{2, t%2}}
       } else {
@@ -197,6 +198,10 @@ def vec_select{...spec, v:V=[_]vT, ind} = {
   def k = width{V} / w
   def 1 = match (ind) { {{...t}} => length{t}==k; {i:[(k)]I} => isint{I} }
   vec_shuffle{T, v, ind}
+}
+def vec_select{n, v:V=[_]vT, {...ind} if knum{n} and n>64} = {
+  def e = n / 64
+  vec_select{64, v, merge{...each{+{.,range{e}}, e*ind}}}
 }
 # Selects as 4 unified lanes
 def vec_select{128, v={a:V=[_]T, b:V}, ind={_,_} if 256==width{V} and hasarch{'AVX'} and all{(ind>=0) & (ind<4)}} = {
