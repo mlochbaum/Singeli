@@ -69,10 +69,10 @@ def __pmaxsw{a:T==[4]i16, b:T} = emit{T, '_m_pmaxsw', a, b}
 def __pmaxub{a:T==[8]u8, b:T} = emit{T, '_m_pmaxub', a, b}
 def __pminsw{a:T==[4]i16, b:T} = emit{T, '_m_pminsw', a, b}
 def __pminub{a:T==[8]u8, b:T} = emit{T, '_m_pminub', a, b}
-def __stream{mem_addr:*([2]f32), a:([1]i64)} = emit{void, '_mm_stream_pi', mem_addr, a}
+def __stream{mem_addr:*(void), a:([1]i64)} = emit{void, '_mm_stream_pi', mem_addr, a}
 def __maskmove{a:T==[8]u8, mask:T, mem_addr:*(u8)} = emit{void, '_mm_maskmove_si64', a, mask, mem_addr}
 def __maskmovq{a:T==[8]u8, mask:T, mem_addr:*(u8)} = emit{void, '_m_maskmovq', a, mask, mem_addr}
-def __stream{mem_addr:*(f32), a:([4]f32)} = emit{void, '_mm_stream_ps', mem_addr, a}
+def __stream{mem_addr:*(void), a:([4]f32)} = emit{void, '_mm_stream_ps', mem_addr, a}
 def __storeh{mem_addr:*([2]f32), a:([4]f32)} = emit{void, '_mm_storeh_pi', mem_addr, a}
 def __storel{mem_addr:*([2]f32), a:([4]f32)} = emit{void, '_mm_storel_pi', mem_addr, a}
 def __store1{mem_addr:*(f32), a:([4]f32)} = emit{void, '_mm_store1_ps', mem_addr, a}
@@ -144,9 +144,10 @@ def __move{a:T==[2]i64} = emit{T, '_mm_move_epi64', a}
 def __setzero_2f64{} = emit{[2]f64, '_mm_setzero_pd'}
 def __maskmoveu{a:T==[16]u8, mask:T, mem_addr:*(u8)} = emit{void, '_mm_maskmoveu_si128', a, mask, mem_addr}
 def __storel{mem_addr:*T==[2]i64, a:T} = emit{void, '_mm_storel_epi64', mem_addr, a}
-def __stream{mem_addr:*T==i32, a:T} = emit{void, '_mm_stream_si32', mem_addr, a}
-def __stream{mem_addr:*T==u64, a:T} = emit{void, '_mm_stream_si64', mem_addr, a}
-def __stream{mem_addr:*(f64), a:([2]f64)} = emit{void, '_mm_stream_pd', mem_addr, a}
+def __stream{mem_addr:*(void), a:T if intvec{128,T}} = emit{void, '_mm_stream_si128', mem_addr, a}
+def __stream{mem_addr:*(void), a:(i32)} = emit{void, '_mm_stream_si32', mem_addr, a}
+def __stream{mem_addr:*(void), a:(u64)} = emit{void, '_mm_stream_si64', mem_addr, a}
+def __stream{mem_addr:*(void), a:([2]f64)} = emit{void, '_mm_stream_pd', mem_addr, a}
 def __store1{mem_addr:*(f64), a:([2]f64)} = emit{void, '_mm_store1_pd', mem_addr, a}
 def __storer{mem_addr:*(f64), a:([2]f64)} = emit{void, '_mm_storer_pd', mem_addr, a}
 def __storeh{mem_addr:*(f64), a:([2]f64)} = emit{void, '_mm_storeh_pd', mem_addr, a}
@@ -204,8 +205,8 @@ def __cvtepu32_2i64{a:([4]i32)} = emit{[2]i64, '_mm_cvtepu32_epi64', a}
 def __testz{a:T, b:T if intvec{128,T}} = emit{i32, '_mm_testz_si128', a, b}
 def __testc{a:T, b:T if intvec{128,T}} = emit{i32, '_mm_testc_si128', a, b}
 def __testnzc{a:T, b:T if intvec{128,T}} = emit{i32, '_mm_testnzc_si128', a, b}
-def __test_all_zeros{a:T, mask:T if intvec{128,T}} = emit{i32, '_mm_test_all_zeros', a, mask}
-def __test_mix_ones_zeros{a:T, mask:T if intvec{128,T}} = emit{i32, '_mm_test_mix_ones_zeros', a, mask}
+def __test_all_zeros{mask:T, a:T if intvec{128,T}} = emit{i32, '_mm_test_all_zeros', mask, a}
+def __test_mix_ones_zeros{mask:T, a:T if intvec{128,T}} = emit{i32, '_mm_test_mix_ones_zeros', mask, a}
 def __test{a:T if intvec{128,T}} = emit{i32, '_mm_test_all_ones', a}
 def __minpos{a:T==[8]u16} = emit{T, '_mm_minpos_epu16', a}
 def __mpsadbw{a:T==[16]u8, b:T, imm8 if num{imm8}} = emit{T, '_mm_mpsadbw_epu8', a, b, imm8}
@@ -306,8 +307,9 @@ def __maskstore{mem_addr:*(f64), mask:T, a:([4]f64) if intvec{256,T}} = emit{voi
 def __maskstore{mem_addr:*(f64), mask:T, a:([2]f64) if intvec{128,T}} = emit{void, '_mm_maskstore_pd', mem_addr, mask, a}
 def __maskstore{mem_addr:*(f32), mask:T, a:([8]f32) if intvec{256,T}} = emit{void, '_mm256_maskstore_ps', mem_addr, mask, a}
 def __maskstore{mem_addr:*(f32), mask:T, a:([4]f32) if intvec{128,T}} = emit{void, '_mm_maskstore_ps', mem_addr, mask, a}
-def __stream{mem_addr:*(f64), a:([4]f64)} = emit{void, '_mm256_stream_pd', mem_addr, a}
-def __stream{mem_addr:*(f32), a:([8]f32)} = emit{void, '_mm256_stream_ps', mem_addr, a}
+def __stream{mem_addr:*(void), a:T if intvec{256,T}} = emit{void, '_mm256_stream_si256', mem_addr, a}
+def __stream{mem_addr:*(void), a:([4]f64)} = emit{void, '_mm256_stream_pd', mem_addr, a}
+def __stream{mem_addr:*(void), a:([8]f32)} = emit{void, '_mm256_stream_ps', mem_addr, a}
 def __storeu2{hiaddr:*T==f32, loaddr:*T, a:([8]f32)} = emit{void, '_mm256_storeu2_m128', hiaddr, loaddr, a}
 def __storeu2{hiaddr:*T==f64, loaddr:*T, a:([4]f64)} = emit{void, '_mm256_storeu2_m128d', hiaddr, loaddr, a}
 def __extractf128{a:([8]f32), imm8 if num{imm8}} = emit{[4]f32, '_mm256_extractf128_ps', a, imm8}
