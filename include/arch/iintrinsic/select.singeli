@@ -93,7 +93,7 @@ local def vec_shuffle_impl{T, sel_n, val={_:V, ..._}, ind} = {
       shuf{'permutevar', n, {i} => vec_make{U, (w/32)*i}}
     } else {
       def n = 128 / w
-      if (hasarch{'AVX'}) shuf_base{'permute', n}
+      if (hasarch{'AVX'}) shuf{'permute', n, {t} => base{n, if (n==2) merge{t,t} else t}}
       else shuf_sub{T, 'shuffle', base{n, get_ind{sel_n, n, ind}}, merge{val,val}}
     }
   } else { # isint{T}
