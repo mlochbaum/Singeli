@@ -1610,7 +1610,7 @@ nodes ← {
     }
     Eval ⇐ {
       e←o.Eval 𝕩
-      For←(E fn) program._trace_ pos
+      For←(!∘"Running non-generator"˙⍟(3≠•Type) E fn) program._trace_ pos
       lsv←(pos var.Get {𝕎𝕩}⟜𝕩)¨ ls
       For ⟨E¨ptrv, E from, E to, blocks.New ind‿ptrn‿body‿lsv‿𝕩⟩
     }
