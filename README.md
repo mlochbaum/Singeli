@@ -4,7 +4,7 @@ Introductions: [Singeli as interpreter](doc/interpreter.md) | [Singeli as compil
 
 Singeli is a domain-specific language for building high-performance algorithms (including [SIMD](https://en.wikipedia.org/wiki/SIMD)) with flexible abstractions over code that corresponds to individual instructions. It's implemented in [BQN](https://mlochbaum.github.io/BQN), with a frontend that emits IR and a backend that converts it to C (the IR is simple, so that other backends like LLVM or machine code could be supported without much work).
 
-With 5k lines in production [in CBQN](https://github.com/dzaima/CBQN/tree/master/src/singeli/src), I think Singeli counts as usable! See also [SingeliSort](https://github.com/mlochbaum/SingeliSort) and [1brc](https://github.com/dzaima/1brc). Backwards-incompatible changes are still made occasionally, and there's always the possibility of bugs in a new-ish language. And SIMD programming takes some setup since every intrinsic used has to be wrapped somehow. [Standard includes](include/) that do this nicely for x86 and ARM are in progress.
+With 5k lines in production [in CBQN](https://github.com/dzaima/CBQN/tree/master/src/singeli/src), I think Singeli counts as usable! See also [SingeliSort](https://github.com/mlochbaum/SingeliSort) and [1brc](https://github.com/dzaima/1brc). The core language should now be stable (and past breaking changes have been done with about a 6 month deprecation period). [Standard includes](include/) are important for programming comfortably and are less solid in some areas, particularly the more sophisticated SIMD instructions. But if a better design comes up we'd probably introduce a new include rather than make major breaking changes.
 
 To compile input.singeli:
 

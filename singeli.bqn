@@ -311,7 +311,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
       c.phrase _node_ (While∘⟨Cont, Call, 1⟩) 𝕩
     }
   }
-  SimpExpr‿TypeExpr‿CondExpr ← ExprFromEnd¨ ⟨⟩‿⟨"="⟩‿⟨"&"⟩
+  SimpExpr‿TypeExpr ← ExprFromEnd¨ ⟨⟩‿⟨"="⟩
 
   # 𝕩 is the expression preceding ":"
   Declare ← c.declare _node_ {
@@ -376,11 +376,11 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Get "{"
     LFs@
     a ← {
-      ∊⟜"}"‿"&"‿kIf⌾<_test@ ? 0⥊<↕2 ;
+      ∊⟜"}"‿kIf⌾<_test@ ? 0⥊<↕2 ;
       Param ← ⟨Try∘"...", TargetElem⟩_seq
       a ← While ⟨"}"_divList, Param, 1⟩ ⋄ err_ex_gather Asrt 1≥+´⊑¨a ⋄ a
     }
-    c ← @_optGet_⟨kIf,⋈Expr, While ⟨Div∘"&", CondExpr⊣•Out∘"Conditions with & are deprecated; use if/and", 0⟩⟩ @
+    c ← When ⟨Try∘kIf, Expr⟩
     Get "}"
     a‿c
   }
@@ -399,15 +399,13 @@ Parse ← {𝕊 tokens‿ShowTrace:
     "{", TargetList
     =◶⟨0, ⊑⊏∊(dig∾''')˙⟩_test◶⟨tc.name _node_ Name, tc.constant _node_ EWord⟩
   ⟩
-  TypeTarget ← ∊⟜(types.primTypes≠⊸↑builtins.names)⌾<_test◶⟨
-    TargetElem
-    tc.constant _node_ CondExpr ⊣ •Out∘"Primitive type for constant matching is deprecated; add parentheses"
-  ⟩
+  noDestruct ← "Type destructuring would shadow primitive type; add parentheses to use as constant"
+  TypeTarget ← TargetElem ⊣ noDestruct Asrt ¬∘∊⟜(types.primTypes≠⊸↑builtins.names)⌾<_test
   _tAdd_ ← {@_opt_(⟨⊢⟩∾˜⥊{s‿n‿P: ⟨s, n _node_ (⋈⟜P ⊣ Get∘s)⟩}˘∘‿3⥊𝕘)}
   FinishTarget    ← @_tAdd_⟨kIf, tc.conds,     Expr⟩ @_tAdd_⟨
     ":",  tc.typed,  TypeTarget
     "=",  tc.same,   TargetElem
-    "==", tc.equals, CondExpr
+    "==", tc.equals, SimpExpr
   ⟩
   # Can't handle = or expressions containing it; don't allow == out of caution
   FinishDefTarget ← @_tAdd_⟨kIf, tc.conds, TypeExpr⟩ @_tAdd_⟨
@@ -472,8 +470,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   MultiLine ← {Line𝕩} _blockLines
   TopIf ← c.topif _node_ (∾⌾(¯1⊸⊑) @_opt_⟨"{",MultiLine, ⋈{Line𝕩}⟩ _if)
-  SubLine ← @_opt_⟨kIf,TopIf⊣•Out∘"Top-level if is deprecated as it now means if_inline but will be a normal if; change to if_inline or parenthesize"
-                   kInclude,Include, kIf_inline,TopIf, kConfig,Config, Stmt⟩
+  SubLine ← @_opt_⟨kInclude,Include, kIf_inline,TopIf, kConfig,Config, Stmt⟩
   LocLine ← @_opt_⟨kIf_inline,"localizable line"‿kIf_inline AsrtHere 0˙, kIf,StIf, SubLine⟩
   Line ← @_optGet_⟨
     kLocal, @_opt_⟨"{",c.body _node_ MultiLine, LocLine⟩
@@ -1045,9 +1042,6 @@ builtins ← {
       ⟨"withenv",{e←program.env⋄e.Push 2↑𝕩⋄r←⟨⟩{𝕎_ne𝕩}˜RGL 2⊑𝕩⋄e.Pop@⋄r}_e3⟩
       ⟨"getenv",{program.env.Get 𝕩}_p1⟩
       ⟨"memoize",({𝕏 (MemoMap@)._memoize _genNamed_ ({"memoize{"∾(Repr 𝕩)∾"}"}𝕩˙)} RGP)_p1⟩
-      # Deprecated
-      ⟨"tupsel",numbers.GetInt⊸⊑⚇0‿∞ _p2 ⊣ •Out∘"tupsel{} is deprecated; use select{}"⟩
-      ⟨"tuplen",≠_p1 ⊣ •Out∘"tuplen{} is deprecated; use length{}"⟩
     ⟩
     functions.builtins
     numbers.builtins
