@@ -1447,7 +1447,7 @@ nodes ← {
   }
   OpDef ⇐ {
     ⟨op,fn,type,prec⟩←𝕩 ⋄ pos←𝕨
-    prec ↩ prec.Eval@
+    prec ↩ numbers.GetFloat prec.Eval@
     Visit←{⟨type,op,𝕏⍟(0==)fn,•Repr prec⟩}
     ⟨node,Dump,Disp,Scope,Eval⟩⇐d←Defaults "opdef"‿visit
     N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
