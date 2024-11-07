@@ -96,7 +96,7 @@ numbers ← {kname⇐"number"
       (⌊53÷2⋆⁼b) <⟜≠◶E‿EE d
     ;
       _n ← {('-'=⊑)◶⟨𝔽, -∘𝔽 1⊸↓⟩}
-      pe ← ⊑𝕩⊐'e' ⋄ e ← pe <⟜≠◶⟨0,Nat _n+⟜1⊸↓⟩ 𝕩
+      pe ← ⊑𝕩⊐'e' ⋄ e ← pe (2⌊-˜⟜≠)◶⟨0,!∘"Empty exponent",Nat _n+⟜1⊸↓⟩ 𝕩
       m ← pe↑𝕩 ⋄ m /˜↩ ¬dm←m='.'
       (0≠⊢´)◶⟨⊑,Wrap⟩ (e - (≠m)-⊑dm⊐1)⊸f.ParseDec _cn _n 10 𝕎 m
   }{
@@ -104,6 +104,7 @@ numbers ← {kname⇐"number"
     ∨´m←𝕩∊c←"rdw" ? # r repeat; d total digits; w total bits
     ∧´¬"bx"∊˜𝕩/˜¬∨`m ? # Not part of the digit stream
       f ← {(𝕩×≠)⊸Re⊢}‿{𝕩⊸Re}‿{𝕩_wf} ⋄ Re←{𝕨⊸⥊⌾⌽𝕩}
+      "Empty segment after digit repetition prefix"!¬∨´m∧1«m
       p ← 𝕩⊔˜(¬×1+`⊢)m  # ⟨codes, ...counts, rest⟩
       n ← Nat¨ ¯1↓1↓p   # Parsed counts
       wfm←"Repetition with w requires the base to be a power of two"
