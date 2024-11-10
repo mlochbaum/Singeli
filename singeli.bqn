@@ -1380,7 +1380,7 @@ nodes ← {
     v←@ ⋄ Scope ⇐ { ext.Scope𝕩 ⋄ v ↩ pos⊸(N𝕩).AddLam¨ names }
     Eval ⇐ {
       slots ← {𝕩.Set 𝕨.Get pos⋄𝕩}⍟≢○({𝕎𝕩}⟜(N𝕩))´¨ v
-      (ext.Eval𝕩){𝔽} program._trace_ pos slots
+      (!∘"Running non-generator"˙⍟(3≠•Type) ext.Eval𝕩) program._trace_ pos slots
     }
   }
   Arg ⇐ {
