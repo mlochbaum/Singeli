@@ -102,7 +102,7 @@ numbers ← {kname⇐"number"
   }{
     # Pass digit repeater as 𝕎
     ∨´m←𝕩∊c←"rdw" ? # r repeat; d total digits; w total bits
-    ∧´¬"bx"∊˜𝕩/˜¬∨`m ? # Not part of the digit stream
+    ∨´m>↩∨`𝕩∊"bx" ? # Not part of the digit stream
       f ← {(𝕩×≠)⊸Re⊢}‿{𝕩⊸Re}‿{𝕩_wf} ⋄ Re←{𝕨⊸⥊⌾⌽𝕩}
       "Empty segment after digit repetition prefix"!¬∨´m∧1«m
       p ← 𝕩⊔˜(¬×1+`⊢)m  # ⟨codes, ...counts, rest⟩
