@@ -1709,6 +1709,10 @@ files ← {
     path ↩ •file.Parent 𝕩
     𝕩 ast.Build •file.Chars 𝕩
   }
+  RunImm ← {
+    path ↩ •wdpath
+    "(-r argument)" ast.Build 𝕩
+  }
   lib ← ('/'∾˜⍟(≠⟜(¯1⊸⊑))⍟(0<≠∘⊢)⌾⊑¨libpaths)∾<⟨"","include/"⟩
   Resolve ⇐ {
     '/'=⊑𝕩 ? •file.Exists f←𝕩∾".singeli" ? f ;
@@ -1720,7 +1724,7 @@ files ← {
     f
   }
   Include ⇐ { log∾↩<𝕩 ⋄ p←path ⋄ a←Load 𝕩 ⋄ path↩p ⋄ a }
-  Build ⇐ { log↩⟨⟩ ⋄ Load 𝕩 }
+  Build ⇐ { log↩⟨⟩ ⋄ =◶⟨RunImm⊑, Load⟩ 𝕩 }
   WriteDeps ⇐ { @≢𝕩 ? 𝕩 •file.Lines log ; @ }
 }
 
