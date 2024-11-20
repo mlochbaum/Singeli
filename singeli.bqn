@@ -348,7 +348,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
   }
 
   For ← c.for _node_ {𝕤
-    OA← "@for: multiple variables must use ""over"""⊸AsrtHere
+    OA← "@for: pointers must be followed by ""over"""⊸AsrtHere
+    OW← •Out∘"@for: pointer without ""over"" is deprecated"⍟¬
     TA← "@for: ""from"" missing ""to"""⊸Asrt
     NA← "@for: loop variable must be a name"⊸Asrt
     Get "@"
@@ -358,7 +359,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     NE← {𝕤⋄ n←⋈∘{NA@≢𝕩⋄𝕩}∘c.PhraseTryName⍟𝕩 to ⋄ to↩SimpExpr@ ⋄ n}
     {Div kIn? to↩⟨⊑NE 1,to⟩; @}
     pe← While ⟨Div∘",", Div∘kIn◶⟨⋈,⋈⟜SimpExpr⟩ Name, 0⟩
-    ps← {Div kOver?(<NE 0==to)∾𝕩; OA 0=≠𝕩⋄⟨⟩} pe          # Pointers
+    ps← {Div kOver?(<NE 0==to)∾𝕩; OA 0=≠𝕩⋄OW 0==to⋄⟨⟩} pe # Pointers
     fr← When ⟨Div kFrom, SimpExpr⟩                        # Start index
     i ← {¬Div kTo?TA 0=≠fr⋄⟨⟩; 0<=to?ps∾↩<NE 0⋄⟨⟩; NE 1}  # Index variable
     LFs@ ⋄ Get ")"
