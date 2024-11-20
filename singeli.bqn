@@ -1,4 +1,4 @@
-cpu‿libpaths‿configs ← •args
+cpu‿libpaths‿configs‿⟨ErrOut,ErrExit⟩ ← •args
 
 tab‿lf←@+9‿10
 
@@ -34,18 +34,18 @@ Tokenize←{
 Source ← { 𝕨 𝕊 src‿lc: file←𝕨⊣""
   { pos 𝕊 disp:
     r‿c←<˘⍉>pos⊏lc
-    •Out ∾⟨file, ":", •Repr 1+e←¯1⊑r, ":"⟩
-    •Out src/˜(src=lf)(⊣<+`⊸=)e
+    ErrOut ∾⟨file, ":", •Repr 1+e←¯1⊑r, ":"⟩
+    ErrOut src/˜(src=lf)(⊣<+`⊸=)e
     Tr ← {
       e ← (+`(𝕩≤¯1»𝕨≠⊸+¨𝕩))⊔𝕩⋈¨𝕨
       l ← "^"⌾(1⊑¯1⊑⊑) ⌽ "|"⌾(1⊸⊑)¨⊸∾` (1+≠e)↑e
       {∾((-⟜»𝕨)∾≠¯1⊑𝕩)↑¨""<⊸∾𝕩}˝∘⍉∘>¨ l
     }
-    •Out¨ ¯1↓⍟(∧´' '=⊑) disp Tr○((r=e)⊸/) c
+    ErrOut¨ ¯1↓⍟(∧´' '=⊑) disp Tr○((r=e)⊸/) c
   }
 }
-DispSource ← @⊸≢◶⟨•Out¨∘"(unknown position!)"‿"", {𝕎𝕩}´⟩
-Err ← { (𝕩≠⊸⥊•Out‿DispSource) {𝕎𝕩}¨ 𝕩 ⋄ •Exit 1 }
+DispSource ← @⊸≢◶⟨ErrOut¨∘"(unknown position!)"‿"", {𝕎𝕩}´⟩
+Err ← { (𝕩≠⊸⥊ErrOut‿DispSource) {𝕎𝕩}¨ 𝕩 ⋄ ErrExit@ }
 
 AsrtGotGen ← {𝕊 disp: {𝔽𝕩 ? 𝕩 ; !∾⟨𝕎𝕩," (got ",Disp𝕩,")"⟩}}
 _asrtGotR‿_asrtGotS ← AsrtGotGen¨ •Repr‿{Show𝕩}
@@ -58,7 +58,7 @@ _v1 ← {𝔽⊣"Expected at least one parameter"  1⊸≤_asrtGotR ≠}
 _v2 ← {𝔽⊣"Expected at least two parameters" 2⊸≤_asrtGotR ≠}
 
 # Error messages for generator matching
-ErrParams ← { •Out 𝕨 ⋄ ! "Parameters: "∾(0<≠)◶⟨"none",ShowMulti⟩ 𝕩 }
+ErrParams ← { ErrOut 𝕨 ⋄ ! "Parameters: "∾(0<≠)◶⟨"none",ShowMulti⟩ 𝕩 }
 _errNoMatch ← { ((∾⟜": "⍟(0<≠)𝕨)⊢⊘∾"No matching "∾𝕗) ErrParams 𝕩 }
 
 numbers ← {kname⇐"number"
@@ -205,10 +205,10 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Asrt ← {𝕨𝕊1:@;
     [v, k] ← (<"") ∾˘´ {𝕩⊸•ns.Get¨⊸≍ •ns.Keys 𝕩}¨ c‿tc
     ShowTrace⟜(v⊸⊐ ⊏ k˙)´ <˘⍉>DumpStack@
-    •Out ""
+    ErrOut ""
     F ← (⥊lf)⊸≢◶⟨"end of line", =◶⟨"keyword "∾•Repr∘⊑⟜keywords, •Repr⟩⟩
-    •Out {∾"Expected "‿𝕨‿" but saw "‿𝕩}⟜F´⍟(1<≡) 𝕨
-    •Exit 1
+    ErrOut {∾"Expected "‿𝕨‿" but saw "‿𝕩}⟜F´⍟(1<≡) 𝕨
+    ErrExit@
   }
   MakeTokStream ← {
     i←⊐𝕩 ⋄ u←keywords{𝕗⊸⊐⊣⍟(<⟜(≠𝕗))¨⊢}𝕩/˜i>¯1»⌈`i
@@ -1135,8 +1135,8 @@ program ← {
   Stack ← {𝕤
     ⟨_trace_⇐_while_⟩ ⇐ ⟨Dump⇐Arr⟩ ← MakeStack@
     Report ⇐ {𝕤
-      •Out (∧`lf⊸≠)⊸/⎊•Repr •CurrentError@
-      •Out ""
+      ErrOut (∧`lf⊸≠)⊸/⎊•Repr •CurrentError@
+      ErrOut ""
       # DispSource¨ ⌽ Dump@
       # ^ would be the easy way, but we want to compress repeats
       l ← ≠s ← Dump@
@@ -1149,10 +1149,10 @@ program ← {
       f ← i+n                         # End of displayed reps
       df ← {DispSource 𝕩˙}¨ s
       rt ← (1<n) ("Repeated "∾•Repr∘⊢∾" times:"∾/⟜" {{{")¨ (e-i)÷n
-      df rt⊸({𝕏⊣·•Out𝕨˙}¨)⌾((f-1)⊸⊏)↩
-      df {•Out∘("}}}"∾@+10)⊢𝕏}¨⌾((i/˜1<n)⊸⊏)↩
+      df rt⊸({𝕏⊣·ErrOut𝕨˙}¨)⌾((f-1)⊸⊏)↩
+      df {ErrOut∘("}}}"∾@+10)⊢𝕏}¨⌾((i/˜1<n)⊸⊏)↩
       {𝕏@}¨ ⌽ df /˜ 1≠`e≠○(l↑/⁼)f     # Remove extra iterations
-      •Exit 1
+      ErrExit@
     }
   }
   DynamicEnv ← {𝕤
@@ -1677,10 +1677,10 @@ targetNodes ← {
       c ← {𝕎∧𝕏}´{AllEq𝕩⊸⊏}¨ci
       TrE ↩ TrE⊸{t𝕊e:
         Err ← {
-          •Out m ← E "values given the same name don't match"
+          ErrOut m ← E "values given the same name don't match"
           fail ← ¬AllEq¨ sels ← ⊏⟜𝕩¨ ci
           errs ← ci {∾⟨"For ",ns⊑˜⊑𝕨," got: ",ShowMulti𝕩⟩}¨○(fail⊸/) sels
-          •Out¨ ¯1↓errs ⋄ ! program._trace_ pos ¯1⊑errs
+          ErrOut¨ ¯1↓errs ⋄ ! program._trace_ pos ¯1⊑errs
         }
         C◶Err‿T
       }
