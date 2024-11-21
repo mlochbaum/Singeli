@@ -47,7 +47,7 @@ libpaths ← (Rel⌾(1⊸⊑) ¯2 ↑ SplitEq)¨ lib
 configs ← (2 ↑ SplitEq)¨ config
 oe ↩ "stderr" ⊣´ oe
 ⟨ErrOut,ErrExit,_withErr⟩ ← ⟨@,•Exit∘1,{𝔽}⟩ (⊢∾≠⊸↓˜) {
-  "stderr": •term.ErrRaw∾⟜(@+10) ; "stdout":•Out ; "none":⊢ ;
+  "stderr": •term.ErrRaw•ToUTF8∾(@+10)˙ ; "stdout":•Out ; "none":⊢ ;
   e←"" ⋄ Out←{e∾↩𝕩∾@+10}
   {
     "bqn": ⟨Out, {𝕊:!e}, {1∘𝔽⎊{𝕊:e}}⟩ ;
