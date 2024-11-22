@@ -48,16 +48,18 @@ libpaths ← (Rel⌾(1⊸⊑) ¯2 ↑ SplitEq)¨ lib
 configs ← (2 ↑ SplitEq)¨ config
 _getShows ← {name _𝕣: ⟨@,⊢⟩ (⊢∾≠⊸↓˜) {
   "stderr": •term.ErrRaw•ToUTF8∾(@+10)˙ ; "stdout":•Out ; "none":⊢ ;
-  e←"" ⋄ Out←{e∾↩𝕩∾@+10}
-  {
-    "bqn": ⟨Out, {𝕊:e}⟩ ;
-    (p←"file=")(⊣≡≠⊸↑)𝕩? f←Rel p≠⊸↓𝕩 ⋄ ⟨Out, {𝕊: f •file.Chars e⋄𝕩}⟩ ;
-    !"Unknown "∾𝕨∾" output option: "∾𝕩
+  e←"" ⋄ Out←{e∾↩𝕩∾@+10} ⋄ write←{
+    "bqn": {𝕊:e} ;
+    (p←"file=")(⊣≡≠⊸↑)𝕩? f←Rel p≠⊸↓𝕩 ⋄ {f •file.Chars e ⋄ 𝕩} ;
+    !"Unknown "∾name∾" output option: "∾𝕩
   }𝕩
+  ⟨Out, Write⟩
 }}
-ToErrs ← {oe𝕊O‿E: {"bqn"≡oe ? ⟨O,!E,{ShowWrite∘1∘𝔽⎊E}⟩ ; ⟨O,Exit1 E,{𝔽}⟩}}
 ⟨ShowOut,ShowWrite⟩ ← "show{}" _getShows "stdout" ⊣´ os
-Exit1 ← •Exit∘1 ⊣ ShowWrite
+ToErrs ← {oe𝕊O‿E: {
+  "bqn"≡oe ? showWrite{𝕏∘1}↩ ⋄ ⟨O, !E, {𝔽⎊E}⟩ ;
+  ⟨O, •Exit∘1 ⊣ ShowWrite∘E, {𝔽}⟩
+}}
 ⟨ErrOut,ErrExit,_withErr⟩ ← ToErrs⟜("error" _getShows) "stderr" ⊣´ oe
 
 arch ← ⟨feats,⟨"strict"⟩≢inf⟩ •Import "arch.bqn"
