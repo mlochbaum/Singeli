@@ -926,13 +926,18 @@ functions ← {kname⇐"function"
 }
 
 blocks ← {
+  asrtEq ← {𝕊a:≡´_a} AsrtGotGen {∾⟜", needed "⊸∾˜○•Repr´}
   New ⇐ {𝕊 ind‿ptrs‿body‿ls‿e:
+    AsrtNP ← AsrtEq⟜((≠ptrs)⋈≠)
+    CheckLS ← "Expected generator for @for load or store" IsGen _asrtGotS ⊢
     {
-      "Wrong number of pointer arguments to @for body" ! ptrs≡○≠1⊑𝕩
-      r ← body.Eval be ← ⟨≠ind,ls,𝕩,ptrs⟩ env.Block e
+      "Expected two to four parameters" (2⊸≤∧≤⟜4)_asrtGotR ≠𝕩
+      "Wrong number of pointer arguments to @for body" AsrtNP 1⊑𝕩
+      CheckLS¨ xls ← 2↓𝕩
+      r ← body.Eval be ← ⟨≠ind, xls(⊣∾≠⊸↓)ls, 2↑𝕩, ptrs⟩ env.Block e
       be.Stores @
       r
-    }_e2
+    }
   }
 }
 

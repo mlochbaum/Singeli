@@ -1,15 +1,15 @@
 include 'skin/c'
 
 def fortup{vars,begin,end,block} = {
+  def load_t = select
+  def store_t{p,i,v} = { select{p,i} = v }
   def f{i,l} = if (i<l) {
-    block{i, vars}
+    block{i, vars, load_t, store_t}
     f{i+1, l}
   }
   f{begin,end}
 }
 
-def load{p,i} = select{p,i}
-def store{p,i,v} = { select{p,i} = v }
 fn test(a:tup{u64,u64,u64}) = {
   @fortup (r in a, k in tup{8,1,3} over _ from 1 to 3) r = k
   emit{u1, 'res', ...a}
