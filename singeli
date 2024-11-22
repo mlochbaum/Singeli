@@ -8,6 +8,7 @@ short‿long‿args‿dup‿desc ← <˘⍉> ⟨
   "h" ‿"help"  ‿0‿1‿"Print this message and exit"
   "o" ‿"out"   ‿1‿0‿"Output file (print to stdout by default)"
   "oe"‿"errout"‿1‿0‿"Error to: stderr (default), stdout, none, file=path, bqn"
+  "os"‿"show"  ‿1‿0‿"show{} to: stdout (default), stderr, none, file=path, bqn"
 # "?" ‿"stdin" ‿0‿0‿"Use stdin as input, after any argument files"
   "r" ‿"run"   ‿1‿1‿"Use this argument as source code"
   "t" ‿"target"‿1‿0‿"Output type: c (default), cpp, ir"
@@ -29,8 +30,8 @@ op ← (short⊸⊐ ⌊ long⊸⊐) •args
 op ⌈↩ c ×¬ <`⊸= op⊏args
 opts ← ((1+c)∾˜f/op) ⊔ ((op=c)(1-˜×⟜(+`))○(∾⟜1)f←¬0»op⊏args) ⊔ •args
 "Option can't be duplicated" ! ∧´ (dup∾1) ≥ 1<≠¨opts
-os ← (0⌾⊑dup∾0) (∾','⊸Spl¨)⍟⊣¨ (1⌾(¯1⊸⊑)args) ⊣◶⟨0<≠∘⊢,⊑¨⊢⟩¨ opts
-help‿out‿oe‿run‿target‿feats‿inf‿lib‿config‿pre‿namepre‿deplog‿files ← os
+olist ← (0⌾⊑dup∾0) (∾','⊸Spl¨)⍟⊣¨ (1⌾(¯1⊸⊑)args) ⊣◶⟨0<≠∘⊢,⊑¨⊢⟩¨ opts
+help‿out‿oe‿os‿run‿target‿feats‿inf‿lib‿config‿pre‿namepre‿deplog‿files ← olist
 
 { help ?
   opt_help ← ∾¨´ ⟨desc⟩ ∾˜ (1+·⌈´≠¨)⊸(↑¨)¨ short‿long ∾¨¨ ",:"
@@ -45,19 +46,23 @@ deplog ↩ @ ⊣´ Rel¨deplog
 SplitEq ← (»⊸(⊣-<)·∨`'='⊸=)⊸⊔
 libpaths ← (Rel⌾(1⊸⊑) ¯2 ↑ SplitEq)¨ lib
 configs ← (2 ↑ SplitEq)¨ config
-oe ↩ "stderr" ⊣´ oe
-⟨ErrOut,ErrExit,_withErr⟩ ← ⟨@,•Exit∘1,{𝔽}⟩ (⊢∾≠⊸↓˜) {
+_getShows ← {name _𝕣: ⟨@,⊢⟩ (⊢∾≠⊸↓˜) {
   "stderr": •term.ErrRaw•ToUTF8∾(@+10)˙ ; "stdout":•Out ; "none":⊢ ;
   e←"" ⋄ Out←{e∾↩𝕩∾@+10}
   {
-    "bqn": ⟨Out, {𝕊:!e}, {1∘𝔽⎊{𝕊:e}}⟩ ;
-    (p←"file=")(⊣≡≠⊸↑)𝕩? f←Rel p≠⊸↓𝕩 ⋄ {𝕊: f •file.Chars e ⋄ •Exit 1} ;
-    !"Unknown error output option: "∾𝕩
+    "bqn": ⟨Out, {𝕊:e}⟩ ;
+    (p←"file=")(⊣≡≠⊸↑)𝕩? f←Rel p≠⊸↓𝕩 ⋄ ⟨Out, {𝕊: f •file.Chars e⋄𝕩}⟩ ;
+    !"Unknown "∾𝕨∾" output option: "∾𝕩
   }𝕩
-} oe
+}}
+ToErrs ← {oe𝕊O‿E: {"bqn"≡oe ? ⟨O,!E,{ShowWrite∘1∘𝔽⎊E}⟩ ; ⟨O,Exit1 E,{𝔽}⟩}}
+⟨ShowOut,ShowWrite⟩ ← "show{}" _getShows "stdout" ⊣´ os
+Exit1 ← •Exit∘1 ⊣ ShowWrite
+⟨ErrOut,ErrExit,_withErr⟩ ← ToErrs⟜("error" _getShows) "stderr" ⊣´ oe
 
 arch ← ⟨feats,⟨"strict"⟩≢inf⟩ •Import "arch.bqn"
-frontend ← arch‿libpaths‿configs‿⟨ErrOut,ErrExit⟩ •Import "singeli.bqn"
+outputs ← ShowOut‿ErrOut‿ErrExit
+frontend ← arch‿libpaths‿configs‿outputs •Import "singeli.bqn"
 backend ← {
   ⟨"ir"⟩≡target ? ⊢ ;
   par ← ⟨⟨"cpp"⟩≡target,arch,"si"⊣´namepre⟩
@@ -68,4 +73,4 @@ output ← {
   •Out⍟(0<≠) ¯1⊸↓
 }
 
-{Output Backend ∾ deplog⊸Frontend¨ 𝕩}_withErr (<¨run) ∾ files
+{ShowWrite Output Backend ∾ deplog⊸Frontend¨ 𝕩}_withErr (<¨run) ∾ files

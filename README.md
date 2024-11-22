@@ -642,4 +642,8 @@ The arguments to the `singeli` command are input files and options in any order.
 
 `-n`, `--name`: Prefix to use for C functions and global variables, instead of `si_` (short for Singeli). If multiple files built with Singeli are to be included in the same project, this helps to avoid name conflicts.
 
+`-os`, `--show`: Destination for `show{}` builtin. Set to `stdout` by default; may also be set to `stderr`, `none` to discard it, `file=` followed by a path to write to a file on program exit, or `bqn` to return all output as a BQN result, allowing it to be read by a BQN program that calls Singeli.
+
+`-oe`, `--errout`: Destination for errors when the compilation fails. Set to `stderr` by default; other options same as `-os`. With `bqn` set, an error exits the current compilation rather than the program as a whole, and if there's no error causes the compilation to return `1` unless `-os bqn` is set.
+
 `-d`, `--deplog`: A file path. A list of dependencies—files read while compiling—will be placed in this file. This way an incremental compiler framework can check these files to see if this compilation needs to be re-run.

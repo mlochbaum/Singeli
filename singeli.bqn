@@ -1,4 +1,4 @@
-cpu‿libpaths‿configs‿⟨ErrOut,ErrExit⟩ ← •args
+cpu‿libpaths‿configs‿⟨ShowOut,ErrOut,ErrExit⟩ ← •args
 
 tab‿lf←@+9‿10
 
@@ -1030,7 +1030,7 @@ builtins ← {
     Repr¨⊸≍ types.primTypes
     ⍉> ⟨
       ⟨"__set",functions.Mut _p2⟩
-      ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"⋄kind⇐"error"}⊣•Out∘ShowMulti⟩
+      ⟨"show",(1≠≠)◶⊑‿{Shows⇐!∘"Multiple show used improperly"⋄kind⇐"error"}⊣ShowOut∘ShowMulti⟩
       ⟨"is",Match _p2⟩, ⟨"hastype",1‿2 _exp_ ((1≠≠)◶⟨IsTyped⊑, HasType´⟩)⟩
       ⟨"undefined",Undefined⟩, ⟨"load",Load⟩, ⟨"store",Store⟩
       ⟨"type",TypeOf _p1⟩, ⟨"kind",Sym Kind _p1⟩
