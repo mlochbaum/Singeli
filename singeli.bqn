@@ -929,7 +929,9 @@ blocks ← {
   asrtEq ← {𝕊a:≡´_a} AsrtGotGen {∾⟜", needed "⊸∾˜○•Repr´}
   New ⇐ {𝕊 ind‿ptrs‿body‿ls‿e:
     AsrtNP ← AsrtEq⟜((≠ptrs)⋈≠)
-    CheckLS ← "Expected generator for @for load or store" IsGen _asrtGotS ⊢
+    EG ← "Expected generator for @for load or store" IsGen _asrtGotS ⊢
+    LenLS ← "Wrong number of @for load or store generators"⊸AsrtNP
+    CheckLS ← IsTup◶⟨EG, EG¨⊣LenLS⟩
     {
       "Expected two to four parameters" (2⊸≤∧≤⟜4)_asrtGotR ≠𝕩
       "Wrong number of pointer arguments to @for body" AsrtNP 1⊑𝕩
@@ -1112,10 +1114,14 @@ env ← {
   Fixed⇐{ (var.Fixed¨ 𝕨) Make 𝕩 }
   Block⇐{⟨ni,Load‿Store,ind‿ptrs,names⟩ 𝕊 par:
     Reg ← "register"≡Kind
-    pv ← names functions.Declare⍟(Reg⊢)⚇∞‿0⟜(Load∘⋈⟜ind)¨ ptrs
+    pv ← names functions.Declare⍟(Reg⊢)⚇∞‿0⟜({𝕎𝕩}´)¨ load ⋈⟜(⋈⟜ind)¨ ptrs
     vars‿parent ⇐ (var.Fixed¨(ni⥊<ind)∾pv) Make par
     Stores ⇐ {𝕤
-      ptrs {IsTup 𝕩 ? 𝕨𝕊¨𝕩 ; registers.Mutated 𝕩 ? Store 𝕨‿ind‿𝕩 ;@}¨ pv
+      St ← {
+        IsTup ⊑𝕩 ? 𝕨𝕊¨⋈¨´𝕩 ;
+        s𝕊v‿p: registers.Mutated v ? S p‿ind‿v ;@
+      }
+      store St pv‿ptrs
     }
   }
 }
