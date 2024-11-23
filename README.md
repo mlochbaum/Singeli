@@ -14,7 +14,7 @@ $ singeli input.singeli [-o output.c]
 
 For options see `$ singeli -h` or [this section](#command-line-options). To run `singeli` as an executable, ensure that [CBQN](https://github.com/dzaima/CBQN) is installed as `bqn` in your executable path, or call as `/path/to/bqn singeli …`.
 
-Debugging compilation errors is easy enough since they come with parsing or stack traces (if not it's a bug—please report), and `show{}` prints whatever you want at compile time. At runtime, `lprintf{}` provided by `include 'debug/printf'` prints what you pass to it, and the emitted C code is rather verbose but it embeds source function and variable names you can use to get your bearings. The interactive [Singeli playground](https://github.com/dzaima/singeliPlayground) tool is a nice way to get parts of your code working without the awkward compile-debug loop.
+Debugging compilation errors is easy enough since they come with parsing or stack traces (if not it's a bug—please report), and `show{}` prints whatever you want at compile time. At runtime, `lprintf{}` provided by `include 'debug/printf'` prints what you pass to it, and the emitted C code is rather verbose but it embeds source function and variable names you can use to get your bearings. For tooling, the interactive [Singeli playground](https://github.com/dzaima/singeliPlayground) is a nice way to get parts of your code working without the awkward compile-debug loop, and [singeli-lsp](https://codeberg.org/dzaima/singeli-lsp) provides advanced editing features with parsing and name resolution.
 
 Early design discussion for Singeli took place at [topanswers.xyz](https://topanswers.xyz/apl?q=1623); now it's in the [BQN forum](https://mlochbaum.github.io/BQN/community/forums.html).
 
