@@ -429,7 +429,7 @@ to this:
       def to_V{a} = { f:V = vec_make{V,a} }
       f := each{to_V, flip{fib_starts{k, gap}}}
 
-Wait, I need `include 'arch/iintrinsic/basic'` to use `vec_make`! I'm using the file for x86 here because that's what my computer is, but there's `arch/neon_intrin/basic` for ARM too. It has the `vec_make` function to make a register with type `[4]u32` from four `u32` parameters, and it also defines basic arithmetic and logic for us which is good because we're going to need them!
+Wait, I need `include 'arch/iintrinsic/basic'` to use `vec_make`! I'm using the file for x86 here because that's what my computer is, but there's `arch/neon_intrin/basic` for ARM too. [It has](../include/README.md#simd-basics) the `vec_make` function to make a register with type `[4]u32` from four `u32` parameters, and it also defines basic arithmetic and logic for us which is good because we're going to need them!
 
 But it doesn't have anything to store every part of the register to a different place, like `each{store{., i, .}, d, f0}` does! And I mean, some CPUs can do this, it's called a scatter instruction, but it's not really good to use. Because of the way memory architecture works it's just a bunch of requests piled into one instruction.
 
@@ -442,7 +442,7 @@ The only way to get the most out of a store instruction is to store four values 
       re{[4]u32, ft}
     }
 
-Okay so this isn't actually a good thing to use! Because `_MM_TRANSPOSE4_PS` modifies its arguments in place, but Singeli doesn't expect it to do that! So it could squash it together with another register that isn't supposed to be modified. Here it works because the registers in `ft` don't alias with any other registers, but it would be a lot better to write the transpose with normal instructions. And educational! I'll try doing this once there's built-in support for the unpack instructions that transpose needs I think.
+Okay so this isn't actually a good thing to use! Because `_MM_TRANSPOSE4_PS` modifies its arguments in place, but Singeli doesn't expect it to do that! So it could squash it together with another register that isn't supposed to be modified. Here it works because the registers in `ft` don't alias with any other registers, but it would be a lot better to write the transpose with normal instructions. And educational! I'll try doing this once there's built-in support for the unpack instructions that transpose needs I think. (And now there is and I did it! I put an explanation in the next section!)
 
 Now what I need to do is change the loop so it makes four vectors at a time, instead of only one. To initialize it I'm just going to extend our starting points using `merge{fs, next{next{fs}}}`. Then inside the loop I want to replace all four vectors instead of just making a new one. Since the number of values I want is divisible by 16 I don't have to worry about having any leftovers at the end, but if it wasn't I'd get an error and have to fix things. Before I get into explaining it, here's all the code together!
 
@@ -470,11 +470,12 @@ Now what I need to do is change the loop so it makes four vectors at a time, ins
       scan{{a,_}=>inc{a}, copy{num, iota{2}}}
     }
 
+    # Better transpose: see below!
+    include 'arch/iintrinsic/select'
     def transpose4x4{f} = {
-      def re{T, xs} = each{reinterpret{T, .}, xs}
-      ft := re{[4]f32, f}
-      emit{void, '_MM_TRANSPOSE4_PS', ...ft}
-      re{[4]u32, ft}
+      def zip{a,b} = each{zip{a,b, .}, iota{2}}
+      def zips{{a,b}} = each{zip, a,b}
+      join{zips{zips{split{2, f}}}}
     }
 
     fn fib_fill_vector{k==4, n}(dst:*u32) : void = {
@@ -516,3 +517,51 @@ Timing the new version I get 1.9 seconds, almost twice as fast as the best strai
 But that won't get us that far either because even if I snip out *all* the computation and just use `each{store{., i, .}, d, f}` for the loop body it takes 1.6 seconds! This program goes over a whole 6GB of memory and never revisits any of it, so it doesn't get to use caches at all. And uncached memory is kind of slow, well 4GB in a second is pretty fast if you think about it but it's not always enough to keep up with a vector CPU!
 
 Anyway, I think using almost all the memory bandwidth for some Fibonacci digits I didn't really need is fun but if you need to speed it up more I know Singeli can do it!
+
+## Transposing by zipping
+
+Since Singeli added built-in [support for selection](../include/README.md#simd-selection), we can do a nice transpose implementation that doesn't need to worry about the architecture! Again, I'm using the iintrinsic one for x86, but ARM can use neon\_intrin. Here's the code:
+
+    include 'arch/iintrinsic/select'
+    def transpose4x4{f} = {
+      def zip{a,b} = each{zip{a,b, .}, iota{2}}
+      def zips{{a,b}} = each{zip, a,b}
+      join{zips{zips{split{2, f}}}}
+    }
+
+The whole thing only uses one select function, `zip{}`! What it does is to interleave two vectors, one element from the first one, then the same one from the other, and the next from the first, until they're all done. But this would end up as two vectors long, and vector instructions only output one vector, so I have to call `zip{}` twice! `zip{a,b,0}` is one half of the result and `zip{a,b,1}` is the other half. I always want both of these, so I use `each{zip{a,b, .}, iota{2}}` to get the list of both of those, since `iota{2}` is `tup{0,1}` you know. Oh and I just call it `zip` because it doesn't overlap with the built-in `zip`'s arguments, it's just a little local extension that won't affect anything outside of `transpose4x4`.
+
+Actually one-means-two zips still isn't big enough, because I have *four* vectors! The function `zips{}` uses `each{zip, a,b}` like a double-size version of `zip{}`. If `a` is `tup{a0,a1}` and `b` is `tup{b0,b1}`, we get `tup{zip{a0,b0}, zip{a1,b1}}` which is the right order if you work it out. You could even say `each{}` is sort of a zip, like `join{each{tup, a,b}}` zips two lists that are the same length, actually even more interestingly if you look at [util/tup](../include/util/tup.singeli) it has `def flip{tab} = each{tup, ...tab}` so `each` is kind of a transpose thing too!
+
+Now `zips` takes a tuple of pairs because of the extra braces around `a,b`, and it returns the same thing, but `f` is only a tuple of four vectors! So to make it two by two we have another tuple function `split{2, f}`, and to undo that and put the two halves back together we have `join{}`. And that's all the functions we need! So the actual computation `join{zips{zips{split{2, f}}}}` splits into two double-vectors, zips them together *twice*, and then un-splits.
+
+But… why does it work exactly? Since there's not much data we can start by drawing it out to see what happens at each step. Here's what we want to happen!
+
+    abcd      aeim
+    efgh  >>  bfjn
+    ijkl  >>  cgko
+    mnop      dhlp
+
+And here are the two steps, when we arrange the vectors two by two. If you look at just the first vector, `abcd` gets spaced out over the first row, and then the entire list to turn into the first result column!
+
+    abcd efgh  //  aibj ckdl  //  aeim bfjn
+    ijkl mnop  //  emfn gohp  //  cgko dhlp
+
+      01|23          30|12          23|01
+
+Under it I have some mysterious numbers! They're a better way to work on transposing once you get the hang of it, I think. Instead of a 2x2 list of vectors, I think of the original 4x4 matrix as a 2x2x2x2 shape, and I give each of the four axes a number! The axes start out in their original positions, which I write `01|23` so that the left of the `|` is the lower-order axes inside of a vector, and the right is the axes outside of a vector. These outside axes disappear when we run the program and it just becomes a jumble of registers, so we could swap them for free with a `flip{}` if we wanted! But the way we did the zipping means we don't have to! It takes the very outside axis and moves it to the inside by putting pairs of elements on each side next to each other, and shifts the other axes up to make room. Doing this twice is the same as swapping the inner two axes with the outer two, which is a 4x4 transpose!
+
+And for fun, here's an earlier version I had, that does the same steps but with a different interpretation! It does pairwise zips and leaves the pairs in place so the middle step is flipped relative to what we had before. And it uses some cool features like `{...a}` to be the same as just `a` but only matching if that argument is a list! All the eaches are kinda complicated so I'm glad I found a better way, but it's good for practice still!
+
+    def transpose4x4{f} = {
+      def zip{{...a}, {...b}, i} = each{zip{..., i}, a, b}
+      def zips{{a,b}} = each{zip{a,b,.}, iota{2}}
+      join{each{zips, zips{split{2, f}}}}
+    }
+
+    abcd efgh  ^^  aibj emfn  <>  aeim bfjn
+    ijkl mnop  vv  ckdl gohp  <>  cgko dhlp
+
+      01|23          30|21          23|01
+
+Oh also… I dunno why, but transposing `4[u32]` comes out just a little slower for me than when I was using `4[f32]` for `_MM_TRANSPOSE4_PS`. So you can re-add the casts from that version to get the same speed it had before.
