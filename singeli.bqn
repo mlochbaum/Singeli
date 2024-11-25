@@ -355,12 +355,12 @@ Parse ← {𝕊 tokens‿ShowTrace:
     Get "@"
     f ← Callable@
     Get "(" ⋄ LFs@
-    to← SimpExpr@
-    NE← {𝕤⋄ n←⋈∘{NA@≢𝕩⋄𝕩}∘c.PhraseTryName⍟𝕩 to ⋄ to↩SimpExpr@ ⋄ n}
+    to← Expr@
+    NE← {𝕤⋄ n←⋈∘{NA@≢𝕩⋄𝕩}∘c.PhraseTryName⍟𝕩 to ⋄ to↩Expr@ ⋄ n}
     {Div kIn? to↩⟨⊑NE 1,to⟩; @}
-    pe← While ⟨Div∘",", Div∘kIn◶⟨⋈,⋈⟜SimpExpr⟩ Name, 0⟩
+    pe← While ⟨Div∘",", Div∘kIn◶⟨⋈,⋈⟜Expr⟩ Name, 0⟩
     ps← {Div kOver?(<NE 0==to)∾𝕩; OA 0=≠𝕩⋄OW 0==to⋄⟨⟩} pe # Pointers
-    fr← When ⟨Div kFrom, SimpExpr⟩                        # Start index
+    fr← When ⟨Div kFrom, Expr⟩                            # Start index
     i ← {¬Div kTo?TA 0=≠fr⋄⟨⟩; 0<=to?ps∾↩<NE 0⋄⟨⟩; NE 1}  # Index variable
     LFs@ ⋄ Get ")"
     b ← Block@
@@ -407,7 +407,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   FinishTarget    ← @_tAdd_⟨kIf, tc.conds,     Expr⟩ @_tAdd_⟨
     ":",  tc.typed,  TypeTarget
     "=",  tc.same,   TargetElem
-    "==", tc.equals, SimpExpr
+    "==", tc.equals, Expr
   ⟩
   # Can't handle = or expressions containing it; don't allow == out of caution
   FinishDefTarget ← @_tAdd_⟨kIf, tc.conds, TypeExpr⟩ @_tAdd_⟨
@@ -420,7 +420,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   IdTarget ← c.newId _node_ Name
   Target ← c.target _node_ (TargetElem∘0)
 
-  Arg ← c.arg _node_ ((Try∘"...")‿Name‿":"‿SimpExpr _seq)
+  Arg ← c.arg _node_ ((Try∘"...")‿Name‿":"‿Expr _seq)
   Function ← c.function _node_ {𝕤
     a ← "("‿")" _argsFn_ Arg @
     r ← When ⟨Try":", TypeExpr⟩
