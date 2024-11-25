@@ -95,10 +95,15 @@ You're probably here for the vector processing stuff. Is this going to save me f
 
 Real built-in vector support would apparently harsh Singeli's minimalist vibe, so all you get out of the box are vector types, written like `[16]i8`. Which is better than C's `__m128` for every integer because now `a+b` has a clear meaning. Oh, and it knows which vector extensions exist, so you can test whether your target architecture supports one with `hasarch{'SSSE3'}`. Here I'm going to use x86 with vector extensions up to SSSE3 (released in 2006, yes you have it, unless you're on ARM). By default, Singeli picks up architecture flags from the current CPU to compile for native execution. Or you can specify with `-a SSSE3`, although if you're not on x86 of course you've got no way to run the output C code.
 
-To make use of my `[16]i8`s instead of leaving them to sit around and look pretty I need some definitions, which will compile to C intrinsics. There are two libraries for these right now. arch/iintrinsic/basic is a curated set of "nice" operations like load, store, and arithmetic, and arch/iintrinsic/misc is a dump of the rest (iintrinsic is "intel intrinsics", which is the target the same way C is for arch/c). I only need one macro from misc, so I'm just going to copy it over.
+To make use of my `[16]i8`s instead of leaving them to sit around and look pretty I need some definitions, which will compile to C intrinsics. There are two libraries for these right now. [arch/iintrinsic/basic](../include/README.md#simd-basics) is a curated set of "nice" operations like load, store, and arithmetic, and arch/iintrinsic/misc is a dump of the rest (iintrinsic is "intel intrinsics", which is the target the same way C is for arch/c). I only need one macro from misc, so I'm just going to copy it over.
 
     include 'arch/iintrinsic/basic'
     def shuffle{a:T==[16]i8, b:T} = emit{T, '_mm_shuffle_epi8', a, b}
+
+EDIT: That was good to build character and all, but now there's a [usable wrapper](../include/README.md#simd-selection) for shuffling (blending too, eh, let's ignore it because the instructions weren't added until after SSSE3), so I'll just patch this in:
+
+    include 'arch/iintrinsic/select'
+    def shuffle{a:T==[16]i8, b:T} = vec_shuffle{a, b}
 
 Looks like `#define`, but these `def` macros are smart: you can check compile-time conditions to decide whether it applies. If not it'll try the previous definition if any, meaning it's an overload. `shuffle` doesn't overload anything, so just errors if `a` and `b` don't have type `T` which is `[16]i8`. On the other hand, there's something we do want to overload:
 
@@ -133,7 +138,8 @@ And another cast `<~` in there. The three casts skin/cext defines are `~~` for r
 So now we can put together a function that works on any length. Language-wise there's nothing new here unless you consider an `if` statement to be a surprise. But there's a trick for handling when the two vector pointers meet in the middle. If there's one vector or less between them, we have the code for that. If there are two vectors or less, we could reverse one full and one partial vector, but that's ugly. Instead we're going to reverse two overlapping full vectors. This actually doesn't take any changes other than the loop bound. The main loop was going to read the two vectors and then write two reversed ones anyway, so the writes don't interfere with the reads.
 
     include 'arch/iintrinsic/basic'
-    def shuffle{a:T==[16]i8, b:T} = emit{T, '_mm_shuffle_epi8', a, b}
+    include 'arch/iintrinsic/select'
+    def shuffle{a:T==[16]i8, b:T} = vec_shuffle{a, b}
     fn reverse{T==i8 if hasarch{'SSSE3'}}(arr:*T, len:u64) : void = {
       def V = [16]T
       f := vec_make{V, range{16}}
@@ -173,9 +179,10 @@ And this is a macro for blend, the vector equivalent of `if (m) t else f`. Again
 Now the hard part, which is to make this work on other types. For a lot of simpler vector algorithms you mostly just have to change the vector type, so you'd write something like `def V = [128/width{T}]T` to make a 128-bit vector and you're done. Here that doesn't work because SSSE3 only has this one shuffle instruction, which works on 1-byte units. So we're going to define `V` as `[16]i8`. Then it's bit-bashing time to reverse the `T`-width units in those vectors. Here, I'll dump it all out so you can see what I'm talking about.
 
     include 'arch/iintrinsic/basic'
+    include 'arch/iintrinsic/select'
     oper &~ andnot infix none 35
     def blend{m:M, t:T, f:T} = (t & T~~m) | (f &~ T~~m)
-    def shuffle{a:T==[16]i8, b:T} = emit{T, '_mm_shuffle_epi8', a, b}
+    def shuffle{a:T==[16]i8, b:T} = vec_shuffle{a, b}
 
     fn reverse{T if hasarch{'SSSE3'}}(arr:*T, len:u64) : void = {
       def b = width{T} / 8  # width of T in bytes
@@ -217,4 +224,4 @@ First line shows `vb-b`, which is the first byte after reversing, or the start o
 
 And then the last vector is a minor variation on what we did before. Work it out yourself if you really care. Can't get reverse by subtracting the forward vector from a constant any more, so I added the reverse one to a different constant. This arithmetic all happens at runtime, so you won't get anything useful out of `show`, but `lprintf` does handle vectors.
 
-What about AVX2, or other architectures? It's all possible. NEON support is going to be pretty easy here since it has just about the same instructions: use `hasarch{'SSSE3'} or hasarch{'AARCH64'}` for the condition, qualify the `shuffle` we have here with `hasarch{'SSSE3'}`, and add a NEON one too. Then as `reverse` is compiled it'll check the architecture when it calls `shuffle` and use the right one. For AVX2 you have a few options. First thing I'd try is to change `def vb = 16` to `def vb = if (hasarch{'AVX2'}) 32 else 16`, and then make other things check `vb` as necessary. Have fun dealing with that within-lane shuffle.
+What about AVX2, or other architectures? It's all possible. NEON support is going to be pretty easy here since it has just about the same instructions: use `hasarch{'SSSE3'} or hasarch{'AARCH64'}` for the condition, qualify the `shuffle` we have here with `hasarch{'SSSE3'}`, and add a NEON one too (EDIT: now arch/neon\_intrin/basic has you covered, load conditionally with `if_inline`). Then as `reverse` is compiled it'll check the architecture when it calls `shuffle` and use the right one. For AVX2 you have a few options. First thing I'd try is to change `def vb = 16` to `def vb = if (hasarch{'AVX2'}) 32 else 16`, and then make other things check `vb` as necessary. Have fun dealing with that within-lane shuffle.
