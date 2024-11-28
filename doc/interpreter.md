@@ -564,4 +564,4 @@ And for fun, here's an earlier version I had, that does the same steps but with 
 
       01|23          30|21          23|01
 
-Oh also… I dunno why, but transposing `4[u32]` comes out just a little slower for me than when I was using `4[f32]` for `_MM_TRANSPOSE4_PS`. So you can re-add the casts from that version to get the same speed it had before.
+Oh also… I dunno why, but transposing `[4]u32` comes out just a little slower for me than when I was using `[4]f32` for `_MM_TRANSPOSE4_PS`. So you can re-add the casts from that version to get the same speed it had before.
