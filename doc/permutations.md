@@ -1,6 +1,6 @@
 # Listing all permutations
 
-Hey I found a way to list all the permutations in lexicographically increasing order, super fast! No, I don't know what it's "useful for", don't ask me questions like that!
+Hey I found a way to list all the permutations in lexicographically increasing order, at billions of permutations per second! No, I don't know what it's "useful for", don't ask me questions like that!
 
 Okay, we're going to start off with an old old algorithm that Roger Hui wrote about in 1981! There are articles explaining it in [APL](https://www.jsoftware.com/papers/50/50_19.htm), [J](https://code.jsoftware.com/wiki/Doc/Articles/Play202) and [BQN](https://saltysylvi.github.io/blog/BQNcrate-permutations.html), what about Singeli though?
 
@@ -179,6 +179,22 @@ But yeah, the reason we're stuck at 16 even though AVX2 vectors are 32 bytes is 
 
 Look out for `(l + vl-1)/vl`, that's a ceiling division! We want to write `l` total indices, but maybe that's not an even multiple of `vl`, so we have to round up. Watch out, `dst` might need to be allocated with some extra space in case `l` rounds up on the last step. Although for `k = 9` that would be `9 * fact{8}`, which is a multiple of 32 so that's all good! And on that note here's how you can make `genperms` run from the command line:
 
+    fn test_perms(perm:*u8, k:u8, fact:u64) : u1 = {
+      kw := u64^~k
+      def assert{cond} = if (not cond) return{0}
+      @for (i to fact * kw) assert{perm->i < k}
+
+      def assert_sorted{a, b} = {
+        j:u8 = 0
+        while (a->j == b->j) { ++j; assert{j < k} }
+        assert{a->j < b->j}
+      }
+      @for (i to fact - 1) {
+        assert_sorted{perm + i * kw, perm + (i + 1) * kw}
+      }
+      1
+    }
+
     include 'debug/printf'
     include 'clib/malloc'
     main(argc, argv) : i32 = {
@@ -187,7 +203,7 @@ Look out for `(l + vl-1)/vl`, that's a ceiling division! We want to write `l` to
       kl := arg_i32{1}
       if (kl > 16) { lprintf{'Too long!'}; return{-1} }
       k := u8<~kl; kw:=u64^~k
-      # Number of iterations, for testing
+      # Number of iterations, for timing
       iter:i32 = 1; if (argc > 2) iter = arg_i32{2}
 
       # Generate fact permutations, totalling size bytes
@@ -196,10 +212,132 @@ Look out for `(l + vl-1)/vl`, that's a ceiling division! We want to write `l` to
       # Last iteration is size/kw == fact bytes
       dst := alloc{u8, size + (-fact)%vl}
       @for (iter) genperms(dst, k)
-      # Have to print something to force it to run!
-      lprintf{load{dst, size - 1}}
+
+      # Always have to check something to force it to run!
+      passed:u1 = load{dst, size - 1} == 0
+      if (argc <= 2 and not test_perms(dst, k, fact)) passed = 0
+      if (not passed) lprintf{'Error!'}
       free{dst}
       0
     }
 
-I'm compiling with `gcc -O3 -march=native`, and just `./a.out 9` finishes instantly so I added an `iter` argument to make it run more than once. Now `$ time ./a.out 9 10000` shows `0m0.848s` which is 0.026 nanoseconds per index, that's right, only 26 picoseconds! So it's 10,000 times faster than my first timing of 396ns in Singeli, but just barely short for the best time of 253ns! That sounds hard to improve on but… stay tuned!
+I'm compiling with `gcc -O3 -march=native`, and just `./a.out 9` finishes instantly so I added an `iter` argument to make it run more than once. And I have a tester but it's slower than generating the permutations so it only runs if you don't set `iter`! Now `$ time ./a.out 9 10000` shows `0m0.848s` which is 0.026 nanoseconds per index, that's right, only 26 picoseconds! So it's 10,000 times faster than my first timing of 396ns in Singeli, but just barely short for the best time of 253ns!
+
+But also there's a huge drop off when I go from 9 to 10, over a factor of 3! But there's not anything we could do about that, is there? It's just dropping out of cache into main memory, right, since I don't have the 36MB of cache I'd need? Well, sort of! The shuffle instructions use one argument from a register, one argument from memory, and get written to memory. The result has to go into uncached memory unless I change the format, but the second argument loops over a pretty big region. It turns out we can make it smaller to keep those accesses to the L1 cache and get a speed boost!
+
+## Permutation association
+
+Here was our last implementation of `all_perms`!
+
+    def all_perms{k, j} = {
+      def fix_d = all_perms{k, j - 1}
+      def d = k - j
+      def start = copy{j, iota{k} == d}
+      def end = scan{{l,_} => shiftright{0, l}, start}
+      def diffs = start - end
+      def move_d = scan{+, iota{k}, diffs}
+      join{each{select{., fix_d}, move_d}}
+    }
+    def all_perms{k, 0} = tup{iota{k}}
+    def all_perms{k} = all_perms{k, k}
+
+There's a really pretty structure inside… that recursion and looping have been hiding from us! Notice how we never use `fix_d` until right at the end? First, let me pull out the part that only depends on `j`…
+
+    def all_perms{k} = {
+      def move_last{j} = {
+        def i = iota{k}
+        def start = copy{j, i == k - j}
+        def end = scan{{l,_} => shiftright{0, l}, start}
+        scan{+, i, start - end}
+      }
+      def perm_last{j} = {
+        def fix_d = perm_last{j - 1}
+        def cj = move_last{j}
+        join{each{select{., fix_d}, cj}}
+      }
+      def perm_last{0} = tup{iota{k}}
+      perm_last{k}
+    }
+
+Do you see it yet? It's a fold! The whole `perm_last{k}` definition is the same as:
+
+      fold{
+        {fix_d, cj} => join{each{select{., fix_d}, cj}},
+        tup{iota{k}},
+        each{move_last, 1 + iota{k}}
+      }
+
+Okay but it still doesn't look that nice! Well, for one thing we don't need the starting permutation list `tup{iota{k}}`, provided `k > 0`, since composing every permutation in a list with the identity just gives that list back! For another, `join{each{select{., fix_d}, cj}}` is a util/tup pattern, `flat_table{select, cj, fix_d}`. Which is weird backwards arguments, but if we look at `d = k - j` that's `k - (1 + iota{k})` which is `reverse{iota{k}}` so if we pass in `iota{k}` for `d` then we get a really clean presentation like…
+
+    def all_perms{k} = {
+      def i = iota{k}
+      def moves_to{d} = {
+        def start = copy{k - d, i == d}
+        def end = scan{{l,_} => shiftright{0, l}, start}
+        scan{+, i, start - end}
+      }
+      fold{flat_table{select, ...}, each{moves_to, i}}
+    }
+
+It still passes the tests, but this isn't actually doing the same thing, since I should have also changed it to from a left fold to a right fold to reverse everything. And actually it gets a lot slower because of that! But why's it still the same result? Remember how I said permutation composition is associative? It's a very important example of an associative but not commutative operation, even though _some_ people don't appreciate that! Well this means `flat_table{select, ...}` is also associative. If you fold it over three lists of permutations, each entry is a composition of three permutations, so the ordering of the composition doesn't affect its value. And the overall ordering is based on the position in the first argument, then the second, then the third. That also doesn't depend on whether you put the first and second together first, or the second and third!
+
+And what does associativity mean for us? We can do the fold not just left or right but in any ordering! So I can split it up this way:
+
+      def split_fold{op, args, l} = {
+        def fslice{...s} = fold{op, slice{args, ...s}}
+        op{fslice{0,l}, fslice{l}}
+      }
+      split_fold{flat_table{select, ...}, each{moves, i}, 4}
+
+This is pretty easy to compile actually! First I'm going to make some little changes to `genperms` so it takes a start and end index, kind of like `slice`, and separate out the main loop that combines permutations so I can reuse it:
+
+    def shuffle_arr{dst:(*V), src:(*V), vals, len} = {
+      def sel = vec_shuffle{16, vals, .}
+      @for (dst, src over (len + vl-1)/vl) dst = sel{src}
+    }
+
+    fn genperms_range(dst:*u8, k:u8, js:u8, je:u8) : i64 = {
+      vi := vec_make{V, range{vl} % 16} # Identity permutation
+      dv := *V~~dst
+      store{dv, 0, vi}
+      next := dst + k  # Pointer to unfinished part
+      start := vi == vec_broadcast{V, k - js}
+      @for (j from js + 1 to je + 1) {
+        start = vec_shift_left_128{start, 1}
+        end := start
+        move_d := vi
+        l := next - dst
+        @for (_ from 1 to j) {
+          end = vec_shift_right_128{end, 1}
+          move_d -= start - end
+          shuffle_arr{*V~~next, dv, move_d, l}
+          next += l
+        }
+      }
+      next - dst
+    }
+
+So our old `genperms` would do `genperms_range(dst, k, 1, k)`. But here's one with a split! When `k` is big, almost all the time gets spent in the `shuffle_arr` in this function. And one call makes `size` elements, which is `fact{e} * k` or `720 * k` bytes. We just keep reading that many bytes from `dst` and never further, which means that little section can stay in the L1 cache! Just one trick for the main loop, after reading a permutation from `tmp` you have to copy it to both lanes with `vec_select` so shuffle does what we want!
+
+    include 'clib/malloc'
+    fn genperms_split(dst:*u8, k:u8) : void = {
+      if (k == 0) return{}
+      e:u8 = 6; if (k < e) e = k  # Split point
+      l := genperms_range(dst, k, 1, e)
+      if (e < k) {
+        kw := u64^~k
+        len:u64 = 1; @for (f from u64^~e + 1 to kw + 1) len *= f
+        size := len * kw
+        tmp := alloc{u8, size + vl}
+        genperms_range(tmp, k, e, k)
+        next := dst + l
+        @for (i from 1 to len) {
+          def s = vec_select{128, load{*V~~(tmp + i * kw), 0}, tup{0,0}}
+          shuffle_arr{*V~~next, *V~~dst, s, l}
+          next += l
+        }
+        free{tmp}
+      }
+    }
+
+Now `$ time ./a.out 9 10000` shows `0m0.717s`, 22 picoseconds per index which is 10,000 times faster than the fastest Singeli version! The time for `./a.out 10 1000` is faster too, but not by as big a factor. After some thinking that makes sense, because with 9 it was reading from and writing to the L3 cache, but with 10 only the writes go to main memory so changing the reads isn't quite as much more good. But for `./a.out 11 100` the reads also don't fit in L3 and the improvement gets bigger again!
