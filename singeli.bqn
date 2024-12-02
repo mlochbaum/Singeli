@@ -25,7 +25,7 @@ Tokenize←{
   k∨↩da<∨´(»⊸∧k<𝕩⊸∊)¨wc‿oc                  # Group names, numbers, and ops
   bt←(⌈`↕∘≠×¬)k ⋄ xd←𝕩∊dig
   k∨↩»⊸∨(»(bt⊏xd)∧𝕩='e')∧(𝕩='-')∧«xd        # Negative exponents 12e-3
-  ts←n∨¬k∨ign                               # Token start mask
+  ts←(n∧b)∨¬k∨ign                           # Token start mask
   lc←(1+/𝕩=lf){(⊢⋈¨𝕩-⊏⟜(0∾𝕨))𝕨⍋𝕩}/ts        # Line/column numbers
   ⟨𝕩⊔˜1-˜(ign>≠`ab∧s∨d)¬⊸×+`ts, 𝕨 Source 𝕩‿lc⟩
 }
