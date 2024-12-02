@@ -341,3 +341,276 @@ So our old `genperms` would do `genperms_range(dst, k, 1, k)`. But here's one wi
     }
 
 Now `$ time ./a.out 9 10000` shows `0m0.717s`, 22 picoseconds per index which is 10,000 times faster than the fastest Singeli version! The time for `./a.out 10 1000` is faster too, but not by as big a factor. After some thinking that makes sense, because with 9 it was reading from and writing to the L3 cache, but with 10 only the writes go to main memory so changing the reads isn't quite as much more good. But for `./a.out 11 100` the reads also don't fit in L3 and the improvement gets bigger again!
+
+## Saving space
+
+That's really good for speed, but it does need its own allocation. I don't think it would ever be a problem, but taking it out is a good excuse to work with permutations more! Also I think you can fit it at the end of the result buffer. But anyway, it's possible to make the "outer" permutations only using some stack space. It doesn't matter if it gets a little slower because it's such a tiny fraction of the total time!
+
+My first try was to use recursion. Instead of going bottom-up like `genperms_range`, it traverses from the top down, passing a permutation `s` along and modifying it at each layer, see? So the code to make `sm` is the same as the code for `move_d` in `genperms_range`, except when it finishes it makes a recursive call instead of making a new block with `shuffle_arr`.
+
+    fn genperms_rec_sub{e}(dst:*u8, next:*u8, k:u8, j:u8, s:V) : *u8 = {
+      if (k - j <= e) {
+        if (dst == next) { # First region
+          next += genperms_range(dst, k, 1, e)
+        } else {
+          def fact{i} = if (i <= 1) 1 else i * fact{i - 1}
+          l := fact{e} * u64<~k
+          shuffle_arr{*V~~next, *V~~dst, s, l}
+          next += l
+        }
+      } else {
+        sm := vec_make{V, range{vl} % 16}
+        start := sm == vec_broadcast{V, j}
+        end := start
+        @for (_ from j to k) {
+          outer := vec_shuffle{16, s, sm}
+          next = genperms_rec_sub{e}(dst, next, k, j+1, outer)
+          end = vec_shift_right_128{end, 1}
+          sm -= start - end
+        }
+      }
+      next
+    }
+    fn genperms_rec(dst:*u8, k:u8) : void = {
+      if (k == 0) return{}
+      genperms_rec_sub{6}(dst, dst, k, 0, vec_make{V, range{vl} % 16})
+    }
+
+It's kinda just not good though? There's so much saved state along the way, and it's even a tiny bit slower from all the recursion overhead. I see 0m0.737s for `$ time ./a.out 9 10000`! And I don't like how it's recursive but with the base cases depending on previous computations, it's spooky! But it does show what sort of structure we want for generating permutations. If I write like `m_80` for case 0 of the layer that has 8 of them total, it would be…
+
+    select{select{m_90, m_80}, m_70}
+
+Wait, that's too messy! Let's define `oper $ select infix left 25` so we can write it like…
+
+    m_90 $ m_80 $ m_70
+    m_90 $ m_80 $ m_71
+    ...
+    m_90 $ m_80 $ m_76
+    m_90 $ m_81 $ m_70
+    ...
+
+For each layer of recursion there's a set of permutations, and the outermost one only does one set of changes while the others cycle around faster. We can generate some example components with the code from `all_perms` above, I packed the outputs together to make it easier to read over!
+
+    def show_moves{k, d} = {
+      def i = iota{k}
+      def start = copy{k - d, i == d}
+      def end = scan{{l,_} => shiftright{0, l}, start}
+      each{show, scan{+, i, start - end}}
+      show{''}
+    }
+    each{show_moves{7, .}, iota{3}}
+
+    tup{0,1,2,3,4,5,6}   tup{0,1,2,3,4,5,6}   tup{0,1,2,3,4,5,6}
+    tup{1,0,2,3,4,5,6}   tup{0,2,1,3,4,5,6}   tup{0,1,3,2,4,5,6}
+    tup{2,0,1,3,4,5,6}   tup{0,3,1,2,4,5,6}   tup{0,1,4,2,3,5,6}
+    tup{3,0,1,2,4,5,6}   tup{0,4,1,2,3,5,6}   tup{0,1,5,2,3,4,6}
+    tup{4,0,1,2,3,5,6}   tup{0,5,1,2,3,4,6}   tup{0,1,6,2,3,4,5}
+    tup{5,0,1,2,3,4,6}   tup{0,6,1,2,3,4,5}
+    tup{6,0,1,2,3,4,5}
+
+What I want is a way to get from one _combined_ permutation to the next. Let's say we wanted to go from `m_75 $ m_65 $ m_52` to `m_75 $ m_65 $ m_53`. We have one sort of difference with `scan{+, ...}`, but it's no good! It's more like `m_53 = update $ m_52`, with `update` on the left. Then `m_75 $ m_65 $ m_53` would be `m_75 $ m_65 $ update $ m_53`, but how do we get `update` in the middle like that? We need `m_53 = m_52 $ update` so we can compute `(m_75 $ m_65 $ m_52) $ update` and let associativity do the work! A permutation on the right side rearranges, so we need to know how to rearrange one permutation to get the next. How does that work?
+
+    tup{0,1,2,3,4,5,6}
+            X X
+    tup{0,1,3,2,4,5,6}
+            X   X
+    tup{0,1,4,2,3,5,6}
+            X     X
+    tup{0,1,5,2,3,4,6}
+            X       X
+    tup{0,1,6,2,3,4,5}
+
+Here's an example! First we have to swap two numbers that are next to each other, then two further apart, and so on. I can make a permutation that does that using the starting index `start` and distance `dist` like this!
+
+    def i = iota{7}
+    def {start, dist} = tup{2, 3}
+    def swap = i + dist * ((i == start) - (i == start + dist))
+    show{swap}                       # tup{0,1,5,3,4,2,6}
+    show{tup{0,1,4,2,3,5,6} $ swap}  # tup{0,1,5,2,3,4,6}
+
+With `dist` and `start` both broadcast to vectors that would be `vi + (dist & (vi == start)) - (dist & (vi == start + dist))`. See, `&` works because `==` sets all the result bits to 1 if it matches! Now how about to go back to the beginning? Here's the last and first permutation for each layer. I got the last row that goes between them with `show{find_index{fold{+, i, start - end}, i}}`!
+
+    tup{6,0,1,2,3,4,5}   tup{0,6,1,2,3,4,5}   tup{0,1,6,2,3,4,5}
+         / / / / / /         |  / / / / /         | |  / / / /
+    tup{0,1,2,3,4,5,6}   tup{0,1,2,3,4,5,6}   tup{0,1,2,3,4,5,6}
+
+    tup{1,2,3,4,5,6,0}   tup{0,2,3,4,5,6,1}   tup{0,1,3,4,5,6,2}
+
+There are three parts to each of these permutations. It starts out like `iota{k}`, but it skips a step, but that skipped number comes back at the end! I can get the skipped step with `vi - (vi >= start)`, subtract not add because a true comparison gives `-1`! Then to fix up the last number there's another useful instruction from iintrinsic/select, blend! I'll write `blend_hom{vi - (vi >= start), start, is_last}`, which changes my vector to `start` where `is_last` is true. The `_hom` part stands for homogeneous! That means it assumes every element of the last argument is all 0 or all 1, exactly what we get out of a comparison! The blend instruction in AVX2 depends on the top bit, so `blend_hom` is the same as `blend_top` in that architecture. But `blend_hom` is more portable when we can make sure all the other bits are the same as the top one!
+
+So now all I need to do is apply these operations in the right order. Here it is! The beginning goes just like `genperms_split`, but the way to update `s` is a little complicated!
+
+    oper ** vec_broadcast infix right 55
+
+    fn genperms_counter(dst:*u8, k:u8) : void = {
+      if (k == 0) return{}
+      e:u8 = 6; if (k < e) e = k  # Split point
+      l := genperms_range(dst, k, 1, e)
+      if (e < k) {
+        next := dst + l
+        digits:*u8 = @for_const (16) 0  # The counter
+        vi := vec_make{V, range{vl} % 16}
+        is_last := vi == V**(k - 1)
+        start_e := V**(k - 1 - e)
+        s := vi  # The outer permutation
+        while (1) {
+          # Increment first, genperms_range already did one iteration!
+          i := e; start := start_e
+          d := undefined{u8}
+          while ((d = digits->i) == i) { # Digit rolls over to 0
+            digits <-{i} 0
+            shift := blend_hom{vi - (vi >= start), start, is_last}
+            s = vec_shuffle{16, s, shift}
+            ++i; start -= V**1
+            if (i == k) return{}
+          }
+          # Some digit always increases by 1
+          ++d; digits <-{i} d
+          dist := V**d
+          swap := vi + (dist & (vi == start)) - (dist & (vi == start + dist))
+          s = vec_shuffle{16, s, swap}
+          # Now shuffle
+          shuffle_arr{*V~~next, *V~~dst, s, l}
+          next += l
+        }
+      }
+    }
+
+On every step, we increment the last digit of our counter. If that overflows, then we do a shift instead of a swap for that digit and move up to the next digit. When we move past the top digit we're done!
+
+It's a little faster than `genperms_rec` but still slower than `genperms_split`! I have to speed up that counter!
+
+## Counting quick
+
+I explained it to Ford because he always has helpful suggestions. He said it was "like a model train set that takes up an entire room of someone's house", yay! And also he had a really cool idea for the counter. I was trying to apply SIMD instructions, but they're not very good for this because they're not designed to communicate between the elements too much. Ford said I can use regular addition!
+
+    0x552 + 0x9ab = 0xefd
+    0x553 + 0x9ab = 0xefe
+    0x554 + 0x9ab = 0xeff
+    0x600 + 0x900 = 0xf00
+
+The trick is you add an offset to each digit, so when it reaches 16 it wraps around in hex. 64 bits is exactly enough to fit 16 4-bit digits, perfect! Each digit wraps all the way back to 0 so you have to re-add the offset at those places, but we need to know the number of wrapped digits anyway which helps with that. And it's done when all the digits wrap!
+
+But one more thing before _we're_ done, with such a nice counter I'd hate to loop on the wrapped digit count! The effect of all the `shift`s only depends on the how many there are, since we always wrap the lowest one, then the one above it, and so on, until they stop wrapping. If you have the wrap permutations from before, `reverse{scan{select,reverse{wraps}}}` shows what they do cumulatively:
+
+    tup{3,4,5,6,2,1,0}
+    tup{0,3,4,5,6,2,1}
+    tup{0,1,3,4,5,6,2}
+    tup{0,1,2,3,4,5,6}  # No digits!
+
+This isn't too complicated! It's the top permutation `tup{3,4,5,6,2,1,0}` shifted over, with `iota{k}` filling in the spots it leaves behind. If you go from bottom to top you can follow how it got that way, first the `2` moves over to the right, then the `1` but it pushes the `2` out of the last slot, then the `0`. But we don't have to compute it that way! We'll pre-compute `tup{3,4,5,6,2,1,0}`, then shift it over with a shuffle by `iota{k} - x`, and use a blend to fill in the entries where that was negative. Specifically `blend_top`, because the top bit is the sign bit!
+
+So here's the function using all that stuff. And also the count-trailing-zeros function `ctz` to figure out how many digits wrapped, since it's practically designed for that!
+
+    def ctz{x:(u64)} = emit{u8, '__builtin_ctzll', x}
+
+    fn genperms_flat(dst:*u8, k:u8) : void = {
+      if (k == 0) return{}
+      e:u8 = 6; if (k < e) e = k  # Split point
+      l := genperms_range(dst, k, 1, e)
+      if (e < k) {
+        next := dst + l
+        vi := vec_make{V, range{vl} % 16}
+        s := vi  # The outer permutation
+        rev := V**(k - 1) - vi
+        rot := blend_hom{rev, vi + V**(k - e), vi < V**e}
+        # Counter: 16 digits times 4 bits each
+        base:u64 = u64~~0x0123456789abcdef >> (4 * e)
+        digits := base
+        while (1) {
+          # Increment first, genperms_range already did one iteration!
+          ++digits
+          nz := ctz{digits} / 4  # Number of zero digits
+          i := e + nz
+          if (i == k) return{}
+          nb := 4 * nz
+          digits |= base & ((u64~~1 << nb) - 1)
+          d := u8<~(((digits - base) >> nb) & 0xf)
+          # shift_rev handles digits that roll to 0, swap handles increment
+          vo := V**i - rev
+          vs := vo - V**1
+          shift_rev := blend_top{vec_shuffle{16, rot, vs}, vi, vs}
+          s = vec_shuffle{16, s, shift_rev}
+          dist := V**d
+          swap := vi + (dist & (vo == V**0)) - (dist & (vo == dist))
+          s = vec_shuffle{16, s, swap}
+          # Now shuffle
+          shuffle_arr{*V~~next, *V~~dst, s, l}
+          next += l
+        }
+      }
+    }
+
+It's finally the same speed as `genperms_split`, 0m0.716s! It barely even gets slower if I decrease `e` to 5, which for `k = 9` means a block is only 34 vectors, so the part that updates `s` is really fast! Another cool thing we can do with this function is take away the `next += l` at the end to see how fast it would be if it wasn't bottlenecked by writing to memory. This could happen if you could use each block of permutations after generating it and didn't need it any more, so you could write over the space it's in. Also make sure to decrease the allocation in `main` though! This is so fast I can run `time ./a.out 14 1` in 0m16.079s, that's 13 picoseconds per index or 76GB/s!
+
+You could even avoid having to save the first block if you could find the permutation that transforms one block to the next. I don't know if there's a tricky way to do this, the best I could think of was to make the inverse of `s` along with `s` so you can combine the inverse of the last step each time. Which is not that hard since `swap` is its own inverse and `shift_rev` just needs some more shifting and blending. But I think… at least for now… I'll leave it as an exercise!
+
+Okay there were a lot of steps along the way so I decided to put everything together for a unified definition of `genperms_flat`!
+
+    include 'skin/c'
+    include 'skin/cext'
+    include 'arch/c'
+    include 'util/for'
+    include 'arch/iintrinsic/basic'
+    include 'arch/iintrinsic/select'
+
+    def vl = 32; def V = [vl]u8
+    oper ** vec_broadcast infix right 55
+    def ctz{x:(u64)} = emit{u8, '__builtin_ctzll', x}
+
+    fn genperms_flat(dst:*u8, k:u8) : void = {
+      if (k == 0) return{}
+      vi := vec_make{V, range{vl} % 16}
+      dv := *V~~dst
+      store{dv, 0, vi}  # One identity permutation to start with
+      next := dst + k   # Pointer to unfinished part
+      l := next - dst   # Current block length
+      def add_block{vals} = {
+        def sel = vec_shuffle{16, vals, .}
+        @for (dst in *V~~next, dv over (l + vl-1)/vl) dst = sel{dv}
+        next += l
+      }
+
+      # Increase block size from k to k*fact{e}
+      e:u8 = 6; if (k < e) e = k  # Split point
+      rev := V**(k - 1) - vi
+      start := rev == V**0
+      @for (j from 2 to e + 1) {
+        start = vec_shift_left_128{start, 1}
+        end := start
+        move_d := vi
+        @for (_ from 1 to j) {
+          end = vec_shift_right_128{end, 1}
+          move_d -= start - end
+          add_block{move_d}
+        }
+        l = next - dst
+      }
+      if (k == e) return{}
+
+      # Do the rest with a fixed block size
+      s := vi  # The outer permutation
+      rot := blend_hom{rev, vi + V**(k - e), vi < V**e}
+      # Counter: 16 digits times 4 bits each
+      base := u64~~0x0123456789abcdef >> (4 * e)
+      digits := base
+      while (1) {
+        # One iteration is done, so start with increment!
+        ++digits
+        nz := ctz{digits} / 4  # Number of zero digits
+        i := e + nz
+        if (i == k) return{}
+        nb := 4 * nz
+        digits |= base & ((u64~~1 << nb) - 1)
+        d := u8<~(((digits - base) >> nb) & 0xf)
+        # shift_rev handles digits that roll to 0, swap handles increment
+        vo := V**i - rev
+        vs := vo - V**1
+        shift_rev := blend_top{vec_shuffle{16, rot, vs}, vi, vs}
+        s = vec_shuffle{16, s, shift_rev}
+        dist := V**d
+        swap := vi + (dist & (vo == V**0)) - (dist & (vo == dist))
+        s = vec_shuffle{16, s, swap}
+        add_block{s}
+      }
+    }
