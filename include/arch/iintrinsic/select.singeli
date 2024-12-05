@@ -149,7 +149,9 @@ local def vec_shuffle_proc{...spec, V=[_]vT, vals, {...inds}} = {
 }
 
 # For convenience, allow indices to be written directly without tup
+def vec_select {val, ...inds if 1 < length{inds}} = vec_select {val, inds}
 def vec_shuffle{val, ...inds if 1 < length{inds}} = vec_shuffle{val, inds}
+def vec_select {spec if knum{spec} or ktyp{spec}, val, ...inds if 1 < length{inds}} = vec_select {spec, val, inds}
 def vec_shuffle{spec if knum{spec} or ktyp{spec}, val, ...inds if 1 < length{inds}} = vec_shuffle{spec, val, inds}
 # Main definitions
 def vec_shuffle{...spec, val:    V=[_]_      , {...inds}} = vec_shuffle_proc{...spec, V, tup{val}, inds}
