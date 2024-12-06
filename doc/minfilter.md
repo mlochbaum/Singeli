@@ -417,12 +417,13 @@ Look, dig into it if you want to, but do it on your own time. If it even reprodu
 
 Oh, right… So do you know a good way to do that?
 
-We have some vector scan code already, for prefix sums, let me find it… Rolling average uses it, takes the prefix sum and then differences of that based on the window size. Come to think of it, we could probably do that without putting the sum in a buffer. I remember there are problems if the window is larger than the result but something like that scan-fold-scan thing should work. Anyway, here's the scan. Along with our lovely collection of shuffle instructions courtesy of Intel.
+We have some vector scan code already, for prefix sums, let me find it… Rolling average uses it, takes the prefix sum and then differences of that based on the window size. Come to think of it, we could probably do that without putting the sum in a buffer. I remember there are problems if the window is larger than the result but something like that scan-fold-scan thing should work. Anyway, here's the scan. Along with our lovely collection of shuffle instructions courtesy of Intel. This is old code, I'd shuffle with iintrinsic/select now.
 
     include 'arch/c'
     include 'skin/c'
     include 'skin/cext'
     include 'util/for'
+    include 'util/tup'
     include 'arch/iintrinsic/basic'
 
     # Lane crossing permutes shuf_32 and shuf_64 are much slower
@@ -461,7 +462,7 @@ We have some vector scan code already, for prefix sums, let me find it… Rollin
       def shift{v, k==128} = {
         # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
         def S = [8]i32; def perm = '_mm256_permute2x128_si256'
-        V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 16b02}
+        V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 0x02}
       }
       # Scan steps from width k to end
       def pre{v, k} = if (k < width{V}) pre{op{v, shift{v,k}}, 2*k} else v
@@ -476,7 +477,7 @@ We have some vector scan code already, for prefix sums, let me find it… Rollin
         r = op{pre{x}, p}
         p = to_last{r}
       }
-      if (q) {
+      if (q != 0) {
         m := vec_make{V, range{vlen}} < vec_broadcast{V, T<~q}
         s := op{pre{x->e}, p}
         r <-{e} blend{m, s, r->e}
@@ -532,11 +533,11 @@ Oh, the lane thing, right! So we actually have… *two* lanes, and then when tho
       def shift{v:V, k==128} = {
         # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
         def S = [8]i32; def perm = '_mm256_permute2x128_si256'
-        V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 16b02}
+        V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 0x02}
       }
       # Scan steps from width k to end
       def pre{v:V, k} = if (k < width{V}) pre{op{shift{v,k}, v}, 2*k} else v
-      {v:V} => pre{v, width{eltype{V}}}
+      {v:V=[_]T} => pre{v, width{T}}
     }
 
       def pre = make_scan_vec{op}
@@ -562,9 +563,9 @@ Now, we can't just drop min into your scan\_vec. Shifting in zeros is going to k
 
 Oh, right, we should shift in the identity value instead!
 
-But the instruction we *have* shifts in zeros. Adding a bitwise or to each step isn't great. Better idea: we shuffle instead of shifting, and repeat the first value?
+But the instruction we *have* shifts in zeros. Adding a bitwise or each step isn't great. Better idea: we shuffle instead of shifting, and repeat the first value? By the way, would you mind switching this permute2x128 call over to vec\_select? No reason to keep subjecting ourselves to that thing.
 
-Oh, like this! Also, here, I can separate the shift pattern!
+Oh, like this! Also, here, I can separate the shift pattern to get ready!
 
     #                            aaaaAAAA
     #                            ababABAB
@@ -575,34 +576,33 @@ Oh, like this! Also, here, I can separate the shift pattern!
     # at increasing power-of-two shifts
     def prefix_byshift{op, sh} = {
       def pre{v:V, k} = if (k < width{V}) pre{op{v, sh{v,k}}, 2*k} else v
-      {v:V} => pre{v, width{eltype{V}}}
+      {v:V=[_]T} => pre{v, width{T}}
     }
 
+    include 'arch/iintrinsic/select'
     def make_scan_vec{op==(+)} = {
       def shift{v:V, k} = shl_lane{v, k/8}
+      # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
       def shift{v:V, k==128} = {
-        # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
-        def S = [8]i32; def perm = '_mm256_permute2x128_si256'
-        V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 16b02}
+        vec_select{k, tup{to_lane_last{v}, vec_broadcast{V,0}}, 2,0}
       }
       prefix_byshift{op, shift}
     }
 
-So our shared code is down to… two lines. Although they are the hardest two. So the caller only provides a shift function. That's not awful.
+So our shared code is down to… two lines. Although they're the hardest two, caller only provides a shift function. That's not awful.
 
 The shift also doesn't depend on the operation! Or even the starting size, since you use the same shift for 4-byte or 2-byte that's already been shifted once or 1-byte that—wait, the last shift for 16-byte does, but to\_lane\_last reads it from the argument so you don't see it.
 
 So, what's that mean, you can even define it on the outside?
 
     def shift_zero{v:V, k} = shl_lane{v, k/8}
+    # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
     def shift_zero{v:V, k==128} = {
-      # Add end of lane 0 to entire lane 1, correcting for lanewise shifts
-      def S = [8]i32; def perm = '_mm256_permute2x128_si256'
-      V~~emit{S, perm, S~~to_lane_last{v}, vec_broadcast{S,0}, 16b02}
+      vec_select{k, tup{to_lane_last{v}, vec_broadcast{V,0}}, 2,0}
     }
     def make_scan_vec{op==(+)} = prefix_byshift{op, shift_zero}
 
-Trippy. Clearer to keep it all bundled together though, that shift\_zero thing is not a generally usable macro.
+Trippy. Better keep it buried though, that shift\_zero thing is not a generally usable macro.
 
 Okay I tweaked the prefix generator a little and here's an interpreted min scan! I took your strategy for shift, so it takes a slice of the first k numbers and shifts them into the original list instead of zeros!
 
@@ -634,20 +634,25 @@ Okay sure!
     def shift_ind{k,l} = shiftright{range{k},range{l}}
     def shift{v,k} = select{v, shift_ind{k,length{v}}}
 
-Oh, uh, yeah, that works. So I take the plus scan thing and replace the shift with a shuffle? May as well do a dedicated 32-bit one too, probably not any faster but it won't waste a register. Then for the last step… maybe not the most elegant way but using the un-permuted vector instead of zeros works.
+Oh, uh, yeah, that works. So I take the plus scan thing and replace the shift with a shuffle? Then for the last step… maybe not the most elegant way but using the un-permuted vector instead of zeros works.
 
     def make_scan_idem{T, op} = {
       def shift_ind{k,l} = shiftright{range{k},range{l}}
-      def shift{v:V, k         } = shuf_lane_8 {v, shift_ind{k/8,16}}
-      def shift{v:V, k if k>=32} = shuf_lane_32{v, shift_ind{k/32,4}}
-      def shift{v:V, k if k==128} = {
-        def S = [8]i32; def perm = '_mm256_permute2x128_si256'
-        V~~emit{S, perm, S~~to_lane_last{v}, v, 16b02}
-      }
+      def shift{v:V, k} = shuf_lane_8{v, shift_ind{k/8,16}}
+      def shift{v:V, k==128} = vec_select{k, tup{to_lane_last{v}, v}, 2,0}
       prefix_byshift{op, shift}
     }
 
-Great! And then the outer loop is the same?
+Nah, hold on, we can fix k to 1 and simplify some of this index stuff if we set the right shuffle element. Better when the element size gets to 32 bits too because those shuffles put the index in the immediate instead of a new vector. Maybe the C compiler'd optimize the 8-bit version, but you never know.
+
+    def make_scan_idem{T, op} = {
+      def shift_ind{l} = shiftright{0, range{l}}
+      def shift{v:V, k} = vec_shuffle{primtype{'i',k}, v, shift_ind{128/k}}
+      def shift{v:V, k==128} = vec_select{k, tup{to_lane_last{v}, v}, 2,0}
+      prefix_byshift{op, shift}
+    }
+
+Oh that's so cool! And then the outer loop is the same?
 
 Yeah, let's just copy that body for now, and we change pre, and initializer's passed in instead of always being zero. Done.
 
@@ -668,7 +673,7 @@ Right.
         r = op{r, op{pre{x}, p}}
         p = to_last{r}
       }
-      if (q) {
+      if (q != 0) {
         m := vec_make{V, range{vlen}} < vec_broadcast{V, T<~q}
         re:= r->e
         s := op{pre{x->e}, p}
@@ -676,10 +681,10 @@ Right.
       }
     }
 
-    1.7209255ns/elt at width 4, half: 47590078, end: 667920292
-    0.48559672ns/elt at width 200, half: 15405690, end: 11431447
+    1.7776541ns/elt at width 4, half: 47590078, end: 667920292
+    0.64667934ns/elt at width 200, half: 15405690, end: 11431447
 
-That's just one of the scans replaced, fair amount of improvement on the larger window.
+That's just one of the scans replaced, decent improvement on the larger window.
 
 But the width 4 was under a nanosecond before!
 
@@ -695,4 +700,4 @@ Yeah, you have the definition up here with a mask. It's a pretty common pattern,
 
 But the last step does write over the end, right? Even though it doesn't change anything.
 
-We manage the allocations so there's space for it. It's pretty cheap, since it doesn't matter what's after the destination array as long as we can write to it.
+We manage the allocations so there's space for it. It's pretty cheap, since it doesn't matter what's after the destination array as long as we can write to it. Oh yeah, but if another thread modifies that space in between the read and write then the modification disappears, so watch the concurrency.
