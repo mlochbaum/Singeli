@@ -3,11 +3,7 @@ local {
   include 'util/kind'
   oper ~~ reinterpret infix right 55
   def base{b,{}} = 0; def base{b,{h,...t}} = h + b*base{b,t}
-
-  def all = match {
-    {{t}} => t
-    {t} => { def h=length{t}>>1; all{slice{t,0,-h} & slice{t,h}} }
-  }
+  def all{t} = is{t, 0 <= t}
 
   def fmt_p{T} = {
     if (isfloat{T}) {

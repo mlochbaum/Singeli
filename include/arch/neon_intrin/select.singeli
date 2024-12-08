@@ -2,11 +2,8 @@ local {
   include 'skin/cop'
   include 'util/kind'
   oper ~~ reinterpret infix right 55
+  def all{t} = is{t, 0 <= t}
 
-  def all = match {
-    {{t}} => t
-    {t} => { def h=length{t}>>1; all{slice{t,0,-h} & slice{t,h}} }
-  }
   def emit_intrin{V=[_]T, name, ...args} = {
     def intrin = merge{
       name,

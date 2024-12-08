@@ -74,10 +74,7 @@ local {
   def can_elt = match { {[_]T, x:T} => 1; {_,x} => num{x} }
   def can_make_sub = can_elt
   def can_make_sub{V=[k]_, {...x}} = {
-    def all = match {
-      {{t}} => t
-      {t} => { def h=length{t}>>1; all{slice{t,0,-h} & slice{t,h}} }
-    }
+    def all{t} = is{t, 0 <= t}
     k==length{x} and all{each{can_elt{V,.}, x}}
   }
   def can_make{V,x} = go{V} and has_make{V} and can_make_sub{V,x}
