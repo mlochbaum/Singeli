@@ -175,9 +175,9 @@ Okay we're all set! My compiled code is going to be a lot like the latest defini
 
 Too bad to see the scans turn into mutation but that's how it goes. For `select` we have `vec_shuffle{16, ...}` from iintrinsic/select, and I guess I've gotta point out that this function is only good for `k` up to 16! Haha, regular 16, not 16 factorial! But `16 * fact{16}}` is `0x0001307777580000` bytes and you know it's a pretty big number when Singeli starts writing it as hex, so this is probably good for practical purposes, if they exist that is! Well, I just checked and `(16 * fact{16}) / fold{*, copy{4*3, 10}}` is 335 terabytes so it's not like impossible but that's a lot of hard drives, anyway `16` _is_ covered, it's 17 that doesn't work and that's 6 whole petabytes!
 
-But yeah, the reason we're stuck at 16 even though AVX2 vectors are 32 bytes is that its selection works in lanes, it splits the vectors in half and does one selection on one half and another—well, think of it like an `each` that maps over two sets of lanes really! I started with AVX2 since Ford says I have to get more comfortable with lanes, except because I don't handle `k > 16` there's not much to do really! I just make sure the two halves of `move_d` are the same, so when I run `sel{dv}` it does the same thing to every number in `dv`. Part of that is using `vec_shift_left_128` and `vec_shift_right_128` for the AVX2 versions of `shiftleft` and `shiftright`. The `128` means they work on 128-bit lanes!
+But yeah, the reason we're stuck at 16 even though AVX2 does 32-byte vectors is that it selects in lanes, so it breaks the vectors in half and does one selection on one half and another—well, think of it like an `each` that maps over two sets of lanes really! I started with AVX2 since Ford says I have to get more comfortable with lanes, except because I don't handle `k > 16` there's not much to do really! I just make sure the two halves of `move_d` are the same, so when I run `sel{dv}` it does the same thing to every number in `dv`. One thing is I use `vec_shift_left_128` and `vec_shift_right_128` for the AVX2 versions of `shiftleft` and `shiftright`. The `128` means they work on 128-bit lanes!
 
-Look out for `(l + vl-1)/vl`, that's a ceiling division! We want to write `l` total indices, but maybe that's not an even multiple of `vl`, so we have to round up. Watch out, `dst` might need to be allocated with some extra space in case `l` rounds up on the last step. Although for `k = 9` that would be `9 * fact{8}`, which is a multiple of 32 so that's all good! And on that note here's how you can make `genperms` run from the command line:
+Look out for `(l + vl-1)/vl`, that's a ceiling division! We want to write `l` total indices, but maybe that's not an even multiple of `vl`, so we have to round up. And that means `dst` might need to be allocated with some extra space in case `l` rounds up on the last step. Although for `k = 9` that would be `9 * fact{8}`, which is a multiple of 32 so that's all good! On that note here's how you can make `genperms` run from the command line:
 
     fn test_perms(perm:*u8, k:u8, fact:u64) : u1 = {
       kw := u64^~k
@@ -389,7 +389,7 @@ Wait, that's too messy! Let's define `oper $ select infix left 25` so we can wri
     m_90 $ m_81 $ m_70
     ...
 
-For each layer of recursion there's a set of permutations, and the outermost one only does one set of changes while the others cycle around faster. We can generate some example components with the code from `all_perms` above, I packed the outputs together to make it easier to read over!
+For each layer of recursion there's a set of permutations, and the outermost one only ever does one set of changes while the others cycle around faster. We can generate some example components with the code from `all_perms` above, I packed the outputs together to make it easier to read over!
 
     def show_moves{k, d} = {
       def i = iota{k}
@@ -482,7 +482,7 @@ It's a little faster than `genperms_rec` but still slower than `genperms_split`!
 
 ## Counting quick
 
-I explained it to Ford because he always has helpful suggestions. He said it was "like a model train set that takes up an entire room of someone's house", yay! And also he had a really cool idea for the counter. I was trying to apply SIMD instructions, but they're not very good for this because they're not designed to communicate between the elements too much. Ford said I can use regular addition!
+I explained it to Ford because he's always so helpful with suggestions. He said it was "like a model train set that takes up an entire room of someone's house", yay! And also he had a really cool idea for the counter. I kept trying to apply SIMD instructions, but they're not very good for this because they're not designed to communicate between the elements too much. Ford said I can use regular addition!
 
     0x552 + 0x9ab = 0xefd
     0x553 + 0x9ab = 0xefe
@@ -491,14 +491,14 @@ I explained it to Ford because he always has helpful suggestions. He said it was
 
 The trick is you add an offset to each digit, so when it reaches 16 it wraps around in hex. 64 bits is exactly enough to fit 16 4-bit digits, perfect! Each digit wraps all the way back to 0 so you have to re-add the offset at those places, but we need to know the number of wrapped digits anyway which helps with that. And it's done when all the digits wrap!
 
-But one more thing before _we're_ done, with such a nice counter I'd hate to loop on the wrapped digit count! The effect of all the `shift`s only depends on the how many there are, since we always wrap the lowest one, then the one above it, and so on, until they stop wrapping. If you have the wrap permutations from before, `reverse{scan{select,reverse{wraps}}}` shows what they do cumulatively:
+But one more thing before _we're_ done, with such a nice counter I'd hate to loop on the wrapped digit count! The effect of all the `shift`s only depends on the how many there are, I mean we always wrap the lowest one, then the one above it, and so on, until they stop wrapping. If you have the wrap permutations from before, `reverse{scan{select,reverse{wraps}}}` shows what they do cumulatively:
 
     tup{3,4,5,6,2,1,0}
     tup{0,3,4,5,6,2,1}
     tup{0,1,3,4,5,6,2}
     tup{0,1,2,3,4,5,6}  # No digits!
 
-This isn't too complicated! It's the top permutation `tup{3,4,5,6,2,1,0}` shifted over, with `iota{k}` filling in the spots it leaves behind. If you go from bottom to top you can follow how it got that way, first the `2` moves over to the right, then the `1` but it pushes the `2` out of the last slot, then the `0`. But we don't have to compute it that way! We'll pre-compute `tup{3,4,5,6,2,1,0}`, then shift it over with a shuffle by `iota{k} - x`, and use a blend to fill in the entries where that was negative. Specifically `blend_top`, because the top bit is the sign bit!
+This isn't too complicated! The section `tup{3,4,5,6}` shifts around but doesn't change, and the spots before it are like `iota{k}`, and the rest of the numbers go backwards at the end. If you go from bottom to top you can follow how it got that way, first the `2` moves over to the right, then the `1` but it pushes the `2` out of the last slot, then the `0`. But we don't have to compute it like that! We'll make `tup{3,4,5,6,2,1,0}` once before the loop, then shift it over with a shuffle by `iota{k} - x`, and use a blend to fill in the entries where that was negative. Specifically `blend_top`, because the top bit is the sign bit!
 
 So here's the function using all that stuff. And also the count-trailing-zeros function `ctz` to figure out how many digits wrapped, since it's practically designed for that!
 
@@ -614,3 +614,7 @@ Okay there were a lot of steps along the way so I decided to put everything toge
         add_block{s}
       }
     }
+
+I like to think of this as two permutation methods mixed together, and it's not that hard to separate them either! The first one is our very first AVX2 function `genperms`, which you get just by always setting `e` to `k`! Then `if (k == e) return{}` always returns and the code after doesn't do anything. This one always runs on the biggest block size it can. The other method is if you set `e` to `0` or `1`, and it doesn't do blocks at all, the only permutation that's ever read from `dv` is the identity! So you'd want to make a lot more changes to the code really, to skip that and write the vector `vals` right away. Then this method is a slower but zero-memory way to loop through all the permutations!
+
+Our combination lets us choose `e` to get the best of both worlds, top speed and low memory use. It's sort of a tradeoff but a really easy one, re-reading a few kilobytes of memory and a few percent of CPU overhead are really low costs! But one last thought… especially if `k` is fixed you could set a low `e` like `4` and keep the whole first permutation block in registers!
