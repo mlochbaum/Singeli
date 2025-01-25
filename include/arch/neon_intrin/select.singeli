@@ -124,8 +124,8 @@ def blend_bit{f:V=[k]T, t:V, m:M=[k]_ if width{V}==width{M}} = {
 def blend_hom{f:V=[k]T, t:V, m:M=[k]_} = blend_bit{f, t, m}
 
 # For x86 compatibility
-def vec_shift_left_128  = vec_shift_left
-def vec_shift_right_128 = vec_shift_right
-def vec_merge_shift_left_128  = vec_merge_shift_left
-def vec_merge_shift_right_128 = vec_merge_shift_right
-def zip128 = zip
+def vec_shift_left_128 {x:V=[_]_, n} = vec_shift_left {x, n}
+def vec_shift_right_128{x:V=[_]_, n} = vec_shift_right{x, n}
+def vec_merge_shift_left_128 {a:V=[_]_, b:V, n} = vec_merge_shift_left {a, b, n}
+def vec_merge_shift_right_128{a:V=[_]_, b:V, n} = vec_merge_shift_right{a, b, n}
+def zip128{a:V=[_]_, b:V, half} = zip{a, b, half}

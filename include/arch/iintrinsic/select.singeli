@@ -233,9 +233,17 @@ def zip{a:V=[_]_, b:V, half if width{V}==128} = zip128{a, b, half}
 # Directions left and right are opposite to instruction l and r!
 local {
   def has_sh{w, sse} = hasarch{match (w) { {128}=>sse; {256}=>'AVX2'; {512}=>'AVX512BW' }}
-  def has_sh{V=[_]T, sse} = isint{T} and has_sh{width{V}, sse}
+  def has_sh{V=[_]T, sse, n} = isint{T} and has_sh{width{V}, sse} and knum{n}
+  def has_vsh128 = match {
+    {V=[_]T, n if has_sh{V,'SSE2',n}}=>1; {..._}=>0
+  }
+  def has_msh128 = match {
+    {V=[k]_, n if has_sh{V,'SSSE3',n} and 0<=n and n<=k*128/width{V}}=>1; {..._}=>0
+  }
+  def has_vsh{V, n} = width{V}==128 and has_vsh{V, n}
+  def has_msh{V, n} = width{V}==128 and has_msh{V, n}
   # Shift left or right based on sign
-  def sh_128{dir, x:V=[_]T, n if has_sh{V,'SSE2'} and knum{n} and isint{T}} = {
+  def sh_128{dir, x:V=[_]T, n} = {
     def wv = width{V}; def S = [width{V}/8]u8
     def name = merge{'bs', if (dir*n < 0) 'l' else 'r', 'li'}
     def suff = if (wv == 128) 'si128' else 'epi128'
@@ -244,21 +252,23 @@ local {
     call_cast{sh, T, S, x}
   }
   # Merge-shift, with mod_n to pick direction
-  def mshl_128{mod_n, a:V=[k]T, b:V, n if has_sh{V,'SSSE3'} and knum{n} and 0<=n and n<=k*128/width{V}} = {
+  def msh_128{mod_n, a:V=[k]T, b:V, n} = {
     def S = [width{V}/8]u8
     def sh = emit{V, intrin{'alignr', S}, ..., mod_n{n*(width{T}/8)}}
     call_cast{sh, T, S, b, a}
   }
+  def mshl_128 = msh_128{{n} => n,      ...}
+  def mshr_128 = msh_128{{n} => 16 - n, ...}
 }
-def vec_shift_left_128  = sh_128{ 1, ...}
-def vec_shift_right_128 = sh_128{-1, ...}
-def vec_merge_shift_left_128  = mshl_128{{n} => n, ...}
-def vec_merge_shift_right_128 = mshl_128{{n} => 16 - n, ...}
+def vec_shift_left_128 {x:V, n if has_vsh128{V, n}} = sh_128{ 1, x, n}
+def vec_shift_right_128{x:V, n if has_vsh128{V, n}} = sh_128{-1, x, n}
+def vec_shift_left     {x:V, n if has_vsh   {V, n}} = sh_128{ 1, x, n}
+def vec_shift_right    {x:V, n if has_vsh   {V, n}} = sh_128{-1, x, n}
 
-def vec_shift_left {x:V, n if width{V}==128} = vec_shift_left_128 {x,n}
-def vec_shift_right{x:V, n if width{V}==128} = vec_shift_right_128{x,n}
-def vec_merge_shift_left {a:V, b:V, n if width{V}==128} = vec_merge_shift_left_128 {a,b,n}
-def vec_merge_shift_right{a:V, b:V, n if width{V}==128} = vec_merge_shift_right_128{a,b,n}
+def vec_merge_shift_left_128 {a:V, b:V, n if has_msh128{V, n}} = mshl_128{a, b, n}
+def vec_merge_shift_right_128{a:V, b:V, n if has_msh128{V, n}} = mshr_128{a, b, n}
+def vec_merge_shift_left     {a:V, b:V, n if has_msh   {V, n}} = mshl_128{a, b, n}
+def vec_merge_shift_right    {a:V, b:V, n if has_msh   {V, n}} = mshr_128{a, b, n}
 
 
 # Blend
@@ -271,17 +281,18 @@ local {
     {_} => 0
   }
   def has_blendv{V, M} = width{V}==width{M} and has_blend{V}
+  def blend_instr{f:V=[_]T, t, m:M} = {
+    def name = intrin{'blendv', if (isfloat{T}) V else [width{V}/8]i8}
+    call_cast_sub{0, emit{V, name, f, t, ...}, T, M, m}
+  }
 }
-def blend_hom{f:V=[k]T, t:V, m:M=[k]_ if has_blendv{V,M}} = {
-  def name = intrin{'blendv', if (isfloat{T}) V else [width{V}/8]i8}
-  call_cast_sub{0, emit{V, name, f, t, ...}, T, M, m}
-}
+def blend_hom{f:V=[k]T, t:V, m:M=[k]_ if has_blendv{V,M}} = blend_instr{f, t, m}
 def blend_top{f:V=[k]T, t:V, m:M=[k]_ if has_blendv{V,M} and (isfloat{T} or width{T}==8)} = {
-  blend_hom{f, t, m}
+  blend_instr{f, t, m}
 }
 
 # Blend with immediate
-def all_bool{m} = all{each{knum, m}} and all{(m==0) | (m==1)}
+local def all_bool{m} = all{each{knum, m}} and all{(m==0) | (m==1)}
 def blend_units{f, t, ...m if all_bool{m}} = blend_units{f, t, m}
 def blend_units{f:V=[k]T, t:V, {...m} if has_blend{V} and width{T}>=16 and 0 == __min{8,k} % length{m} and all_bool{m}} = {
   def E = {
