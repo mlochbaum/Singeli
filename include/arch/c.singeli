@@ -67,4 +67,8 @@ def __not{a:(u1)} = emit{u1, '!', a}
 extend (sh{'op <<'}){__shl}
 extend (sh{'op >>'}){__shr}
 
+def load{p:*T, i if anynum{i} and not is{T,void}} = emit{T, '^load', p, i}
+def store{p:*T, i, v:T if anynum{i} and not is{T,void}} = { emit{void, '^store', p, i, v}; v }
+def store{p:*T, i, v if is{'number',kind{v}} and anynum{i} and not is{T,void}} = store{p, i, cast{T, v}}
+
 def cast_i{T, x} = emit{T, '', x}

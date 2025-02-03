@@ -1025,8 +1025,9 @@ builtins ← {
     IsTyped𝕩 ? types.IsInt 𝕩 ? 𝕩 ;
     "Index must be numeric" 0 _asrtGotS 𝕩
   }
-  Load ← { 𝕊 ptr‿i  : functions.Emit ⟨AccessPtr ptr, Sym "^load",  ptr, GetIndex i⟩ } _e2
-  Store← { 𝕊 ptr‿i‿v: t←AccessPtr ptr ⋄ functions.Emit ⟨types.void, Sym "^store", ptr, GetIndex i, vc←t types.Cast v⟩ ⋄ vc } _e3
+  LSDep ← •Out∘"Builtins load{} and store{} are deprecated; include 'arch/c' to define them"
+  Load ← { 𝕊 ptr‿i  : LSDep@ ⋄ functions.Emit ⟨AccessPtr ptr, Sym "^load",  ptr, GetIndex i⟩ } _e2
+  Store← { 𝕊 ptr‿i‿v: LSDep@ ⋄ t←AccessPtr ptr ⋄ functions.Emit ⟨types.void, Sym "^store", ptr, GetIndex i, vc←t types.Cast v⟩ ⋄ vc } _e3
 
   names‿values ⇐ <˘∾≍⟨
     Repr¨⊸≍ types.primTypes

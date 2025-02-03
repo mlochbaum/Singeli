@@ -500,12 +500,12 @@ The following generators are pre-defined in any program. They're placed in a par
 | `return{result}`       | Return `result` (optional if return type is `void`) from current function
 | `export{name,value}`   | Export value for use by the calling language
 | `require{name}`        | Require something from the calling language, such as a C header
-| `load{ptr,ind}`        | Return value at `ptr+ind`
-| `store{ptr,ind,val}`   | Store `val` at `ptr+ind`
 | `makelabel{}`          | Create a label value
 | `setlabel{label}`      | Set label to the current position
 | `setlabel{}`           | Short for `setlabel{makelabel{}}`
 | `goto{label}`          | Jump to the position set for a label
+| `load{ptr,ind}`        | Return value at `ptr+ind` (builtin deprecated, get with `include 'arch/c'`)
+| `store{ptr,ind,val}`   | Store `val` at `ptr+ind` (builtin deprecated, get with `include 'arch/c'`)
 
 ### Architecture
 

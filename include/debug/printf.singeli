@@ -2,6 +2,7 @@
 # lprintf: Same, with trailing newline
 
 local {
+  include 'arch/c' # load{}
   include 'skin/c'
   include 'skin/cext'
   include 'util/kind'

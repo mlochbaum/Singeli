@@ -1,3 +1,5 @@
+include 'arch/c'
+
 fn fun(x:__pnt{i32}, y:__pnt{u8}) : void = {
   def for{vars,begin,end,block} = {
     block{0, vars}

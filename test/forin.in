@@ -1,3 +1,5 @@
+include 'arch/c'
+
 fn fun(x:__pnt{u8}) : void = {
   def for{vars,begin,end,block} = { block{end, vars} }
   def xg{r} = x
