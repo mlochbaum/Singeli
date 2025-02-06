@@ -1341,7 +1341,7 @@ nodes ← {
   }
   _unmatchedGen ⇐ {
      n _𝕣𝕩: 𝕗 "generator definition"_errNoMatch 𝕩 ;
-    𝕨n _𝕣𝕩: {name⇐n⋄depth⇐0⋄targs⇐⟨⟩⋄Base⇐GenUnhandled}
+    𝕨n _𝕣𝕩: {name⇐n⋄targs⇐⟨⟩⋄Base⇐GenUnhandled}
   }
   Lambda ⇐ {
     ⟨par,result⟩←𝕩 ⋄ pos←𝕨
@@ -1350,9 +1350,6 @@ nodes ← {
     Scope⇐{ Visit scopes._defer o.Scope par.ScopeLambda 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value and name, from Define
       name ← (1⊑𝕨)⊣""
-      depth←1 ⋄ nextTargs←⟨⟩ ⋄ Base←GenUnhandled
-      SetBase ← {𝕨𝕊⟨d⇐depth,t⇐targs,b⇐base⟩: depth↩1+d ⋄ nextTargs↩t ⋄ base↩b ; base↩𝕨}
-      SetBase⟜{𝕏˜@}⍟(genUnhandled˙≢⊢) {𝕩.Get pos} ⊑𝕨
       ⟨Exec⟩ ← { result.node≢"function"?
         Exec ⇐ result.Eval∘⊢
       ;
@@ -1364,13 +1361,19 @@ nodes ← {
           {Set⇐MSet}‿n result.Eval 𝕩
         }
       }
-      targs ← ⟨par.target, par.GetTry e, Exec⟩‿nextTargs # Push to linked list
-      info ← {name⇐"(generator)"⍟(0=≠)name ⋄ depth⇐depth⋄targs⇐targs⋄base⇐base}
-      Gen ← {
-        gen ↩ base targetNodes.CombineParams ⊑¨ 1⊸⊑⍟(↕depth) targs
-        Gen 𝕩
+      base ← ({𝕩.Get pos} ⊑𝕨) ⊣ genUnhandled
+      targs ← ⟨@‿⟨par.target, par.GetTry e, Exec⟩⟩
+      Make ← {base 𝕊 targs:
+        SetBase ← {𝕨𝕊⟨t⇐targs,b⇐base⟩: targs∾↩⟨t⟩ ⋄ b ; 𝕨} # Push targs to linked list/tree
+        base ↩ SetBase⟜{𝕏˜@}⍟(genUnhandled˙≢⊢) base
+        info ← {name⇐"(generator)"⍟(0=≠)name ⋄ targs⇐targs⋄base⇐base}
+        Gen ← {
+          gen ↩ base targetNodes.CombineParams {@‿·:1↓𝕩;∾𝕊¨𝕩} targs
+          Gen 𝕩
+        }
+        {Gen𝕩}⊘info
       }
-      {Gen𝕩}⊘info
+      base Make targs
     }
   }
   Extender ⇐ {
