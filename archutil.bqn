@@ -78,7 +78,7 @@ ReadNative ⇐ {𝕊:
     ! "Couldn't find CPU features"
   }
   f ↩ ∾ (' ' Spl 2↓(∨`':'⊸=)⊸/)¨ f
-  f ↩ "PNI"‿"BMI1"‿"PCLMULQDQ"‿"AVX1.0"⊸⊐⊸(⊣◶⟨"SSE3",¯1⊸↓,¯3⊸↓,¯3⊸↓,⊢⟩¨) f
+  f ↩ "PNI"‿"ABM"‿"BMI1"‿"PCLMULQDQ"‿"AVX1.0"⊸⊐⊸(⊣◶⟨"SSE3","LZCNT",¯1⊸↓,¯3⊸↓,¯3⊸↓,⊢⟩¨) f
   UtoDot '_'⊸≠⊸/⍟("AVX512"(⊣≡≠⊸↑)⊢)¨ f
 }
 
