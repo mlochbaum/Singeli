@@ -121,11 +121,11 @@ def reverse_units{n, x:V=[l]T if knum{n} and 1<n and n<l and l%n == 0} = {
 def blend_bit{f:V=[k]T, t:V, m:M=[k]_ if width{V}==width{M}} = {
   emit_intrin{V, 'vbsl', m, t, f}
 }
-def blend_hom{f:V=[k]T, t:V, m:M=[k]_} = blend_bit{f, t, m}
+def blend_hom{...} = blend_bit
 
 # For x86 compatibility
-def vec_shift_left_128 {x:V=[_]_, n} = vec_shift_left {x, n}
-def vec_shift_right_128{x:V=[_]_, n} = vec_shift_right{x, n}
-def vec_merge_shift_left_128 {a:V=[_]_, b:V, n} = vec_merge_shift_left {a, b, n}
-def vec_merge_shift_right_128{a:V=[_]_, b:V, n} = vec_merge_shift_right{a, b, n}
-def zip128{a:V=[_]_, b:V, half} = zip{a, b, half}
+def vec_shift_left_128 {...} = vec_shift_left
+def vec_shift_right_128{...} = vec_shift_right
+def vec_merge_shift_left_128 {...} = vec_merge_shift_left
+def vec_merge_shift_right_128{...} = vec_merge_shift_right
+def zip128{...} = zip

@@ -1,0 +1,12 @@
+def n{...} = __neg
+def a = n
+def a{'b0'} = 'fail'
+
+def b = ({'b0'} => 1)
+def b{'b1'} = 2
+
+def c{...} = b
+def a{...} = b
+
+fn ta() = emit{u8, 'out', ...each{a, tup{3, 'b0', 'b1'}}}
+fn tc() = emit{u8, 'out', ...each{c, tup{   'b0', 'b1'}}}

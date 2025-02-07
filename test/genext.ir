@@ -1,0 +1,10 @@
+beginFn f0_ta u8 0
+new v0 emit u8 'out' -3 1 2
+ret v0
+endFn
+
+beginFn f1_tc u8 0
+new v0 emit u8 'out' 1 2
+ret v0
+endFn
+

@@ -444,7 +444,11 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   GenRes ← ⊑⟨"=",Result∘1⟩_seq
   Value ← @_opt_⟨"=",GenRes, @⟩
-  Generator ← @_opt_⟨"{",GenRes _withParams, Value⟩
+  _trySeq←{n←≠s←𝕗 ⋄ n⊸=◶⟨0⊣Back⍟⊢,1⟩0{𝕗<n?@_optGet_⟨𝕗⊑s,(1+𝕗)_𝕣, 𝕗⟩; 𝕗}}
+  Generator ← @_opt_⟨
+    "{","{"‿"..."‿"}"_trySeq◶⟨GenRes _withParams, c.extgen _node_ Value⟩,
+    Value
+  ⟩
   # Decide how to parse definition value based on what's after def
   Valuator ← @_optGet_⟨kExtend,Extender˙, @_opt_⟨"{",Value˙,"_",Value˙,Generator˙⟩⟩
   Define ← c.define _node_ {𝕤
@@ -1366,7 +1370,11 @@ nodes ← {
       Make ← {base 𝕊 targs:
         SetBase ← {𝕨𝕊⟨t⇐targs,b⇐base⟩: targs∾↩⟨t⟩ ⋄ b ; 𝕨} # Push targs to linked list/tree
         base ↩ SetBase⟜{𝕏˜@}⍟(genUnhandled˙≢⊢) base
-        info ← {name⇐"(generator)"⍟(0=≠)name ⋄ targs⇐targs⋄base⇐base}
+        info ← {
+          name⇐"(generator)"⍟(0=≠)name
+          targs⇐targs⋄base⇐base
+          reBase⇐{base≡genUnhandled? Make⟜targs; !∘("Fallback for generator case unsupported: "∾Show base)}
+        }
         Gen ← {
           gen ↩ base targetNodes.CombineParams {@‿·:1↓𝕩;∾𝕊¨𝕩} targs
           Gen 𝕩
@@ -1374,6 +1382,17 @@ nodes ← {
         {Gen𝕩}⊘info
       }
       base Make targs
+    }
+  }
+  ExtGen ⇐ {
+    result←𝕩 ⋄ pos←𝕨
+    Visit←{⟨𝕏result⟩}
+    ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "lambda"‿visit
+    Eval⇐{𝕨 𝕊 e:
+      g ← result.Eval e
+      "Extension must be a generator" IsGen _asrtGotS program._trace_ pos g
+      RB ← {𝕨𝕊⟨R⇐ReBase⟩: R𝕨; !"Fallback for generator unsupported: "∾Show g} program._trace_ pos
+      ({𝕩.Get pos} ⊑𝕨) ⊢⊘(RB⟜{𝕏˜@}⍟(genUnhandled˙≢⊣)) g
     }
   }
   Extender ⇐ {
