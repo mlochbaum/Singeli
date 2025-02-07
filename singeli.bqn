@@ -273,7 +273,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Expr ← (∾⟜" must appear on its own line" Asrt 0˙) _exprStmt
   Stmt ← ⊢ _exprStmt
 
-  Vec ← c.run _node_ (c.consts.vec ⋈ "["‿Expr‿"]"‿{Callable𝕩} _seq)
+  Vec ← c.run _node_ (c.consts.vec ⋈ "["‿Expr‿"]"‿{CallablePhrase𝕩} _seq)
   ParEx ← ⊑ "("‿Expr‿")" _seq
   EWord ← c.token _node_ (⊑⟜keywords⍟(¬=) (IsLogic∨∊⟜('''∾wc∾oc)_ifASCII) _begin_ "expression")
   Expr0 ← @_opt_⟨"[",Vec, "(",ParEx, EWord⟩
@@ -300,6 +300,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   AddParams ← @_opt_⟨"{", {AddParams∘(c.run  _node_ ParCs           ) 𝕩}, ⊢⟩
   AddArgs   ← @_opt_⟨"(", {          (c.call _node_ (⊢⋈"("‿")"_args)) 𝕩}, ⊢⟩
   Callable ← AddParams∘Expr0
+  CallablePhrase ← c.phrase _node_ (⋈Callable)
   CanCall ← (¬ =◶⟨IsLogic⌾<, ∨´(oc∾"[")=⊏⟩) _test
   StartsOp ← =◶⟨IsLogic⌾<, ⊑∘∊⟜oc _ifASCII∘⊑⟩ _test
   Call ← { c←CanCall @ ⋄ AddArgs⍟c Callable𝕩 }
@@ -353,7 +354,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     TA← "@for: ""from"" missing ""to"""⊸Asrt
     NA← "@for: loop variable must be a name"⊸Asrt
     Get "@"
-    f ← Callable@
+    f ← CallablePhrase@
     Get "(" ⋄ LFs@
     to← Expr@
     NE← {𝕤⋄ n←⋈∘{NA@≢𝕩⋄𝕩}∘c.PhraseTryName⍟𝕩 to ⋄ to↩Expr@ ⋄ n}
