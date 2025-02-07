@@ -1288,12 +1288,12 @@ nodes ← {
         (∾0‿2‿1⊏(i⊏¨<∘∾)∾⟜<(c-˜0⋈¯1+´pp)↓´˜⊢) ⊣ (𝕘!c≤≠∘⊢)
       }"Partial and given parameter counts don't match"
       Name ← {
-        p ← (Show¨ 𝕩) Proc (pp/spread)⊏"."‿"..."
+        p ← Show¨ DeSpread 𝕩 Proc (pp/spread)⊏{shows⇐𝕩}¨"."‿"..."
         ∾∾ ⟨Repr𝕨,"{"⟩‿(1↓⥊(<", ")≍˘p)‿⟨"}"⟩
       }
       {(𝔽 𝕩⊸Proc)_genNamed_(Name´∘𝕘‿𝕩)}
     }
-    DeSpread ← (pp<spread){∨´𝕗? ∾𝕗Sp¨⊢; ⊢}
+    DeSpread ← (pp<spread){∨´𝕗? ∾𝕗{∨´𝕘?𝕗/˜1+𝕘×-○≠⟜𝕗;𝕗}(pp∧spread)Sp¨⊢; ⊢}
     Visit←{⟨𝕏caller,𝕏¨realpar⟩}
     ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "run"‿visit
     Oper ⇐ {𝕤⋄ pos operator.Run ⟨⊑Visit o.Oper 𝕩, params⟩}
