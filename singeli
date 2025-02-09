@@ -41,13 +41,13 @@ help‿out‿oe‿os‿run‿target‿feats‿inf‿lib‿config‿pre‿namepre
 
 Rel ← •wdpath⊸•file.At
 files Rel¨↩
-deplog ↩ @ ⊣´ Rel¨deplog
 
 SplitEq ← (»⊸(⊣-<)·∨`'='⊸=)⊸⊔
 libpaths ← (Rel⌾(1⊸⊑) ¯2 ↑ SplitEq)¨ lib
 configs ← (2 ↑ SplitEq)¨ config
+OutBuf ← {𝕊: e←⟨⟩ ⋄ Save⇐{e∾↩<𝕩⋄𝕩} ⋄ Get⇐{𝕊:e}}
 _getShows ← {name _𝕣 𝕩:
-  e←⟨⟩ ⋄ Save←{e∾↩<𝕩⋄𝕩} ⋄ Get←{𝕊:e}
+  Save‿Get ← OutBuf@
   Out‿Write ← ⊢‿⊢ »˜ {
     "stderr": •term.ErrRaw•ToUTF8∾(@+10)˙ ; "stdout":•Out ; "none":⊢ ;
     "bqn":"error"≡name? ⊢ ;
@@ -60,9 +60,13 @@ _getShows ← {name _𝕣 𝕩:
 ⟨ErrOut, ErrWrite⟩  ← "error"  _getShows oe ↩ "stderr" ⊣´ oe
 Writes ← ShowWrite ⋈ {⋈∾∾⟜(@+10)¨𝕩}⍟(0<≠)∘ErrWrite
 ⟨ErrExit,_withErr⟩ ← { "bqn"≡oe ? ⟨!, {𝔽⎊@}⟩ ; ⟨•Exit∘1 ⊣ Writes, {𝔽}⟩ }
+DepOut‿DepWrite ← {
+  wr ← {⟨⟩:⊢; ⟨p⟩: (Rel p)⊸•file.Lines} deplog
+  Save‿Get ← OutBuf@ ⋄ DepOut⇐Save ⋄ DepWrite⇐Wr∘Get
+}
 
 arch ← ⟨feats,⟨"strict"⟩≢inf⟩ •Import "arch.bqn"
-outputs ← ShowOut‿ErrOut‿ErrExit
+outputs ← ShowOut‿ErrOut‿ErrExit‿DepOut
 frontend ← arch‿libpaths‿configs‿outputs •Import "singeli.bqn"
 backend ← {
   ⟨"ir"⟩≡target ? ⊢ ;
@@ -73,6 +77,6 @@ output ← {
   ≠out ? (Rel⊑out) •file.Chars ⊢ ;
   •Out⍟(0<≠) ¯1⊸↓
 }
-Result ← {show‿errout‿out⇐𝕩} Writes ∾ <
+Result ← {show‿errout‿deplog‿out⇐𝕩} Writes ∾ DepWrite ⋈ ⊢
 
-Result {Output Backend ∾ deplog⊸Frontend¨ 𝕩}_withErr (<¨run) ∾ files
+Result {Output Backend ∾ Frontend¨ 𝕩}_withErr (<¨run) ∾ files

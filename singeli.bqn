@@ -1,4 +1,4 @@
-cpu‿libpaths‿configs‿⟨ShowOut,ErrOut,ErrExit⟩ ← •args
+cpu‿libpaths‿configs‿⟨ShowOut,ErrOut,ErrExit,DepOut⟩ ← •args
 
 tab‿lf←@+9‿10
 
@@ -1740,7 +1740,7 @@ targetNodes ← {
 }
 
 files ← {
-  path←@ ⋄ log←⟨⟩
+  path←@
   Load ← {
     path ↩ •file.Parent 𝕩
     𝕩 ast.Build •file.Chars 𝕩
@@ -1759,9 +1759,8 @@ files ← {
     Err∘((1<≠)◶""‿Report∘search⊸(∾˜)⌾⊑)⍟(f≡@) "File not found"‿𝕨
     f
   }
-  Include ⇐ { log∾↩<𝕩 ⋄ p←path ⋄ a←Load 𝕩 ⋄ path↩p ⋄ a }
-  Build ⇐ { log↩⟨⟩ ⋄ =◶⟨RunImm⊑, Load⟩ 𝕩 }
-  WriteDeps ⇐ { @≢𝕩 ? 𝕩 •file.Lines log ; @ }
+  Include ⇐ { DepOut 𝕩 ⋄ p←path ⋄ a←Load 𝕩 ⋄ path↩p ⋄ a }
+  Build ⇐ { =◶⟨RunImm⊑, Load⟩ 𝕩 }
 }
 
 ast ← {
@@ -1775,7 +1774,6 @@ ast ← {
   Compile ⇐ {
     t ← files.Build 𝕩
     t.Oper operator.NewScope baseOper
-    files.WriteDeps 𝕨
     t.Scope scopes._run sc ← scopes.New baseScope
     t.Eval program._with (sc.Names@) env.New baseEnv
   }
