@@ -39,6 +39,10 @@ help‿out‿oe‿os‿run‿target‿feats‿inf‿lib‿config‿pre‿namepre
   •Exit@
 ;@}
 
+_choices ← {∧´𝕨∊𝕩? (⊑𝕩)⊣´𝕨; !∾⟨"Unknown ",𝕗," option: ",∾𝕨," (options are",1↓∾", "⊸∾¨𝕩,")"⟩}
+target "target"   _choices↩ "c"‿"cpp"‿"ir"
+inf    "inference"_choices↩ "loose"‿"strict"
+
 Rel ← •wdpath⊸•file.At
 files Rel¨↩
 
@@ -65,12 +69,12 @@ DepOut‿DepWrite ← {
   Save‿Get ← OutBuf@ ⋄ DepOut⇐Save ⋄ DepWrite⇐Wr∘Get
 }
 
-arch ← ⟨feats,⟨"strict"⟩≢inf⟩ •Import "arch.bqn"
+arch ← ⟨feats,"strict"≢inf⟩ •Import "arch.bqn"
 outputs ← ShowOut‿ErrOut‿ErrExit‿DepOut
 frontend ← arch‿libpaths‿configs‿outputs •Import "singeli.bqn"
 backend ← {
-  ⟨"ir"⟩≡target ? ⊢ ;
-  par ← ⟨⟨"cpp"⟩≡target,arch,"si"⊣´namepre⟩
+  "ir"≡target ? ⊢ ;
+  par ← ⟨"cpp"≡target,arch,"si"⊣´namepre⟩
   pre ⊑⊸{𝕨⊸𝕏}⍟(0<≠∘⊣) par •Import "emit_c.bqn"
 }
 Output ← {
