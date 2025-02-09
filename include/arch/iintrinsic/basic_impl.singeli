@@ -98,8 +98,8 @@ local {
     seti{'set', V, select{x, l-1-range{l}}}
   }
 }
-def vec_make{V, ...x if can_make{V,x}} = mv_sub{mvi, V, x}
-def vec_make{V, x if 'tuple'==kind{x} and can_make{V,x}} = mv_sub{mvi, V, x}
+def vec_make{V,  ...x  if can_make{V,x}} = mv_sub{mvi, V, x}
+def vec_make{V, {...x} if can_make{V,x}} = mv_sub{mvi, V, x}
 def vec_broadcast{V, x if can_make{V,x}} = mv_sub{mvc, V, tup{x}}
 
 def load         {p:*V, i      if go{V} and has_make{V}} = emit{V,    intrin_b{'loadu' , V}, vec_ptr{p+i}}

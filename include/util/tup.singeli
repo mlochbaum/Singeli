@@ -3,9 +3,6 @@
 local {
   include 'skin/cop'
   oper $ length prefix 30
-  oper > tail   prefix 50
-  def __pnt{t} = select{t, 0}
-  def tail{tup} = slice{tup, 1}
 
   include 'util/kind'
   def sl{l, start, len} = slice{l, start, start + len}
@@ -52,7 +49,7 @@ def split{n, list if knum{n}} = {
   def d = __ceil{($list) / n}
   each{sl{list, ., n}, n*range{d}}
 }
-def split{n, list if ktup{n}} = {
+def split{{...n}, list} = {
   def start = shiftright{0, scan{+,n}}
   each{sl{list,...}, start, n}
 }
@@ -61,24 +58,24 @@ def split{n, list if ktup{n}} = {
 def flip{tab} = each{tup, ...tab}
 
 # Function table mapping over all combinations
-def table{f, ...tups} = {
-  if (empty{tups}) f{}
-  else if (1 == $tups) each{f, *tups}
-  else each{{e} => table{f{e,...}, ...>tups}, *tups}
+def table = match {
+  {f}           => f{}
+  {f, t}        => each{f, t}
+  {f, t, ...ts} => each{{e} => table{f{e,...}, ...ts}, t}
 }
 # Flattened into a single list
-def flat_table{f, ...tups} = {
-  if (empty{tups}) tup{f{}}
-  else if (1 == $tups) each{f, *tups}
-  else join{each{{e} => flat_table{f{e,...}, ...>tups}, *tups}}
+def flat_table = match {
+  {f}           => tup{f{}}
+  {f, t}        => each{f, t}
+  {f, t, ...ts} => join{each{{e} => flat_table{f{e,...}, ...ts}, t}}
 }
 
 # Left fold, with or without initial element
-def fold{f, init, list} = {
-  if (empty{list}) init
-  else fold{f, f{init, *list}, >list}
+def fold = match {
+  {f, init, {}} => init
+  {f, init, {x, ...rest}} => fold{f, f{init, x}, rest}
+  {f,    {init, ...rest}} => fold{f, init, rest}
 }
-def fold{f, list} = fold{f, *list, >list}
 
 # Low-stack inclusive+exclusive scan implementation
 local def scan_full = match {
