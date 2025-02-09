@@ -73,10 +73,10 @@ backend ← {
   par ← ⟨⟨"cpp"⟩≡target,arch,"si"⊣´namepre⟩
   pre ⊑⊸{𝕨⊸𝕏}⍟(0<≠∘⊣) par •Import "emit_c.bqn"
 }
-output ← {
+Output ← {
   ≠out ? (Rel⊑out) •file.Chars ⊢ ;
   •Out⍟(0<≠) ¯1⊸↓
-}
+}⊸⊢
 Result ← {show‿errout‿deplog‿out⇐𝕩} Writes ∾ DepWrite ⋈ ⊢
 
 Result {Output Backend ∾ Frontend¨ 𝕩}_withErr (<¨run) ∾ files
