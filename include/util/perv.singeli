@@ -1,26 +1,26 @@
 # Pervasion
 
-local oper \ ({t}=>is{'tuple',kind{t}}) prefix 40
-
 def extend perv1{op} = {
-  def op{a if \a} = each{op, a}
+  def op{{...a}} = each{op, a}
 }
 
 def extend perv2{op} = {
-  def op{a, b if \b} = each{op{a,.}, b}
-  def op{a, b if \a} = each{op{.,b}, a}
-  def op{a, b if \a and \b} = each{op, a, b}
+  def op{    a , {...b}} = each{op{a,.}, b}
+  def op{{...a},     b } = each{op{.,b}, a}
+  def op{{...a}, {...b}} = each{op, a, b}
 }
 
-local def anytup = match { {e, ...t} => \e or anytup{...t}; {} => 0 }
+local def anytup = match {
+  {{..._}, ..._} => 1; {_, ...r} => anytup{...r}; {} => 0
+}
 
 def perv{n if is{'number',kind{n}}} = { def extend _{op} = {
   def op{...t if is{n,length{t}} and anytup{...t}} = {
-    def ftup{{e, ...t}} = if (\e) e else ftup{t}
+    def ftup = match { {{{...e}, ..._}} => e; {_, ...r} => ftup{r} }
     def l = ftup{t}
-    def r{s} = if (\s) s else each{{_}=>s,l}
+    def r = match { {{...s}} => s; {k} => each{{_}=>k,l} }
     each{op, ...each{r,t}}
   }
 }}
-def perv{n==1} = perv1
-def perv{n==2} = perv2
+def perv{1} = perv1
+def perv{2} = perv2
