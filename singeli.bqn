@@ -341,10 +341,14 @@ Parse ← {𝕊 tokens‿ShowTrace:
   StWhile ← c.while _node_ (1 ∾   kWhile‿"("‿Expr‿")"‿Block _seq)
   DoWhile ← c.while _node_ (0 ∾⟜⌽ kDo‿Block‿kWhile‿"("‿Expr‿")" _seq)
 
+  Option ← @_opt_⟨
+    "{", c.lambda _node_ {Params‿"=>"‿Block _seq 𝕩}
+    "(", c.extgen _node_ ParEx
+  ⟩
   Options ← c.options _node_ {𝕤
     Get kMatch
     a ← @_opt_⟨"(", ⋈"("‿")"_args, ⟨⟩⟩ @
-    m ← c.lambda _node_ (Params‿"=>"‿Block _seq) _blockLines @
+    m ← Option _blockLines @
     a‿m
   }
 
@@ -1621,10 +1625,10 @@ nodes ← {
   OptPlain ← {
     gens←𝕩
     Visit←{⟨𝕏¨gens⟩}
-    ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "function"‿visit
+    ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "match"‿visit
     Eval ⇐ { 𝕊 e:
       n ← "(options)"
-      Init ← "option"_errNoMatch ⊘ {name⇐n}
+      Init ← "option"_errNoMatch ⊘ {name⇐n⋄targs⇐⟨⟩⋄Base⇐GenUnhandled}
       init {𝕩‿n 𝕨.Eval e}⟜{Get⇐𝕩˙}´ gens
     }
   }
