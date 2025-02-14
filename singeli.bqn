@@ -1293,7 +1293,7 @@ nodes ← {
         (∾0‿2‿1⊏(i⊏¨<∘∾)∾⟜<(c-˜0⋈¯1+´pp)↓´˜⊢) ⊣ (𝕘!c≤≠∘⊢)
       }"Partial and given parameter counts don't match"
       Name ← {
-        p ← Show¨ DeSpread 𝕩 Proc (pp/spread)⊏{shows⇐𝕩}¨"."‿"..."
+        p ← Show¨ DeSpread 𝕩 Proc (pp/spread)⊏{kind⇐@⋄shows⇐𝕩}¨"."‿"..."
         ∾∾ ⟨Repr𝕨,"{"⟩‿(1↓⥊(<", ")≍˘p)‿⟨"}"⟩
       }
       {(𝔽 𝕩⊸Proc)_genNamed_(Name´∘𝕘‿𝕩)}
