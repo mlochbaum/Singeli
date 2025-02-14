@@ -1358,7 +1358,6 @@ nodes ← {
     ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "lambda"‿visit
     Scope⇐{ Visit scopes._defer o.Scope par.ScopeLambda 𝕩 }
     Eval⇐{𝕨 𝕊 e: # 𝕨 is previous value and name, from Define
-      name ← (1⊑𝕨)⊣""
       ⟨Exec⟩ ← { result.node≢"function"?
         Exec ⇐ result.Eval∘⊢
       ;
@@ -1370,23 +1369,10 @@ nodes ← {
           {Set⇐MSet}‿n result.Eval 𝕩
         }
       }
-      base ← ({𝕩.Get pos} ⊑𝕨) ⊣ genUnhandled
+      base‿name ← ({𝕩.Get pos}⌾⊑ 𝕨) ⊣ genUnhandled‿""
+      name "(generator)"⍟(0=≠)↩
       targs ← ⟨@‿⟨par.target, par.GetTry e, Exec⟩⟩
-      Make ← {base 𝕊 targs:
-        SetBase ← {𝕨𝕊⟨t⇐targs,b⇐base⟩: targs∾↩⟨t⟩ ⋄ b ; 𝕨} # Push targs to linked list/tree
-        base ↩ SetBase⟜{𝕏˜@}⍟(genUnhandled˙≢⊢) base
-        info ← {
-          name⇐"(generator)"⍟(0=≠)name
-          targs⇐targs⋄base⇐base
-          reBase⇐{base≡genUnhandled? Make⟜targs; !∘("Fallback for generator case unsupported: "∾Show base)}
-        }
-        Gen ← {
-          gen ↩ base targetNodes.CombineParams {@‿·:1↓𝕩;∾𝕊¨𝕩} targs
-          Gen 𝕩
-        }
-        {Gen𝕩}⊘info
-      }
-      base Make targs
+      ⟨base, name⟩ AddGenCase targs
     }
   }
   ExtGen ⇐ {
@@ -1396,8 +1382,7 @@ nodes ← {
     Eval⇐{𝕨 𝕊 e:
       g ← result.Eval e
       "Extension must be a generator" IsGen _asrtGotS program._trace_ pos g
-      RB ← {𝕨𝕊⟨R⇐ReBase⟩: R𝕨; !"Fallback for generator unsupported: "∾Show g} program._trace_ pos
-      ({𝕩.Get pos} ⊑𝕨) ⊢⊘(RB⟜{𝕏˜@}⍟(genUnhandled˙≢⊣)) g
+      ({𝕩.Get pos}⌾⊑ 𝕨) ⊢⊘(MergeGen⍟(genUnhandled˙≢⊑∘⊣)) program._trace_ pos g
     }
   }
   Extender ⇐ {
@@ -1742,6 +1727,23 @@ targetNodes ← {
     base 𝕊 cases
   }
 }
+# Generator merging
+AddGenCase ← {base‿name Make targs:
+  SetBase ← {𝕨𝕊⟨t⇐targs,b⇐base⟩: targs∾↩⟨t⟩ ⋄ b ; 𝕨} # Push targs to linked list/tree
+  base ↩ SetBase⟜{𝕏˜@}⍟(genUnhandled˙≢⊢) base
+  info ← { name⇐name ⋄ targs⇐targs ⋄ base⇐base }
+  Gen ← {
+    gen ↩ base targetNodes.CombineParams {@‿·:1↓𝕩;∾𝕊¨𝕩} targs
+    Gen 𝕩
+  }
+  {Gen𝕩}⊘info
+}
+MergeGen ← AddGenCase⟜({
+  𝕨𝕊⟨targs,base⟩: {
+    base≡genUnhandled ? targs ;
+    !"Fallback for generator case unsupported: "∾Show base
+  };!"Fallback for generator unsupported: "∾Show 𝕨
+}⟜{𝕏˜@})
 
 files ← {
   path←@
