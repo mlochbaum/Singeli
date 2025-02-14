@@ -970,6 +970,8 @@ MemoMap ← {𝕤
   _memoize ⇐ { (𝔽 SetRes˜ MemoArg) _cached }
 }
 
+GenUnhandled ← !∘"Unhandled case"
+_targsFromPartial ← {@‿⟨{_proc⇐{𝕗_𝕣: ⊢}}, 𝔽, ⊢⟩}
 builtins ← {
   # Parameter checking
   _exp_ ← {
@@ -1072,7 +1074,10 @@ builtins ← {
   ⟩
   _ne ← {𝔽⎊{𝕊:!":"∾•CurrentError@}} # Protect error from ReErr if builtin runs generator
   ReErr ← {! (':'≠⊑)◶⟨1⊸↓, 𝕩 ∾ (∨`':'⊸=>·∨`'('⊸=)⊸(∨´∘⊣◶⟨": "⊸∾,/⟩)⟩ •CurrentError@}
-  values {n←𝕨⋄𝕏⎊(ReErr∘n)⊘{name⇐n}}⍟(3=•Type∘⊢)¨˜↩ names
+  values {n𝕊f:
+    info ← {name⇐n⋄base⇐genUnhandled⋄targs⇐⟨F⎊@_targsFromPartial⟩}
+    F⎊(ReErr∘n)⊘info
+  }⍟(3=•Type∘⊢)¨˜↩ names
 }
 
 var ← {
@@ -1087,7 +1092,6 @@ var ← {
     }
   }
 }
-GenUnhandled ← !∘"Unhandled case"
 scopes ← {
   noLambda ← var.Fixed genUnhandled
   null←{Get⇐{Err⟨"Undefined name: "∾𝕩,𝕨⟩} ⋄ GetLam⇐noLambda˙}
