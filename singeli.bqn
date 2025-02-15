@@ -971,7 +971,7 @@ MemoMap ← {𝕤
 }
 
 GenUnhandled ← !∘"Unhandled case"
-_targsFromPartial ← {@‿⟨{_proc⇐{𝕗_𝕣: ⊢}}, 𝔽, ⊢⟩}
+_targFromPartial ← {@‿⟨{_proc⇐{𝕗_𝕣: ⊢}}, 𝔽, ⊢⟩}
 builtins ← {
   # Parameter checking
   _exp_ ← {
@@ -1075,7 +1075,7 @@ builtins ← {
   _ne ← {𝔽⎊{𝕊:!":"∾•CurrentError@}} # Protect error from ReErr if builtin runs generator
   ReErr ← {! (':'≠⊑)◶⟨1⊸↓, 𝕩 ∾ (∨`':'⊸=>·∨`'('⊸=)⊸(∨´∘⊣◶⟨": "⊸∾,/⟩)⟩ •CurrentError@}
   values {n𝕊f:
-    info ← {name⇐n⋄targs⇐⟨F⎊@_targsFromPartial⟩}
+    info ← {name⇐n⋄targs⇐⟨F⎊@_targFromPartial⟩}
     F⎊(ReErr∘n)⊘info
   }⍟(3=•Type∘⊢)¨˜↩ names
 }
@@ -1289,25 +1289,28 @@ nodes ← {
     Sp ← ⊣◶⟨⋈⊢, "Spread input must be tuple" IsTup _asrtGotS ⊢⟩
     # Partial parameters .
     realpar ← params /˜¬ pp ← @⊸≡¨params
-    em ← {¬∨´pp? {_𝕣_:𝔽};
-      Proc ← (pp/spread){
+    DeSpread ← (pp<spread){∨´𝕗? ∾𝕗{∨´𝕘?𝕗/˜1+𝕘×-○≠⟜𝕗;𝕗}(pp∧spread)Sp¨⊢; ⊢}
+    em ← {¬∨´pp? {_𝕣_:𝔽∘DeSpread};
+      Fill ← (pp/spread){
         ¬∨´𝕗 ? ((⍋⍋pp)⊏∾) ⊣ (𝕘!(≠𝕗)=≠∘⊢) ;
         c ← +´pp∧»∨`ps←pp∧spread
         i ← (⋈⁼/ps)(↑⋈↓)(⊢-≠×(c-˜≠)⊸≤)⍋⍋ps¬⊸/pp
         (∾0‿2‿1⊏(i⊏¨<∘∾)∾⟜<(c-˜0⋈¯1+´pp)↓´˜⊢) ⊣ (𝕘!c≤≠∘⊢)
       }"Partial and given parameter counts don't match"
-      Name ← {
-        p ← Show¨ DeSpread 𝕩 Proc (pp/spread)⊏{kind⇐@⋄shows⇐𝕩}¨"."‿"..."
-        ∾∾ ⟨Repr𝕨,"{"⟩‿(1↓⥊(<", ")≍˘p)‿⟨"}"⟩
+      Proc ← DeSpread∘Fill
+      GetInfo ← { G‿P:
+        s ← Show¨ P (pp/spread)⊏{kind⇐@⋄shows⇐𝕩}¨"."‿"..."
+        name ← ∾∾ ⟨Repr g,"{"⟩‿(1↓⥊(<", ")≍˘s)‿⟨"}"⟩
+        GetTargs ← {⟨((1⊑𝕏)⍟(@⊸≢) P⎊@) _targFromPartial⟩}
+        name {𝕨𝕊@:name⇐𝕨; name⇐𝕨⋄targs⇐GetTargs𝕩} TryGen⎊@ g
       }
-      {(𝔽 𝕩⊸Proc)_genNamed_(Name´∘𝕘‿𝕩)}
+      { P←𝕩⊸Proc ⋄ N←{n↩𝕩}∘GetInfo∘𝔾‿P ⋄ 𝔽∘P⊘{𝕨N𝕩} }
     }
-    DeSpread ← (pp<spread){∨´𝕗? ∾𝕗{∨´𝕘?𝕗/˜1+𝕘×-○≠⟜𝕗;𝕗}(pp∧spread)Sp¨⊢; ⊢}
     Visit←{⟨𝕏caller,𝕏¨realpar⟩}
     ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "run"‿visit
     Oper ⇐ {𝕤⋄ pos operator.Run ⟨⊑Visit o.Oper 𝕩, params⟩}
     Eval ⇐ {
-      (3=•Type𝕨)◶⟨!∘"Running non-generator", 𝕎∘DeSpread⟩ program._trace_ pos _em_𝕨 𝕩
+      (3=•Type𝕨)◶⟨!∘"Running non-generator", 𝕎⟩ program._trace_ pos _em_𝕨 𝕩
     }´ d.Eval
   }
   Call ⇐ { 𝕨 Run ⟨consts.call , <⊸∾´𝕩⟩ }
@@ -1745,6 +1748,11 @@ MergeGen ← AddGenCase⟜({
   𝕨𝕊⟨targs⟩: targs ;
   !"Fallback for generator unsupported: "∾Show 𝕨
 }⟜{𝕏˜@})
+TryGen ← {
+  unmatched←{⇐}
+  gen ← unmatched‿"(trial)" MergeGen 𝕩
+  unmatched⊸≡◶⟨1⋈⊢, 0‿@⟩ Gen
+}
 
 files ← {
   path←@
