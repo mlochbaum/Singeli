@@ -1055,7 +1055,7 @@ builtins ← {
       ⟨"findmatches", FindMatches⟩
       ⟨"symchars",(Sym∘⋈¨SymP)_p1⟩
       ⟨"fmtnat",Sym∘•Repr numbers.GetNat _p1⟩
-      ⟨"bind",⊑RG0⊸{(𝕎_ne𝕩⊸∾)_genNamed_({∾⟨Repr𝕨,"{",ShowMulti𝕩,", ...}"⟩}´∘𝕨‿𝕩)}1⊸↓_v1⟩
+      ⟨"bind",⊑RG0⊸{b←generators.Runner˜(0¨𝕩)∾1⋄𝕎_b_𝕎𝕩}1⊸↓_v1⟩
       ⟨"each",⊑{RTT𝕩⋄𝕎¨_ne<˘⍉>𝕩}1⊸↓_v2⟩, ⟨"apply",RG0⊸{𝕎_ne𝕩}⟜RL1 _p2⟩
       ⟨"export",{𝕨 ReqSym⊸program.Export⚇0 𝕩}_p2⟩
       ⟨"require",{program.Require∘ReqSym⚇0 𝕩}⟩
@@ -1286,31 +1286,13 @@ nodes ← {
     𝕨𝕊⟨⟨·⇐evb⟩,params⟩: 𝕨 CondOper 𝕩;
     ⟨caller,params⟩←𝕩 ⋄ pos⇐𝕨
     spread ← 0=•Type¨params ⋄ params ⊑¨↩
-    Sp ← ⊣◶⟨⋈⊢, "Spread input must be tuple" IsTup _asrtGotS ⊢⟩
-    # Partial parameters .
-    realpar ← params /˜¬ pp ← @⊸≡¨params
-    DeSpread ← (pp<spread){∨´𝕗? ∾𝕗{∨´𝕘?𝕗/˜1+𝕘×-○≠⟜𝕗;𝕗}(pp∧spread)Sp¨⊢; ⊢}
-    em ← {¬∨´pp? {_𝕣_:𝔽∘DeSpread};
-      Fill ← (pp/spread){
-        ¬∨´𝕗 ? ((⍋⍋pp)⊏∾) ⊣ (𝕘!(≠𝕗)=≠∘⊢) ;
-        c ← +´pp∧»∨`ps←pp∧spread
-        i ← (⋈⁼/ps)(↑⋈↓)(⊢-≠×(c-˜≠)⊸≤)⍋⍋ps¬⊸/pp
-        (∾0‿2‿1⊏(i⊏¨<∘∾)∾⟜<(c-˜0⋈¯1+´pp)↓´˜⊢) ⊣ (𝕘!c≤≠∘⊢)
-      }"Partial and given parameter counts don't match"
-      Proc ← DeSpread∘Fill
-      GetInfo ← { G‿P:
-        s ← Show¨ P (pp/spread)⊏{kind⇐@⋄shows⇐𝕩}¨"."‿"..."
-        name ← ∾∾ ⟨Repr g,"{"⟩‿(1↓⥊(<", ")≍˘s)‿⟨"}"⟩
-        GetTargs ← {⟨((1⊑𝕏)⍟(@⊸≢) P⎊@) _targFromPartial⟩}
-        name {𝕨𝕊@:name⇐𝕨; name⇐𝕨⋄targs⇐GetTargs𝕩} TryGen⎊@ g
-      }
-      { P←𝕩⊸Proc ⋄ N←{n↩𝕩}∘GetInfo∘𝔾‿P ⋄ 𝔽∘P⊘{𝕨N𝕩} }
-    }
+    realpar ← params /˜¬ partial ← @⊸≡¨params # . or ...
     Visit←{⟨𝕏caller,𝕏¨realpar⟩}
+    em ← spread generators.Runner partial
     ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "run"‿visit
     Oper ⇐ {𝕤⋄ pos operator.Run ⟨⊑Visit o.Oper 𝕩, params⟩}
     Eval ⇐ {
-      (3=•Type𝕨)◶⟨!∘"Running non-generator", 𝕎⟩ program._trace_ pos _em_𝕨 𝕩
+      (IsGen 𝕨)◶⟨!∘"Running non-generator", 𝕎⟩ program._trace_ pos _em_𝕨 𝕩
     }´ d.Eval
   }
   Call ⇐ { 𝕨 Run ⟨consts.call , <⊸∾´𝕩⟩ }
@@ -1375,7 +1357,7 @@ nodes ← {
       base‿name ← ({𝕩.Get pos}⌾⊑ 𝕨) ⊣ genUnhandled‿""
       name "(generator)"⍟(0=≠)↩
       targs ← ⟨@‿⟨par.target, par.GetTry e, Exec⟩⟩
-      ⟨base, name⟩ AddGenCase targs
+      ⟨base, name⟩ generators.AddCase targs
     }
   }
   ExtGen ⇐ {
@@ -1385,7 +1367,8 @@ nodes ← {
     Eval⇐{𝕨 𝕊 e:
       g ← result.Eval e
       "Extension must be a generator" IsGen _asrtGotS program._trace_ pos g
-      ({𝕩.Get pos}⌾⊑ 𝕨) ⊢⊘(MergeGen⍟(genUnhandled˙≢⊑∘⊣)) program._trace_ pos g
+      M ← generators.Merge program._trace_ pos⍟(genUnhandled˙≢⊑∘⊣)
+      ({𝕩.Get pos}⌾⊑ 𝕨) ⊢⊘M g
     }
   }
   Extender ⇐ {
@@ -1731,27 +1714,48 @@ targetNodes ← {
     base 𝕊 cases
   }
 }
-# Generator merging
-AddGenCase ← {base‿name Make targs:
-  GetBase ← {𝕊⟨b⇐base⟩: b ; genUnhandled}
-  SetBase ← {𝕨𝕊⟨t⇐targs⟩: targs∾↩⟨t⟩ ⋄ GetBase 𝕩 ; 𝕨} # Push targs to linked list/tree
-  base ↩ SetBase⟜{𝕏˜@}⍟(genUnhandled˙≢⊢) base
-  info ← { name⇐name ⋄ targs⇐targs ⋄ base⇐base }
-  Gen ← {
-    gen ↩ base targetNodes.CombineParams {@‿·:1↓𝕩;∾𝕊¨𝕩} targs
-    Gen 𝕩
+generators ← {
+  AddCase ⇐ {base‿name Make targs:
+    GetBase ← {𝕊⟨b⇐base⟩: b ; genUnhandled}
+    SetBase ← {𝕨𝕊⟨t⇐targs⟩: targs∾↩⟨t⟩ ⋄ GetBase 𝕩 ; 𝕨} # Push targs to linked list/tree
+    base ↩ SetBase⟜{𝕏˜@}⍟(genUnhandled˙≢⊢) base
+    info ← { name⇐name ⋄ targs⇐targs ⋄ base⇐base }
+    Gen ← {
+      gen ↩ base targetNodes.CombineParams {@‿·:1↓𝕩;∾𝕊¨𝕩} targs
+      Gen 𝕩
+    }
+    {Gen𝕩}⊘info
   }
-  {Gen𝕩}⊘info
-}
-MergeGen ← AddGenCase⟜({
-  𝕨𝕊⟨base⟩: base≢genUnhandled ? !"Fallback for generator case unsupported: "∾Show base ;
-  𝕨𝕊⟨targs⟩: targs ;
-  !"Fallback for generator unsupported: "∾Show 𝕨
-}⟜{𝕏˜@})
-TryGen ← {
-  unmatched←{⇐}
-  gen ← unmatched‿"(trial)" MergeGen 𝕩
-  unmatched⊸≡◶⟨1⋈⊢, 0‿@⟩ Gen
+  Merge ⇐ AddCase⟜({
+    𝕨𝕊⟨base⟩: base≢genUnhandled ? !"Fallback for generator case unsupported: "∾Show base ;
+    𝕨𝕊⟨targs⟩: targs ;
+    !"Fallback for generator unsupported: "∾Show 𝕨
+  }⟜{𝕏˜@})
+  AsTry ← {
+    unmatched←{⇐}
+    gen ← unmatched‿"(trial)" Merge 𝕩
+    unmatched⊸≡◶⟨1⋈⊢, 0‿@⟩ Gen
+  }
+  Runner ⇐ { spread 𝕊 pp: # (Call _result_ Gen args) runs generator
+    Sp ← ⊣◶⟨⋈⊢, "Spread input must be tuple" IsTup _asrtGotS ⊢⟩
+    DeSpread ← (pp<spread){∨´𝕗? ∾𝕗{∨´𝕘?𝕗/˜1+𝕘×-○≠⟜𝕗;𝕗}(pp∧spread)Sp¨⊢; ⊢}
+    {¬∨´pp? {_𝕣_:𝔽∘DeSpread};
+      Fill ← (pp/spread){
+        ¬∨´𝕗 ? ((⍋⍋pp)⊏∾) ⊣ (𝕘!(≠𝕗)=≠∘⊢) ;
+        c ← +´pp∧»∨`ps←pp∧spread
+        i ← (⋈⁼/ps)(↑⋈↓)(⊢-≠×(c-˜≠)⊸≤)⍋⍋ps¬⊸/pp
+        (∾0‿2‿1⊏(i⊏¨<∘∾)∾⟜<(c-˜0⋈¯1+´pp)↓´˜⊢) ⊣ (𝕘!c≤≠∘⊢)
+      }"Partial and given parameter counts don't match"
+      Proc ← DeSpread∘Fill
+      GetInfo ← { G‿P:
+        s ← Show¨ P (pp/spread)⊏{kind⇐@⋄shows⇐𝕩}¨"."‿"..."
+        name ← ∾∾ ⟨Repr g,"{"⟩‿(1↓⥊(<", ")≍˘s)‿⟨"}"⟩
+        GetTargs ← {⟨((1⊑𝕏)⍟(@⊸≢) P⎊@) _targFromPartial⟩}
+        name {𝕨𝕊@:name⇐𝕨; name⇐𝕨⋄targs⇐GetTargs𝕩} AsTry⎊@ g
+      }
+      { P←𝕩⊸Proc ⋄ N←{n↩𝕩}∘GetInfo∘𝔾‿P ⋄ 𝔽∘P⊘{𝕨N𝕩} }
+    }
+  }
 }
 
 files ← {
