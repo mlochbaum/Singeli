@@ -1075,7 +1075,7 @@ builtins ← {
   _ne ← {𝔽⎊{𝕊:!":"∾•CurrentError@}} # Protect error from ReErr if builtin runs generator
   ReErr ← {! (':'≠⊑)◶⟨1⊸↓, 𝕩 ∾ (∨`':'⊸=>·∨`'('⊸=)⊸(∨´∘⊣◶⟨": "⊸∾,/⟩)⟩ •CurrentError@}
   values {n𝕊f:
-    info ← {name⇐n⋄base⇐genUnhandled⋄targs⇐⟨F⎊@_targsFromPartial⟩}
+    info ← {name⇐n⋄targs⇐⟨F⎊@_targsFromPartial⟩}
     F⎊(ReErr∘n)⊘info
   }⍟(3=•Type∘⊢)¨˜↩ names
 }
@@ -1352,10 +1352,6 @@ nodes ← {
     RunEval ⇐ {𝕏 <ns}
     DefEval ⇐ { f‿ValEval 𝕊 e: ⟨RunEval valEval,0⟩ Eval e }
   }
-  _unmatchedGen ⇐ {
-     n _𝕣𝕩: 𝕗 "generator definition"_errNoMatch 𝕩 ;
-    𝕨n _𝕣𝕩: {name⇐n⋄targs⇐⟨⟩⋄Base⇐GenUnhandled}
-  }
   Lambda ⇐ {
     ⟨par,result⟩←𝕩 ⋄ pos←𝕨
     Visit←{l←par.VisitLambda 𝕩⋄l∾⟨𝕏result⟩}  # Call par.VisitLambda first
@@ -1471,7 +1467,8 @@ nodes ← {
     }
   }
   no_def ← {
-    Eval⇐{=𝕨 ? n←1⊑𝕨 ⋄ n _unmatchedGen ; 𝕊⟜𝕩{𝕩.RunEval 𝕗}¨⊑𝕨}
+    ENM ← "generator definition"_errNoMatch
+    Eval⇐{=𝕨 ? n←1⊑𝕨 ⋄ n⊸ENM⊘{name⇐n⋄targs⇐⟨⟩} ; 𝕊⟜𝕩{𝕩.RunEval 𝕗}¨⊑𝕨}
     ⟨node,Dump,NonLocal,Oper,Scope⟩⇐Defaults "value"‿⟨⟩
     Disp⇐⟨"(no definition)"⟩˙
   }
@@ -1617,7 +1614,7 @@ nodes ← {
     ⟨node,Dump,Disp,NonLocal,Oper,Scope⟩⇐Defaults "match"‿visit
     Eval ⇐ { 𝕊 e:
       n ← "(options)"
-      Init ← "option"_errNoMatch ⊘ {name⇐n⋄targs⇐⟨⟩⋄Base⇐GenUnhandled}
+      Init ← "option"_errNoMatch ⊘ {name⇐n⋄targs⇐⟨⟩}
       init {𝕩‿n 𝕨.Eval e}⟜{Get⇐𝕩˙}´ gens
     }
   }
@@ -1733,7 +1730,8 @@ targetNodes ← {
 }
 # Generator merging
 AddGenCase ← {base‿name Make targs:
-  SetBase ← {𝕨𝕊⟨t⇐targs,b⇐base⟩: targs∾↩⟨t⟩ ⋄ b ; 𝕨} # Push targs to linked list/tree
+  GetBase ← {𝕊⟨b⇐base⟩: b ; genUnhandled}
+  SetBase ← {𝕨𝕊⟨t⇐targs⟩: targs∾↩⟨t⟩ ⋄ GetBase 𝕩 ; 𝕨} # Push targs to linked list/tree
   base ↩ SetBase⟜{𝕏˜@}⍟(genUnhandled˙≢⊢) base
   info ← { name⇐name ⋄ targs⇐targs ⋄ base⇐base }
   Gen ← {
@@ -1743,10 +1741,9 @@ AddGenCase ← {base‿name Make targs:
   {Gen𝕩}⊘info
 }
 MergeGen ← AddGenCase⟜({
-  𝕨𝕊⟨targs,base⟩: {
-    base≡genUnhandled ? targs ;
-    !"Fallback for generator case unsupported: "∾Show base
-  };!"Fallback for generator unsupported: "∾Show 𝕨
+  𝕨𝕊⟨base⟩: base≢genUnhandled ? !"Fallback for generator case unsupported: "∾Show base ;
+  𝕨𝕊⟨targs⟩: targs ;
+  !"Fallback for generator unsupported: "∾Show 𝕨
 }⟜{𝕏˜@})
 
 files ← {
