@@ -1390,12 +1390,12 @@ nodes ← {
     Visit←{names∾⟨𝕏¨result⟩}
     ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "extender"‿visit
     Scope⇐{ Visit scopes._defer o.Scope names scopes.New 𝕩 }
-    Eval⇐{𝕨𝕊e: {
+    Eval⇐{𝕨𝕊e: n←(1⊑𝕨)⊣"" ⋄ {
       A ← ! program._trace_ pos
       "Wrong number of parameters in extension" A names≡○≠𝕩
       "Generator defined with extend must be called with extend" A ∧´ ("var"≡Kind)¨ 𝕩
       (0<≠)◶⟨emptyBody,⊢´⟩ result {𝕨.Eval𝕩}¨ <𝕩 env.Alias e
-    }⊘{𝕊: {name⇐𝕩} "(extender)"⍟(0=≠) (1⊑𝕨)⊣""}}
+    }⊘{𝕊: {name⇐𝕩} "(extender)"⍟(0=≠) n}}
   }
   Extend ⇐ {
     ⟨ext,names⟩←𝕩 ⋄ pos←𝕨
