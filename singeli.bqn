@@ -38,7 +38,8 @@ Source ← { 𝕨 𝕊 src‿lc: file←𝕨⊣""
     ErrOut src/˜(src=lf)(⊣<+`⊸=)e
     Tr ← {
       e ← (+`(𝕩≤¯1»𝕨≠⊸+¨𝕩))⊔𝕩⋈¨𝕨
-      l ← "^"⌾(1⊑¯1⊑⊑) ⌽ "|"⌾(1⊸⊑)¨⊸∾` (1+≠e)↑e
+      p ← "^"⍟(∧´0=≠¨𝕨)"|" # No names indicates multi-location runtime error
+      l ← "^"⌾(1⊑¯1⊑⊑) ⌽ p⌾(1⊸⊑)¨⊸∾` (1+≠e)↑e
       {∾((-⟜»𝕨)∾≠¯1⊑𝕩)↑¨""<⊸∾𝕩}˝∘⍉∘>¨ l
     }
     ErrOut¨ ¯1↓⍟(∧´' '=⊑) disp Tr○((r=e)⊸/) c
@@ -237,7 +238,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   # Node creation and error tracking
   c ← nodes ⋄ tc ← targetNodes
   ⟨_whileParse_⇐_while_, DumpStack⇐Arr⟩ ← MakeStack@
-  _node_ ← {p←Pos@ ⋄ (ShowTrace○⋈⟜""⊢)‿p 𝔽 𝔾_whileParse_⟨p,𝕗⟩ 𝕩}
+  _node_ ← {p←Pos@ ⋄ (ShowTrace⟜(""¨)⥊∘⊢)‿p 𝔽 𝔾_whileParse_⟨p,𝕗⟩ 𝕩}
   AsrtHere ← {𝕨 Asrt _whileParse_ ⟨Pos@,""⟩ 𝕩}
 
   When  ← {Test‿Cont:       ( ⥊∘< Cont)⍟Test   ⟨⟩  }
@@ -1332,7 +1333,7 @@ nodes ← {
       ns {𝕩‿decl 𝕨.Eval e}¨ v
       CQ ← {𝕨 Match 𝕩.Eval e? @ ; ! program._trace_ 𝕩.pos "Destructuring match check failed" }
       q CQ¨ eqs
-      { CC program._trace_ 𝕩.pos 𝕩.Eval e }¨ conds
+      { CC program._trace_ ((⊑⋈1⊏˘⊢)𝕨) 𝕩 }˜´∘TraceEval⟜e¨ conds
     }
     RunEval ⇐ {𝕏 <ns}
     DefEval ⇐ { f‿ValEval 𝕊 e: ⟨RunEval valEval,0⟩ Eval e }
@@ -1509,6 +1510,7 @@ nodes ← {
     E ← IsTyped◶"Expected boolean"‿"Can't use runtime logic outside if() and while()"
     e numbers.GetBool 𝕨.Eval 𝕩
   }
+  TraceEval ← { "cond_oper"≡𝕨.node ? 𝕨.Eval ≍≍𝕩 ; ⟨𝕨 BoolEval 𝕩, ≍𝕨.pos⟩ }
   CondEvalS ← {  # Return 0 or 1 for constant result and @ for unknown
     "cond_oper"≡𝕨.node ? 𝕨.Eval 𝕩 ;
     n𝕊⟨jv‿label,e⟩:
@@ -1518,22 +1520,30 @@ nodes ← {
     ; "If condition must evaluate to boolean" numbers.GetBool c }
   }
   CondEval ← ⊑∘⊑∘⊢ ≢ CondEvalS  # Return 1 if it might jump
-  CondOper ← { pos 𝕊 ⟨name‿_evb‿_evc, terms⟩: # Node created for and/or/not
-    Eval⇐{ev←(=𝕩)⊑evb‿evc ⋄ terms _ev program._trace_ pos 𝕩}
+  CondOper ← { pos 𝕊 ⟨name‿_evb‿_evt‿_evc, terms⟩: # Node created for and/or/not
+    Eval⇐{ev←(=𝕩)⊑evb‿evc‿evt ⋄ terms _ev program._trace_ pos 𝕩}
     Visit←{⟨name,𝕏¨terms⟩} ⋄ pos⇐
-    ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "cond_oper"‿visit
+    ⟨node,Dump,Disp,NonLocal,Scope⟩⇐Defaults "cond_oper"‿visit
   }
   AddConds ⇐ {
-    ev_not ← {¬(⊑𝕗) BoolEval 𝕩}‿{=𝕩? ¬⍟(@⊸≢) (⊑𝕗) CondEvalS ¬⌾(⊑⊑)𝕩}
-    CAccum ← {𝕊id: {E←BoolEval⟜𝕩 ⋄ (E 1⊑𝕗˙)⍟(id⊸≡) E ⊑𝕗}‿{
-      𝔽_𝕣 ⟨jv‿label,e⟩:
-      l ← LazyLabel@
-      i ← (⊑𝕗) CondEvalS ⟨¬id,l⟩⌾⊑⍟(id=jv) 𝕩
-      c ← (1⊑𝕗) CondEvalS⟜𝕩⍟((¬id)≢⊢) i
-      functions.SetLabel⍟(@⊸≢) l.label
-      i⍟(id⊸≡) c
-    }}
-    @ 𝕩.Add⟜{𝕊t‿n‿e: t‿n‿{name⇐n⋄evb‿evc⇐e}‿¯∞}¨ ⟨
+    ev_not ← {
+      _evb ⇐ {¬(⊑𝕗) BoolEval 𝕩}
+      _evt ⇐ {¬⌾⊑(⊑𝕗) TraceEval ⊑𝕩}
+      _evc ⇐ {=𝕩? ¬⍟(@⊸≢) (⊑𝕗) CondEvalS ¬⌾(⊑⊑)𝕩}
+    }
+    CAccum ← {𝕊id:
+      _evb ⇐ {E←BoolEval⟜𝕩 ⋄ (E 1⊑𝕗˙)⍟(id⊸≡) E ⊑𝕗}
+      _evt ⇐ {E←TraceEval⟜(⊑𝕩) ⋄ ∾⌾(1⊸⊑)⍟(≡○⊑)⟜(E 1⊑𝕗˙)⍟(id≡⊑) E ⊑𝕗}
+      _evc ⇐ {
+        𝔽_𝕣 ⟨jv‿label,e⟩:
+        l ← LazyLabel@
+        i ← (⊑𝕗) CondEvalS ⟨¬id,l⟩⌾⊑⍟(id=jv) 𝕩
+        c ← (1⊑𝕗) CondEvalS⟜𝕩⍟((¬id)≢⊢) i
+        functions.SetLabel⍟(@⊸≢) l.label
+        i⍟(id⊸≡) c
+      }
+    }
+    @ 𝕩.Add⟜{𝕊t‿n‿e: t‿n‿{name⇐n⋄evb‿evt‿evc⇐e}‿¯∞}¨ ⟨
       'p'‿"not"‿ev_not
       'l'‿"and"‿(CAccum 1)
       'l'‿"or" ‿(CAccum 0)
@@ -1613,7 +1623,7 @@ nodes ← {
     from↩consts.n0⊣´from
     vardisp←1↓∾(","⊸∾¨ptrn)∾" over "⊸∾¨ind
     Visit←{⟨𝕏fn,vardisp⊣𝕏¨ptri≍˘ptrv,𝕏from,𝕏to,𝕏body⟩}
-    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐d←Defaults "for"‿visit
+    ⟨node,Dump,Disp,NonLocal,Oper⟩⇐Defaults "for"‿visit
     ls←@
     Scope ⇐ {
       (o.Scope 𝕩)¨ ∾⟨fn⟩‿ptrv‿⟨from,to⟩
