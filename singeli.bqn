@@ -1321,19 +1321,22 @@ nodes ← {
     VisitLambda ⇐ {⟨names,𝕏¨exprs⟩}
     ScopeLambda ⇐ {names scopes.New 𝕩}
     GB ← "Generator condition must evaluate to boolean" numbers.GetBool ⊢
-    GetTry ⇐ {𝕊 e: {
-      v‿q ← 𝕩
+    _reqConds ← { fail _𝕣 e‿q:
+      CQ ← { 𝕨 Match 𝕩.Eval e? @ ; Fail program._trace_ 𝕩.pos "match check failed" }
+      CC ← { GB 𝕩? @ ; Fail program._trace_ ((⊑⋈1⊏˘⊢)𝕨) "condition failed" }
+      q CQ¨ eqs
+      CC˜´∘TraceEval⟜e¨ conds
+      e
+    }
+    GetTry ⇐ {𝕊 e: {fail 𝕊 v‿q: fail _reqConds ⟨v env.Fixed e, q⟩; 𝕊 v‿q:
       ts ← (q {𝕩˙⊸Match}⊸⋈¨ eqs) ∾ GB˙⊸⋈¨conds
       t ← {⊢} {f‿n𝕊𝕩:f⟜n.Eval◶@‿𝕏}´ ts
       𝕨 T v env.Fixed e
     }}
-    CC ← "Destructuring condition failed" ! GB
     Eval ⇐ { val‿decl 𝕊 e:
       v‿q ← ProcE val
       ns {𝕩‿decl 𝕨.Eval e}¨ v
-      CQ ← {𝕨 Match 𝕩.Eval e? @ ; ! program._trace_ 𝕩.pos "Destructuring match check failed" }
-      q CQ¨ eqs
-      { CC program._trace_ ((⊑⋈1⊏˘⊢)𝕨) 𝕩 }˜´∘TraceEval⟜e¨ conds
+      {! "Destructuring "∾𝕩} _reqConds e‿q
     }
     RunEval ⇐ {𝕏 <ns}
     DefEval ⇐ { f‿ValEval 𝕊 e: ⟨RunEval valEval,0⟩ Eval e }
@@ -1716,9 +1719,8 @@ targetNodes ← {
     # Error message comes from Base so just run everything
     base {t‿c‿e𝕊n: ⊢ @⊸≢◶⟨N⊣, @⊸≢◶⟨N⊣,E⟩⟜C⟩ @t._proc}´ cases
   ; ·𝕊 ⟨t‿c‿e⟩:
-    Base ← "generator definition (failed condition)"_errNoMatch
-    ProcE ← "Generator destructuring: "⊸∾ t._proc
-    ⊢ E Base∘⊣⍟(@⊸≡)⟜(C∘ProcE)
+    Pre ← "Generator destructuring: "⊸∾
+    ⊢ E {Pre ErrParams 𝕩˙} C Pre t._proc
   ; ·𝕊 cases:
     Base ← ("generator definition ("∾" tried)"∾˜•Repr≠cases)_errNoMatch
     base 𝕊 cases
