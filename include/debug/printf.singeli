@@ -39,10 +39,10 @@ def printf_impl{...vs0} = {
     {{...vs}} => listfmt{hex, '{', '}', vs}
     {_:*E} => tup{tup{'%p', tup{x}}}
 
-    {_:[l]E} => {
-      tmp:*E = undefined{E, l}
-      *[l]E~~tmp <- x
-      listfmt{hex, '[', ']', each{load{tmp,.}, range{l}}}
+    {_:V=[l]E} => {
+      tmp:*V = undefined{V, 1}
+      tmp <- x
+      listfmt{hex, '[', ']', each{load{*E~~tmp,.}, range{l}}}
     }
 
     {_:T if typekind{T}=='primitive'} => {
