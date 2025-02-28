@@ -37,11 +37,13 @@ local def vec_shuffle16_impl{suff, vec:V, ind} = {
   emit{V, intrin{merge{'shuffle', suff}, [width{V}/16]i16}, vec, base{4, ind}}
 }
 local def has_sh16{w} = (w==128 and hasarch{'SSE2'}) or (w==256 and hasarch{'AVX2'})
-local def vec_shuffle_part{part}{vec:V=[_]_, {...ind} if has_sh16{width{V}} and length{ind}==4 and all{(ind>=0) & (ind<4)}} = {
+local def is_bool = match { {0}=>1; {1}=>1; {_}=>0 }
+def vec_shuffle16_half{half, vec:V=[_]_, {...ind} if is_bool{half} and has_sh16{width{V}} and length{ind}==4 and all{(ind>=0) & (ind<4)}} = {
+  def part = select{tup{'lo','hi'}, half}
   call_cast{vec_shuffle16_impl{part, ., ind}, i16, V, vec}
 }
-def vec_shuffle16_lo{...} = vec_shuffle_part{'lo'}
-def vec_shuffle16_hi{...} = vec_shuffle_part{'hi'}
+def vec_shuffle16_lo{...} = vec_shuffle16_half{0, ...}
+def vec_shuffle16_hi{...} = vec_shuffle16_half{1, ...}
 
 # General implementation for constant indices
 local def vec_shuffle_impl{T, sel_n, val={_:V, ..._}, ind} = {
