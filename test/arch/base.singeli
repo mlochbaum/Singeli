@@ -1,0 +1,60 @@
+include 'skin/c'
+include 'arch/c'
+include 'debug/printf'
+
+def comptime_fail{...msg} = {
+  show{...msg}
+  0{} # comptime_fail
+}
+
+require{'stdlib.h'}
+def exit{code} = emit{void, 'exit', code}
+require{'string.h'}
+def memeq{a, b, bytes} = 0 == emit{i32, 'memcmp', a, b, bytes}
+
+local fn expect_eq_fn{V}(exp:V, got:V) : void = {
+  buf:*V = tup{exp, got}
+  if (not memeq{buf, buf+1, width{V}/8}) {
+    lprintf{'Expected: ', tup{'x0', exp}, ' (type = ', V,')'}
+    lprintf{'Got:      ', tup{'x0', got}}
+    exit{1}
+  }
+}
+
+def expect_eq{exp:V, got:V} = expect_eq_fn{V}(exp, got)
+
+def test_exp{exp, G}{...args} = {
+  def err
+  def got = match (...args) {
+    (G)
+    {..._} => err
+  }
+  if (is{got, err}) comptime_fail{'No case matched for ', G, args}
+  else expect_eq{exp, got}
+}
+def test_no_case{G}{...args} = {
+  def err
+  def got = match (...args) {
+    (G)
+    {..._} => err
+  }
+  if (not is{got, err}) comptime_fail{'Expected no case to match for ', G, args}
+}
+
+def for_tup{vars,0,'!',iter} = {
+  def n = length{select{vars, 0}}
+  each{{i, ...args} => iter{i, args, {a,_} => a}, range{n}, ...vars}
+}
+
+def example_elts{V=[k]E} = {
+  def ew = width{E}
+  def mul = match (if (issigned{E}) primtype{'u',ew} else E) { {(u8)}=>3; {(u16)}=>100; {(u32)}=>1e8; {(u64)}=>1e17; {(f32)}=>1.0001; {(f64)}=>1.000100010001 } 
+  def e = (range{k}+1) * mul
+  if (isint{E}) e%(1<<(ew - issigned{E}) - 1) else e
+}
+def primtypes = tup{u8,i8,u16,i16,u32,i32,u64,i64,f32,f64}
+def supported_widths{accept_avx2_256} = {
+  if (hasarch{'AVX512F'}) tup{128, 256, 512}
+  else if (hasarch{if (accept_avx2_256) 'AVX' else 'AVX2'}) tup{128, 256}
+  else tup{128}
+}
