@@ -6,6 +6,7 @@ CCFLAGS=-g $(shell bqn ../to-c-args.bqn $(ARCH))
 RUN=
 
 ALL_TESTS=
+ALL_TESTS+=run-imm-shuffle-select
 
 default: $(ALL_TESTS)
 .SECONDARY:
