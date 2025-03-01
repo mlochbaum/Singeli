@@ -71,7 +71,9 @@ local def vec_shuffle_impl{T, sel_n, val={_:V, ..._}, ind} = {
   def shuf_base{...a, n   } = shuf{...a, n, base{n, .}}
   def shuf_make{...a, n, T} = shuf{...a, n, vec_make{[n]T, .}}
   # Arch-specific cases
-  if (2 == length{val}) {
+  if (sel_n == 1 and 1 == length{val}) {
+    select{val, 0}
+  } else if (2 == length{val}) {
     def 1 = isfloat{T} and wv >= 128 and ind_width <= 128 and pos
     shuf_base{'shuffle', 128 / w}
   } else if (wv < 128) {
@@ -203,6 +205,7 @@ def vec_select{n, v:V=[_]vT, {...ind} if knum{n} and n>64} = {
   def e = n / 64
   vec_select{64, v, merge{...each{+{.,range{e}}, e*ind}}}
 }
+def vec_select{(width{V}), x:V=[_]_, i if is{i,0} or is{i,tup{0}}} = x
 # Selects as 4 unified lanes
 def vec_select{128, v={a:V=[_]T, b:V}, ind={_,_} if 256==width{V} and hasarch{'AVX'} and all{(ind>=0) & (ind<4)}} = {
   def q = if (isint{T} and hasarch{'AVX2'}) 'x' else 'f'
