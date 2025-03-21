@@ -37,7 +37,9 @@ local {
 }
 def vec_make{V,  ...x  if can_make{V,x}} = mv_sub{V, x}
 def vec_make{V, {...x} if can_make{V,x}} = mv_sub{V, x}
-def vec_broadcast{V, x if can_make{V,x}} = emit{V, intrin{'vdup', '_n', V}, x}
+def vec_broadcast{V=[_]T, x if can_make{V,x}} = {
+  emit{V, intrin{'vdup', '_n', V}, cast{T,x}}
+}
 
 def load {a:*V, n      if va{V}} = emit{V   , intrin{'vld1', V}, *eltype{V} ~~ (a+n)}
 def store{a:*V, n, v:V if va{V}} = emit{void, intrin{'vst1', V}, *eltype{V} ~~ (a+n), v}
