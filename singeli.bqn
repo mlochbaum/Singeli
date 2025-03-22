@@ -694,7 +694,7 @@ types ← {kname⇐"type"
     ⟩ _cases 𝕩
   }
   _cmpPrim ← {
-    L←¯1⊸⊑ ⋄ ≠○⊑◶⟨𝔽○L, ('f'≠⊑∘⊣)_and_(<○L)⟩
+    L←¯1⊸⊑ ⋄ ≠○⊑◶⟨𝔽○L, ('f'≠⊑∘⊣)_and_('u'≠⊑∘⊢)_and_(<○L)⟩
   }
   Equiv    ← ≡          _typeRel_ @
   Subtype  ⇐ ≤ _cmpPrim _typeRel_ 1
@@ -1258,7 +1258,7 @@ nodes ← {
     }
     {name≢"_"?@; # _ does nothing on assignment, and errors on access
       scope↩@ ⋄ Eval↩!∘"Can't get value of _"
-      IsDef↩{𝕊:Eval↩⊑⊣⋄V↩{Set⇐⊢}˙}
+#     IsDef↩{𝕊:Eval↩⊑⊣⋄V↩{Set⇐⊢}˙}
     }
     # If f≡1, set value in Eval for function recursion
     RunEval ⇐ {𝕏 ⟨@, name⟩}
