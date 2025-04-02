@@ -1,0 +1,7 @@
+if_inline (hasarch{'X86_64'}) {
+  include 'arch/iintrinsic/basic'
+  include 'arch/iintrinsic/select'
+} else if_inline (hasarch{'AARCH64'}) {
+  include 'arch/neon_intrin/basic'
+  include 'arch/neon_intrin/select'
+}
