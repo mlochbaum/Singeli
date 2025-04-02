@@ -1,0 +1,31 @@
+include '../base'
+include '../simd'
+
+main() : void = {
+  fn test{V=[k]E}() : void = {
+    def elts = example_elts{V}
+    def src = vec_make{V, elts}
+    
+    @for_tup(i in range{k}, el in elts over '!') {
+      if (hasarch{'X86_64'}) {
+        if (width{E}==8 and not hasarch{'SSSE3'}) {
+          test_no_case{broadcast_sel}{src, i}
+        } else if (width{V}==512 and width{E}<=16 and not hasarch{'AVX512BW'}) {
+          test_no_case{broadcast_sel}{src, i}
+        } else {
+          test_exp{vec_broadcast{V, el}, broadcast_sel}{src, i}
+        }
+      } else {
+        test_exp{vec_broadcast{V, el}, broadcast_sel}{src, i}
+      }
+    }
+    test_no_case{broadcast_sel}{src, k}
+    test_no_case{broadcast_sel}{src, 0.5}
+  }
+  @for_tup(E in primtypes over '!') {
+    @for_tup(k in supported_widths{0}/width{E} over '!') {
+      test{[k]E}()
+    }
+  }
+  lprintf{'pass'}
+}

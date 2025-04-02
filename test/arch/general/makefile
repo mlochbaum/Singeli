@@ -7,6 +7,7 @@ RUN=
 
 ALL_TESTS=
 ALL_TESTS+=run-imm-shuffle-select
+ALL_TESTS+=run-broadcast-sel
 
 default: $(ALL_TESTS)
 .SECONDARY:
