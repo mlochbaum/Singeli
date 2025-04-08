@@ -11,8 +11,7 @@ if_inline (hasarch{'X86_64'}) {
 }
 
 def expand{e, t} = replicate{e, t}*e + cycle{e*length{t}, range{e}}
-def gen_idxs{n} = select{(3*range{n}) % n, 1-range{n}}
-def gen_idxs{1} = tup{0}
+def gen_idxs{n} = (3 * (1-range{n})) % n
 
 def widths{min, max} = tup{min, ...widths{min*2, max}}
 def widths{min, max if min>max} = tup{}
@@ -21,17 +20,17 @@ def widths{v, v} = tup{v}
 main() : void = {
   fn test{sw, V}(counts:*u64) : void = {
     def vw = width{V}
-    
+
     def inc_ok{ok} = store{counts, ok, load{counts, ok}+1}
     def elts = example_elts{V}
     def vec = vec_make{V, elts}
-    
+
     def has_int{lw} = not (lw==256 and not hasarch{'AVX2'})
     def qualities{lw} = {
-      def has_int = has_int{lw}
-      replicate{tup{has_int,has_int,sw>=32}, tup{'u','i','f'}}
+      def i = has_int{lw}
+      replicate{tup{i,i,sw>=32}, tup{'u','i','f'}}
     }
-    
+
     if (sw<=64) @for_tup(lw in widths{sw, vw} over '!') {
       # vec_shuffle{[n]vw (width=lw), v:V (width=vw)}; n = elements
       def n = lw/sw
@@ -60,7 +59,7 @@ main() : void = {
         }
       } # else show{'missed V=',V, ' lw=',lw, ' n=',n, ' spec=',[n]primtype{'u', sw}}
     }
-    
+
     def select_ok = match() {
       {if sw<=16 and not hasarch{'SSSE3'}} => 0
       {if sw<=16 and vw>=256 and not hasarch{if (sw==8) 'AVX512VBMI' else 'AVX512BW'}} => 0
@@ -72,12 +71,12 @@ main() : void = {
     if (select_ok) {
       def n = vw/sw
       def idxs = gen_idxs{n}
-      
+
       def exp = {
         def scale = sw/width{eltype{V}}
         vec_make{V, select{elts, expand{scale, idxs}}}
       }
-      
+
       @for_tup(spec in merge{
         copy{has_int{vw} or quality{eltype{V}}=='f', sw},
         each{{q}=>primtype{q,sw}, if (sw<=64) qualities{vw} else tup{}}
@@ -88,7 +87,7 @@ main() : void = {
       }
     }
   }
-  
+
   counts:*u64 = tup{0,0}
   if (hasarch{'X86_64'}) {
     @for_tup(sw in tup{8,16,32,64,128} over '!') {
