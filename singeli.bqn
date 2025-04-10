@@ -1543,7 +1543,7 @@ nodes ← {
         l ← LazyLabel@
         i ← (⊑𝕗) CondEvalS ⟨¬id,l⟩⌾⊑⍟(id=jv) 𝕩
         c ← (1⊑𝕗) CondEvalS⟜𝕩⍟((¬id)≢⊢) i
-        functions.SetLabel⍟(@⊸≢) l.label
+        {jv label.GotoC⍟(id⊸≡) c ⋄ functions.SetLabel 𝕩}⍟(@⊸≢) l.label
         i⍟(id⊸≡) c
       }
     }
