@@ -32,8 +32,8 @@ baseArch ⇐ ∨˝∘∧⟜mat (∨´all)◶⟨∊⟜arg,1¨⟩ feats
 FeatInd ⇐ { # 𝕨 is 0 to allow features outside current architecture
   i ← feats ⊐ 𝕩
   m ← (i=≠feats)/○⥊𝕩
-  !∘(∾"Unknown architecture features:"<⊸∾' '∾¨/⟜m)⍟(∨´) ¬m∊allfeats
-  !∘(1↓·∾' '∾¨⟨"Features not in",aname,"architecture:"⟩∾⊢)⍟(0<≠)⍟𝕨 m
+  !∘(∾"arch: Unknown architecture features:"<⊸∾' '∾¨/⟜m)⍟(∨´) ¬m∊allfeats
+  !∘(1↓·∾' '∾¨⟨"arch: Features not in",aname,"architecture:"⟩∾⊢)⍟(0<≠)⍟𝕨 m
   i
 }
 
