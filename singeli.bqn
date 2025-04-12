@@ -274,7 +274,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Expr ← (∾⟜" must appear on its own line" Asrt 0˙) _exprStmt
   Stmt ← ⊢ _exprStmt
 
-  Vec ← c.run _node_ (c.consts.vec ⋈ "["‿Expr‿"]"‿{CallablePhrase𝕩} _seq)
+  Vec ← c.run _node_ (c.word∘"__vec" ⋈ "["‿Expr‿"]"‿{CallablePhrase𝕩} _seq)
   ParEx ← ⊑ "("‿Expr‿")" _seq
   EWord ← c.token _node_ (⊑⟜keywords⍟(¬=) (IsLogic∨∊⟜('''∾wc∾oc)_ifASCII) _begin_ "expression")
   Expr0 ← @_opt_⟨"[",Vec, "(",ParEx, EWord⟩
@@ -1279,7 +1279,7 @@ nodes ← {
   consts ⇐ {
     ⟨v⇐values,n⇐names⟩ ← builtins
     Make ← {𝕩˙_value 𝕨}
-    call‿i32‿vec ⇐ Make¨⟜(v⊏˜n⊐⊢) "call"‿"i32"‿"__vec"
+    call‿i32 ⇐ Make¨⟜(v⊏˜n⊐⊢) "call"‿"i32"
     n0 ⇐ Number "0"
     pp_u8 ⇐ "**u8" Make types.pp_u8
   }
