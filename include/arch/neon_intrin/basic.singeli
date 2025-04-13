@@ -68,7 +68,9 @@ def  __max{a:V,b:V if va{V} and n8{V}}  = emit{V, intrin{'vmax', V}, a, b}
 def  __shl{a:V,b:S if vi{V} and S==uns{V}} = emit{V, intrin{'vshl', V}, a, sgn{S}~~b}
 def __adds{a:V,b:V if vi{V}} = emit{V, intrin{'vqadd', V}, a, b}
 def __subs{a:V,b:V if vi{V}} = emit{V, intrin{'vqsub', V}, a, b}
+
 def   addp{a:V,b:V if va{V}} = emit{V, intrin{'vpadd', V}, a, b}
+def addpw{a:V=[k]E if vi{V} and width{E}<=32} = emit{[k/2](primtype{quality{E}, width{E}*2}), intrin{'vpaddl', V}, a}
 
 def __shl{a:V, s if vi{V} and num{s} and s>0 and s<ew{V}} = emit{V, intrin{'vshl', '_n', V}, a, s};  def __shl{a:V,0 if vi{V}} = a
 def __shr{a:V, s if vi{V} and num{s} and s>0 and s<ew{V}} = emit{V, intrin{'vshr', '_n', V}, a, s};  def __shr{a:V,0 if vi{V}} = a
