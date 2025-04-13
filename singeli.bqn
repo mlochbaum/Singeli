@@ -175,7 +175,7 @@ architecture ← {
   # Architecture to be used for the next function created
   next ← init
   SeeNext ⇐ {𝕊:next}
-  NewFunction ⇐ {𝕊: r←next ⋄ next↩init ⋄ r }
+  NewFunction ⇐ {𝕊: r←𝕨 ⊢⊘Union next ⋄ next↩init ⋄ r }
   With ⇐ { NewFunction ⊢ (⊑𝕩){𝔽} ⊣ {next↩𝕩}∘(New 1↓𝕩) }_v1
 }
 
@@ -830,7 +830,7 @@ functions ← {kname⇐"function"
   New ← {𝕤
     kind⇐kname ⋄ Matches⇐≡ ⋄ Type⇐!∘"Explicit function result type needed"
     id⇐𝕩 ⋄ shows⇐("$f"∾(•Repr id)∾"_"⊸∾⍟(0<≠)𝕨)⊣"$main"
-    arch⇐architecture.NewFunction@ ⋄ SetArch⇐{arch↩𝕩}
+    arch⇐current.arch architecture.NewFunction @ ⋄ SetArch⇐{arch↩𝕩}
     label←¯1 ⋄ slabel←⟨⟩ ⋄ args←atypes←ctypes←⟨⟩ ⋄ rType⇐@
     labc⇐0 ⋄ IncLab⇐{𝕊:labc+↩1}  # Labels set: don't alias through label
     NextLabel⇐{𝕤⋄ labels.New label+↩1 }
