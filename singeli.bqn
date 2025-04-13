@@ -57,6 +57,7 @@ _e2 ← {𝔽⊣"Expected two parameters" 2⊸=_asrtGotR ≠} ⋄ _p2←{𝔽´_
 _e3 ← {𝔽⊣"Expected three parameters" 3⊸=_asrtGotR ≠}
 _v1 ← {𝔽⊣"Expected at least one parameter"  1⊸≤_asrtGotR ≠}
 _v2 ← {𝔽⊣"Expected at least two parameters" 2⊸≤_asrtGotR ≠}
+_m1 ← {𝔽⊣"Expected at most one parameter" ≤⟜1 _asrtGotR ≠}
 
 # Error messages for generator matching
 ErrParams ← { ErrOut 𝕨 ⋄ ! "Parameters: "∾(0<≠)◶⟨"none",ShowMulti⟩ 𝕩 }
@@ -926,7 +927,7 @@ functions ← {kname⇐"function"
   builtins ⇐ ⍉> ⟨
     ⟨"call",Call _v1⟩, ⟨"emit",Emit _v2⟩, ⟨"return",Return⟩
     ⟨"makelabel",Label⟩, ⟨"goto",(Goto 0⊸ReadLabel) _p1⟩
-    ⟨"setlabel",(SetLabel 1⊸ReadLabel) _p1 ⋈∘Label⍟(0=≠)⟩
+    ⟨"setlabel",(SetLabel 1 ReadLabel ≠◶Label‿⊑)_m1⟩
   ⟩ ∾ { New‿Union‿Has‿List ← architecture ⋄ S←SetArch ⋄ G←GetArch ⋄ ⟨
     ⟨"setarch",S New⟩
     ⟨"addarch",S G Union New⟩
