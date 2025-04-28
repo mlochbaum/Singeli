@@ -14,15 +14,14 @@ arches ⇐ ⟨
     ExtFile ⇐ {𝕩⊑"x86_strict"‿"x86"}
     feats ⇐ name ReadFeats ExtFile 0
     header ⇐ "immintrin.h"
-    us ← "Unsupported vector type"
     VecType ⇐ {
       𝕊 1‿⟨v⟩‿1‿0: v≤64?
-        us ! ∊⟜(2⋆1+↕6)⌾<v        # 2…64
-        ⟨4, "__mmask"∾•Repr 8⌈v⟩; # AVX-512 mask
+        { ∊⟜(2⋆1+↕6)⌾<v ? ⟨4, "__mmask"∾•Repr 8⌈v⟩ # AVX-512 mask
+        ; <"mask register length must a power of 2 between 2 and 64" } ;
       𝕊 w‿⟨v⟩‿u‿f:
-        us ! ∊⟜(2⋆6+↕4)⌾<l←w×v  # 64…512
-        ⟨5-˜2⋆⁼l, ∾⟨"__m", •Repr l, {l=64?"";¬f?"i";(64=w)/"d"}⟩⟩;
-      !"Nested vector type unsupported in x86"
+        { ∊⟜(2⋆6+↕4)⌾<l←w×v ? ⟨5-˜2⋆⁼l, ∾⟨"__m", •Repr l, {l=64?"";¬f?"i";(64=w)/"d"}⟩⟩
+        ; <"non-boolean register width must a power of 2 between 64 and 512" } ;
+      <"nested vector type unsupported in x86"
     }
     mainDefine ⇐ "__x86_64__"
     StripDefines ⇐ { u ← "__" ⋄ (¯2↓2↓⊢)¨ ((u≡2⊸↑)∧u≡¯2⊸↑)¨⊸/ 𝕩 }
@@ -35,7 +34,7 @@ arches ⇐ ⟨
     VecType ⇐ {
       𝕊 w‿⟨v⟩‿u‿f:
         1 ⋈ ∾⟨{f?"float"; (u/"u")∾"int"}, •Repr w, "x", •Repr v, "_t"⟩;
-      !"Nested vector type not yet supported in ARM"
+      <"Nested vector type not yet supported in ARM"
     }
     mainDefine ⇐ "__aarch64__"
     StripDefines ⇐ { l←≠pre←"__ARM_FEATURE_" ⋄ l↓¨(pre≡l⊸↑)¨⊸/ 𝕩 }
@@ -53,7 +52,7 @@ arches ⇐ ⟨
         lmul ← (v×w)÷128
         mf ← lmul<1
         1 ⋈ ∾⟨"v", {f?"float"; (u/"u")∾"int"}, •Repr w, "m", mf/"f", •Repr ÷⍟mf lmul, "_t"⟩;
-      !"Only two levels of vector nesting supported in RISC-V"
+      <"Only two levels of vector nesting supported in RISC-V"
     }
     mainDefine ⇐ "__riscv_xlen"
     StripDefines ⇐ { "RVV"¨ "__riscv_v"⊸≡¨⊸/ 𝕩 }

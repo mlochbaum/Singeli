@@ -9,18 +9,19 @@ types ← {
   ub←uv←um←0 ⋄ req←⟨⟩ ⋄ init ⇐ {ub↩uv↩um↩0⋄req↩⟨⟩}
   Require ⇐ {𝕊: req∾↩<𝕩}
   Headers ⇐ {𝕊: ⍷ req ∾˜ 1‿ub‿um‿(uv>0)/⟨"stdint.h","stdbool.h","math.h",cpu.header⟩}
-  Type ⇐ { 𝕨𝕊bType‿w‿am‿ptrs:
+  Type ⇐ { 𝕨 𝕊 bType‿w‿am‿ptrs‿disp:
+    Err ← {ErrOut ∾⟨"Unhandled type `",disp,"`: ",𝕩⟩ ⋄ ErrExit@} 
     u‿f ← bType = "uf"
     (" "∾𝕨) ⊢⊘(∾˜) (ptrs/"*") ∾˜ {
-      0<≠am     ? uu‿t ← cpu.VecType w‿am‿u‿f ⋄ uv⌈↩uu ⋄ t ;
+      0<≠am     ? uu‿t ← Err∘⊑⍟(0==) cpu.VecType w‿am‿u‿f ⋄ uv⌈↩uu ⋄ t ;
       f         ? "float"‿"double"⊑˜32‿64⊸⊐⌾<w ;
       w=0       ? "void" ;
       u∧w=1     ? "bool" ⊣ ub↩1 ;
       ⊑w∊2⋆3+↕4 ? ∾⟨u/"u","int",•Repr w,"_t"⟩ ;
-      Asrt "Unsupported type"
+      Err "invalid scalar type"
     }
   ;
-    𝕨𝕊⟨"fn",res‿args,ptrs⟩:
+    𝕨𝕊⟨"fn",res‿args,ptrs,disp⟩:
     ∾⟨res, " (*",ptrs/"*",𝕨⊢⊘∾")(", ","Join args, ")"⟩
   }
   SpecialFloat ⇐ {um↩1 ⋄ n←'-'=⊑𝕩 ⋄ (n↑𝕩)∾"NAN"‿"INFINITY"⊑˜"0/0"‿"1/0"⊸⊐⌾<n↓𝕩}
@@ -99,7 +100,7 @@ as ← {
       "Invalid IR type" Asrt ")->"≡3↑r←n¬⊸/𝕩
       ⟨Type 3↓r, a⟩
     }
-    𝕨 types.Type {
+    𝕨 types.Type ⟨𝕩⟩ ∾˜ {
       "void": 'v'‿0‿⟨⟩‿ptrs;
       '('=⊑𝕩? ⟨"fn",ParseFn 𝕩,ptrs⟩;
       ⟨⊑𝕩, Nat 1↓𝕩, am, ptrs⟩
