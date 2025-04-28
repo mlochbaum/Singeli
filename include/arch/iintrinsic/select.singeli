@@ -70,12 +70,17 @@ local def vec_shuffle_impl{T, sel_n, val={_:V, ..._}, ind} = {
   }
   def shuf_base{...a, n   } = shuf{...a, n, base{n, .}}
   def shuf_make{...a, n, T} = shuf{...a, n, vec_make{[n]T, .}}
+  # shuffle_ps / shuffle_pd
+  def fshuf{b, v={_,_}} = {
+    def i = get_ind{sel_n, __min{wv / w, 4}, ind}
+    shuf_sub{T, 'shuffle', base{b, i % b}, v}
+  }
   # Arch-specific cases
   if (sel_n == 1 and 1 == length{val}) {
     select{val, 0}
   } else if (2 == length{val}) {
     def 1 = isfloat{T} and wv >= 128 and ind_width <= 128 and pos
-    shuf_base{'shuffle', 128 / w}
+    fshuf{128 / w, val}
   } else if (wv < 128) {
     def 1 = wv == 64 and isint{T} and w >= 16 and pos
     shuf_base{'shuffle', 4}
@@ -99,7 +104,7 @@ local def vec_shuffle_impl{T, sel_n, val={_:V, ..._}, ind} = {
     } else {
       def n = 128 / w
       if (hasarch{'AVX'}) shuf{'permute', n, {t} => base{n, if (n==2 and wv>128) merge{t,t} else t}}
-      else shuf_sub{T, 'shuffle', base{n, get_ind{sel_n, n, ind}}, merge{val,val}}
+      else fshuf{n, merge{val,val}}
     }
   } else { # isint{T}
     def 1 = hasarch{'SSE2'}
