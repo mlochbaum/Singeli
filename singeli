@@ -74,7 +74,7 @@ outputs ← ShowOut‿ErrOut‿ErrExit‿DepOut
 frontend ← arch‿libpaths‿configs‿outputs •Import "singeli.bqn"
 backend ← {
   "ir"≡target ? ⊢ ;
-  par ← ⟨"cpp"≡target,arch,"si"⊣´namepre⟩
+  par ← ⟨"cpp"≡target,arch,"si"⊣´namepre,outputs⟩
   pre ⊑⊸{𝕨⊸𝕏}⍟(0<≠∘⊣) par •Import "emit_c.bqn"
 }
 Output ← {

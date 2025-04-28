@@ -1,4 +1,9 @@
-cpp‿cpu‿prefix ← ∾⟜"_"⌾(2⊸⊑) •args
+cpp‿cpu‿prefix‿⟨·,ErrOut,ErrExit,·⟩ ← ∾⟜"_"⌾(2⊸⊑) •args
+
+Asrt ← {𝕨𝕊1:𝕩; ·𝕊𝕩:𝕊𝕨;
+  ErrOut "Invalid IR, likely implementation bug!"
+  ErrOut⍟(0⊸≢) 𝕩 ⋄ ErrExit@
+}
 
 types ← {
   ub←uv←um←0 ⋄ req←⟨⟩ ⋄ init ⇐ {ub↩uv↩um↩0⋄req↩⟨⟩}
@@ -12,7 +17,7 @@ types ← {
       w=0       ? "void" ;
       u∧w=1     ? "bool" ⊣ ub↩1 ;
       ⊑w∊2⋆3+↕4 ? ∾⟨u/"u","int",•Repr w,"_t"⟩ ;
-      !"Unsupported type"
+      Asrt "Unsupported type"
     }
   ;
     𝕨𝕊⟨"fn",res‿args,ptrs⟩:
@@ -29,22 +34,22 @@ Generate ← {
   ProcLine ← {
     line ← StartLine 𝕩
     c ← code⊸⊐⌾< Name line
-    (∾"Unknown operation: `"‿𝕩‿"`") ! c<≠code
+    (∾"Unknown operation: `"‿𝕩‿"`") Asrt c<≠code
     depth‿infn‿do ← c ⊑ op
-    ! fn ≡ infn
+    "Invalid function containment" Asrt fn ≡ infn
     fn +↩ depth
     res ← ∾ do {𝕎𝕩}¨ <line
     line.Finish @
     res ∾ ⟨infn∧fn,(0<≠res)∧2-fn⟩/';'‿lf
   }⍟(0<≠)
   l ← ProcLine¨ lf ((⊢-˜+`×¬)∘=⊔⊢) 𝕩
-  "Unclosed function" ! 0≡fn
+  "Unclosed function" Asrt 0≡fn
   prelude ← lf Join ("#include"∾("<"∾∾⟜">")⍟('"'≠⊑))¨ types.Headers@
   ∾ (𝕨⊣prelude) ((⊣⋈(⊣×1+⊢)○(0<≠)⥊lf˙)∾⊢) (decl.Emit@)∾l
 }
 
 StartLine ← { 𝕊 str:
-  Assert ← { ! ∾𝕨‿": `"‿str‿"`" }⍟(1≢⊢)
+  Assert ← { Asrt ∾𝕨‿": `"‿str‿"`" }⍟(1≢⊢)
   tok ← ' ' ((⊢-˜+`×¬)∘=⊔⊢) str
   i ← ¯1
   Next ⇐ {𝕤
@@ -80,7 +85,7 @@ as ← {
       m ← "-0x8000000000000000"≡v # For floats: negate after cast
       ∾⟨"(",m↑v,"(",Type t,")",m↓v,")"⟩
     ;
-      !"tup{"≡4↑v
+      "Invalid IR literal" Asrt "tup{"≡4↑v
       "{"∾"}"∾˜∾1↓⥊(<",")≍˘ Lit¨ ((⊢-˜+`×¬)∘(Bl<','⊸=)⊔⊢)○(¯1↓4↓⊢) v
     }
   }‿⊢
@@ -91,7 +96,7 @@ as ← {
     ParseFn ← {
       s ← (','=𝕩)∧n←(1⊸=∧·∧`0⊸<)"()"Nest𝕩
       a ← Type¨ ((1-˜+`×¬)s∨»⊸≠⊸≥n)⊔𝕩
-      !")->"≡3↑r←n¬⊸/𝕩
+      "Invalid IR type" Asrt ")->"≡3↑r←n¬⊸/𝕩
       ⟨Type 3↓r, a⟩
     }
     𝕨 types.Type {
@@ -125,7 +130,7 @@ BeginFn ← {𝕤
   ret ← n Type 𝕩
   argc ← I32 𝕩
   param ← Name⊸Type∘𝕩¨ ↕argc
-  exts ← All 𝕩 ⋄ !1≥≠exts ⋄ !∧´('+'=⊑)¨exts
+  exts ← All 𝕩 ⋄ Asrt 1≥≠exts ⋄ Asrt ∧´('+'=⊑)¨exts
   fexts ← FmtExt¨exts
   { "main"≢nn
   ? n⊸decl.BeginFn⊸⊢ ∾fexts∾⟨"static ",ret,"(",List param,") {"⟩
@@ -198,7 +203,7 @@ Require ← { types.Require Name 𝕩 ⋄ "" }
     kind ← Name 𝕩
     ty   ← Name 𝕩 # Define turns to type
     c ← code⊸⊐⌾< kind
-    (∾"Unknown new: `"‿kind‿"`") ! c<≠code
+    (∾"Unknown new: `"‿kind‿"`") Asrt c<≠code
     val ← (c⊑op) {𝕎𝕩} 𝕩
     {
       "void"≡ty?∾val ;

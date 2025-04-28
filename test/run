@@ -1,7 +1,8 @@
 #! /usr/bin/env bqn
 
 cpu ← •Import "../arch.bqn"
-par ← ⟨cpu‿⟨⟩‿⟨⟩‿⟨•Out,•term.ErrRaw•ToUTF8∾(@+10)˙,!∘0,⊢⟩, 0‿cpu‿"si"⟩
+out ← ⟨•Out,•term.ErrRaw•ToUTF8∾(@+10)˙,!∘0,⊢⟩
+par ← ⟨cpu‿⟨⟩‿⟨⟩‿out, 0‿cpu‿"si"‿out⟩
 steps ← {""⊸𝕏}⌾(1⊸⊑) par •Import¨ "../singeli.bqn"‿"../emit_c.bqn"
 
 n ← ≠types ← "in"‿"ir"‿"c"
