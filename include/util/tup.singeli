@@ -105,17 +105,17 @@ def replicate{f, list if kgen{f}} = replicate{each{f,list}, list}
 def indices{i} = replicate{i, inds{i}}
 
 # Search functions that return a single number
-local def proc_find{out, f, i} = each{out, findmatches{f, i}}
+local def proc_find{out, i, f} = each{out, findmatches{i, f}}
 # Index of only match, erroring if there are multiple
 # If there are none, return the default if given and error otherwise
-def find_index{sfor, sin, ...default if $default <= 1} = proc_find{
+def find_index{sin, sfor, ...default if $default <= 1} = proc_find{
   {is} => match (is, default) { {{i}, _} => i; {{}, {d}} => d },
-  sfor, sin
+  sin, sfor
 }
 # Index of first match
-def index_of{sfor, sin} = {
-  def n = $sfor
-  proc_find{match { {{i, ..._}} => i; {_} => n }, sfor, sin}
+def index_of{sin, sfor} = {
+  def n = $sin
+  proc_find{match { {{i, ..._}} => i; {_} => n }, sin, sfor}
 }
 # Whether each element is found; how many times it's found
 def contained_in = proc_find{{i} => 0 < $i, ...}
