@@ -150,6 +150,7 @@ Includes `arch/iintrinsic/select` and `arch/neon_intrin/select` define operation
 |--------------------------------------|------|------------
 | `vec_select {spec?, val, ...?ind}`   |      | Vector version of `select{val, ind}`
 | `vec_shuffle{spec?, val, ...?ind}`   |      | Select within sub-units, possibly repeating the indices
+| `broadcast_sel{val, i}`              |      | Vector with all elements equal to element `i` of `val`
 | `reverse_units{s, val}`              |      | Reverse each length-`s` group of elements in `val`
 | `vec_shift_left_128 {val, n}`        |      | Move element `i` of `val` to index `i-n`, shifting in zeros
 | `vec_shift_right_128{val, n}`        |      | Move element `i` of `val` to index `i+n`, shifting in zeros
