@@ -5,7 +5,7 @@ main() : void = {
   fn test{V=[k]E}() : void = {
     def elts = example_elts{V}
     def src = vec_make{V, elts}
-    
+
     @for_tup(i in range{k}, el in elts over '!') {
       if (hasarch{'X86_64'}) {
         if (width{E}==8 and not hasarch{'SSSE3'}) {

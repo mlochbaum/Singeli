@@ -123,10 +123,9 @@ def blend_bit{f:V=[k]T, t:V, m:M=[k]_ if width{V}==width{M}} = {
 }
 def blend_hom{...} = blend_bit
 
-def broadcast_sel{x:V=[k]_, i if knum{i} and i>=0 and i<k and (i>>0)==i} = {
+def broadcast_sel{x:V=[k]_, i if knum{i} and i>=0 and i<k and __floor{i}==i} = {
   emit_intrin{V, merge{'vdup', if (width{V}==128) 'q' else '', '_lane'}, x, i}
 }
-
 
 # For x86 compatibility
 def vec_shift_left_128 {...} = vec_shift_left

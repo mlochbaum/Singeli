@@ -4,6 +4,7 @@ local {
   oper ~~ reinterpret infix right 55
   def base{b,{}} = 0; def base{b,{h,...t}} = h + b*base{b,t}
   def all{t} = is{t, 0 <= t}
+  def copy{n, v} = each{{_}=>v, range{n}}
 
   def fmtwidth{V} = fmtnat{width{V}}
   def fmt_p{T} = {
@@ -311,43 +312,46 @@ def blend{f:V=[k]T, t:V, {...m} if has_blend{V} and k<=8 and length{m}==k} = {
 }
 
 
-
-local include 'util/tup' # copy
-local def int_below{i, end} = knum{i} and (i>>0) == i and i < end
-
-def extract{[k]E, x:[k]E, 0} = x
-def extract{R=[_]E, x:V=[_]E, 0 if width{R}<width{V}} = {
-  def t = match (E) { {(f32)}=>'ps'; {(f64)}=>'pd'; {_}=>'si' }
-  emit{R, merge{'_mm',fmtwidth{V},'_cast',t,fmtwidth{V},'_',t,fmtwidth{R}}, x}
+# Broadcast
+local def int_below{i, end} = knum{i} and __floor{i} == i and i < end
+local def has_shuf8{k} = hasarch{
+  match (k) { {16}=>'SSSE3'; {32}=>'AVX2'; {64}=>'AVX512BW' }
 }
-local def low128{x:[_]E} = extract{[128/width{E}]E, x, 0}
-
+def broadcast_sel{x:V=[k]E, i if width{E}==8 and int_below{i, k} and has_shuf8{k}} = {
+  if (k==32 and i<16) {
+    def a = {
+      if (i<8) V ~~ ([4]u64~~x >> (i*8))
+      else if (i==8) vec_shuffle{[2]u64, x, 1,0}
+      else vec_shift_left_128{x, i}
+    }
+    broadcast_sel{a, 0} # Handled by special case for 0 below
+  } else {
+    def a = vec_shuffle{x, copy{16, i&15}}
+    vec_select{128, a, copy{k>>4, i>>4}}
+  }
+}
 def broadcast_sel{x:[k]E, i if width{E}==16 and k<=16 and int_below{i, k}} = {
   def a = vec_shuffle16_half{(i&4)!=0, x, copy{4, i&3}}
   vec_shuffle{u64, a, copy{k>>2, i>>2}}
 }
-def broadcast_sel{x:[k]E, i if width{E}==8 and int_below{i, k} and (match(k) { {16}=>hasarch{'SSSE3'}; {32}=>hasarch{'AVX2'}; {64}=>hasarch{'AVX512BW'} })} = {
-  def a = vec_shuffle{16, x, copy{16, i&15}}
-  vec_select{128, a, copy{k/16, i>>4}}
+
+local def has_full_shuf = match { # element width
+  {8}=>hasarch{'AVX512VBMI'}; {16}=>hasarch{'AVX512BW'}; {_}=>1
 }
-def broadcast_sel{x:[32]E, i if width{E}==8 and hasarch{'AVX2'} and int_below{i, 16} and i!=0} = {
-  def a = if (i==8) vec_shuffle{[2]u64, x, 1,0}
-  else if (i<=7) [32]E ~~ ([4]u64~~x >> (i*8))
-  else vec_shift_left_128{x, i}
-  broadcast_sel{a, 0}
-}
-def broadcast_sel{x:[k]E, i if (match(width{E}) { {8}=>hasarch{'AVX512VBMI'}; {16}=>hasarch{'AVX512BW'}; {_}=>1 }) and int_below{i, k}} = {
+def broadcast_sel{x:[k]E, i if int_below{i, k} and has_full_shuf{width{E}}} = {
   vec_shuffle{x, copy{k, i}}
 }
 
-local def char{E} = match (if (isint{E}) width{E} else E) {
-  {8}=>'b'
-  {16}=>'w'
-  {32}=>'d'
-  {64}=>'q'
-  {(f32)}=>'ss'
-  {(f64)}=>'sd'
-}
-def broadcast_sel{x:V=[_]E, 0 if hasarch{'AVX2'} and (width{V}!=512 or width{E}>=32 or hasarch{'AVX512BW'})} = {
-  emit{V, intrin{merge{'broadcast', char{E}}, V}, low128{x}}
+def broadcast_sel{x:V=[k]E, 0 if hasarch{'AVX2'} and (width{V}<512 or width{E}>=32 or hasarch{'AVX512BW'})} = {
+  def w = width{E}
+  def char = {
+    if (isfloat{E}) match (w) { {32}=>'ss'; {64}=>'sd' }
+    else match (w) { {8}=>'b'; {16}=>'w'; {32}=>'d'; {64}=>'q' }
+  }
+  def lane0 = if (width{V} == 128) x else {
+    def t = match (E) { {(f32)}=>'ps'; {(f64)}=>'pd'; {_}=>'si' }
+    def f = fmtwidth{V}
+    emit{[128/w]E, merge{'_mm',f,'_cast',t,f,'_',t,'128'}, x}
+  }
+  emit{V, intrin{merge{'broadcast', char}, V}, lane0}
 }
