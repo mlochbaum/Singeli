@@ -1,2 +1,3 @@
 #!/usr/bin/env bqn
-•Out 1↓ ∾' '⊸∾¨ (⟨•args, 1⟩ •Import "../../arch.bqn").GetCFlags @
+feats ← ∾ ',' ((⊢-˜+`×¬)∘=⊔⊢)¨ •args
+•Out 1↓ ∾' '⊸∾¨ (⟨feats, 1⟩ •Import "../../arch.bqn").GetCFlags @
