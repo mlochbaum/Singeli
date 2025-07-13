@@ -2,7 +2,7 @@
 
 Hey I found a way to list all the permutations in lexicographically increasing order, at billions of permutations per second! No, I don't know what it's "useful for", don't ask me questions like that!
 
-Okay, we're going to start off with an old old algorithm that Roger Hui wrote about in 1981! There are articles explaining it in [APL](https://www.jsoftware.com/papers/50/50_19.htm), [J](https://code.jsoftware.com/wiki/Doc/Articles/Play202) and [BQN](https://saltysylvi.github.io/blog/BQNcrate-permutations.html), what about Singeli though?
+Okay, we're going to start off with an old old algorithm that Roger Hui was using [in 1979](https://dl.acm.org/doi/10.1145/602312.602317)! There are articles explaining it in [APL](https://www.jsoftware.com/papers/50/50_19.htm), [J](https://code.jsoftware.com/wiki/Doc/Articles/Play202) and [BQN](https://saltysylvi.github.io/blog/BQNcrate-permutations.html), what about Singeli though?
 
 The big idea is that we're going to break each permutation down into one part that just moves one index to the start, then another that leaves the first index alone. Here's an implementation, it's pretty short!
 
