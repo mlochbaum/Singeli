@@ -62,8 +62,13 @@ arches ⇐ ⟨
 # Attempt to get the CPU's native architecture from OS resources
 ReadNative ⇐ {𝕊:
   f ← {
-    c ← 1⊑ •SH "cat"‿"/proc/cpuinfo"
-    l ← (∨˝"flags"‿"Features"(⊣≡≠⊸↑)⌜⊢)⊸/ (@+10) Spl c  # Line with flags
+    cf ← {
+      0<≠c ←  1⊑•SH "cat"‿"/proc/cpuinfo" ? ⟨c, "flags"‿"Features"⟩ ;
+      0<≠c ← (1⊑•SH)⎊⟨⟩ ⟨"lscpu"⟩         ? ⟨c, ⟨"Flags"⟩⟩ ;
+      @
+    }
+    @≢cf ? c‿f ← cf
+    l ← (∨˝f(⊣≡≠⊸↑)⌜⊢)⊸/ (@+10) Spl c  # Line with flags
     0<≠l ? ToUpper¨ 1↑l
   ;
     l ← (@+10) Spl (1⊑•SH)⎊⟨⟩ "sysctl"‿"machdep.cpu" # For macs
