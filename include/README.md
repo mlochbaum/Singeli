@@ -116,7 +116,7 @@ The following table shows when arithmetic support was added to x86 for various v
 | AVX-512F  |          |           | `[16]i32` |  `[8]i64` | `[16]f32` | `[8]f64` |
 | AVX-512BW | `[64]i8` | `[32]i16` |           |           |           |          |
 
-The next table shows integer instruction availability in x86. Each entry shows the first extension to include the instructions on a given element type. Multi-instruction fills are not shown. Instructions introduced by SSE extensions are all available in AVX2, except `extract`, and those in AVX2 are all in AVX-512F or AVX-512BW (depending on type support as shown above), except `copy_sign`. AVX2 instructions are also supported on 128-bit vectors, and AVX-512 instructions are supported on 128-bit and 256-bit vectors if AVX-512VL is available. But `arch/iintrinsic/basic` doesn't correctly support these extensions right now.
+The next table shows integer instruction availability in x86. Each entry shows the first extension to include the instructions on a given element type. Multi-instruction fills are not shown. Instructions introduced by SSE extensions are all available in AVX2, except `extract`, and those in AVX2 are all in AVX-512F or AVX-512BW (depending on type support as shown above), except `copy_sign`. AVX2 instructions are also supported on 128-bit vectors, and AVX-512 instructions are supported on 128-bit and 256-bit vectors if AVX-512VL is available.
 
 | Functions                     | `i8`   | `i16`  | `i32`  | `i64`   | `u8`   | `u16`  | `u32`  | `u64`
 |-------------------------------|--------|--------|--------|---------|--------|--------|--------|-------

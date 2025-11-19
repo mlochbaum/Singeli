@@ -216,7 +216,8 @@ local {
   def has_minmax{V if hasarch{'SSE4.1'} and sse{V}} = avx_minmax{V}
   def has_minmax{V if hasarch{'AVX'} and avx{V} and ef{V}} = 1
   def has_minmax{V if hasarch{'AVX2'} and avx{V}} = avx_minmax{V}
-  def has_minmax{V if hasarch{'AVX512F'} and av5{V}} = has_avx512{V}
+  def av5vl{V} = av5{V} or (sse_avx{V} and hasarch{'AVX512VL'})
+  def has_minmax{V if hasarch{'AVX512F'} and av5vl{V} and has_avx512{V}} = 1
 
   def has_mul{_} = 0  # same-width multiply (mullo for ints)
   def has_mul{V==[4]f32 if hasarch{'SSE'}} = 1
@@ -225,19 +226,20 @@ local {
   def has_mul{V if hasarch{'SSE4.1'} and sse{V} and ew{V}==32} = 1
   def has_mul{V if hasarch{'AVX'   } and avx{V} and ef{V}} = 1
   def has_mul{V if hasarch{'AVX2'  } and avx{V} and ew{V}<=32 and ew{V}>=16} = 1
-  def has_mul{V if hasarch{'AVX512F'} and av5{V}} = if (ef{V}) 1 else match (ew{V}) {
+  def has_avx512mul{V} = if (ef{V}) 1 else match (ew{V}) {
     {(32)}=>1; {(16)}=>hasarch{'AVX512BW'}; {(64)}=>hasarch{'AVX512DQ'}
   }
+  def has_mul{V if hasarch{'AVX512F'} and av5vl{V} and has_avx512mul{V}} = 1
 
   def has_shift{_} = 0  # shift by scalar
   def has_shift{V if hasarch{'SSE2'} and sse{V} and ei{V} and ew{V}>=16} = 1
   def has_shift{V if hasarch{'AVX2'} and avx{V} and ei{V} and ew{V}>=16} = 1
   def has_shift{V if hasarch{'AVX512F'} and av5{V} and ei{V} and ew{V}>=16} = has_avx512{V}
-  def has_rsh{V} = (eltype{V}!=i64 or av5{V}) and has_shift{V}
+  def has_rsh{V} = (eltype{V}!=i64 or av5vl{V}) and has_shift{V}
   def has_vshift{_} = 0  # shift by vector
   def has_vshift{V if hasarch{'AVX2'} and sse_avx{V} and ei{V} and ew{V}>=32} = 1
-  def has_vshift{V if hasarch{'AVX512F'} and av5{V} and ei{V} and ew{V}>=16} = has_avx512{V}
-  def has_vrsh{V} = (eltype{V}!=i64 or av5{V}) and has_vshift{V}
+  def has_vshift{V if hasarch{'AVX512F'} and av5vl{V} and ei{V} and ew{V}>=16 and has_avx512{V}} = 1
+  def has_vrsh{V} = (eltype{V}!=i64 or av5vl{V}) and has_vshift{V}
 
   def has_eq{_} = 0  # equals, integer only
   def has_eq{V if hasarch{'SSE2'  } and sse{V}} = ew{V}<=32
@@ -255,7 +257,7 @@ local {
   # abs, sign, avg
   def has_int_op{V=[_]T, arch_s, q, w, w512} = {
     if (q!=quality{T}) 0
-    else if (sse_avx{V} and hasarch{if (sse{V}) arch_s else 'AVX2'}) width{T}<=w
-    else hasarch{'AVX512F'} and av5{V} and has_avx512{V} and width{T}<=w512
+    else if (sse_avx{V} and hasarch{if (sse{V}) arch_s else 'AVX2'} and width{T}<=w) 1
+    else hasarch{'AVX512F'} and av5vl{V} and has_avx512{V} and width{T}<=w512
   }
 }
