@@ -1066,6 +1066,7 @@ builtins ← {
       ⟨"withenv",{e←program.env⋄e.Push 2↑𝕩⋄r←⟨⟩{𝕎_ne𝕩}˜RGL 2⊑𝕩⋄e.Pop@⋄r}_e3⟩
       ⟨"getenv",1‿2 _exp_ {(1<⟜≠◶⟨NoEnv˙,{𝕏˙}⊑⟩𝕩) program.env.GetDef ⊑𝕩}⟩
       ⟨"hasenv",1‿2 _exp_ {e←program.env⋄(1<≠)◶⟨e.Has⊑,e.HasVal˜´⟩𝕩}⟩
+      ⟨"setenv_global", {program.env.SetGlob 𝕩}_e2⟩
       ⟨"memoize",({𝕏 (MemoMap@)._memoize _genNamed_ ({"memoize{"∾(Repr 𝕩)∾"}"}𝕩˙)} RGP)_p1⟩
     ⟩
     functions.builtins
@@ -1185,12 +1186,15 @@ program ← {
     }
   }
   DynamicEnv ← {𝕤
-    stack ← @
+    global ← stack ← @
     Sym ← "Environment label must be a symbol"⊸symbols.From
     Push⇐ {   stack ↩ 𝕩‿stack} Sym⌾⊑
     Pop ⇐ {𝕊: stack ↩ 1⊑stack}
+    SetGlob ⇐ {global ↩ 𝕩‿global} Sym⌾⊑
     Get ← { yes‿no 𝕊 𝕩:
-      stack { @≡𝕨? No 𝕩 ; 𝕩≡⊑v←⊑𝕨? Yes 1⊑v ; (1⊑𝕨)𝕊𝕩 } Sym 𝕩
+      s ← Sym 𝕩
+      _find ← { @≡𝕩? 𝔽 s ; s≡⊑v←⊑𝕩? Yes 1⊑v ; 𝕊 1⊑𝕩 }
+      No _find∘global _find stack
     }
     Has    ⇐ 1‿0⊸Get
     GetDef ⇐ {⊢‿𝕨 Get 𝕩}
