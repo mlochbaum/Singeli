@@ -1041,6 +1041,7 @@ builtins ← {
   LSDep ← •Out∘"Builtins load{} and store{} are deprecated; include 'arch/c' to define them"
   Load ← { 𝕊 ptr‿i  : LSDep@ ⋄ functions.Emit ⟨AccessPtr ptr, Sym "^load",  ptr, GetIndex i⟩ } _e2
   Store← { 𝕊 ptr‿i‿v: LSDep@ ⋄ t←AccessPtr ptr ⋄ functions.Emit ⟨types.void, Sym "^store", ptr, GetIndex i, vc←t types.Cast v⟩ ⋄ vc } _e3
+  NoEnv ← {!∾"Environment value "‿𝕩‿" hasn't been set"}
 
   names‿values ⇐ <˘∾≍⟨
     Repr¨⊸≍ types.primTypes
@@ -1063,7 +1064,8 @@ builtins ← {
       ⟨"require",{program.Require∘ReqSym⚇0 𝕩}⟩
       ⟨"witharch",architecture.With⟩
       ⟨"withenv",{e←program.env⋄e.Push 2↑𝕩⋄r←⟨⟩{𝕎_ne𝕩}˜RGL 2⊑𝕩⋄e.Pop@⋄r}_e3⟩
-      ⟨"getenv",{program.env.Get 𝕩}_p1⟩
+      ⟨"getenv",1‿2 _exp_ {(1<⟜≠◶⟨NoEnv˙,{𝕏˙}⊑⟩𝕩) program.env.GetDef ⊑𝕩}⟩
+      ⟨"hasenv",1‿2 _exp_ {e←program.env⋄(1<≠)◶⟨e.Has⊑,e.HasVal˜´⟩𝕩}⟩
       ⟨"memoize",({𝕏 (MemoMap@)._memoize _genNamed_ ({"memoize{"∾(Repr 𝕩)∾"}"}𝕩˙)} RGP)_p1⟩
     ⟩
     functions.builtins
@@ -1187,11 +1189,12 @@ program ← {
     Sym ← "Environment label must be a symbol"⊸symbols.From
     Push⇐ {   stack ↩ 𝕩‿stack} Sym⌾⊑
     Pop ⇐ {𝕊: stack ↩ 1⊑stack}
-    Get ⇐ {
-      𝕊𝕩:stack𝕊𝕩 ;
-      @≡𝕨? !∾"Environment value "‿𝕩‿" hasn't been set" ;
-      𝕩≡⊑v←⊑𝕨? 1⊑v ; (1⊑𝕨)𝕊𝕩
-    } Sym
+    Get ← { yes‿no 𝕊 𝕩:
+      stack { @≡𝕨? No 𝕩 ; 𝕩≡⊑v←⊑𝕨? Yes 1⊑v ; (1⊑𝕨)𝕊𝕩 } Sym 𝕩
+    }
+    Has    ⇐ 1‿0⊸Get
+    GetDef ⇐ {⊢‿𝕨 Get 𝕩}
+    HasVal ⇐ {⟨𝕨˙⊸Match, 0⟩ Get 𝕩}
   }
   J ← 1↓·∾" "⊸∾¨
   DispHeader←{ "require " ∾ "'"(∾∾⊣)𝕩 }
