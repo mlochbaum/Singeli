@@ -504,8 +504,6 @@ The following generators are pre-defined in any program. They're placed in a par
 | `setlabel{label}`      | Set label to the current position
 | `setlabel{}`           | Short for `setlabel{makelabel{}}`
 | `goto{label}`          | Jump to the position set for a label
-| `load{ptr,ind}`        | Return value at `ptr+ind` (builtin deprecated, get with `include 'arch/c'`)
-| `store{ptr,ind,val}`   | Store `val` at `ptr+ind` (builtin deprecated, get with `include 'arch/c'`)
 
 ### Architecture
 

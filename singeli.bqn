@@ -356,7 +356,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
 
   For ← c.for _node_ {𝕤
     OA← "@for: pointers must be followed by ""over"""⊸AsrtHere
-    OW← •Out∘"@for: pointer without ""over"" is deprecated"⍟¬
+    OW← "@for: pointer (indicated by ""in"") must be followed by ""over"""⊸AsrtHere
     TA← "@for: ""from"" missing ""to"""⊸Asrt
     NA← "@for: loop variable must be a name"⊸Asrt
     Get "@"
@@ -1027,20 +1027,7 @@ builtins ← {
   }_p2
   UD ← constants.Undefined{(1<≠)◶⟨𝔽⊑,𝔽˜⟜numbers.GetNat´⟩}
   Undefined ← 1‿2 _exp_ (UD ⊣ RT0∘⊑)
-  # Load/store
-  AccessPtr ← {
-    t ← types.Deref TypeOf 𝕩
-    "Can't access void pointer" (¬types.IsVoid t)_asrtGotS 𝕩
-    t
-  }
-  GetIndex ← {
-    "number"≡Kind𝕩 ? numbers.GetInt 𝕩 ;
-    IsTyped𝕩 ? types.IsInt 𝕩 ? 𝕩 ;
-    "Index must be numeric" 0 _asrtGotS 𝕩
-  }
-  LSDep ← •Out∘"Builtins load{} and store{} are deprecated; include 'arch/c' to define them"
-  Load ← { 𝕊 ptr‿i  : LSDep@ ⋄ functions.Emit ⟨AccessPtr ptr, Sym "^load",  ptr, GetIndex i⟩ } _e2
-  Store← { 𝕊 ptr‿i‿v: LSDep@ ⋄ t←AccessPtr ptr ⋄ functions.Emit ⟨types.void, Sym "^store", ptr, GetIndex i, vc←t types.Cast v⟩ ⋄ vc } _e3
+  Load ← Store ← !∘"not yet defined; include 'arch/c' for a standard definition"
   NoEnv ← {!∾"Environment value "‿𝕩‿" hasn't been set"}
 
   names‿values ⇐ <˘∾≍⟨
@@ -1639,7 +1626,7 @@ nodes ← {
     ls←@
     Scope ⇐ {
       (o.Scope 𝕩)¨ ∾⟨fn⟩‿ptrv‿⟨from,to⟩
-      ls ↩ (<pos) {𝕏}∘𝕩.Get¨ "load"‿"store"
+      ls ↩ (<pos) 𝕩.Get¨ "load"‿"store"
       body.Scope scopes._defer (ind∾ptrn) scopes.New 𝕩
     }
     Eval ⇐ {
