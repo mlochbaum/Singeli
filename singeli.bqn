@@ -40,7 +40,7 @@ Source ← { 𝕨 𝕊 src‿lc: file←𝕨⊣""
       e ← (+`(𝕩≤¯1»𝕨≠⊸+¨𝕩))⊔𝕩⋈¨𝕨
       p ← "^"⍟(∧´0=≠¨𝕨)"|" # No names indicates multi-location runtime error
       l ← "^"⌾(1⊑¯1⊑⊑) ⌽ p⌾(1⊸⊑)¨⊸∾` (1+≠e)↑e
-      {∾((-⟜»𝕨)∾≠¯1⊑𝕩)↑¨""<⊸∾𝕩}˝∘⍉∘>¨ l
+      {∾((𝕨-0»𝕨)∾≠¯1⊑𝕩)↑¨""<⊸∾𝕩}˝∘⍉∘>¨ l
     }
     ErrOut¨ ¯1↓⍟(∧´' '=⊑) disp Tr○((r=e)⊸/) c
   }
@@ -1750,7 +1750,7 @@ generators ← {
     {¬∨´pp? {_𝕣_:𝔽∘DeSpread};
       Fill ← (pp/spread){
         ¬∨´𝕗 ? ((⍋⍋pp)⊏∾) ⊣ (𝕘!(≠𝕗)=≠∘⊢) ;
-        c ← +´pp∧»∨`ps←pp∧spread
+        c ← +´pp∧0»∨`ps←pp∧spread
         i ← (⋈⁼/ps)(↑⋈↓)(⊢-≠×(c-˜≠)⊸≤)⍋⍋ps¬⊸/pp
         (∾0‿2‿1⊏(i⊏¨<∘∾)∾⟜<(c-˜0⋈¯1+´pp)↓´˜⊢) ⊣ (𝕘!c≤≠∘⊢)
       }"Partial and given parameter counts don't match"

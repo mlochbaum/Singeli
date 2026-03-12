@@ -28,6 +28,7 @@ types ← {
 }
 
 lf ← @+10
+Pr ← ≤○≠◶⟨0,⊣≡≠⊸↑⟩
 
 Generate ← {
   decl.Init@ ⋄ types.Init@
@@ -86,7 +87,7 @@ as ← {
       m ← "-0x8000000000000000"≡v # For floats: negate after cast
       ∾⟨"(",m↑v,"(",Type t,")",m↓v,")"⟩
     ;
-      "Invalid IR literal" Asrt "tup{"≡4↑v
+      "Invalid IR literal" Asrt "tup{" Pr v
       "{"∾"}"∾˜∾1↓⥊(<",")≍˘ Lit¨ ((⊢-˜+`×¬)∘(Bl<','⊸=)⊔⊢)○(¯1↓4↓⊢) v
     }
   }‿⊢
@@ -97,7 +98,7 @@ as ← {
     ParseFn ← {
       s ← (','=𝕩)∧n←(1⊸=∧·∧`0⊸<)"()"Nest𝕩
       a ← Type¨ ((1-˜+`×¬)s∨»⊸≠⊸≥n)⊔𝕩
-      "Invalid IR type" Asrt ")->"≡3↑r←n¬⊸/𝕩
+      "Invalid IR type" Asrt ")->" Pr r←n¬⊸/𝕩
       ⟨Type 3↓r, a⟩
     }
     𝕨 types.Type ⟨𝕩⟩ ∾˜ {
@@ -154,7 +155,7 @@ Define ← {st 𝕊 ty‿id‿val:
   eq ← {cpp>st? ⟨"; ",id," = "⟩ ; ⟨" = "⟩}
   ∾∾⟨
     arr, (1=st)/⟨"static "⟩
-    ⟨id as.Type ty⟩, (('?'≠·⊑1↑⊑) / eq⊸∾) val
+    ⟨id as.Type ty⟩, ((¬"?"Pr⥊∘⊑) / eq⊸∾) val
   ⟩
 }
 UndefArr ← {𝕊 ty‿id‿n: (0 Define ⟨1↓ty,∾id‿"["‿n‿"]",⟨"?"⟩⟩) ∾ "; "}
@@ -184,11 +185,11 @@ Require ← { types.Require Name 𝕩 ⋄ "" }
     "^load"   𝕊⟨p,i  ⟩: ∾p‿"["‿i‿"]" ;
     "^store"  𝕊⟨p,i,v⟩:  p‿"["‿i‿"] = "‿v
   }
-  Call ← 1⊸↑⊸≡⟜"^"◶⟨{𝕨‿"("‿𝕩‿")"}⟜List, Special⟩
+  Call ← ("^"Pr⊣)◶⟨{𝕨‿"("‿𝕩‿")"}⟜List, Special⟩
   code‿op ← <˘⍉>⟨
     "val" ‿(⋈ Lit)
     "call"‿{ fn ← Lit 𝕩 ⋄ fn Call (Lit𝕩˙)¨ ↕I32 𝕩 }
-    "emit"‿(Name ("op "≡3↑⊣)◶⟨
+    "emit"‿(Name ("op "Pr⊣)◶⟨
         Call⟜(as.Lit¨All)
         { o←3↓𝕨 ⋄ ⟨Lit 𝕩," ",o," ",Lit 𝕩⟩ }
       ⟩ ⊢)
