@@ -147,7 +147,7 @@ Export ← {
   ∾⟨ret," = ",val,";"⟩
 }
 Define ← {st 𝕊 ty‿id‿val:
-  arr ← {'*'=⊑ty? ∨´"{?"=c←⊑1↑⊑val? # Define array, then pointer cover
+  arr ← {'*'=⊑ty? ∨´"{?"=c←@⊣´⥊⊑val? # Define array, then pointer cover
     v←val ⋄ val↩i←id∾"_" ⋄ id∾⍟st˜↩"const "
     {'?'=c? UndefArr ⟨ty,i,(∧`':'⊸≠)⊸/1↓⊑v⟩ ;
      cpp>st? DefCppArr ⟨ty,i,∾v⟩ ; ⟨st Define ⟨1↓ty,i∾"[]",v⟩, "; "⟩}
