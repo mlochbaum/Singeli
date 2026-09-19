@@ -4,10 +4,21 @@ Spl ← (⊢-˜+`×¬)∘=⊔⊢
 ToUpper ⇐ ((-´"Aa")×'a'⊸≤∧≤⟜'z')⊸+
 UtoDot ← ((-´"._")×'_'⊸=)⊸+
 
-ReadDeps ⇐ { ' ' Spl¨ •file.Lines ∾"data/"‿𝕩‿"_ext.txt" }
+ReadDeps ⇐ {@:⟨⟩; ' ' Spl¨ •file.Lines ∾"data/"‿𝕩‿"_ext.txt" }
 ReadFeats ← { ⟨𝕨⟩ ∾ ⍷∾ ReadDeps 𝕩 }
 
-arches ⇐ ⟨
+unknownArch ← {
+  width ⇐ 𝕩
+  name ⇐ "UNKNOWN" ∾ •Repr width
+  extfile ⇐ @
+  feats ⇐ ⟨name⟩
+  header ⇐ "(no vector types)"
+  mainDefine ⇐ "__"∾name
+  StripDefines ⇐ ⟨"UNKNOWN"⟩˙
+  VecType ⇐ {𝕊: <"Vector types not supported on "∾name}
+}¨ 64‿32
+
+arches ⇐ unknownArch ∾ ⟨
   {
     name ⇐ "X86_64"
     width ⇐ 64
