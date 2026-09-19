@@ -23,9 +23,12 @@ width‿VecType‿header ⇐ ⟨aname⇐name⟩ ← archDesc
   # Unique feature flags including arch name
   feats ⇐ ⟨aname⟩ ∾ u
   # Make a dependency matrix: i‿j⊑m is 1 iff feature i depends on j
-  m ← (≥⌜˜↕∘≠)⊸×∨´×⌜˜¨(<u)∊¨d # Dependencies from file
-  m ∨˝∘∧⎉1‿∞˜⍟(⌈2⋆⁼≠)↩        # Transitive closure
-  mat ⇐ 1 ∾˘ 0¨∘⊏⊸∾ m         # Plus base architecture
+  mat ⇐ {
+    0=≠u? ≍≍1 ;
+    m ← (≥⌜˜↕∘≠)⊸×∨´×⌜˜¨(<u)∊¨d # Dependencies from file
+    m ∨˝∘∧⎉1‿∞˜⍟(⌈2⋆⁼≠)↩        # Transitive closure
+    1 ∾˘ 0¨∘⊏⊸∾ m               # Plus base architecture
+  }
 }
 baseArch ⇐ ∨˝∘∧⟜mat (∨´all)◶⟨∊⟜arg,1¨⟩ feats
 
