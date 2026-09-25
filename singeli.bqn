@@ -1242,18 +1242,17 @@ nodes ← {
     Disp⇐{𝕤⋄⟨name⟩}
     Oper⇐{𝕩.Lookup name}
     Eval⇐!∘0 ⋄ Scope⇐{Eval↩pos var.Get (pos 𝕩.Get name){𝔽}}
+    {name≡"_"? scope↩@ ⋄ Eval↩!∘"Can't get value of _" ; @}
     # Modify so it defines the variable instead of getting the value
     v0←@⋄V←!∘0 ⋄ IsDef⇐{𝕊:
-      ⟨Oper⟩↩d
-      Scope↩{
-        1𝕊𝕩: v0‿v ↩ pos 𝕩.AddLam name ;
-        v ↩ pos 𝕩.Add name
+      {name≡"_"? V↩{Set⇐⊢}˙; # No assignment but may declare registers
+        ⟨Oper⟩↩d
+        Scope↩{
+          1𝕊𝕩: v0‿v ↩ pos 𝕩.AddLam name ;
+          v ↩ pos 𝕩.Add name
+        }
       }
       Eval↩{val‿decl 𝕊 𝕩: u←V𝕩 ⋄ u.Set name⊸functions.Declare⚇0⍟decl val}
-    }
-    {name≢"_"?@; # _ does nothing on assignment, and errors on access
-      scope↩@ ⋄ Eval↩!∘"Can't get value of _"
-      IsDef↩{𝕊:Eval↩⊑⊣⋄V↩{Set⇐⊢}˙}
     }
     # If f≡1, set value in Eval for function recursion
     RunEval ⇐ {𝕏 ⟨@, name⟩}
