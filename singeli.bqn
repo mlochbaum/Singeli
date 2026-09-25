@@ -201,8 +201,8 @@ Parse ← {𝕊 tokens‿ShowTrace:
   sep ← ⟨";", ⥊lf⟩
   ! ⊑ (¯1⊏tokens) ∊ sep
 
-  keywords ← "include"‿"config"‿"local"‿"if"‿"if_inline"‿"else"‿"while"‿"do"‿"match"‿"extend"‿"def"‿"fn"‿"main"‿"oper"‿"in"‿"over"‿"from"‿"to"‿"and"‿"or"‿"not"
-             kInclude ‿kConfig ‿kLocal ‿kIf ‿kIf_inline ‿kElse ‿kWhile ‿kDo ‿kMatch ‿kExtend ‿kDef ‿kFn ‿kMain ‿kOper ‿kIn ‿kOver ‿kFrom ‿kTo ‿kAnd ‿kOr ‿kNot ← ↕≠keywords
+  keywords ← "include"‿"config"‿"local"‿"if"‿"if_inline"‿"else"‿"while"‿"do"‿"match"‿"extend"‿"def"‿"fn"‿"static"‿"main"‿"oper"‿"in"‿"over"‿"from"‿"to"‿"and"‿"or"‿"not"
+             kInclude ‿kConfig ‿kLocal ‿kIf ‿kIf_inline ‿kElse ‿kWhile ‿kDo ‿kMatch ‿kExtend ‿kDef ‿kFn ‿kStatic ‿kMain ‿kOper ‿kIn ‿kOver ‿kFrom ‿kTo ‿kAnd ‿kOr ‿kNot ← ↕≠keywords
 
   Asrt ← {𝕨𝕊1:@;
     [v, k] ← (<"") ∾˘´ {𝕩⊸•ns.Get¨⊸≍ •ns.Keys 𝕩}¨ c‿tc
@@ -264,6 +264,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   kMatch,  { Options 𝕩 }
   "@",     { For 𝕩 }
   kExtend, { Extend 𝕩 }
+  kStatic, { Static 𝕩 }
   kDef,    { Define 𝕩 } ⊣ AsrtStmt∘"def"
   kFn,     { DefFun 𝕩 } ⊣ AsrtStmt∘"fn"
   kMain,   { DefMain𝕩 } ⊣ AsrtStmt∘"main"
@@ -444,6 +445,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
     b ← Result Try"="
     ⟨a,r,b⟩
   }
+  Static ← c.static _node_ (⊑ kStatic‿(@_opt_⟨"{",Body, ⋈Stmt⟩) _seq)
 
   ExtPar ← "{"‿"}" _argsFn_ Name
   Extender ← c.extender _node_ (ExtPar‿"="‿Body _seq)
@@ -482,7 +484,7 @@ Parse ← {𝕊 tokens‿ShowTrace:
   Include ← c.include _node_ (kInclude‿Symbol _seq)
 
   MultiLine ← {Line𝕩} _blockLines
-  TopIf ← c.topif _node_ (∾⌾(¯1⊸⊑) @_opt_⟨"{",MultiLine, ⋈{Line𝕩}⟩ _if)
+  TopIf ← c.topIf _node_ (∾⌾(¯1⊸⊑) @_opt_⟨"{",MultiLine, ⋈{Line𝕩}⟩ _if)
   SubLine ← @_opt_⟨kInclude,Include, kIf_inline,TopIf, kConfig,Config, Stmt⟩
   LocLine ← @_opt_⟨kIf_inline,"localizable line"‿kIf_inline AsrtHere 0˙, kIf,StIf, SubLine⟩
   Line ← @_optGet_⟨
@@ -879,6 +881,11 @@ functions ← {kname⇐"function"
     f (f.Finish 𝔽)program._trace_ 𝕘 𝕩
     current↩fs
     f
+  }
+  _static_ ⇐ {
+    fs←current ⋄ current↩nofn
+    r ← 𝔽 program._trace_ 𝕘 𝕩
+    current↩fs ⋄ r
   }
   NextArg ⇐ { 𝕨 current.NextArg 𝕩 }
   Label ⇐ { current.NextLabel 𝕩 }
@@ -1379,7 +1386,7 @@ nodes ← {
       A ← ! program._trace_ pos
       "Wrong number of parameters in extension" A names≡○≠𝕩
       "Generator defined with extend must be called with extend" A ∧´ ("var"≡Kind)¨ 𝕩
-      (0<≠)◶⟨emptyBody,⊢´⟩ result {𝕨.Eval𝕩}¨ <𝕩 env.Alias e
+      Last result {𝕨.Eval𝕩}¨ <𝕩 env.Alias e
     }⊘{𝕊: {name⇐𝕩} "(extender)"⍟(0=≠) n}}
   }
   Extend ⇐ {
@@ -1415,6 +1422,13 @@ nodes ← {
       𝕨.SetRType∘Ev¨ type
       Ev result
     } functions._with_ pos
+  }
+  Static ⇐ {
+    statements←𝕩 ⋄ pos←𝕨
+    Visit←{𝕏¨statements}
+    ⟨node,Dump,Disp,Oper,Scope⟩⇐d←Defaults "static"‿visit
+    NonLocal ⇐ Visit {𝕩.NonLocal@}˙
+    Eval ⇐ Last d.Eval functions._static_ pos
   }
   Main ⇐ {
     ty ← consts.i32‿consts.pp_u8
@@ -1492,9 +1506,10 @@ nodes ← {
     N←⊢ ⋄ NonLocal⇐{𝕊:N↩{𝕩.parent}}
     Oper⇐{ d.Oper operator.NewScope N 𝕩 }
     sc←@ ⋄ Scope⇐{ d.Scope sc ↩ scopes.New N 𝕩 }
-    Eval⇐{ (0<≠)◶⟨emptyBody,⊢´⟩ ⊑ d.Eval (sc.Names@) env.New N 𝕩 }
+    Eval⇐{ Last ⊑ d.Eval (sc.Names@) env.New N 𝕩 }
   }
   emptyBody ← {Shows⇐!∘"Empty body has no result"⋄kind⇐"error"}
+  Last ← (0<≠)◶⟨emptyBody, ⊢´⟩
 
   LazyLabel ← {𝕤
     label ⇐ 𝕩

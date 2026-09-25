@@ -242,6 +242,8 @@ The parenthesis syntax to call a function is really just a nicer way to use the 
 
 A function argument can have a tuple type; in Singeli's compiled output it's flattened into multiple arguments. It can be made into a gathered argument with `...` syntax: inside a function `fn f(...a:tup{i8,i16}, b:i32)`, `a` is a tuple of registers, but the function is called as `f(a0, a1, b)` with `a0:i8` and `a1:i16`. Since the length of `a` is known based on its type, any number of arguments can be prefixed by `...`, unlike [gathered parameters](#gathered-parameters).
 
+Function definitions can be nested, but the generated code will place all functions at the top level. The inner function can access compile-time values defined in the outer one, but can't use its runtime values. Additionally, the `static` keyword causes statements to be performed outside the function at runtime, for example `static num:i32 = 8` creates a constant, not a new variable on each function call. Multiple statements can be enclosed in `static {…}`, which effectively applies `static` to each one; unlike other kinds of block it doesn't create its own scope.
+
 ## Export
 
 The `export` builtin exports values for use in the calling language. In C this means a non-`static` constant with that name is defined in the output file.

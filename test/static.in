@@ -1,0 +1,17 @@
+def const{T} = {
+  static _:T = undefined{T}
+}
+def export_const{T, name} = {
+  def c = const{T}
+  export{name, c}
+  c
+}
+fn test() = {
+  emit{i32, 'f', export_const{i32, 'first'}}
+  def a = static export_const{i16, 'second'}
+  static {
+    def b = 4
+    ba:__pnt{i8} = range{b}
+  }
+  emit{type{ba}, 'op +', a, ba}
+}

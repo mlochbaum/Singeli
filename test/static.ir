@@ -1,0 +1,12 @@
+constant $c0__ i32 ?:i32
+constant $c1__ i16 ?:i16
+constant $c2_ba *i8 !tup{!0:i8,!1:i8,!2:i8,!3:i8}:*i8
+
+beginFn f0_test *i8 0
+new v0 emit i32 'f' $c0__
+new v1 emit *i8 'op +' $c1__ $c2_ba
+ret v1
+endFn
+
+export 'first' i32 $c0__
+export 'second' i16 $c1__
