@@ -1728,7 +1728,7 @@ targetNodes ← {
   CombineParams ⇐ { base 𝕊 cases: genUnhandled ≢ base?
     # Error message comes from Base so just run everything
     base {t‿c‿e𝕊n: ⊢ @⊸≢◶⟨N⊣, @⊸≢◶⟨N⊣,E⟩⟜C⟩ @t._proc}´ cases
-  ; ·𝕊 ⟨t‿c‿e⟩:
+  ; ·𝕊 ⟨t‿c‿e⟩: e≢{⊢}?
     Pre ← "Generator destructuring: "⊸∾
     ⊢ E {Pre ErrParams 𝕩˙} C Pre t._proc
   ; ·𝕊 cases:
