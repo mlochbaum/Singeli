@@ -1294,7 +1294,7 @@ nodes ← {
     ⟨node,Dump,Disp,NonLocal,Scope⟩⇐d←Defaults "run"‿visit
     Oper ⇐ {𝕤⋄ pos operator.Run ⟨⊑Visit o.Oper 𝕩, params⟩}
     Eval ⇐ {
-      (IsGen 𝕨)◶⟨!∘"Running non-generator", 𝕎⟩ program._trace_ pos _em_𝕨 𝕩
+      (IsGen 𝕨)◶⟨!∘"Running non-generator", 𝕎⟩ _em_𝕨 program._trace_ pos 𝕩
     }´ d.Eval
   }
   Call ⇐ { 𝕨 Run ⟨consts.call , <⊸∾´𝕩⟩ }
